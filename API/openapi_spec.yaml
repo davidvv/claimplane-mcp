@@ -1,0 +1,256 @@
+openapi: 3.1.0
+info:
+  title: Flight Compensation Claim API
+  description: API for handling flight delay compensation claims, backend implemented with FastAPI.
+  version: 1.0.0
+servers:
+  - url: https://api.yourdomain.com
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message detail
+    FlightDetails:
+      type: object
+      required:
+        - flightNumber
+        - plannedDepartureDate
+      properties:
+        flightNumber:
+          type: string
+          description: Flight code (e.g., LH1234)
+          pattern: "^[A-Z]{2}\\d{3,4}$"
+        plannedDepartureDate:
+          type: string
+          format: date
+          description: Planned departure date (YYYY-MM-DD)
+        actualDepartureTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Actual departure timestamp, optional
+    PersonalInfo:
+      type: object
+      required:
+        - fullName
+        - email
+        - bookingReference
+      properties:
+        fullName:
+          type: string
+          description: User's full name
+        email:
+          type: string
+          format: email
+          description: User's email address
+        bookingReference:
+          type: string
+          description: Booking reference code
+    UploadResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Files uploaded.
+    ClaimStatus:
+      type: object
+      properties:
+        claimId:
+          type: string
+        status:
+          type: string
+          description: Current claim status (pending, approved, rejected, etc.)
+        lastUpdated:
+          type: string
+          format: date-time
+  security:
+    - bearerAuth: []
+paths:
+  /api/flight-details:
+    post:
+      summary: Submit flight details for a claim
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlightDetails'
+      responses:
+        '200':
+          description: Flight details submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Flight details recorded.
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/personal-info:
+    post:
+      summary: Submit user personal information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonalInfo'
+      responses:
+        '200':
+          description: Personal information submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Personal information recorded.
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/upload:
+    post:
+      summary: Upload claim-related documents
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - boardingPass
+              properties:
+                boardingPass:
+                  type: string
+                  format: binary
+                  description: Boarding pass scan or photo (required)
+                receipt:
+                  type: string
+                  format: binary
+                  description: Expense receipt (optional)
+      responses:
+        '200':
+          description: Files uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+        '400':
+          description: Missing required files or invalid format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/claim-status:
+    get:
+      summary: Get the current status of a claim
+      parameters:
+        - name: claimId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Unique claim identifier
+      responses:
+        '200':
+          description: Claim status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimStatus'
+        '404':
+          description: Claim not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/admin/claims:
+    get:
+      summary: Admin - list all claims for review
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of claims
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    claimId:
+                      type: string
+                    userName:
+                      type: string
+                    flightNumber:
+                      type: string
+                    status:
+                      type: string
+                    submittedAt:
+                      type: string
+                      format: date-time
+        '401':
+          description: Unauthorized
+  /api/admin/claims/{claimId}/status:
+    patch:
+      summary: Admin - update claim status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Identifier of the claim to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  description: New claim status (approved, rejected, etc.)
+      responses:
+        '200':
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Claim status updated.
+        '400':
+          description: Invalid status value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+security: []  

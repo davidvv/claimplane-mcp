@@ -1,0 +1,60 @@
+# FastAPI and web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.12.1
+
+# Pydantic for data validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Authentication and security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# File handling
+aiofiles==23.2.1
+python-magic==0.4.27
+
+# Logging and monitoring
+structlog==23.2.0
+prometheus-client==0.19.0
+
+# Development tools
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# Date/time handling
+python-dateutil==2.8.2
+
+# UUID generation
+uuid==1.30
+
+# Email validation
+email-validator==2.1.0
+
+# CORS support
+fastapi-cors==0.0.6
+
+# Rate limiting
+slowapi==0.1.9
+
+# Background tasks
+celery==5.3.4
+redis==5.0.1
+
+# Testing
+factory-boy==3.3.0
+faker==20.1.0

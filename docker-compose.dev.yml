@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Development
+  postgres:
+    image: postgres:15-alpine
+    container_name: flight_claim_postgres_dev
+    environment:
+      POSTGRES_DB: flight_claim_db
+      POSTGRES_USER: flight_claim_user
+      POSTGRES_PASSWORD: flight_claim_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flight_claim_user -d flight_claim_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flight_claim_dev
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: flight_claim_redis_dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flight_claim_dev
+
+  # Flight Claim API
+  api:
+    build: .
+    container_name: flight_claim_api_dev
+    environment:
+      - DATABASE_URL=postgresql://flight_claim_user:flight_claim_password@postgres:5432/flight_claim_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - CORS_ORIGINS=["http://localhost:3000","http://localhost:8080","http://127.0.0.1:3000"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./app:/app/app  # Mount for development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - flight_claim_dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Adminer for database management
+  adminer:
+    image: adminer:latest
+    container_name: flight_claim_adminer_dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - flight_claim_dev
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  flight_claim_dev:
+    driver: bridge

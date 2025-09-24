@@ -17,6 +17,12 @@ from app.schemas import (
 from app.services.claim_service import ClaimService
 from app.services.file_service import FileService
 from app.utils.auth import get_current_user, get_current_admin_user
+from app.utils.validation import (
+    validate_flight_number, validate_iata_code, validate_booking_reference,
+    validate_flight_date, validate_disruption_type, validate_declaration_accepted,
+    validate_consent_accepted
+)
+from app.utils.logging import log_claim_event, log_file_operation
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +37,44 @@ async def submit_flight_details(
 ) -> FlightDetailsResponse:
     """Submit flight details for a claim."""
     try:
+        # Validate flight details
+        if not validate_flight_number(flight_details.flightNumber):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid flight number format"
+            )
+
+        if not validate_iata_code(flight_details.departureAirport):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid departure airport code"
+            )
+
+        if not validate_iata_code(flight_details.arrivalAirport):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid arrival airport code"
+            )
+
+        if not validate_flight_date(flight_details.plannedDepartureDate):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid flight date"
+            )
+
         claim_service = ClaimService(db)
-        claim_service.save_flight_details(current_user.id, flight_details)
-        
+        claim = claim_service.save_flight_details(current_user.id, flight_details)
+
+        log_claim_event(
+            "flight_details_submitted",
+            claim.claim_id,
+            user_id=str(current_user.id),
+            success=True
+        )
+
         return FlightDetailsResponse(message="Flight details recorded.")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error submitting flight details: {e}")
         raise HTTPException(
@@ -51,10 +91,19 @@ async def submit_personal_info(
 ) -> PersonalInfoResponse:
     """Submit user personal information."""
     try:
+        # Validate booking reference
+        if not validate_booking_reference(personal_info.bookingReference):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid booking reference format"
+            )
+
         claim_service = ClaimService(db)
         claim_service.save_personal_info(current_user.id, personal_info)
-        
+
         return PersonalInfoResponse(message="Personal information recorded.")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error submitting personal info: {e}")
         raise HTTPException(
@@ -76,20 +125,34 @@ async def upload_documents(
         
         # Validate and save boarding pass
         if boarding_pass:
-            file_service.validate_and_save_file(
-                current_user.id, 
-                boarding_pass, 
+            document = file_service.validate_and_save_file(
+                current_user.id,
+                boarding_pass,
                 "boarding_pass"
             )
-        
+            log_file_operation(
+                "upload",
+                boarding_pass.filename,
+                success=True,
+                user_id=str(current_user.id),
+                document_type="boarding_pass"
+            )
+
         # Validate and save receipt if provided
         if receipt:
-            file_service.validate_and_save_file(
-                current_user.id, 
-                receipt, 
+            document = file_service.validate_and_save_file(
+                current_user.id,
+                receipt,
                 "receipt"
             )
-        
+            log_file_operation(
+                "upload",
+                receipt.filename,
+                success=True,
+                user_id=str(current_user.id),
+                document_type="receipt"
+            )
+
         return UploadResponse(message="Files uploaded.")
     except ValueError as e:
         logger.error(f"File validation error: {e}")
@@ -206,18 +269,59 @@ async def create_claim(
 ) -> ClaimStatus:
     """Create a new claim with flight details and personal information."""
     try:
+        # Validate flight details
+        if not validate_flight_number(flight_details.flightNumber):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid flight number format"
+            )
+
+        if not validate_iata_code(flight_details.departureAirport):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid departure airport code"
+            )
+
+        if not validate_iata_code(flight_details.arrivalAirport):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid arrival airport code"
+            )
+
+        if not validate_flight_date(flight_details.plannedDepartureDate):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid flight date"
+            )
+
+        # Validate personal info
+        if not validate_booking_reference(personal_info.bookingReference):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid booking reference format"
+            )
+
         claim_service = ClaimService(db)
         claim = claim_service.create_complete_claim(
             user_id=current_user.id,
             flight_details=flight_details,
             personal_info=personal_info
         )
-        
+
+        log_claim_event(
+            "created",
+            claim.claim_id,
+            user_id=str(current_user.id),
+            success=True
+        )
+
         return ClaimStatus(
             claimId=claim.claim_id,
             status=claim.status,
             lastUpdated=claim.created_at
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating claim: {e}")
         raise HTTPException(

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "flight-claim-api"
 version = "1.0.0"
-description = "Flight Compensation Claim API - FastAPI implementation"
+description = "Easy Air Claim API - FastAPI implementation"
 authors = [{name = "FlightClaim Team", email = "team@flightclaim.com"}]
 license = {text = "MIT"}
 readme = "README.md"

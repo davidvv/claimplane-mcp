@@ -1,13 +1,19 @@
-"""Main FastAPI application for Flight Compensation Claim API."""
+"""Main FastAPI application for Easy Air Claim API."""
 
 import logging
 from datetime import datetime
 from typing import List
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.orm import Session
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from starlette.responses import Response
 
 from app.config import settings
 from app.database import get_db, create_tables, init_db
@@ -20,6 +26,9 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+# Create rate limiter
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
 # Create FastAPI app
 app = FastAPI(
@@ -39,6 +48,11 @@ app = FastAPI(
     },
 )
 
+# Add rate limiting middleware
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -52,7 +66,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     """Application startup event."""
-    logger.info("Starting Flight Compensation Claim API...")
+    logger.info("Starting Easy Air Claim API...")
     
     try:
         # Create database tables
@@ -70,7 +84,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Application shutdown event."""
-    logger.info("Shutting down Flight Compensation Claim API...")
+    logger.info("Shutting down Easy Air Claim API...")
 
 
 # Include routers
@@ -121,7 +135,7 @@ app.include_router(
 async def root():
     """Root endpoint."""
     return {
-        "message": "Welcome to Flight Compensation Claim API",
+        "message": "Welcome to Easy Air Claim API",
         "version": settings.app_version,
         "docs": "/docs",
         "redoc": "/redoc",
@@ -138,13 +152,19 @@ async def health_check(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
         db_status = "unhealthy"
-    
+
     return HealthCheck(
         status="healthy" if db_status == "healthy" else "unhealthy",
         version=settings.app_version,
         timestamp=datetime.utcnow(),
         database=db_status,
     )
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint."""
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.exception_handler(HTTPException)

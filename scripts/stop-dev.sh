@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Flight Compensation Claim API - Development Stop Script
+# Easy Air Claim API - Development Stop Script
 # Quick script to stop the development environment
 
-echo "🛑 Stopping Flight Compensation Claim API development environment..."
+echo "🛑 Stopping Easy Air Claim API development environment..."
 
 # Stop all services
 docker-compose -f docker-compose.dev.yml down

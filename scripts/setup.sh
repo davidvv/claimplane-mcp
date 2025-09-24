@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Flight Compensation Claim API - Development Setup Script
+# Easy Air Claim API - Development Setup Script
 # This script sets up the complete development environment
 
 set -e  # Exit on any error
 
-echo "🚀 Setting up Flight Compensation Claim API development environment..."
+echo "🚀 Setting up Easy Air Claim API development environment..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -272,7 +272,7 @@ EOF
 # Main setup function
 main() {
     echo "╔══════════════════════════════════════════════════════════════════════╗"
-    echo "║        Flight Compensation Claim API - Development Setup            ║"
+    echo "║        Easy Air Claim API - Development Setup            ║"
     echo "╚══════════════════════════════════════════════════════════════════════╝"
     echo
     

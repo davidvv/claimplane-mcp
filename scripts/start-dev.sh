@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Flight Compensation Claim API - Development Start Script
+# Easy Air Claim API - Development Start Script
 # Quick script to start the development environment
 
 set -e
 
-echo "🚀 Starting Flight Compensation Claim API development environment..."
+echo "🚀 Starting Easy Air Claim API development environment..."
 
 # Colors for output
 GREEN='\033[0;32m'

@@ -1,4 +1,4 @@
-# PostgreSQL Setup Guide - Flight Compensation Claim API
+# PostgreSQL Setup Guide - Easy Air Claim API
 
 ## Quick Start with Docker 🐳
 
@@ -35,10 +35,10 @@ If you only want the database:
 ```bash
 # Start PostgreSQL container
 docker run -d \
-  --name flight_claim_postgres \
-  -e POSTGRES_DB=flight_claim_db \
-  -e POSTGRES_USER=flight_claim_user \
-  -e POSTGRES_PASSWORD=flight_claim_password \
+  --name easy_air_claim_postgres \
+  -e POSTGRES_DB=easy_air_claim_db \
+  -e POSTGRES_USER=easy_air_claim_user \
+  -e POSTGRES_PASSWORD=easy_air_claim_password \
   -p 5432:5432 \
   -v postgres_data:/var/lib/postgresql/data \
   postgres:15-alpine
@@ -47,19 +47,19 @@ docker run -d \
 docker ps
 
 # Connect to the database
-docker exec -it flight_claim_postgres psql -U flight_claim_user -d flight_claim_db
+docker exec -it easy_air_claim_postgres psql -U easy_air_claim_user -d easy_air_claim_db
 ```
 
 ## Database Connection Details
 
 **Connection String:**
 ```
-postgresql://flight_claim_user:flight_claim_password@localhost:5432/flight_claim_db
+postgresql://easy_air_claim_user:easy_air_claim_password@localhost:5432/easy_air_claim_db
 ```
 
 **Environment Variables (add to your .env file):**
 ```bash
-DATABASE_URL=postgresql://flight_claim_user:flight_claim_password@localhost:5432/flight_claim_db
+DATABASE_URL=postgresql://easy_air_claim_user:easy_air_claim_password@localhost:5432/easy_air_claim_db
 ```
 
 ## Setting Up the Database Schema
@@ -105,24 +105,24 @@ init_db()
 ### 1. Check Database Connection
 ```bash
 # Test connection
-docker exec -it flight_claim_postgres psql -U flight_claim_user -d flight_claim_db -c "\dt"
+docker exec -it easy_air_claim_postgres psql -U easy_air_claim_user -d easy_air_claim_db -c "\dt"
 
 # You should see tables like:
-# public | users                  | table | flight_claim_user
-# public | claims                 | table | flight_claim_user
-# public | documents              | table | flight_claim_user
-# public | claim_status_history   | table | flight_claim_user
-# public | chat_sessions          | table | flight_claim_user
-# public | chat_messages          | table | flight_claim_user
+# public | users                  | table | easy_air_claim_user
+# public | claims                 | table | easy_air_claim_user
+# public | documents              | table | easy_air_claim_user
+# public | claim_status_history   | table | easy_air_claim_user
+# public | chat_sessions          | table | easy_air_claim_user
+# public | chat_messages          | table | easy_air_claim_user
 ```
 
 ### 2. Test with Adminer
 Open http://localhost:8080 in your browser and connect with:
 - **System:** PostgreSQL
 - **Server:** postgres
-- **Username:** flight_claim_user
-- **Password:** flight_claim_password
-- **Database:** flight_claim_db
+- **Username:** easy_air_claim_user
+- **Password:** easy_air_claim_password
+- **Database:** easy_air_claim_db
 
 ### 3. Test API Connection
 ```bash
@@ -161,13 +161,13 @@ docker-compose -f docker-compose.dev.yml down
 ### Database Management
 ```bash
 # Access database CLI
-docker exec -it flight_claim_postgres psql -U flight_claim_user -d flight_claim_db
+docker exec -it easy_air_claim_postgres psql -U easy_air_claim_user -d easy_air_claim_db
 
 # Backup database
-docker exec flight_claim_postgres pg_dump -U flight_claim_user flight_claim_db > backup.sql
+docker exec easy_air_claim_postgres pg_dump -U easy_air_claim_user easy_air_claim_db > backup.sql
 
 # Restore database
-docker exec -i flight_claim_postgres psql -U flight_claim_user -d flight_claim_db < backup.sql
+docker exec -i easy_air_claim_postgres psql -U easy_air_claim_user -d easy_air_claim_db < backup.sql
 
 # Reset database (WARNING: This deletes all data!)
 docker-compose -f docker-compose.dev.yml down -v
@@ -182,10 +182,10 @@ docker-compose -f docker-compose.dev.yml up -d
 docker ps | grep postgres
 
 # Check logs
-docker logs flight_claim_postgres
+docker logs easy_air_claim_postgres
 
 # Test connection manually
-docker exec -it flight_claim_postgres psql -U flight_claim_user -d flight_claim_db -c "SELECT 1;"
+docker exec -it easy_air_claim_postgres psql -U easy_air_claim_user -d easy_air_claim_db -c "SELECT 1;"
 ```
 
 ### Port Conflicts
@@ -225,7 +225,7 @@ If you prefer not to use Docker, you can install PostgreSQL locally:
 ```bash
 brew install postgresql
 brew services start postgresql
-createdb flight_claim_db
+createdb easy_air_claim_db
 ```
 
 ### Ubuntu/Debian
@@ -233,7 +233,7 @@ createdb flight_claim_db
 sudo apt update
 sudo apt install postgresql postgresql-contrib
 sudo systemctl start postgresql
-sudo -u postgres createdb flight_claim_db
+sudo -u postgres createdb easy_air_claim_db
 ```
 
 ### Windows
@@ -262,4 +262,4 @@ Once your database is running:
 
 4. **Run the frontend update** following the `frontend_update_plan.md`
 
-Your PostgreSQL database is now ready to work with the Flight Compensation Claim API! 🎉
+Your PostgreSQL database is now ready to work with the Easy Air Claim API! 🎉

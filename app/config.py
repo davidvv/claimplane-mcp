@@ -1,16 +1,18 @@
-"""Configuration settings for the Flight Compensation Claim API."""
+"""Configuration settings for the Easy Air Claim API."""
 
 import os
 from typing import List, Optional
 
-from pydantic import BaseSettings, EmailStr, validator
+from pydantic import EmailStr
+from pydantic_settings import BaseSettings
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
     """Application configuration settings."""
     
     # Application
-    app_name: str = "Flight Compensation Claim API"
+    app_name: str = "Easy Air Claim API"
     app_version: str = "1.0.0"
     debug: bool = False
     secret_key: str
@@ -55,23 +57,25 @@ class Settings(BaseSettings):
     admin_email: EmailStr
     admin_password: str
     
-    @validator("cors_origins", pre=True)
-    def assemble_cors_origins(cls, v: str | List[str]) -> List[str] | str:
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v):
         """Parse CORS origins from string or list."""
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, (list, str)):
             return v
         raise ValueError(v)
-    
-    @validator("allowed_file_types", pre=True)
-    def assemble_allowed_file_types(cls, v: str | List[str]) -> List[str]:
+
+    @field_validator("allowed_file_types", mode="before")
+    @classmethod
+    def assemble_allowed_file_types(cls, v):
         """Parse allowed file types from string or list."""
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, list):
             return v
-        return cls.__fields__["allowed_file_types"].default
+        return cls.model_fields["allowed_file_types"].default
     
     class Config:
         """Pydantic configuration."""

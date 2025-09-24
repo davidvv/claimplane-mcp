@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Flight Compensation Claim API
+  title: Easy Air Claim API
   description: API for handling flight delay compensation claims, backend implemented with FastAPI.
   version: 1.0.0
 servers:

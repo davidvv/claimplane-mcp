@@ -1,4 +1,4 @@
-# Flight Compensation Claim API
+# Easy Air Claim API
 
 A FastAPI-based backend service for handling flight delay compensation claims under EU Regulation 261/2004.
 

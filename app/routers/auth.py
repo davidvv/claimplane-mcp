@@ -4,16 +4,20 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
 from app.models import User
 from app.schemas import Token, UserLogin, UserResponse, ErrorResponse
+from app.utils.validation import validate_booking_reference
+from app.utils.logging import log_authentication_event
 
 logger = logging.getLogger(__name__)
 
@@ -102,12 +106,22 @@ def authenticate_user(db: Session, email: str, booking_reference: str) -> Option
 
 
 @router.post("/login", response_model=Token)
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ) -> Token:
     """Login endpoint using OAuth2 password flow."""
     try:
+        # Validate booking reference format
+        if not validate_booking_reference(form_data.password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid booking reference format",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
         # Authenticate user
         user = authenticate_user(db, form_data.username, form_data.password)
         if not user:
@@ -116,15 +130,15 @@ async def login(
                 detail="Invalid email or booking reference",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         # Create access token
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
         access_token = create_access_token(
             data={"sub": user.email}, expires_delta=access_token_expires
         )
-        
-        logger.info(f"User {user.email} logged in successfully")
-        
+
+        log_authentication_event("login", user.email, success=True)
+
         return Token(access_token=access_token, token_type="bearer")
     except HTTPException:
         raise
@@ -137,12 +151,22 @@ async def login(
 
 
 @router.post("/login-json", response_model=Token)
+@limiter.limit("5/minute")
 async def login_json(
+    request: Request,
     login_data: UserLogin,
     db: Session = Depends(get_db)
 ) -> Token:
     """Alternative login endpoint using JSON body."""
     try:
+        # Validate booking reference format
+        if not validate_booking_reference(login_data.bookingReference):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid booking reference format",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
         # Authenticate user
         user = authenticate_user(db, login_data.email, login_data.bookingReference)
         if not user:
@@ -151,15 +175,15 @@ async def login_json(
                 detail="Invalid email or booking reference",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         # Create access token
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
         access_token = create_access_token(
             data={"sub": user.email}, expires_delta=access_token_expires
         )
-        
-        logger.info(f"User {user.email} logged in successfully")
-        
+
+        log_authentication_event("login", user.email, success=True)
+
         return Token(access_token=access_token, token_type="bearer")
     except HTTPException:
         raise

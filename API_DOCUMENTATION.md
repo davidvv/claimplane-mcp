@@ -1,8 +1,8 @@
-# Flight Compensation Claim API - Complete Documentation
+# Easy Air Claim API - Complete Documentation
 
 ## Overview
 
-This document provides comprehensive documentation for the Flight Compensation Claim API, a FastAPI-based backend service that implements the OpenAPI 3.1.0 specification for handling flight delay compensation claims under EU Regulation 261/2004.
+This document provides comprehensive documentation for the Easy Air Claim API, a FastAPI-based backend service that implements the OpenAPI 3.1.0 specification for handling flight delay compensation claims under EU Regulation 261/2004.
 
 ## Base URL
 ```

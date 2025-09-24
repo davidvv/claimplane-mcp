@@ -40,8 +40,8 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 -- ON CONFLICT (claim_id) DO NOTHING;
 
 -- Grant permissions (handled by docker-compose environment)
--- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO flight_claim_user;
--- GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO flight_claim_user;
+-- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO easy_air_claim_user;
+-- GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO easy_air_claim_user;
 
 -- Add any custom functions or procedures here
 -- For example, a function to generate claim IDs:

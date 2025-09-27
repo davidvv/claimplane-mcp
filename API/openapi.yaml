@@ -21,7 +21,6 @@ servers:
   - url: https://staging-api.easyairclaim.com/v1
     description: Staging server
 
-
 # Security schemes
 components:
   securitySchemes:

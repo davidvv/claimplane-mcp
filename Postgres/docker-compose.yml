@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: flight_claim_db
+    environment:
+      POSTGRES_DB: flight_claim_db
+      POSTGRES_USER: flight_claim_user
+      POSTGRES_PASSWORD: flight_claim_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flight_claim_user -d flight_claim_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (for caching and background tasks)
+  redis:
+    image: redis:7-alpine
+    container_name: flight_claim_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Flight Claim API
+  api:
+    build: .
+    container_name: flight_claim_api
+    environment:
+      - DATABASE_URL=postgresql://flight_claim_user:flight_claim_password@db:5432/flight_claim_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-here-change-in-production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: flight_claim_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: flight_claim_network

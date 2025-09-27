@@ -1,0 +1,907 @@
+openapi: 3.0.3
+info:
+  title: EasyAirClaim API
+  description: |
+    API for managing flight compensation claims across Europe, USA, and Canada.
+    Handles flight status checking, eligibility verification, claim submission,
+    and customer data management with full GDPR compliance.
+    
+    EasyAirClaim helps passengers get the compensation they deserve for delayed, 
+    cancelled, or disrupted flights according to EU261, DOT, and CTA regulations.
+  version: 1.0.0
+  contact:
+    name: EasyAirClaim Support
+    email: easyairclaim@gmail.com
+    url: https://www.easyairclaim.com
+  license:
+    name: Private
+servers:
+  - url: https://api.easyairclaim.com/v1
+    description: Production server
+  - url: https://staging-api.easyairclaim.com/v1
+    description: Staging server
+
+
+# Security schemes
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # Reusable schemas
+  schemas:
+    # Flight-related schemas
+    FlightInfo:
+      type: object
+      required:
+        - flightNumber
+        - airline
+        - departureDate
+        - departureAirport
+        - arrivalAirport
+      properties:
+        flightNumber:
+          type: string
+          example: "LH1234"
+          description: Flight number including airline code
+        airline:
+          type: string
+          example: "Lufthansa"
+          description: Full airline name
+        departureDate:
+          type: string
+          format: date
+          example: "2025-06-15"
+        departureAirport:
+          type: string
+          example: "FRA"
+          description: IATA airport code
+        arrivalAirport:
+          type: string
+          example: "JFK"
+          description: IATA airport code
+        scheduledDeparture:
+          type: string
+          format: date-time
+          example: "2025-06-15T14:30:00Z"
+        scheduledArrival:
+          type: string
+          format: date-time
+          example: "2025-06-15T18:45:00Z"
+        actualDeparture:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-06-15T16:15:00Z"
+        actualArrival:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-06-15T20:30:00Z"
+        status:
+          type: string
+          enum: [scheduled, delayed, cancelled, diverted, boarding, departed, arrived]
+          example: "delayed"
+        delayMinutes:
+          type: integer
+          nullable: true
+          example: 105
+          description: Delay in minutes, null if not applicable
+
+    FlightStatus:
+      allOf:
+        - $ref: '#/components/schemas/FlightInfo'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "123e4567-e89b-12d3-a456-426614174000"
+            lastUpdated:
+              type: string
+              format: date-time
+              example: "2025-09-27T14:34:00Z"
+            dataSource:
+              type: string
+              example: "FlightAware"
+              description: Source of the flight data
+
+    # Customer-related schemas
+    Customer:
+      type: object
+      required:
+        - email
+        - firstName
+        - lastName
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          example: "456e7890-e89b-12d3-a456-426614174001"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        firstName:
+          type: string
+          example: "John"
+          maxLength: 50
+        lastName:
+          type: string
+          example: "Doe"
+          maxLength: 50
+        phone:
+          type: string
+          nullable: true
+          example: "+49123456789"
+        address:
+          $ref: '#/components/schemas/Address'
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          example: "Hauptstraße 123"
+        city:
+          type: string
+          example: "Gersthofen"
+        postalCode:
+          type: string
+          example: "86368"
+        country:
+          type: string
+          example: "Germany"
+          description: Full country name
+
+    # Eligibility and compensation schemas
+    EligibilityRequest:
+      type: object
+      required:
+        - flightInfo
+        - customerInfo
+      properties:
+        flightInfo:
+          $ref: '#/components/schemas/FlightInfo'
+        customerInfo:
+          type: object
+          required:
+            - email
+            - region
+          properties:
+            email:
+              type: string
+              format: email
+            region:
+              type: string
+              enum: [EU, US, CA]
+              description: Passenger's region for applicable compensation laws
+
+    EligibilityResponse:
+      type: object
+      properties:
+        eligible:
+          type: boolean
+          example: true
+        compensationAmount:
+          type: number
+          format: decimal
+          nullable: true
+          example: 600.00
+          description: Compensation amount in EUR
+        currency:
+          type: string
+          example: "EUR"
+        regulation:
+          type: string
+          enum: [EU261, DOT, CTA]
+          example: "EU261"
+          description: Applicable compensation regulation
+        reasons:
+          type: array
+          items:
+            type: string
+          example: ["Flight delayed over 3 hours", "Departure within EU jurisdiction"]
+        requirements:
+          type: array
+          items:
+            type: string
+          example: ["Boarding pass copy", "Valid ID"]
+
+    # Claim-related schemas
+    Claim:
+      type: object
+      required:
+        - customerId
+        - flightInfo
+        - incidentType
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          example: "789e0123-e89b-12d3-a456-426614174002"
+        customerId:
+          type: string
+          format: uuid
+          example: "456e7890-e89b-12d3-a456-426614174001"
+        flightInfo:
+          $ref: '#/components/schemas/FlightStatus'
+        incidentType:
+          type: string
+          enum: [delay, cancellation, denied_boarding, baggage_delay]
+          example: "delay"
+        status:
+          type: string
+          enum: [draft, submitted, under_review, approved, rejected, paid, closed]
+          example: "submitted"
+          readOnly: true
+        compensationAmount:
+          type: number
+          format: decimal
+          nullable: true
+          example: 600.00
+        currency:
+          type: string
+          example: "EUR"
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+        submittedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes from customer
+
+    ClaimRequest:
+      type: object
+      required:
+        - customerInfo
+        - flightInfo
+        - incidentType
+      properties:
+        customerInfo:
+          $ref: '#/components/schemas/Customer'
+        flightInfo:
+          $ref: '#/components/schemas/FlightInfo'
+        incidentType:
+          type: string
+          enum: [delay, cancellation, denied_boarding, baggage_delay]
+        notes:
+          type: string
+          nullable: true
+
+    # Document schemas
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        filename:
+          type: string
+          example: "boarding_pass.pdf"
+        contentType:
+          type: string
+          example: "application/pdf"
+        size:
+          type: integer
+          example: 2048576
+          description: File size in bytes
+        documentType:
+          type: string
+          enum: [boarding_pass, id_document, receipt, bank_statement, other]
+          example: "boarding_pass"
+        uploadedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+          description: Secure download URL (temporary)
+
+    # Common response schemas
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation completed successfully"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-27T14:34:00Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              example: "Invalid flight number format"
+            details:
+              type: array
+              items:
+                type: string
+              example: ["Flight number must include airline code"]
+        timestamp:
+          type: string
+          format: date-time
+
+    # Pagination schema
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 20
+            total:
+              type: integer
+              example: 150
+            hasNext:
+              type: boolean
+              example: true
+
+# API endpoints
+paths:
+  # Flight operations
+  /flights/status/{flightNumber}:
+    get:
+      tags:
+        - Flights
+      summary: Get flight status and details
+      description: Retrieve current status and details for a specific flight
+      parameters:
+        - name: flightNumber
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "LH1234"
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2025-06-15"
+          description: Flight date (YYYY-MM-DD)
+        - name: refresh
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Force refresh from external data source
+      responses:
+        '200':
+          description: Flight status retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/FlightStatus'
+        '404':
+          description: Flight not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Eligibility operations  
+  /eligibility/check:
+    post:
+      tags:
+        - Eligibility
+      summary: Check compensation eligibility
+      description: Determine if a flight incident is eligible for compensation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EligibilityRequest'
+      responses:
+        '200':
+          description: Eligibility check completed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/EligibilityResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Customer operations
+  /customers:
+    get:
+      tags:
+        - Customers
+      summary: List customers
+      description: Retrieve paginated list of customers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: email
+          in: query
+          schema:
+            type: string
+            format: email
+          description: Filter by email address
+      responses:
+        '200':
+          description: Customers retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Customer'
+
+    post:
+      tags:
+        - Customers
+      summary: Create new customer
+      description: Create a new customer record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Customer'
+      responses:
+        '201':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Customer'
+
+  /customers/{customerId}:
+    get:
+      tags:
+        - Customers
+      summary: Get customer details
+      description: Retrieve specific customer information
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Customer'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Customers
+      summary: Update customer
+      description: Update customer information
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Customer'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Customer'
+
+  # Claims operations
+  /claims:
+    get:
+      tags:
+        - Claims
+      summary: List claims
+      description: Retrieve paginated list of claims
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, submitted, under_review, approved, rejected, paid, closed]
+        - name: customerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by customer ID
+      responses:
+        '200':
+          description: Claims retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Claim'
+
+    post:
+      tags:
+        - Claims
+      summary: Submit new claim
+      description: Create and submit a new compensation claim
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+      responses:
+        '201':
+          description: Claim submitted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Claim'
+
+  /claims/{claimId}:
+    get:
+      tags:
+        - Claims
+      summary: Get claim details
+      description: Retrieve specific claim information
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Claim found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Claim'
+
+    put:
+      tags:
+        - Claims
+      summary: Update claim
+      description: Update claim information and status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [under_review, approved, rejected, paid, closed]
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Claim updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Claim'
+
+  # Document operations
+  /claims/{claimId}/documents:
+    get:
+      tags:
+        - Documents
+      summary: List claim documents
+      description: Get all documents for a specific claim
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Documents retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Document'
+
+    post:
+      tags:
+        - Documents
+      summary: Upload document
+      description: Upload a document for a specific claim
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - documentType
+              properties:
+                file:
+                  type: string
+                  format: binary
+                documentType:
+                  type: string
+                  enum: [boarding_pass, id_document, receipt, bank_statement, other]
+      responses:
+        '201':
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Document'
+
+  /documents/{documentId}:
+    get:
+      tags:
+        - Documents
+      summary: Download document
+      description: Download a specific document
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Document not found
+
+    delete:
+      tags:
+        - Documents
+      summary: Delete document
+      description: Delete a specific document
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Document deleted successfully
+        '404':
+          description: Document not found
+
+  # Health and system endpoints
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Check API health status
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+# Define security for the entire API
+security:
+  - ApiKeyAuth: []
+
+# Tags for organization
+tags:
+  - name: Flights
+    description: Flight status and information operations
+  - name: Eligibility
+    description: Compensation eligibility checking
+  - name: Customers
+    description: Customer management operations
+  - name: Claims
+    description: Claim submission and management
+  - name: Documents
+    description: Document upload and management
+  - name: System
+    description: System health and monitoring

@@ -63,13 +63,39 @@ class CustomerRepository(BaseRepository[Customer]):
             country=country
         )
     
-    async def update_customer(self, customer_id: UUID, **kwargs) -> Optional[Customer]:
-        """Update customer information."""
+    async def update_customer(self, customer_id: UUID, allow_null_values: bool = False, **kwargs) -> Optional[Customer]:
+        """Update customer information.
+        
+        Args:
+            customer_id: UUID of the customer to update
+            allow_null_values: If True, None values will be set to null. If False, None values are filtered out.
+            **kwargs: Fields to update
+        """
         customer = await self.get_by_id(customer_id)
         if not customer:
             return None
         
-        # Filter out None values to avoid overwriting with null
-        update_data = {k: v for k, v in kwargs.items() if v is not None}
+        if allow_null_values:
+            # For PUT operations: allow None values to be set to null
+            update_data = kwargs
+        else:
+            # For PATCH operations: filter out None values to avoid overwriting with null
+            update_data = {k: v for k, v in kwargs.items() if v is not None}
+        
+        if not update_data:
+            return customer
         
         return await self.update(customer, **update_data)
+    
+    async def update_customer_email(self, customer_id: UUID, email: str) -> Optional[Customer]:
+        """Update customer email specifically."""
+        customer = await self.get_by_id(customer_id)
+        if not customer:
+            return None
+        
+        # Check if email already exists for another customer
+        existing = await self.get_by_email(email)
+        if existing and existing.id != customer_id:
+            return None
+        
+        return await self.update(customer, email=email)

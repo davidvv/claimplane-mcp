@@ -32,6 +32,32 @@ class CustomerCreateSchema(BaseModel):
         populate_by_name = True
 
 
+class CustomerUpdateSchema(BaseModel):
+    """Schema for updating a customer (PUT - all fields required)."""
+    
+    email: EmailStr
+    first_name: str = Field(..., max_length=50, alias="firstName")
+    last_name: str = Field(..., max_length=50, alias="lastName")
+    phone: Optional[str] = Field(None, max_length=20)
+    address: Optional[AddressSchema] = None
+    
+    class Config:
+        populate_by_name = True
+
+
+class CustomerPatchSchema(BaseModel):
+    """Schema for partially updating a customer (PATCH - only specified fields updated)."""
+    
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = Field(None, max_length=50, alias="firstName")
+    last_name: Optional[str] = Field(None, max_length=50, alias="lastName")
+    phone: Optional[str] = Field(None, max_length=20)
+    address: Optional[AddressSchema] = None
+    
+    class Config:
+        populate_by_name = True
+
+
 class CustomerResponseSchema(BaseModel):
     """Schema for customer response."""
     
@@ -86,6 +112,47 @@ class ClaimCreateSchema(BaseModel):
         valid_types = ["delay", "cancellation", "denied_boarding", "baggage_delay"]
         if v not in valid_types:
             raise ValueError(f"Incident type must be one of: {', '.join(valid_types)}")
+        return v
+    
+    class Config:
+        populate_by_name = True
+
+
+class ClaimUpdateSchema(BaseModel):
+    """Schema for updating a claim (PUT - all fields required)."""
+    
+    customer_id: UUID = Field(..., alias="customerId")
+    flight_info: FlightInfoSchema = Field(..., alias="flightInfo")
+    incident_type: str = Field(..., alias="incidentType")
+    notes: Optional[str] = None
+    
+    @validator('incident_type')
+    def validate_incident_type(cls, v):
+        """Validate incident type."""
+        valid_types = ["delay", "cancellation", "denied_boarding", "baggage_delay"]
+        if v not in valid_types:
+            raise ValueError(f"Incident type must be one of: {', '.join(valid_types)}")
+        return v
+    
+    class Config:
+        populate_by_name = True
+
+
+class ClaimPatchSchema(BaseModel):
+    """Schema for partially updating a claim (PATCH - only specified fields updated)."""
+    
+    customer_id: Optional[UUID] = Field(None, alias="customerId")
+    flight_info: Optional[FlightInfoSchema] = Field(None, alias="flightInfo")
+    incident_type: Optional[str] = Field(None, alias="incidentType")
+    notes: Optional[str] = None
+    
+    @validator('incident_type')
+    def validate_incident_type(cls, v):
+        """Validate incident type if provided."""
+        if v is not None:
+            valid_types = ["delay", "cancellation", "denied_boarding", "baggage_delay"]
+            if v not in valid_types:
+                raise ValueError(f"Incident type must be one of: {', '.join(valid_types)}")
         return v
     
     class Config:

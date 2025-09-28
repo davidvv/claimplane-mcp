@@ -77,6 +77,30 @@ class ClaimRepository(BaseRepository[Claim]):
             notes=notes
         )
     
+    async def update_claim(self, claim_id: UUID, allow_null_values: bool = False, **kwargs) -> Optional[Claim]:
+        """Update claim information.
+        
+        Args:
+            claim_id: UUID of the claim to update
+            allow_null_values: If True, None values will be set to null. If False, None values are filtered out.
+            **kwargs: Fields to update
+        """
+        claim = await self.get_by_id(claim_id)
+        if not claim:
+            return None
+        
+        if allow_null_values:
+            # For PUT operations: allow None values to be set to null
+            update_data = kwargs
+        else:
+            # For PATCH operations: filter out None values to avoid overwriting with null
+            update_data = {k: v for k, v in kwargs.items() if v is not None}
+        
+        if not update_data:
+            return claim
+        
+        return await self.update(claim, **update_data)
+    
     async def update_claim_status(self, claim_id: UUID, status: str, notes: Optional[str] = None) -> Optional[Claim]:
         """Update claim status and optionally notes."""
         claim = await self.get_by_id(claim_id)

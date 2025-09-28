@@ -9,9 +9,11 @@ from app.database import get_db
 from app.models import Claim
 from app.repositories import ClaimRepository, CustomerRepository
 from app.schemas import (
-    ClaimCreateSchema, 
-    ClaimResponseSchema, 
-    ClaimRequestSchema
+    ClaimCreateSchema,
+    ClaimResponseSchema,
+    ClaimRequestSchema,
+    ClaimUpdateSchema,
+    ClaimPatchSchema
 )
 
 router = APIRouter(prefix="/claims", tags=["claims"])
@@ -215,6 +217,134 @@ async def get_customer_claims(
     claims = await claim_repo.get_by_customer_id(customer_id, skip=skip, limit=limit)
     
     return [ClaimResponseSchema.model_validate(claim) for claim in claims]
+
+
+@router.put("/{claim_id}", response_model=ClaimResponseSchema)
+async def update_claim(
+    claim_id: UUID,
+    claim_data: ClaimUpdateSchema,
+    db: AsyncSession = Depends(get_db)
+) -> ClaimResponseSchema:
+    """
+    Update a claim completely (all fields required).
+    
+    Args:
+        claim_id: Claim UUID
+        claim_data: Complete claim update data
+        db: Database session
+        
+    Returns:
+        Updated claim data
+        
+    Raises:
+        HTTPException: If claim not found, customer not found, or validation fails
+    """
+    customer_repo = CustomerRepository(db)
+    claim_repo = ClaimRepository(db)
+    
+    # Check if claim exists
+    existing_claim = await claim_repo.get_by_id(claim_id)
+    if not existing_claim:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Claim with id {claim_id} not found"
+        )
+    
+    # Verify customer exists
+    customer = await customer_repo.get_by_id(claim_data.customer_id)
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Customer with id {claim_data.customer_id} not found"
+        )
+    
+    # Update claim with all fields (allow null values for PUT)
+    flight_data = claim_data.flight_info
+    
+    updated_claim = await claim_repo.update_claim(
+        claim_id=claim_id,
+        allow_null_values=True,  # PUT should allow setting fields to null
+        customer_id=claim_data.customer_id,
+        flight_number=flight_data.flight_number,
+        airline=flight_data.airline,
+        departure_date=flight_data.departure_date,
+        departure_airport=flight_data.departure_airport,
+        arrival_airport=flight_data.arrival_airport,
+        incident_type=claim_data.incident_type,
+        notes=claim_data.notes
+    )
+    
+    return ClaimResponseSchema.model_validate(updated_claim)
+
+
+@router.patch("/{claim_id}", response_model=ClaimResponseSchema)
+async def patch_claim(
+    claim_id: UUID,
+    claim_data: ClaimPatchSchema,
+    db: AsyncSession = Depends(get_db)
+) -> ClaimResponseSchema:
+    """
+    Partially update a claim (only specified fields are updated).
+    
+    Args:
+        claim_id: Claim UUID
+        claim_data: Partial claim update data
+        db: Database session
+        
+    Returns:
+        Updated claim data
+        
+    Raises:
+        HTTPException: If claim not found, customer not found, or validation fails
+    """
+    customer_repo = CustomerRepository(db)
+    claim_repo = ClaimRepository(db)
+    
+    # Check if claim exists
+    existing_claim = await claim_repo.get_by_id(claim_id)
+    if not existing_claim:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Claim with id {claim_id} not found"
+        )
+    
+    # Build update data, filtering out None values
+    update_data = {}
+    
+    if claim_data.customer_id is not None:
+        # Verify customer exists
+        customer = await customer_repo.get_by_id(claim_data.customer_id)
+        if not customer:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Customer with id {claim_data.customer_id} not found"
+            )
+        update_data['customer_id'] = claim_data.customer_id
+    
+    if claim_data.flight_info is not None:
+        flight_data = claim_data.flight_info
+        update_data.update({
+            'flight_number': flight_data.flight_number.upper(),
+            'airline': flight_data.airline,
+            'departure_date': flight_data.departure_date,
+            'departure_airport': flight_data.departure_airport.upper(),
+            'arrival_airport': flight_data.arrival_airport.upper()
+        })
+    
+    if claim_data.incident_type is not None:
+        update_data['incident_type'] = claim_data.incident_type
+    
+    if claim_data.notes is not None:
+        update_data['notes'] = claim_data.notes
+    
+    # If no fields to update, return existing claim
+    if not update_data:
+        return ClaimResponseSchema.model_validate(existing_claim)
+    
+    # Update claim
+    updated_claim = await claim_repo.update_claim(claim_id=claim_id, **update_data)
+    
+    return ClaimResponseSchema.model_validate(updated_claim)
 
 
 @router.get("/status/{status}", response_model=List[ClaimResponseSchema])

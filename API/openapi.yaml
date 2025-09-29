@@ -580,7 +580,7 @@ paths:
       tags:
         - Customers
       summary: Update customer
-      description: Update customer information
+      description: Update customer information (all fields required)
       security:
         - BearerAuth: []
       parameters:
@@ -608,6 +608,68 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/Customer'
+
+    patch:
+      tags:
+        - Customers
+      summary: Partially update customer
+      description: Update specific customer fields (only provided fields are updated)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john.updated@example.com"
+                firstName:
+                  type: string
+                  example: "John"
+                lastName:
+                  type: string
+                  example: "Doe"
+                phone:
+                  type: string
+                  nullable: true
+                  example: "+49123456789"
+                address:
+                  $ref: '#/components/schemas/Address'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Customer'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # Claims operations
   /claims:
@@ -712,7 +774,7 @@ paths:
       tags:
         - Claims
       summary: Update claim
-      description: Update claim information and status
+      description: Update claim information and status (all fields required)
       security:
         - BearerAuth: []
       parameters:
@@ -746,6 +808,65 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/Claim'
+
+    patch:
+      tags:
+        - Claims
+      summary: Partially update claim
+      description: Update specific claim fields (only provided fields are updated)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customerId:
+                  type: string
+                  format: uuid
+                  example: "456e7890-e89b-12d3-a456-426614174001"
+                flightInfo:
+                  $ref: '#/components/schemas/FlightInfo'
+                incidentType:
+                  type: string
+                  enum: [delay, cancellation, denied_boarding, baggage_delay]
+                notes:
+                  type: string
+                  nullable: true
+                  example: "Flight delayed by 3 hours due to technical issues"
+      responses:
+        '200':
+          description: Claim updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Claim'
+        '404':
+          description: Claim not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # Document operations
   /claims/{claimId}/documents:

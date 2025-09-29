@@ -1,4 +1,5 @@
 """Base repository class with common CRUD operations."""
+import logging
 from typing import TypeVar, Generic, Type, Optional, List
 from uuid import UUID
 
@@ -6,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
 from app.database import Base
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 ModelType = TypeVar("ModelType", bound=Base)
 
@@ -39,14 +43,25 @@ class BaseRepository(Generic[ModelType]):
     
     async def update(self, instance: ModelType, **kwargs) -> ModelType:
         """Update an existing record."""
+        logger.info(f"Updating {self.model.__name__} with ID {instance.id}")
+        logger.info(f"Update data: {kwargs}")
+        
         for key, value in kwargs.items():
             if hasattr(instance, key):
+                old_value = getattr(instance, key)
                 setattr(instance, key, value)
+                logger.info(f"Updated {key}: {old_value} -> {value}")
         
         self.session.add(instance)
         await self.session.flush()
+        logger.info("Session flushed successfully")
+        
         await self.session.refresh(instance)
+        logger.info("Instance refreshed successfully")
+        
         await self.session.commit()
+        logger.info("Transaction committed successfully")
+        
         return instance
     
     async def delete(self, instance: ModelType) -> bool:

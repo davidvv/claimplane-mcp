@@ -1,7 +1,7 @@
 """Pydantic schemas for request/response validation."""
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List
+from typing import Optional, List, Union
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, validator
@@ -48,11 +48,28 @@ class CustomerUpdateSchema(BaseModel):
 class CustomerPatchSchema(BaseModel):
     """Schema for partially updating a customer (PATCH - only specified fields updated)."""
     
-    email: Optional[EmailStr] = None
+    # Use Union to allow both None and str, bypassing strict EmailStr validation
+    email: Union[None, str] = None
     first_name: Optional[str] = Field(None, max_length=50, alias="firstName")
     last_name: Optional[str] = Field(None, max_length=50, alias="lastName")
     phone: Optional[str] = Field(None, max_length=20)
     address: Optional[AddressSchema] = None
+    
+    @validator('email', pre=True)
+    def handle_empty_email(cls, v):
+        """Convert empty strings to None to avoid validation errors."""
+        if v == "" or (isinstance(v, str) and v.strip() == ""):
+            return None  # Convert empty/whitespace strings to None
+        return v
+    
+    @validator('email')
+    def validate_email_if_provided(cls, v):
+        """Validate email format only if a non-empty string is provided."""
+        if v is not None:  # v is already filtered by pre-validator
+            # Basic email validation - in a real app, use email-validator library
+            if '@' not in v or '.' not in v.split('@')[-1]:
+                raise ValueError("Invalid email format")
+        return v
     
     class Config:
         populate_by_name = True

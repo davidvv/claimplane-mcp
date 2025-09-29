@@ -1,4 +1,5 @@
 """Customer API endpoints."""
+import logging
 from typing import List
 from uuid import UUID
 
@@ -9,6 +10,9 @@ from app.database import get_db
 from app.models import Customer
 from app.repositories import CustomerRepository
 from app.schemas import CustomerCreateSchema, CustomerResponseSchema, CustomerUpdateSchema, CustomerPatchSchema
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
@@ -233,36 +237,51 @@ async def patch_customer(
     Raises:
         HTTPException: If customer not found or email already exists
     """
+    logger.info(f"PATCH request received for customer {customer_id}")
+    logger.info(f"Request data: {customer_data.model_dump()}")
+    
     repo = CustomerRepository(db)
     
     # Check if customer exists
     existing_customer = await repo.get_by_id(customer_id)
     if not existing_customer:
+        logger.warning(f"Customer {customer_id} not found")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Customer with id {customer_id} not found"
         )
     
+    logger.info(f"Found existing customer: {existing_customer.email}")
+    
     # Check if email is being changed and if new email already exists
-    if customer_data.email and customer_data.email != existing_customer.email:
+    # Handle edge cases: empty strings, whitespace, and case sensitivity
+    if (customer_data.email is not None and
+        customer_data.email.strip() and  # Not empty or whitespace
+        customer_data.email.lower() != existing_customer.email.lower()):
+        
+        logger.info(f"Email change detected: {existing_customer.email} -> {customer_data.email}")
         email_customer = await repo.get_by_email(customer_data.email)
         if email_customer:
+            logger.warning(f"Email {customer_data.email} already exists for another customer")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Customer with email {customer_data.email} already exists"
             )
     
-    # Build update data, filtering out None values
+    # Build update data, filtering out None values and empty strings
     update_data = {}
     
-    if customer_data.email is not None:
-        update_data['email'] = customer_data.email
+    # Only update email if it's provided and not empty/whitespace
+    if (customer_data.email is not None and
+        customer_data.email.strip()):  # Not empty or whitespace
+        update_data['email'] = customer_data.email.strip()
+    
     if customer_data.first_name is not None:
-        update_data['first_name'] = customer_data.first_name
+        update_data['first_name'] = customer_data.first_name.strip() if customer_data.first_name else customer_data.first_name
     if customer_data.last_name is not None:
-        update_data['last_name'] = customer_data.last_name
+        update_data['last_name'] = customer_data.last_name.strip() if customer_data.last_name else customer_data.last_name
     if customer_data.phone is not None:
-        update_data['phone'] = customer_data.phone
+        update_data['phone'] = customer_data.phone.strip() if customer_data.phone else customer_data.phone
     
     # Handle address updates
     if customer_data.address is not None:
@@ -274,11 +293,16 @@ async def patch_customer(
             'country': address_data.get('country')
         })
     
+    logger.info(f"Update data after filtering: {update_data}")
+    
     # If no fields to update, return existing customer
     if not update_data:
+        logger.info("No fields to update, returning existing customer")
         return CustomerResponseSchema.model_validate(existing_customer)
     
     # Update customer
+    logger.info(f"Updating customer with data: {update_data}")
     updated_customer = await repo.update_customer(customer_id=customer_id, **update_data)
     
+    logger.info(f"Customer updated successfully: {updated_customer.email}")
     return CustomerResponseSchema.model_validate(updated_customer)

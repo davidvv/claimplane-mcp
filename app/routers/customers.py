@@ -286,12 +286,15 @@ async def patch_customer(
     # Handle address updates
     if customer_data.address is not None:
         address_data = customer_data.address.dict()
-        update_data.update({
-            'street': address_data.get('street'),
-            'city': address_data.get('city'),
-            'postal_code': address_data.get('postal_code'),
-            'country': address_data.get('country')
-        })
+        # Only update address fields that are explicitly provided (not None)
+        if address_data.get('street') is not None:
+            update_data['street'] = address_data.get('street')
+        if address_data.get('city') is not None:
+            update_data['city'] = address_data.get('city')
+        if address_data.get('postal_code') is not None:
+            update_data['postal_code'] = address_data.get('postal_code')
+        if address_data.get('country') is not None:
+            update_data['country'] = address_data.get('country')
     
     logger.info(f"Update data after filtering: {update_data}")
     

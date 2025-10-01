@@ -51,12 +51,17 @@ class Customer(Base):
     @property
     def address(self):
         """Return address as a nested object."""
-        if self.street or self.city or self.postal_code or self.country:
+        # Check if any address field has a non-None value
+        if (self.street is not None or
+            self.city is not None or
+            self.postal_code is not None or
+            self.country is not None):
+
             return {
-                "street": self.street,
-                "city": self.city,
-                "postalCode": self.postal_code,
-                "country": self.country
+                "street": self.street or None,
+                "city": self.city or None,
+                "postalCode": self.postal_code or None,
+                "country": self.country or None
             }
         return None
 

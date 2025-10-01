@@ -77,16 +77,16 @@ class CustomerPatchSchema(BaseModel):
 
 class CustomerResponseSchema(BaseModel):
     """Schema for customer response."""
-    
+
     id: UUID
     email: EmailStr
-    first_name: str = Field(..., alias="firstName")
-    last_name: str = Field(..., alias="lastName")
+    first_name: Optional[str] = Field(None, alias="firstName")
+    last_name: Optional[str] = Field(None, alias="lastName")
     phone: Optional[str]
     address: Optional[AddressSchema]
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
-    
+
     class Config:
         populate_by_name = True
         from_attributes = True

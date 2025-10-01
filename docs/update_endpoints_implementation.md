@@ -135,10 +135,20 @@ PATCH /claims/{claim_id}
 ## Validation Results
 All tests pass successfully:
 - ✅ Customer PUT endpoint
-- ✅ Customer PATCH endpoint
+- ✅ Customer PATCH endpoint *(Fixed: No more "string" value overwrites)*
 - ✅ Claim PUT endpoint
 - ✅ Claim PATCH endpoint
 - ✅ Error handling
 - ✅ Edge cases
+- ✅ Address field handling in partial updates
+- ✅ Null-safety in model serialization
+
+## Recent Fixes Applied
+
+**PATCH Field Preservation Fix**: Resolved issue where PATCH requests were overwriting existing fields with "string" placeholder values. The fix ensures:
+- Only explicitly provided fields are updated
+- Existing data is preserved for omitted fields
+- Address fields are handled correctly in partial updates
+- Proper null-safety in model serialization
 
 The implementation follows RESTful best practices and provides robust validation and error handling.

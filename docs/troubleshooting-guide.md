@@ -122,51 +122,47 @@ docker-compose up -d
 docker-compose logs -f db
 ```
 
-### Issue 3: PATCH Persistence Problems
+### Issue 3: PATCH Field Overwriting (RESOLVED)
 
-**Symptoms**:
+**Previous Symptoms**:
 ```
-# PATCH request succeeds but changes aren't saved
-# Data reverts to original values after update
+# PATCH requests were overwriting existing fields with "string" values
+# Only updating email would set firstName, lastName, phone to "string"
+# Address fields also affected by similar issues
 ```
 
-**Diagnostic Steps**:
+**Status**: ✅ **FIXED** - This issue has been resolved in the current version.
+
+**What Was Fixed**:
+- Enhanced `Customer.address` property to properly handle None values
+- Improved `CustomerResponseSchema` with explicit Optional field types
+- Added better null-safety in PATCH endpoint address handling
+- Fixed serialization issues that caused "string" placeholder values
+
+**Current Behavior**:
+- ✅ PATCH requests only update provided fields
+- ✅ Existing data is preserved for omitted fields
+- ✅ Address fields are handled correctly during partial updates
+- ✅ No more "string" value overwrites
+
+**Diagnostic Steps** (if issue reoccurs):
 ```bash
-# Enable detailed logging
-docker-compose logs -f api | grep "UPDATE"
+# Enable detailed logging to trace PATCH operations
+docker-compose logs -f api | grep -E "(PATCH|UPDATE|address)"
 
-# Test with direct database query
-docker exec flight_claim_db psql -U postgres -d flight_claim -c "SELECT * FROM customers WHERE id = 'customer-uuid';"
+# Test specific scenarios
+curl -X PATCH "http://localhost/customers/{id}" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "new@example.com"}'
+
+# Verify only email field was updated
+curl "http://localhost/customers/{id}"
 ```
 
-**Solutions**:
-
-#### Solution A: Transaction Not Committed
-This is usually caused by missing `session.commit()` in the repository layer.
-
-```python
-# Check repository update method includes commit
-async def update(self, instance: ModelType, **kwargs) -> ModelType:
-    # ... update logic ...
-    self.session.add(instance)
-    await self.session.flush()
-    await self.session.refresh(instance)
-    await self.session.commit()  # This line is crucial
-    return instance
-```
-
-#### Solution B: Session Scope Issues
-```python
-# Verify session is properly scoped
-@router.patch("/{customer_id}")
-async def patch_customer(
-    customer_id: UUID,
-    customer_data: CustomerPatchSchema,
-    db: AsyncSession = Depends(get_db)  # Session properly injected
-):
-    # Use same session throughout request
-    repo = CustomerRepository(db)
-    return await repo.update_customer(customer_id, **update_data)
+**Prevention**:
+- The current implementation properly handles None values
+- Address property correctly checks for non-None values before serialization
+- Response schema explicitly marks optional fields as Optional
 ```
 
 ## API Validation Issues
@@ -483,54 +479,44 @@ engine = create_async_engine(
 
 ### Issue 12: PUT/PATCH Behavioral Differences
 
-**Symptoms**:
+**Previous Symptoms**:
 ```
-# PUT doesn't set fields to null as expected
-# PATCH overwrites existing data
+# PATCH was overwriting existing fields with "string" values
+# Address fields not handled correctly in partial updates
+# Serialization issues causing data corruption
 ```
 
-**Diagnostic Steps**:
+**Status**: ✅ **RESOLVED** - These behavioral issues have been fixed.
+
+**Current Behavior**:
+- ✅ **PUT**: Complete updates work correctly, null values properly handled
+- ✅ **PATCH**: Only updates provided fields, preserves existing data
+- ✅ **Address fields**: Properly handled in both PUT and PATCH operations
+- ✅ **No data corruption**: Fixed serialization issues that caused "string" overwrites
+
+**Diagnostic Steps** (if issues reoccur):
 ```bash
-# Test PUT behavior
+# Test PUT with null values
 curl -X PUT "http://localhost/customers/uuid" \
   -H "Content-Type: application/json" \
   -d '{"email": "test@example.com", "firstName": "Test", "lastName": "User", "phone": null}'
 
-# Test PATCH behavior
+# Test PATCH partial update
 curl -X PATCH "http://localhost/customers/uuid" \
   -H "Content-Type: application/json" \
   -d '{"firstName": "Updated"}'
+
+# Verify address handling
+curl -X PATCH "http://localhost/customers/uuid" \
+  -H "Content-Type: application/json" \
+  -d '{"address": {"street": "New Street"}}'
 ```
 
-**Solutions**:
-
-#### Solution A: Verify Repository Logic
-```python
-# CustomerRepository.update_customer method
-if allow_null_values:
-    # PUT: Include all fields, even None values
-    update_data = kwargs
-else:
-    # PATCH: Filter out None values
-    update_data = {k: v for k, v in kwargs.items() if v is not None}
-```
-
-#### Solution B: Check Router Implementation
-```python
-# PUT endpoint
-updated_customer = await repo.update_customer(
-    customer_id=customer_id,
-    allow_null_values=True,  # Key difference for PUT
-    **all_customer_data
-)
-
-# PATCH endpoint  
-updated_customer = await repo.update_customer(
-    customer_id=customer_id,
-    allow_null_values=False,  # Key difference for PATCH
-    **filtered_update_data
-)
-```
+**Key Improvements Made**:
+- Enhanced null-safety in Customer model address property
+- Improved response schema with explicit Optional types
+- Better address field handling in PATCH endpoint
+- Fixed serialization issues that caused placeholder values
 
 ## Performance Issues
 

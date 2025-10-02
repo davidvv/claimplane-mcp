@@ -411,8 +411,25 @@ services:
       dockerfile: Dockerfile.prod
     environment:
       DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@db:5432/flight_claim
-      ENVIRONMENT: production
-      LOG_LEVEL: warning
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-warning}
+      SECRET_KEY: ${SECRET_KEY}
+      FILE_ENCRYPTION_KEY: ${FILE_ENCRYPTION_KEY}
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL}
+      NEXTCLOUD_USERNAME: ${NEXTCLOUD_USERNAME}
+      NEXTCLOUD_PASSWORD: ${NEXTCLOUD_PASSWORD}
+      REDIS_URL: ${REDIS_URL}
+      VIRUS_SCAN_ENABLED: ${VIRUS_SCAN_ENABLED:-true}
+      CLAMAV_URL: ${CLAMAV_URL}
+      RATE_LIMIT_UPLOAD: ${RATE_LIMIT_UPLOAD:-5/minute}
+      RATE_LIMIT_DOWNLOAD: ${RATE_LIMIT_DOWNLOAD:-50/minute}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-30}
+      JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS:-7}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      SECURITY_HEADERS_ENABLED: ${SECURITY_HEADERS_ENABLED:-true}
+      FILE_RETENTION_DAYS: ${FILE_RETENTION_DAYS:-365}
+      NEXTCLOUD_TIMEOUT: ${NEXTCLOUD_TIMEOUT:-30}
+      NEXTCLOUD_MAX_RETRIES: ${NEXTCLOUD_MAX_RETRIES:-3}
     depends_on:
       db:
         condition: service_healthy
@@ -444,7 +461,7 @@ volumes:
 
 #### Production Environment Variables
 ```bash
-# .env.prod
+# .env.prod - Generated using scripts/generate_secrets.py
 DB_USER=flight_claim_prod
 DB_PASSWORD=ultra_secure_password_here
 DATABASE_URL=postgresql+asyncpg://flight_claim_prod:ultra_secure_password_here@db:5432/flight_claim
@@ -452,16 +469,47 @@ ENVIRONMENT=production
 LOG_LEVEL=warning
 DEBUG=false
 SECRET_KEY=production-secret-key-min-32-chars
+FILE_ENCRYPTION_KEY=your-32-character-encryption-key-here
+NEXTCLOUD_URL=https://your-nextcloud-domain.com
+NEXTCLOUD_USERNAME=admin
+NEXTCLOUD_PASSWORD=secure-nextcloud-password
+REDIS_URL=redis://:secure-redis-password@redis:6379/0
+VIRUS_SCAN_ENABLED=true
+CLAMAV_URL=clamav:3310
+RATE_LIMIT_UPLOAD=5/minute
+RATE_LIMIT_DOWNLOAD=50/minute
+JWT_EXPIRATION_MINUTES=30
+JWT_REFRESH_EXPIRATION_DAYS=7
 CORS_ORIGINS=["https://yourdomain.com"]
+SECURITY_HEADERS_ENABLED=true
+FILE_RETENTION_DAYS=365
+NEXTCLOUD_TIMEOUT=30
+NEXTCLOUD_MAX_RETRIES=3
+```
+
+#### Generate Production Secrets
+```bash
+# Generate secure production secrets
+python scripts/generate_secrets.py
+
+# This creates .env.production with cryptographically secure secrets
+# Copy to your production environment
+cp .env.production .env.prod
+
+# Update domain-specific settings
+sed -i 's/yourdomain.com/your-actual-domain.com/g' .env.prod
 ```
 
 #### Deploy Production
 ```bash
-# Deploy with production configuration
+# Deploy with production configuration and secure secrets
 docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
 # Monitor deployment
 docker-compose -f docker-compose.prod.yml logs -f
+
+# Verify security configuration
+docker-compose -f docker-compose.prod.yml exec api env | grep -E "(ENVIRONMENT|SECURITY_HEADERS_ENABLED|VIRUS_SCAN_ENABLED)"
 ```
 
 ## Advanced Configuration

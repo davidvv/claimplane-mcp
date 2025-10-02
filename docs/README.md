@@ -44,6 +44,7 @@ This documentation is organized to serve multiple audiences and use cases:
 | Document | Description | Audience | Status |
 |----------|-------------|----------|---------|
 | **[Setup & Deployment Guide](setup-deployment-guide.md)** | Local development and Docker deployment instructions | DevOps, Developers | ✅ Complete |
+| **[Security Configuration Guide](security-configuration.md)** | Enterprise security setup, secrets management, and production hardening | DevOps, Security Engineers | ✅ Complete |
 | **[Troubleshooting Guide](troubleshooting-guide.md)** | Common issues, diagnostic steps, and solutions | Support, DevOps, Developers | ✅ Complete |
 
 ### 5. Legacy & Reference Documents
@@ -70,9 +71,10 @@ This documentation is organized to serve multiple audiences and use cases:
 
 ### For DevOps Engineers
 1. Start with **[Setup & Deployment Guide](setup-deployment-guide.md)** for deployment procedures
-2. Review **[System Architecture Overview](system-architecture-overview.md)** for infrastructure understanding  
-3. Study **[Troubleshooting Guide](troubleshooting-guide.md)** for operational issues
-4. Reference **[Database Schema Documentation](database-schema.md)** for database management
+2. Review **[Security Configuration Guide](security-configuration.md)** for enterprise security setup
+3. Study **[System Architecture Overview](system-architecture-overview.md)** for infrastructure understanding
+4. Reference **[Troubleshooting Guide](troubleshooting-guide.md)** for operational issues
+5. Reference **[Database Schema Documentation](database-schema.md)** for database management
 
 ### For System Architects
 1. Begin with **[System Architecture Overview](system-architecture-overview.md)** for design patterns

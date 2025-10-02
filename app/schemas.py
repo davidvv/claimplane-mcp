@@ -92,6 +92,14 @@ class CustomerResponseSchema(BaseModel):
         from_attributes = True
 
 
+class HealthResponseSchema(BaseModel):
+    """Schema for health check response."""
+    
+    status: str
+    timestamp: datetime
+    version: str
+
+
 class FlightInfoSchema(BaseModel):
     """Flight information schema."""
     
@@ -217,6 +225,139 @@ class ClaimRequestSchema(BaseModel):
     
     class Config:
         populate_by_name = True
+
+
+class FileUploadSchema(BaseModel):
+    """Schema for file upload requests."""
+    
+    claim_id: UUID = Field(..., description="ID of the claim this file belongs to")
+    customer_id: UUID = Field(..., description="ID of the customer uploading the file")
+    document_type: str = Field(..., description="Type of document being uploaded")
+    description: Optional[str] = Field(None, max_length=500, description="Optional description of the file")
+    access_level: str = Field("private", description="Access level for the file")
+    
+    @validator('document_type')
+    def validate_document_type(cls, v):
+        """Validate document type."""
+        valid_types = [
+            "boarding_pass", "id_document", "receipt", "bank_statement",
+            "flight_ticket", "delay_certificate", "cancellation_notice", "other"
+        ]
+        if v not in valid_types:
+            raise ValueError(f"Document type must be one of: {', '.join(valid_types)}")
+        return v
+    
+    @validator('access_level')
+    def validate_access_level(cls, v):
+        """Validate access level."""
+        valid_levels = ["public", "private", "restricted"]
+        if v not in valid_levels:
+            raise ValueError(f"Access level must be one of: {', '.join(valid_levels)}")
+        return v
+
+
+class FileResponseSchema(BaseModel):
+    """Schema for file response."""
+    
+    id: UUID
+    claim_id: UUID = Field(..., alias="claimId")
+    customer_id: UUID = Field(..., alias="customerId")
+    filename: str
+    original_filename: str = Field(..., alias="originalFilename")
+    file_size: int = Field(..., alias="fileSize")
+    mime_type: str = Field(..., alias="mimeType")
+    document_type: str = Field(..., alias="documentType")
+    status: str
+    access_level: str = Field(..., alias="accessLevel")
+    download_count: int = Field(..., alias="downloadCount")
+    uploaded_at: datetime = Field(..., alias="uploadedAt")
+    expires_at: Optional[datetime] = Field(None, alias="expiresAt")
+    is_deleted: bool = Field(..., alias="isDeleted")
+    
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+
+
+class FileListResponseSchema(BaseModel):
+    """Schema for file list response."""
+    
+    files: List[FileResponseSchema]
+    total: int
+    page: int
+    per_page: int = Field(..., alias="perPage")
+    has_next: bool = Field(..., alias="hasNext")
+    has_prev: bool = Field(..., alias="hasPrev")
+
+
+class FileAccessLogSchema(BaseModel):
+    """Schema for file access log."""
+    
+    id: UUID
+    file_id: UUID = Field(..., alias="fileId")
+    access_type: str = Field(..., alias="accessType")
+    ip_address: Optional[str] = Field(None, alias="ipAddress")
+    access_status: str = Field(..., alias="accessStatus")
+    access_time: datetime = Field(..., alias="accessTime")
+    country_code: Optional[str] = Field(None, alias="countryCode")
+    city: Optional[str] = Field(None, alias="city")
+    
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+
+
+class FileSearchSchema(BaseModel):
+    """Schema for file search requests."""
+    
+    query: Optional[str] = None
+    claim_id: Optional[UUID] = Field(None, alias="claimId")
+    customer_id: Optional[UUID] = Field(None, alias="customerId")
+    document_type: Optional[str] = Field(None, alias="documentType")
+    status: Optional[str] = None
+    date_from: Optional[datetime] = Field(None, alias="dateFrom")
+    date_to: Optional[datetime] = Field(None, alias="dateTo")
+    page: int = 1
+    per_page: int = Field(20, alias="perPage")
+    
+    @validator('per_page')
+    def validate_per_page(cls, v):
+        """Validate per page value."""
+        if v < 1 or v > 100:
+            raise ValueError("per_page must be between 1 and 100")
+        return v
+
+
+class FileValidationRuleSchema(BaseModel):
+    """Schema for file validation rules."""
+    
+    id: UUID
+    document_type: str = Field(..., alias="documentType")
+    max_file_size: int = Field(..., alias="maxFileSize")
+    allowed_mime_types: List[str] = Field(..., alias="allowedMimeTypes")
+    required_file_extensions: Optional[List[str]] = Field(None, alias="requiredFileExtensions")
+    max_pages: Optional[int] = Field(None, alias="maxPages")
+    requires_scan: bool = Field(..., alias="requiresScan")
+    requires_encryption: bool = Field(..., alias="requiresEncryption")
+    retention_days: Optional[int] = Field(None, alias="retentionDays")
+    
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+
+
+class FileSummarySchema(BaseModel):
+    """Schema for file summary statistics."""
+    
+    customer_id: UUID = Field(..., alias="customerId")
+    total_files: int = Field(..., alias="totalFiles")
+    total_size: int = Field(..., alias="totalSize")
+    by_document_type: dict = Field(..., alias="byDocumentType")
+    recent_files: List[FileResponseSchema] = Field(..., alias="recentFiles")
+    
+    class Config:
+        populate_by_name = True
+        from_attributes = True
 
 
 class HealthResponseSchema(BaseModel):

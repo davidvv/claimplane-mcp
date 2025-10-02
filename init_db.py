@@ -8,7 +8,7 @@ import asyncio
 import sys
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.database import Base
-from app.models import Customer, Claim
+from app.models import Customer, Claim, ClaimFile, FileAccessLog, FileValidationRule
 from app.config import settings
 
 async def init_database():

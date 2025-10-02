@@ -1,51 +1,50 @@
-"""Main FastAPI application for the flight claim system."""
-import os
+"""Main FastAPI application."""
+import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
 
-from app import __version__
-from app.database import init_db
-from app.routers import customers_router, claims_router, health_router
-from app.middleware import setup_exception_handlers
+from app.database import engine, Base
+from app.routers import health, customers, claims, files
+from app.exceptions import setup_exception_handlers
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
-    print("Starting up flight claim system...")
+    logger.info("Starting Flight Claim System API...")
     
-    # Initialize database tables
-    try:
-        await init_db()
-        print("Database initialized successfully")
-    except Exception as e:
-        print(f"Warning: Could not initialize database: {e}")
-        # Continue even if database init fails, might be in development
-        pass
+    # Create database tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    logger.info("Database tables created successfully")
     
     yield
     
     # Shutdown
-    print("Shutting down flight claim system...")
+    logger.info("Shutting down Flight Claim System API...")
 
 
 # Create FastAPI app
 app = FastAPI(
     title="Flight Claim System API",
-    description="API for managing flight compensation claims",
-    version=__version__,
+    description="API for managing flight compensation claims with file management",
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
 )
 
-# Setup exception handlers
-setup_exception_handlers(app)
-
-# Configure CORS
+# Setup CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Configure appropriately for production
@@ -54,19 +53,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Setup trusted host middleware
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["*"]  # Configure appropriately for production
+)
+
+# Setup exception handlers
+setup_exception_handlers(app)
+
 
 # Include routers
-app.include_router(customers_router)
-app.include_router(claims_router)
-app.include_router(health_router)
+app.include_router(health.router)
+app.include_router(customers.router)
+app.include_router(claims.router)
+app.include_router(files.router)
 
 
 @app.get("/")
 async def root():
-    """Root endpoint with API information."""
+    """Root endpoint."""
     return {
         "message": "Flight Claim System API",
-        "version": __version__,
+        "version": "1.0.0",
         "docs": "/docs",
         "health": "/health"
     }
@@ -77,26 +86,25 @@ async def info():
     """API information endpoint."""
     return {
         "name": "Flight Claim System API",
-        "version": __version__,
-        "description": "API for managing flight compensation claims",
-        "environment": os.getenv("ENVIRONMENT", "development"),
+        "version": "1.0.0",
+        "description": "API for managing flight compensation claims with file management",
+        "environment": "development",
         "features": [
             "Customer management",
             "Claim submission and tracking",
             "Flight incident reporting",
-            "Compensation calculation"
+            "File management with Nextcloud integration",
+            "Secure file uploads with encryption",
+            "Document validation and scanning"
         ]
     }
 
 
 if __name__ == "__main__":
     import uvicorn
-    
-    # Run the application
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
-        log_level="info"
+        reload=True
     )

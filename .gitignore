@@ -1,1 +1,197 @@
+# macOS
 .DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment Variables
+.env
+.env.local
+.env.production
+.env.staging
+.env.*.local
+
+# Secrets and Keys
+*.key
+*.pem
+*.crt
+*.p12
+secrets/
+secrets/*
+.env.production
+.env.staging
+.env.*.local
+
+# Security Files
+docker-secrets.txt
+k8s-secrets.yaml
+*.secret
+*.private
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+logs/*
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+
+# Docker
+.docker/
+
+# Nextcloud
+nextcloud/
+nextcloud_data/
+nextcloud_config/
+
+# File Uploads
+uploads/
+uploads/*
+temp_uploads/
+temp_uploads/*
+
+# Encrypted Files
+*.encrypted
+*.enc
+
+# Backup Files
+*.bak
+*.backup
+*.old
+
+# Temporary Files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Node.js (if any frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+Thumbs.db
+desktop.ini
+
+# JetBrains
+.idea/
+*.iml
+*.iws
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+*.vim
+.vim/
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Backup files
+*.bak
+*.backup
+*.orig
+*.rej
+*.swp
+*.swo
+
+# Python virtual environment
+venv/
+env/
+ENV/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+.env
+.env

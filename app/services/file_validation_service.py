@@ -162,15 +162,22 @@ class FileValidationService:
     
     def _detect_mime_type(self, file_content: bytes, filename: str) -> str:
         """Detect MIME type from file content and filename."""
-        import magic
-        
-        # Try to detect from content first
         try:
-            mime_type = magic.from_buffer(file_content, mime=True)
-            if mime_type and mime_type != "application/octet-stream":
-                return mime_type
-        except Exception:
-            pass
+            import magic
+            
+            # Try to detect from content first
+            try:
+                mime_type = magic.from_buffer(file_content, mime=True)
+                if mime_type and mime_type != "application/octet-stream":
+                    return mime_type
+            except Exception as e:
+                # Log the error but continue with fallback
+                print(f"Magic library detection failed: {str(e)}")
+                pass
+            
+        except ImportError as e:
+            # Handle case where libmagic is not available
+            print(f"libmagic not available: {str(e)}")
         
         # Fallback to filename-based detection
         mime_type, _ = mimetypes.guess_type(filename)

@@ -24,7 +24,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       SECRET_KEY: ${SECRET_KEY:-development-secret-key}
       FILE_ENCRYPTION_KEY: ${FILE_ENCRYPTION_KEY:-development-encryption-key}
-      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://localhost:8180}
       NEXTCLOUD_USERNAME: ${NEXTCLOUD_USERNAME:-admin}
       NEXTCLOUD_PASSWORD: ${NEXTCLOUD_PASSWORD:-admin}
       REDIS_URL: ${REDIS_URL:-redis://localhost:6379}
@@ -34,7 +34,7 @@ services:
       RATE_LIMIT_DOWNLOAD: ${RATE_LIMIT_DOWNLOAD:-1000/minute}
       JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-30}
       JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS:-7}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8180}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       API_VERSION: ${API_VERSION:-1.0.0}
       API_TITLE: ${API_TITLE:-Flight Claim System API}

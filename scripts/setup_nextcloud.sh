@@ -64,7 +64,7 @@ max_attempts=30
 attempt=1
 
 while [ $attempt -le $max_attempts ]; do
-    if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/status.php | grep -q "200"; then
+    if curl -s -o /dev/null -w "%{http_code}" http://localhost:8180/status.php | grep -q "200"; then
         print_status "Nextcloud is accessible!"
         break
     else
@@ -95,7 +95,7 @@ import sys
 # Nextcloud credentials
 admin_user = sys.argv[1] if len(sys.argv) > 1 else "admin"
 admin_password = sys.argv[2] if len(sys.argv) > 2 else "admin"
-nextcloud_url = sys.argv[3] if len(sys.argv) > 3 else "http://localhost:8080"
+nextcloud_url = sys.argv[3] if len(sys.argv) > 3 else "http://localhost:8180"
 
 # Create app password
 login_url = f"{nextcloud_url}/login"
@@ -107,7 +107,7 @@ print(f"Username: {admin_user}")
 print(f"Password: {admin_password}")
 print(f"URL: {nextcloud_url}")
 print("\nTo create an app password:")
-print("1. Login to Nextcloud at http://localhost:8080")
+print("1. Login to Nextcloud at http://localhost:8180")
 print("2. Go to Settings → Security")
 print("3. Create a new app password")
 print("4. Update your .env file with the new password")
@@ -126,7 +126,7 @@ import sys
 # Configuration
 username = sys.argv[1] if len(sys.argv) > 1 else "admin"
 password = sys.argv[2] if len(sys.argv) > 2 else "admin"
-nextcloud_url = sys.argv[3] if len(sys.argv) > 3 else "http://localhost:8080"
+nextcloud_url = sys.argv[3] if len(sys.argv) > 3 else "http://localhost:8180"
 
 # WebDAV URL
 webdav_url = f"{nextcloud_url}/remote.php/dav/files/{username}/"
@@ -160,7 +160,7 @@ import sys
 # Configuration
 username = sys.argv[1] if len(sys.argv) > 1 else "admin"
 password = sys.argv[2] if len(sys.argv) > 2 else "admin"
-nextcloud_url = sys.argv[3] if len(sys.argv) > 3 else "http://localhost:8080"
+nextcloud_url = sys.argv[3] if len(sys.argv) > 3 else "http://localhost:8180"
 
 # WebDAV URL
 webdav_url = f"{nextcloud_url}/remote.php/dav/files/{username}/"
@@ -252,7 +252,7 @@ echo "1. Edit your .env file"
 echo "2. Run: source .env"
 echo "3. Test with: python3 scripts/test_nextcloud_integration.py"
 echo ""
-echo "Nextcloud should be accessible at: ${NEXTCLOUD_URL:-http://localhost:8080}"
+echo "Nextcloud should be accessible at: ${NEXTCLOUD_URL:-http://localhost:8180}"
 echo "Login with username: ${NEXTCLOUD_USERNAME:-admin}"
 echo "Password: ${NEXTCLOUD_PASSWORD:-admin}"
 EOF
@@ -276,7 +276,7 @@ echo ""
 echo "Service health checks:"
 
 # Check Nextcloud
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/status.php | grep -q "200"; then
+if curl -s -o /dev/null -w "%{http_code}" http://localhost:8180/status.php | grep -q "200"; then
     echo "✅ Nextcloud: Healthy"
 else
     echo "❌ Nextcloud: Unhealthy"
@@ -323,7 +323,7 @@ echo "3. Monitor services: ./scripts/monitor_nextcloud.sh"
 echo "4. View logs: docker-compose -f docker-compose.nextcloud.yml logs -f"
 echo ""
 echo "📚 Access Nextcloud:"
-echo "   URL: http://localhost:8080"
+echo "   URL: http://localhost:8180"
 echo "   Username: $NEXTCLOUD_ADMIN_USER"
 echo "   Password: $NEXTCLOUD_ADMIN_PASSWORD"
 echo ""

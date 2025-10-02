@@ -70,7 +70,7 @@ class Config:
         raise ValueError("Invalid FILE_ENCRYPTION_KEY format. Must be a valid Fernet key.")
     
     # Nextcloud Configuration (should be set in production)
-    NEXTCLOUD_URL = os.getenv("NEXTCLOUD_URL", "http://localhost:8080")
+    NEXTCLOUD_URL = os.getenv("NEXTCLOUD_URL", "http://localhost:8180")
     NEXTCLOUD_USERNAME = os.getenv("NEXTCLOUD_USERNAME", "admin")
     NEXTCLOUD_PASSWORD = os.getenv("NEXTCLOUD_PASSWORD", "admin")
     
@@ -91,7 +91,7 @@ class Config:
     JWT_REFRESH_EXPIRATION_DAYS = int(os.getenv("JWT_REFRESH_EXPIRATION_DAYS", "7"))
     
     # CORS Configuration
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",")
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8180").split(",")
     
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

@@ -118,7 +118,7 @@ REDIS_PASSWORD={secrets_dict['REDIS_PASSWORD']}
 REDIS_URL=redis://:{secrets_dict['REDIS_PASSWORD']}@redis:6379/0
 
 # Nextcloud Security
-NEXTCLOUD_URL=http://localhost:8180
+NEXTCLOUD_URL=http://localhost:8081
 NEXTCLOUD_ADMIN_USER=admin
 NEXTCLOUD_ADMIN_PASSWORD={secrets_dict['NEXTCLOUD_ADMIN_PASSWORD']}
 NEXTCLOUD_DB_PASSWORD={secrets_dict['NEXTCLOUD_DB_PASSWORD']}

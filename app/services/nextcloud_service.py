@@ -48,7 +48,10 @@ class NextcloudService:
             full_path = f"{self.username}/{remote_path.lstrip('/')}"
             upload_url = urljoin(self.webdav_url, full_path)
 
-            logger.info(f"Attempting to upload file to Nextcloud URL: {upload_url}")
+            print(f"Nextcloud config - Base URL: {self.base_url}, WebDAV URL: {self.webdav_url}, Username: {self.username}, Timeout: {self.timeout}")
+            print(f"Attempting to upload file to Nextcloud URL: {upload_url}, File size: {len(file_content)} bytes")
+            logger.info(f"Nextcloud config - Base URL: {self.base_url}, WebDAV URL: {self.webdav_url}, Username: {self.username}, Timeout: {self.timeout}")
+            logger.info(f"Attempting to upload file to Nextcloud URL: {upload_url}, File size: {len(file_content)} bytes")
 
             # Set headers
             headers = {
@@ -59,6 +62,7 @@ class NextcloudService:
             # Upload file
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 method = "PUT" if overwrite else "PUT"
+                logger.info(f"Making {method} request to {upload_url}")
                 response = await client.request(
                     method=method,
                     url=upload_url,
@@ -67,7 +71,7 @@ class NextcloudService:
                     auth=self.auth
                 )
 
-                logger.info(f"Nextcloud upload response status: {response.status_code}")
+                logger.info(f"Nextcloud upload response status: {response.status_code}, headers: {dict(response.headers)}")
 
                 if response.status_code not in [200, 201, 204]:
                     logger.error(f"Nextcloud upload failed: {response.status_code} - {response.text}")
@@ -84,13 +88,14 @@ class NextcloudService:
                 }
 
         except httpx.RequestError as e:
-            logger.error(f"Nextcloud connection error: {str(e)}")
+            logger.error(f"Nextcloud connection error details: URL={upload_url}, Error={str(e)}, Type={type(e).__name__}")
+            logger.error(f"Nextcloud connection error full traceback", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=f"Nextcloud connection error: {str(e)}"
             )
         except Exception as e:
-            logger.error(f"Nextcloud upload error: {str(e)}")
+            logger.error(f"Nextcloud upload error: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Nextcloud upload error: {str(e)}"

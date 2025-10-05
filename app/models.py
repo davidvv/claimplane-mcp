@@ -241,6 +241,7 @@ class ClaimFile(Base):
     storage_path = Column(Text, nullable=False)
     nextcloud_file_id = Column(String(255))
     nextcloud_share_token = Column(String(255))
+    description = Column(Text)
     
     # Security and access
     encryption_status = Column(String(20), default=ENCRYPTION_ENCRYPTED)

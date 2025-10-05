@@ -70,9 +70,9 @@ class Config:
         raise ValueError("Invalid FILE_ENCRYPTION_KEY format. Must be a valid Fernet key.")
     
     # Nextcloud Configuration (should be set in production)
-    NEXTCLOUD_URL = os.getenv("NEXTCLOUD_URL", "http://localhost:8180")
+    NEXTCLOUD_URL = os.getenv("NEXTCLOUD_URL", "http://localhost:8081")
     NEXTCLOUD_USERNAME = os.getenv("NEXTCLOUD_USERNAME", "admin")
-    NEXTCLOUD_PASSWORD = os.getenv("NEXTCLOUD_PASSWORD", "admin")
+    NEXTCLOUD_PASSWORD = os.getenv("NEXTCLOUD_PASSWORD", "admin_secure_password_2024")
     
     # Redis Configuration
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")

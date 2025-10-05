@@ -1,6 +1,7 @@
 """Nextcloud integration service for file storage."""
 import base64
 import json
+import logging
 import os
 from typing import Optional, Dict, Any
 from urllib.parse import urljoin
@@ -9,6 +10,8 @@ import httpx
 from fastapi import HTTPException, status
 
 from app.config import config
+
+logger = logging.getLogger(__name__)
 
 
 class NextcloudService:
@@ -20,16 +23,18 @@ class NextcloudService:
         self.username = config.NEXTCLOUD_USERNAME
         self.password = config.NEXTCLOUD_PASSWORD
         self.timeout = config.NEXTCLOUD_TIMEOUT
-        
+
+        logger.info(f"Nextcloud service initialized with URL: {self.base_url}, username: {self.username}, timeout: {self.timeout}")
+
         # WebDAV base URL
         self.webdav_url = urljoin(self.base_url, "/remote.php/dav/files/")
-        
+
         # OCS API base URL
         self.ocs_url = urljoin(self.base_url, "/ocs/v2.php/")
-        
+
         # Basic auth credentials
         self.auth = (self.username, self.password)
-        
+
         # OCS API headers
         self.ocs_headers = {
             "OCS-APIRequest": "true",
@@ -42,13 +47,15 @@ class NextcloudService:
             # Construct full WebDAV URL
             full_path = f"{self.username}/{remote_path.lstrip('/')}"
             upload_url = urljoin(self.webdav_url, full_path)
-            
+
+            logger.info(f"Attempting to upload file to Nextcloud URL: {upload_url}")
+
             # Set headers
             headers = {
                 "Content-Type": "application/octet-stream",
                 "Content-Length": str(len(file_content))
             }
-            
+
             # Upload file
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 method = "PUT" if overwrite else "PUT"
@@ -59,26 +66,31 @@ class NextcloudService:
                     headers=headers,
                     auth=self.auth
                 )
-                
+
+                logger.info(f"Nextcloud upload response status: {response.status_code}")
+
                 if response.status_code not in [200, 201, 204]:
+                    logger.error(f"Nextcloud upload failed: {response.status_code} - {response.text}")
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail=f"Nextcloud upload failed: {response.status_code} - {response.text}"
                     )
-                
+
                 return {
                     "success": True,
                     "file_id": remote_path,
                     "url": upload_url,
                     "status_code": response.status_code
                 }
-                
+
         except httpx.RequestError as e:
+            logger.error(f"Nextcloud connection error: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=f"Nextcloud connection error: {str(e)}"
             )
         except Exception as e:
+            logger.error(f"Nextcloud upload error: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Nextcloud upload error: {str(e)}"

@@ -44,6 +44,12 @@ class NextcloudService:
     async def upload_file(self, file_content: bytes, remote_path: str, overwrite: bool = False) -> Dict[str, Any]:
         """Upload file to Nextcloud via WebDAV."""
         try:
+            # Ensure parent directory exists
+            logger.info(f"Ensuring directory exists for path: {remote_path}")
+            dir_created = await self.ensure_directory_exists(remote_path)
+            if not dir_created:
+                logger.warning(f"Failed to ensure directory exists for: {remote_path}")
+
             # Construct full WebDAV URL
             full_path = f"{self.username}/{remote_path.lstrip('/')}"
             upload_url = urljoin(self.webdav_url, full_path)
@@ -95,10 +101,11 @@ class NextcloudService:
                 detail=f"Nextcloud connection error: {str(e)}"
             )
         except Exception as e:
-            logger.error(f"Nextcloud upload error: {str(e)}", exc_info=True)
+            logger.error(f"Nextcloud upload error details - Exception type: {type(e).__name__}, Exception args: {e.args}, Exception str: '{str(e)}'", exc_info=True)
+            logger.error(f"Nextcloud upload error context - URL: {upload_url}, File size: {len(file_content)}, Headers: {headers}, Auth: {self.auth}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Nextcloud upload error: {str(e)}"
+                detail=f"Nextcloud upload error: {type(e).__name__}: {str(e)}"
             )
     
     async def download_file(self, remote_path: str) -> bytes:
@@ -278,6 +285,51 @@ class NextcloudService:
                 detail=f"Nextcloud file info error: {str(e)}"
             )
     
+    async def create_directory(self, remote_path: str) -> bool:
+        """Create directory in Nextcloud via WebDAV MKCOL."""
+        try:
+            # Construct full WebDAV URL
+            full_path = f"{self.username}/{remote_path.lstrip('/')}"
+            dir_url = urljoin(self.webdav_url, full_path)
+
+            logger.info(f"Creating Nextcloud directory: {dir_url}")
+
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.request(
+                    method="MKCOL",
+                    url=dir_url,
+                    auth=self.auth
+                )
+
+                logger.info(f"Nextcloud MKCOL response status: {response.status_code}")
+
+                # 201 = Created, 405 = Already exists (some servers return this)
+                if response.status_code in [201, 405]:
+                    return True
+                elif response.status_code == 409:
+                    # 409 = Conflict, might mean parent doesn't exist
+                    logger.warning(f"Nextcloud directory creation conflict: {response.status_code} - {response.text}")
+                    return False
+                else:
+                    logger.error(f"Nextcloud directory creation failed: {response.status_code} - {response.text}")
+                    return False
+
+        except Exception as e:
+            logger.error(f"Nextcloud directory creation error: {str(e)}", exc_info=True)
+            return False
+
+    async def ensure_directory_exists(self, remote_path: str) -> bool:
+        """Ensure the parent directory exists for a file path."""
+        # Extract parent directory path
+        parent_path = "/".join(remote_path.rstrip("/").split("/")[:-1])
+        if not parent_path:
+            return True  # Root directory always exists
+
+        logger.info(f"Ensuring directory exists: {parent_path}")
+
+        # Try to create the directory (won't fail if it already exists)
+        return await self.create_directory(parent_path)
+
     async def test_connection(self) -> bool:
         """Test connection to Nextcloud."""
         try:

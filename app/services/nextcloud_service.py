@@ -15,7 +15,7 @@ from fastapi import HTTPException, status
 
 from app.config import config
 from app.exceptions import (
-    NextcloudRetryableError, NextcloudPermanentError,
+    NextcloudError, NextcloudRetryableError, NextcloudPermanentError,
     NextcloudNetworkError, NextcloudTimeoutError, NextcloudConnectionError,
     NextcloudAuthenticationError, NextcloudAuthorizationError,
     NextcloudStorageError, NextcloudQuotaExceededError,

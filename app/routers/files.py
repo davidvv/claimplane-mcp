@@ -103,8 +103,9 @@ async def get_file_info(
     """
     try:
         # For now, we'll use a placeholder user ID - in production this would come from auth
-        user_id = "123e4567-e89b-12d3-a456-426614174000"  # Placeholder
-        
+        # For testing, try to get customer_id from headers first
+        user_id = request.headers.get("X-Customer-ID", "123e4567-e89b-12d3-a456-426614174000")  # Placeholder
+
         file_service = get_file_service(db)
         file_info = await file_service.get_file_info(file_id, user_id)
         
@@ -140,9 +141,9 @@ async def download_file(
         HTTPException: If file not found or access denied
     """
     try:
-        # Placeholder user ID
-        user_id = "123e4567-e89b-12d3-a456-426614174000"
-        
+        # For testing, try to get customer_id from headers first
+        user_id = request.headers.get("X-Customer-ID", "123e4567-e89b-12d3-a456-426614174000")
+
         file_service = get_file_service(db)
         file_content, file_info = await file_service.download_file(file_id, user_id)
         

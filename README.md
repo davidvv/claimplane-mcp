@@ -1,84 +1,183 @@
-# Flight Claim System API
+# Enterprise File Management Platform
 
-A modular Python/FastAPI backend for managing flight compensation claims. This system provides user management, claim submission, and tracking capabilities with a clean, scalable architecture.
+A sophisticated, enterprise-grade file management platform built with FastAPI, featuring secure file storage, comprehensive validation, encryption, and seamless Nextcloud integration. Designed for flight claim processing workflows with advanced document management capabilities.
 
-## Features
+## 🚀 Key Features
 
-- **User Management**: Customer registration and profile management
-- **Claim Management**: Flight claim submission and tracking
-- **Repository Pattern**: Clean data access layer
-- **Input Validation**: Comprehensive request validation
-- **Error Handling**: Robust error handling and responses
-- **Health Checks**: System and database health monitoring
-- **Docker Support**: Containerized deployment ready
+### **Advanced File Management**
+- **Secure File Upload/Download**: Multi-format file handling with streaming support for large files
+- **Document Type Validation**: Specialized validation rules for boarding passes, ID documents, receipts, bank statements, and more
+- **File Integrity Verification**: SHA256 hashing and content verification to prevent corruption
+- **Access Control**: Granular permissions and file-level security controls
+- **File Search & Organization**: Advanced search capabilities with metadata filtering
+- **File Access Logging**: Comprehensive audit trails for compliance and security
 
-## Tech Stack
+### **Enterprise Security**
+- **End-to-End Encryption**: Fernet encryption for all file content with secure key management
+- **Content Security Scanning**: Malware detection, suspicious pattern analysis, and threat prevention
+- **PDF Security Validation**: JavaScript detection, embedded file analysis, and page limit enforcement
+- **Rate Limiting**: Configurable upload/download limits to prevent abuse
+- **CORS Protection**: Configurable cross-origin resource sharing policies
 
-- **FastAPI**: Modern, fast web framework
-- **SQLAlchemy 2.0**: Async ORM for database operations
-- **PostgreSQL**: Primary database
-- **Pydantic**: Data validation and serialization
-- **Docker**: Containerization
-- **Nginx**: Reverse proxy
+### **Nextcloud Integration**
+- **WebDAV Storage**: Seamless integration with Nextcloud for scalable file storage
+- **Intelligent Retry Logic**: Exponential backoff and error classification for reliable operations
+- **Upload Verification**: Automatic integrity checking after Nextcloud uploads
+- **Chunked Uploads**: Memory-efficient handling of large files
+- **Directory Management**: Automatic folder creation and path management
 
-## Project Structure
+### **Flight Claim Processing**
+- **Customer Management**: Registration and profile management for claim processing
+- **Claim Tracking**: Comprehensive claim lifecycle management
+- **Document Association**: Link files to specific claims and customers
+- **Workflow Integration**: Support for claim processing workflows
+
+## 🛠 Tech Stack
+
+### **Core Framework**
+- **FastAPI**: Modern, async-first web framework for high-performance APIs
+- **SQLAlchemy 2.0**: Async ORM with comprehensive database relationship support
+- **PostgreSQL**: Robust relational database with JSON support
+- **Pydantic v2**: Advanced data validation and serialization
+
+### **Security & Encryption**
+- **Cryptography**: Fernet encryption for secure file storage
+- **Python-JOSE**: JWT token management for authentication
+- **Passlib**: Secure password hashing with bcrypt
+- **Libmagic**: Advanced file type detection and validation
+
+### **Cloud Integration**
+- **Nextcloud**: Enterprise file storage and sharing platform
+- **WebDAV**: Standard protocol for file operations
+- **HTTPX**: Async HTTP client for reliable external API calls
+
+### **Infrastructure & DevOps**
+- **Docker**: Containerized deployment with multi-stage builds
+- **Nginx**: High-performance reverse proxy and load balancer
+- **Redis**: Caching and session management
+- **PostgreSQL**: Primary data storage with health checks
+
+### **Development & Testing**
+- **Pytest**: Comprehensive testing framework with async support
+- **Uvicorn**: ASGI server for development and production
+- **Alembic**: Database migration management
+
+## 📁 Project Structure
 
 ```
 flight_claim/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py                 # FastAPI application entry point
-│   ├── database.py             # Database configuration
-│   ├── models.py               # SQLAlchemy models
-│   ├── schemas.py              # Pydantic schemas
-│   ├── exceptions.py           # Custom exceptions
-│   ├── middleware.py           # Error handling middleware
-│   ├── repositories/           # Repository pattern implementation
+│   ├── main.py                    # FastAPI application with lifespan management
+│   ├── config.py                  # Configuration management
+│   ├── database.py                # Async database connection handling
+│   ├── models.py                  # SQLAlchemy models (Customer, Claim, File, etc.)
+│   ├── schemas/                   # Pydantic schemas for API contracts
 │   │   ├── __init__.py
-│   │   ├── base.py              # Base repository class
-│   │   ├── customer_repository.py
-│   │   └── claim_repository.py
-│   └── routers/                # API route handlers
-│       ├── __init__.py
-│       ├── customers.py
-│       ├── claims.py
-│       └── health.py
-├── requirements.txt            # Python dependencies
-├── Dockerfile                  # Container configuration
-├── docker-compose.yml          # Multi-container setup
-├── nginx.conf                  # Nginx configuration
-├── .env                        # Environment variables
-└── test_api.py                 # API test script
+│   │   └── file_schemas.py         # File-specific data models
+│   ├── middleware/                # Advanced middleware components
+│   │   ├── __init__.py
+│   │   └── file_security.py       # File security and validation middleware
+│   ├── repositories/              # Data access layer
+│   │   ├── __init__.py
+│   │   ├── base.py                # Generic repository base class
+│   │   ├── customer_repository.py # Customer data operations
+│   │   ├── claim_repository.py    # Claim data operations
+│   │   └── file_repository.py     # File data operations
+│   ├── routers/                   # API route handlers
+│   │   ├── __init__.py
+│   │   ├── customers.py           # Customer management endpoints
+│   │   ├── claims.py             # Claim processing endpoints
+│   │   ├── files.py              # File management endpoints
+│   │   └── health.py             # System health monitoring
+│   ├── services/                  # Business logic layer
+│   │   ├── __init__.py
+│   │   ├── encryption_service.py  # File encryption/decryption
+│   │   ├── file_service.py       # File operations and management
+│   │   ├── file_validation_service.py # Security and content validation
+│   │   └── nextcloud_service.py  # Nextcloud WebDAV integration
+│   ├── exceptions.py             # Custom exception hierarchy
+│   └── middleware.py             # Global middleware setup
+├── API/
+│   └── openapi.yaml              # OpenAPI specification
+├── docs/                         # Comprehensive documentation
+│   ├── api-reference.md
+│   ├── security-best-practices.md
+│   └── file-management-implementation-guide.md
+├── scripts/                      # Utility and setup scripts
+│   ├── generate_secrets.py       # Secure key generation
+│   ├── setup_nextcloud.sh        # Nextcloud integration setup
+│   └── init_file_validation_rules.py
+├── requirements.txt              # Python dependencies
+├── Dockerfile                    # Multi-stage container build
+├── docker-compose.yml            # Main application stack
+├── docker-compose.nextcloud.yml  # Nextcloud integration stack
+├── nginx.conf                    # Reverse proxy configuration
+└── docker-secrets.example.txt    # Secrets management template
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- Python 3.11+ (for local development)
+- **Docker and Docker Compose** (recommended for full stack)
+- **Python 3.11+** (for local development)
+- **Nextcloud instance** (optional, for file storage)
 
-### Using Docker (Recommended)
+### Complete Docker Stack (Recommended)
 
-1. **Clone and setup**:
+1. **Clone and configure**:
    ```bash
    # The project is already set up in your current directory
+   # Copy and configure environment variables
+   cp docker-secrets.example.txt .env
+   # Edit .env with your configuration
    ```
 
-2. **Start the services**:
+2. **Start the complete stack**:
    ```bash
+   # Start Nextcloud services first
+   docker-compose -f docker-compose.nextcloud.yml up -d
+
+   # Start the main application stack
    docker-compose up -d
    ```
 
 3. **Verify deployment**:
    ```bash
-   # Check health endpoint
-   curl http://localhost/health
-   
-   # Or visit http://localhost/docs for interactive API documentation
+   # Check API health
+   curl http://localhost:8000/health
+
+   # Check Nextcloud status
+   curl http://localhost:8081/status.php
+
+   # Access interactive API documentation
+   open http://localhost:8000/docs
+
+   # Access Nextcloud web interface
+   open http://localhost:8081
    ```
 
-### Local Development
+### File Management Testing
+
+1. **Upload a test file**:
+   ```bash
+   curl -X POST "http://localhost:8000/files/upload" \
+     -H "Content-Type: multipart/form-data" \
+     -F "file=@test.pdf" \
+     -F "claim_id=test-claim-123" \
+     -F "customer_id=test-customer-456" \
+     -F "document_type=boarding_pass"
+   ```
+
+2. **Download a file**:
+   ```bash
+   curl "http://localhost:8000/files/{file_id}/download" \
+     -H "X-Customer-ID: test-customer-456" \
+     -o downloaded_file.pdf
+   ```
+
+### Local Development Setup
 
 1. **Install dependencies**:
    ```bash
@@ -87,7 +186,7 @@ flight_claim/
 
 2. **Setup PostgreSQL**:
    ```bash
-   # Using Docker for PostgreSQL
+   # Using Docker for database
    docker run -d \
      --name flight_claim_db \
      -e POSTGRES_DB=flight_claim \
@@ -97,26 +196,45 @@ flight_claim/
      postgres:15-alpine
    ```
 
-3. **Run the application**:
+3. **Configure environment**:
+   ```bash
+   cp docker-secrets.example.txt .env
+   # Edit .env file with local configuration
+   ```
+
+4. **Run the application**:
    ```bash
    python app/main.py
    ```
 
-4. **Access the API**:
-   - API: http://localhost:8000
-   - Docs: http://localhost:8000/docs
-   - Health: http://localhost:8000/health
+5. **Access points**:
+   - **API Documentation**: http://localhost:8000/docs
+   - **API Base**: http://localhost:8000
+   - **Health Check**: http://localhost:8000/health
+   - **File Operations**: http://localhost:8000/files/*
 
-## API Endpoints
+## 📋 API Endpoints
 
-### Customers
+### **File Management**
+- `POST /files/upload` - Upload file with validation and encryption
+- `GET /files/{file_id}` - Get file information and metadata
+- `GET /files/{file_id}/download` - Download file with access control
+- `DELETE /files/{file_id}` - Soft delete file
+- `GET /files/claim/{claim_id}` - List files for a specific claim
+- `GET /files/customer/{customer_id}` - List files for a customer
+- `GET /files/{file_id}/access-logs` - Get file access history
+- `GET /files/summary/{customer_id}` - Get file statistics summary
+- `POST /files/search` - Advanced file search with filters
+- `GET /files/validation-rules` - Get document validation rules
+
+### **Customer Management**
 - `POST /customers` - Create new customer
 - `GET /customers/{customer_id}` - Get customer by ID
 - `GET /customers` - List customers (paginated)
 - `GET /customers/search/by-email/{email}` - Search customers by email
 - `GET /customers/search/by-name/{name}` - Search customers by name
 
-### Claims
+### **Claim Processing**
 - `POST /claims` - Create claim for existing customer
 - `POST /claims/submit` - Submit claim with customer info
 - `GET /claims/{claim_id}` - Get claim by ID
@@ -124,22 +242,114 @@ flight_claim/
 - `GET /claims/customer/{customer_id}` - Get claims for customer
 - `GET /claims/status/{status}` - Get claims by status
 
-### System
+### **System Health**
 - `GET /health` - Basic health check
-- `GET /health/db` - Database health check
-- `GET /health/detailed` - Detailed system health
+- `GET /health/db` - Database connectivity check
+- `GET /health/detailed` - Comprehensive system health
 - `GET /` - API information
-- `GET /info` - Detailed API information
+- `GET /info` - Detailed API and feature information
 
-## Testing
+## 🔒 Security Features
 
-Run the comprehensive test script:
+### **File Encryption**
+- **Fernet Encryption**: Industry-standard symmetric encryption for all file content
+- **Secure Key Management**: Environment-based key configuration with validation
+- **Integrity Verification**: SHA256 hashing to ensure file content hasn't been tampered with
+- **Streaming Encryption**: Memory-efficient encryption for large files
 
-```bash
-python test_api.py
+### **Content Validation**
+- **MIME Type Detection**: Advanced file type detection using libmagic
+- **Document-Specific Rules**: Tailored validation rules for different document types:
+  - Boarding passes (PDF, JPEG, PNG)
+  - ID documents (PDF, JPEG, PNG)
+  - Bank statements (PDF only)
+  - Flight tickets (PDF, JPEG, PNG)
+  - Receipts and invoices (PDF, JPEG, PNG)
+- **Security Scanning**: Automated detection of suspicious patterns and potential malware
+- **PDF Content Analysis**: JavaScript detection, embedded file analysis, and page validation
+
+### **Access Control**
+- **File-Level Permissions**: Granular access control for files based on ownership
+- **Audit Logging**: Comprehensive logging of all file access and operations
+- **Rate Limiting**: Configurable limits to prevent abuse and ensure fair usage
+- **CORS Protection**: Secure cross-origin resource sharing configuration
+
+## ☁️ Nextcloud Integration
+
+### **WebDAV Storage**
+- **Seamless Integration**: Full WebDAV protocol support for file operations
+- **Intelligent Error Handling**: Sophisticated error classification and recovery
+- **Retry Logic**: Exponential backoff with jitter for reliable operations
+- **Connection Pooling**: Efficient HTTP connection management
+
+### **Advanced Features**
+- **Upload Verification**: Automatic integrity checking after file uploads
+- **Chunked Uploads**: Memory-efficient handling of large files
+- **Directory Management**: Automatic folder creation and path management
+- **Share Link Creation**: Generate secure share links for file access
+- **File Metadata**: Retrieve comprehensive file information and properties
+
+### **Configuration**
+```yaml
+# docker-compose.yml Nextcloud integration
+NEXTCLOUD_URL: http://nextcloud:80
+NEXTCLOUD_USERNAME: admin
+NEXTCLOUD_PASSWORD: secure_password
+NEXTCLOUD_TIMEOUT: 30
+NEXTCLOUD_MAX_RETRIES: 3
 ```
 
-This will test all major endpoints and verify the system is working correctly.
+## 🆕 Recent Updates & Improvements
+
+### **File Corruption Fixes**
+- **Root Cause Resolution**: Fixed underlying issues causing file corruption during upload/download
+- **Enhanced Error Handling**: Improved error classification and recovery mechanisms
+- **Integrity Verification**: Added comprehensive file integrity checking
+- **Streaming Improvements**: Better memory management for large file operations
+
+### **Performance Enhancements**
+- **Async Operations**: Full async/await implementation for better performance
+- **Connection Optimization**: Improved HTTP connection handling and pooling
+- **Memory Efficiency**: Streaming support for large file operations
+- **Caching Strategy**: Redis integration for improved response times
+
+### **Security Improvements**
+- **Enhanced Validation**: More comprehensive file content validation
+- **Security Scanning**: Advanced malware and threat detection
+- **Encryption Upgrades**: Improved key management and encryption processes
+- **Access Logging**: Detailed audit trails for compliance
+
+### **API Enhancements**
+- **File Search**: Advanced search capabilities with multiple filters
+- **Batch Operations**: Support for bulk file operations
+- **Real-time Validation**: Immediate feedback on file uploads
+- **Progress Tracking**: Upload/download progress monitoring
+
+## 🧪 Testing
+
+Run the comprehensive test suite:
+
+```bash
+# Basic functionality tests
+python test_api.py
+
+# File operation tests
+python app/tests/test_file_operations.py
+
+# Nextcloud integration tests
+python scripts/test_nextcloud_integration.py
+
+# Security and validation tests
+python app/tests/test_edge_cases.py
+```
+
+### **Test Coverage**
+- ✅ File upload/download operations
+- ✅ Nextcloud WebDAV integration
+- ✅ File validation and security scanning
+- ✅ Encryption/decryption processes
+- ✅ Error handling and recovery
+- ✅ Performance and load testing
 
 ## Data Models
 
@@ -169,63 +379,198 @@ This will test all major endpoints and verify the system is working correctly.
 - `submitted_at` (datetime): Submission timestamp
 - `updated_at` (datetime): Last update timestamp
 
-## Configuration
+## ⚙️ Configuration
 
-Environment variables can be configured in the `.env` file:
+### **Environment Variables**
 
-- `ENVIRONMENT`: Application environment (development/production)
-- `DATABASE_URL`: PostgreSQL connection string
-- `LOG_LEVEL`: Logging level
-- `SECRET_KEY`: Secret key for security features (future use)
-
-## Development
-
-### Adding New Features
-
-1. **Models**: Add new SQLAlchemy models in `app/models.py`
-2. **Schemas**: Create Pydantic schemas in `app/schemas.py`
-3. **Repositories**: Implement repository classes in `app/repositories/`
-4. **Routers**: Add API endpoints in `app/routers/`
-5. **Tests**: Update `test_api.py` with new endpoint tests
-
-### Database Migrations
-
-For production deployments, consider using Alembic for database migrations:
+Create a `.env` file based on `docker-secrets.example.txt`:
 
 ```bash
-# Install Alembic
-pip install alembic
+# Application Configuration
+ENVIRONMENT=development
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/flight_claim
+SECRET_KEY=your-secret-key-here
+LOG_LEVEL=INFO
 
-# Initialize migrations
-alembic init alembic
+# File Management
+FILE_ENCRYPTION_KEY=your-file-encryption-key-here
+MAX_FILE_SIZE=52428800
+CHUNK_SIZE=8192
+UPLOAD_VERIFICATION_ENABLED=true
 
-# Create migration
-alembic revision --autogenerate -m "Initial migration"
+# Nextcloud Integration
+NEXTCLOUD_URL=http://nextcloud:80
+NEXTCLOUD_USERNAME=admin
+NEXTCLOUD_PASSWORD=your-nextcloud-password
+NEXTCLOUD_TIMEOUT=30
+NEXTCLOUD_MAX_RETRIES=3
 
-# Apply migration
-alembic upgrade head
+# Security & Performance
+RATE_LIMIT_UPLOAD=100/minute
+RATE_LIMIT_DOWNLOAD=1000/minute
+VIRUS_SCAN_ENABLED=false
+CLAMAV_URL=clamav:3310
+
+# API Configuration
+CORS_ORIGINS=http://localhost:3000,http://localhost:8081
+API_VERSION=1.0.0
+API_TITLE=Flight Claim System API
 ```
 
-## Production Deployment
+### **File Validation Rules**
 
-1. **Security**: Update CORS settings, add authentication
-2. **Database**: Use managed PostgreSQL service
-3. **Monitoring**: Add logging and monitoring
-4. **Scaling**: Configure load balancing and auto-scaling
-5. **Backups**: Implement database backup strategy
+The system includes predefined validation rules for different document types:
 
-## Contributing
+| Document Type | Max Size | Allowed Types | Security Scan | Encryption |
+|---------------|----------|---------------|---------------|------------|
+| Boarding Pass | 10MB | PDF, JPEG, PNG | ✅ | ✅ |
+| ID Document | 5MB | PDF, JPEG, PNG | ✅ | ✅ |
+| Bank Statement | 5MB | PDF | ✅ | ✅ |
+| Flight Ticket | 5MB | PDF, JPEG, PNG | ✅ | ✅ |
+| Receipt | 2MB | PDF, JPEG, PNG | ✅ | ✅ |
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new features
-5. Submit a pull request
+## 🛠 Development
 
-## License
+### **Adding New Features**
+
+1. **Models**: Add SQLAlchemy models in `app/models.py`
+2. **Schemas**: Create Pydantic schemas in `app/schemas/`
+3. **Services**: Implement business logic in `app/services/`
+4. **Repositories**: Add data access layer in `app/repositories/`
+5. **Routers**: Create API endpoints in `app/routers/`
+6. **Tests**: Add comprehensive tests in `app/tests/`
+
+### **File Management Development**
+
+For file-related features:
+
+```python
+# Example: Adding a new document type
+# 1. Update validation service
+file_validation_service.default_rules["new_document_type"] = {
+    "max_file_size": 5 * 1024 * 1024,
+    "allowed_mime_types": ["application/pdf"],
+    "required_extensions": [".pdf"],
+    "requires_scan": True,
+    "requires_encryption": True
+}
+
+# 2. Add to file schemas if needed
+# 3. Update API documentation
+```
+
+### **Database Migrations**
+
+For production deployments:
+
+```bash
+# Install Alembic if not already included
+pip install alembic
+
+# Initialize migrations (if not done already)
+alembic init alembic
+
+# Create new migration
+alembic revision --autogenerate -m "Add file management tables"
+
+# Apply migrations
+alembic upgrade head
+
+# Rollback (if needed)
+alembic downgrade -1
+```
+
+## 🚢 Production Deployment
+
+### **Security Hardening**
+- **CORS Configuration**: Restrict origins to trusted domains only
+- **HTTPS Enforcement**: Configure Nginx for SSL/TLS termination
+- **Authentication**: Implement JWT-based authentication
+- **Rate Limiting**: Enable strict rate limiting for production
+- **Security Headers**: Enable security headers middleware
+
+### **Infrastructure Setup**
+- **Managed Database**: Use services like AWS RDS, Google Cloud SQL, or Azure Database
+- **Load Balancing**: Configure Nginx or cloud load balancers
+- **Monitoring**: Implement logging, metrics collection, and alerting
+- **Backups**: Automated database and file backup strategies
+- **High Availability**: Multi-zone deployment configuration
+
+### **Nextcloud Production Setup**
+- **Separate Database**: Use dedicated PostgreSQL instance for Nextcloud
+- **Redis Clustering**: Configure Redis cluster for session management
+- **Storage Backend**: Configure object storage (S3, GCS, etc.)
+- **SSL Certificates**: Proper SSL/TLS configuration
+- **Monitoring**: Nextcloud-specific monitoring and alerting
+
+### **Scaling Considerations**
+- **Horizontal Scaling**: Multiple API instances behind load balancer
+- **File Storage**: Distributed file storage with Nextcloud
+- **Database Scaling**: Read replicas and connection pooling
+- **Caching Strategy**: Redis cluster for improved performance
+
+## 🤝 Contributing
+
+We welcome contributions to improve the file management platform:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Make** your changes with comprehensive tests
+4. **Test** thoroughly, especially file operations and security features
+5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+6. **Push** to the branch (`git push origin feature/amazing-feature`)
+7. **Open** a Pull Request
+
+### **Development Guidelines**
+- Follow PEP 8 style guidelines
+- Add tests for all new functionality
+- Update documentation for API changes
+- Ensure file security features are maintained
+- Test with various file types and sizes
+
+### **File Management Contributions**
+When contributing file-related features:
+- Consider security implications
+- Test with edge cases (large files, special characters, etc.)
+- Ensure Nextcloud compatibility
+- Update validation rules if adding new document types
+- Add appropriate error handling
+
+## 📄 License
 
 Private - All rights reserved.
 
-## Support
+## 🆘 Support & Contact
 
-For support, contact: easyairclaim@gmail.com
+For support and inquiries, contact: **easyairclaim@gmail.com**
+
+### **Getting Help**
+- 📖 **Documentation**: Check the `/docs` folder for detailed guides
+- 🔧 **Troubleshooting**: See `docs/troubleshooting-guide.md`
+- 🚨 **Issues**: Report bugs and feature requests on the repository
+- 💬 **Discussions**: Use repository discussions for questions and ideas
+
+### **Professional Services**
+- Custom file validation rules
+- Nextcloud integration setup
+- Security hardening
+- Performance optimization
+- Training and documentation
+
+---
+
+## 📊 Key Metrics
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| File Upload | ✅ Production | Multi-format with validation |
+| File Download | ✅ Production | Streaming with access control |
+| Nextcloud Integration | ✅ Production | WebDAV with retry logic |
+| File Encryption | ✅ Production | Fernet encryption |
+| Security Scanning | ✅ Production | Malware detection |
+| Access Logging | ✅ Production | Comprehensive audit trails |
+| API Documentation | ✅ Production | Interactive OpenAPI docs |
+| Docker Deployment | ✅ Production | Complete containerized stack |
+| Testing Suite | ✅ Production | Comprehensive test coverage |
+
+**Built with ❤️ for secure and reliable file management**

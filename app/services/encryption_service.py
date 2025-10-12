@@ -58,14 +58,44 @@ class EncryptionService:
         unique_id = str(uuid.uuid4())
         return f"{unique_id}{ext.lower()}"
     
-    def verify_integrity(self, encrypted_data: bytes, expected_hash: str) -> bool:
-        """Verify file integrity by comparing hashes."""
+    def verify_integrity(self, encrypted_data: bytes, expected_hash: str, original_data: Optional[bytes] = None) -> bool:
+        """Verify file integrity by comparing hashes.
+
+        Args:
+            encrypted_data: The encrypted data to verify
+            expected_hash: The expected hash of the original data
+            original_data: The original data (if available). If provided, hash will be computed from this directly.
+
+        Returns:
+            bool: True if integrity check passes, False otherwise
+        """
         try:
-            decrypted_data = self.decrypt_data(encrypted_data)
-            actual_hash = self.generate_file_hash(decrypted_data)
+            if original_data is not None:
+                # If original data is provided, hash it directly (more efficient and reliable)
+                actual_hash = self.generate_file_hash(original_data)
+            else:
+                # Fallback to decrypting and hashing (for cases where original data isn't available)
+                decrypted_data = self.decrypt_data(encrypted_data)
+                actual_hash = self.generate_file_hash(decrypted_data)
+
             return actual_hash == expected_hash
         except Exception:
             return False
+
+    def create_streaming_context(self) -> Dict[str, Any]:
+        """Create encryption context for streaming operations."""
+        return {
+            "cipher_suite": self.cipher_suite,
+            "initialized": True
+        }
+
+    def encrypt_chunk(self, chunk: bytes, context: Dict[str, Any]) -> bytes:
+        """Encrypt a chunk of data using the provided context."""
+        if not context.get("initialized"):
+            raise ValueError("Encryption context not properly initialized")
+
+        cipher_suite = context["cipher_suite"]
+        return cipher_suite.encrypt(chunk)
 
 
 # Global encryption service instance

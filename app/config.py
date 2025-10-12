@@ -64,6 +64,11 @@ class Config:
         "FILE_ENCRYPTION_KEY",
         SecureConfig.generate_encryption_key()
     )
+
+    # Streaming Configuration for Large Files
+    STREAMING_THRESHOLD = int(os.getenv("STREAMING_THRESHOLD", "52428800"))  # 50MB
+    CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "8388608"))  # 8MB
+    MAX_MEMORY_BUFFER = int(os.getenv("MAX_MEMORY_BUFFER", "104857600"))  # 100MB
     
     # Validate encryption key
     if not SecureConfig.validate_encryption_key(FILE_ENCRYPTION_KEY):
@@ -109,6 +114,16 @@ class Config:
     # Nextcloud Settings
     NEXTCLOUD_TIMEOUT = int(os.getenv("NEXTCLOUD_TIMEOUT", "30"))
     NEXTCLOUD_MAX_RETRIES = int(os.getenv("NEXTCLOUD_MAX_RETRIES", "3"))
+
+    # Post-Upload Verification Configuration
+    UPLOAD_VERIFICATION_ENABLED = os.getenv("UPLOAD_VERIFICATION_ENABLED", "true").lower() == "true"
+    VERIFICATION_TIMEOUT = int(os.getenv("VERIFICATION_TIMEOUT", "300"))  # 5 minutes
+    VERIFICATION_MAX_RETRIES = int(os.getenv("VERIFICATION_MAX_RETRIES", "3"))
+    VERIFICATION_MAX_FILE_SIZE = int(os.getenv("VERIFICATION_MAX_FILE_SIZE", "1073741824"))  # 1GB
+    VERIFICATION_MIN_FILE_SIZE = int(os.getenv("VERIFICATION_MIN_FILE_SIZE", "1024"))  # 1KB
+    VERIFICATION_CHUNK_SIZE = int(os.getenv("VERIFICATION_CHUNK_SIZE", "1048576"))  # 1MB for comparison
+    VERIFICATION_SAMPLE_SIZE = int(os.getenv("VERIFICATION_SAMPLE_SIZE", "10485760"))  # 10MB for sampling
+    VERIFICATION_RETRY_DELAY = int(os.getenv("VERIFICATION_RETRY_DELAY", "5"))  # seconds
 
 
 # Development configuration with relaxed security

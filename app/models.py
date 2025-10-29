@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Column, String, Numeric, Date, Text, ForeignKey, DateTime, func
+from sqlalchemy import Column, String, Numeric, Date, Text, ForeignKey, DateTime, func, Boolean, Integer
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -117,9 +117,22 @@ class Claim(Base):
     notes = Column(Text, nullable=True)
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    
+
+    # Admin workflow fields (Phase 1)
+    assigned_to = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True)
+    assigned_at = Column(DateTime(timezone=True), nullable=True)
+    reviewed_by = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    rejection_reason = Column(Text, nullable=True)
+    calculated_compensation = Column(Numeric(10, 2), nullable=True)
+    flight_distance_km = Column(Numeric(10, 2), nullable=True)
+    delay_hours = Column(Numeric(5, 2), nullable=True)
+    extraordinary_circumstances = Column(String(255), nullable=True)
+
     # Relationships
     customer = relationship("Customer", back_populates="claims")
+    assignee = relationship("Customer", foreign_keys=[assigned_to])
+    reviewer = relationship("Customer", foreign_keys=[reviewed_by])
     
     def __repr__(self):
         return f"<Claim(id={self.id}, flight={self.flight_number}, incident={self.incident_type}, status={self.status})>"
@@ -420,6 +433,49 @@ class FileValidationRule(Base):
         return f"<FileValidationRule(id={self.id}, document_type={self.document_type}, max_size={self.max_file_size})>"
 
 
+class ClaimNote(Base):
+    """Notes associated with claims for internal or customer communication."""
+
+    __tablename__ = "claim_notes"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False)
+    author_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    note_text = Column(Text, nullable=False)
+    is_internal = Column(Boolean, default=True)  # Internal vs customer-facing
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    claim = relationship("Claim", back_populates="notes")
+    author = relationship("Customer")
+
+    def __repr__(self):
+        return f"<ClaimNote(id={self.id}, claim_id={self.claim_id}, internal={self.is_internal})>"
+
+
+class ClaimStatusHistory(Base):
+    """Audit trail for claim status changes."""
+
+    __tablename__ = "claim_status_history"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False)
+    previous_status = Column(String(50), nullable=True)
+    new_status = Column(String(50), nullable=False)
+    changed_by = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    change_reason = Column(Text, nullable=True)
+    changed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    claim = relationship("Claim", back_populates="status_history")
+    changed_by_user = relationship("Customer")
+
+    def __repr__(self):
+        return f"<ClaimStatusHistory(id={self.id}, claim_id={self.claim_id}, {self.previous_status} -> {self.new_status})>"
+
+
 # Add relationships to existing models
 Customer.files = relationship("ClaimFile", back_populates="customer", foreign_keys="ClaimFile.customer_id")
 Claim.files = relationship("ClaimFile", back_populates="claim", cascade="all, delete-orphan")
+Claim.claim_notes = relationship("ClaimNote", back_populates="claim", cascade="all, delete-orphan")
+Claim.status_history = relationship("ClaimStatusHistory", back_populates="claim", cascade="all, delete-orphan", order_by="ClaimStatusHistory.changed_at")

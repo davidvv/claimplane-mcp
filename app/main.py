@@ -8,7 +8,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 
 from app.database import engine, Base
-from app.routers import health, customers, claims, files
+from app.routers import health, customers, claims, files, admin_claims, admin_files
 from app.exceptions import setup_exception_handlers
 
 # Configure logging
@@ -69,6 +69,10 @@ app.include_router(customers.router)
 app.include_router(claims.router)
 app.include_router(files.router)
 
+# Admin routers (Phase 1)
+app.include_router(admin_claims.router)
+app.include_router(admin_files.router)
+
 
 @app.get("/")
 async def root():
@@ -95,7 +99,11 @@ async def info():
             "Flight incident reporting",
             "File management with Nextcloud integration",
             "Secure file uploads with encryption",
-            "Document validation and scanning"
+            "Document validation and scanning",
+            "Admin claim management and workflow (Phase 1)",
+            "EU261/2004 compensation calculation",
+            "Document review and approval system",
+            "Bulk operations and analytics"
         ]
     }
 

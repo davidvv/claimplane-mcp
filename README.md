@@ -32,6 +32,30 @@ A sophisticated, enterprise-grade file management platform built with FastAPI, f
 - **Document Association**: Link files to specific claims and customers
 - **Workflow Integration**: Support for claim processing workflows
 
+## 📋 Development Status & Roadmap
+
+**Current Status**: MVP Phase - Phase 1 Complete! 🎉
+
+The platform now has a complete admin dashboard for processing claims and calculating compensation.
+
+### ✅ Phase 1 Complete (2025-10-29)
+- Admin claim management with filtering and bulk operations
+- EU261/2004 compensation calculation engine
+- Document review and approval system
+- Complete audit trail (status history, notes)
+- 35 tests passing ✅
+
+📄 **See [PHASE1_SUMMARY.md](PHASE1_SUMMARY.md)** for implementation details
+
+📖 **See [ROADMAP.md](ROADMAP.md)** for the complete development plan
+
+**Next Priority**:
+- **Phase 2: Notifications & Async Processing** - Email notifications, Celery tasks, scheduled reminders
+
+For architecture details and development guidelines, see [CLAUDE.md](CLAUDE.md)
+
+⚠️ **IMPORTANT**: Always use the `EasyAirClaim` conda environment. See [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)
+
 ## 🛠 Tech Stack
 
 ### **Core Framework**

@@ -90,6 +90,8 @@ When you start a new Claude Code session on this project:
 - ❌ Install packages without activating the environment
 - ❌ Use the base conda environment
 - ❌ Modify system Python
+- ❌ **NEVER include "Co-Authored-By: Claude" or anthropic email in commits/docs**
+- ❌ **NEVER include AI-generated attribution or emojis unless explicitly requested**
 
 ## Environment File
 

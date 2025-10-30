@@ -1,6 +1,6 @@
-# Enterprise File Management Platform
+# EasyAirClaim - Flight Claim Management System
 
-A sophisticated, enterprise-grade file management platform built with FastAPI, featuring secure file storage, comprehensive validation, encryption, and seamless Nextcloud integration. Designed for flight claim processing workflows with advanced document management capabilities.
+A sophisticated flight compensation claim processing platform built with FastAPI, featuring automated email notifications, admin dashboard, EU261/2004 compensation calculation, secure file storage with encryption, and seamless Nextcloud integration.
 
 ## 🚀 Key Features
 
@@ -31,12 +31,36 @@ A sophisticated, enterprise-grade file management platform built with FastAPI, f
 - **Claim Tracking**: Comprehensive claim lifecycle management
 - **Document Association**: Link files to specific claims and customers
 - **Workflow Integration**: Support for claim processing workflows
+- **Admin Dashboard**: Complete claim management with filtering, search, and bulk operations
+- **Compensation Calculator**: Automatic EU261/2004 compensation calculation
+- **Status Workflow**: Validated status transitions with complete audit trail
+
+### **Automated Notifications** 🆕
+- **Email Notifications**: Professional HTML email templates for all claim events
+- **Async Processing**: Background email sending via Celery workers
+- **Smart Retries**: Automatic retry with exponential backoff for failed emails
+- **Claim Submitted**: Instant confirmation emails to customers
+- **Status Updates**: Automated emails when claim status changes (approved, rejected, paid)
+- **Document Review**: Re-upload request emails with clear instructions
+- **Customizable**: Configurable SMTP settings and "From" address
 
 ## 📋 Development Status & Roadmap
 
-**Current Status**: MVP Phase - Phase 1 Complete! 🎉
+**Current Status**: MVP Phase - Phase 2 Complete! 🎉
 
-The platform now has a complete admin dashboard for processing claims and calculating compensation.
+**Version**: v0.2.0
+
+The platform now has a complete admin dashboard, automated email notifications, and async task processing.
+
+### ✅ Phase 2 Complete (2025-10-30)
+- Email notification system with 3 professional HTML templates
+- Celery + Redis task queue for async processing
+- Background email sending (non-blocking API)
+- Gmail SMTP integration with custom "From" address
+- Automatic retry logic for failed emails
+
+📄 **See [PHASE2_SUMMARY.md](PHASE2_SUMMARY.md)** for implementation details
+📖 **See [PHASE2_TESTING_GUIDE.md](PHASE2_TESTING_GUIDE.md)** for testing guide
 
 ### ✅ Phase 1 Complete (2025-10-29)
 - Admin claim management with filtering and bulk operations
@@ -50,7 +74,7 @@ The platform now has a complete admin dashboard for processing claims and calcul
 📖 **See [ROADMAP.md](ROADMAP.md)** for the complete development plan
 
 **Next Priority**:
-- **Phase 2: Notifications & Async Processing** - Email notifications, Celery tasks, scheduled reminders
+- **Phase 3: Authentication & Authorization** - JWT authentication, user registration, role-based access control
 
 For architecture details and development guidelines, see [CLAUDE.md](CLAUDE.md)
 
@@ -78,8 +102,10 @@ For architecture details and development guidelines, see [CLAUDE.md](CLAUDE.md)
 ### **Infrastructure & DevOps**
 - **Docker**: Containerized deployment with multi-stage builds
 - **Nginx**: High-performance reverse proxy and load balancer
-- **Redis**: Caching and session management
+- **Redis**: Message broker for Celery and caching
 - **PostgreSQL**: Primary data storage with health checks
+- **Celery**: Distributed task queue for async processing
+- **aiosmtplib**: Async SMTP client for email notifications
 
 ### **Development & Testing**
 - **Pytest**: Comprehensive testing framework with async support

@@ -18,6 +18,31 @@ See [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) for complete instructions
 
 ---
 
+## 📚 Claude Code Skills
+
+This project uses Claude Code skills to document workflows and best practices.
+
+**IMPORTANT**: Before committing changes, ALWAYS check `.claude/skills/` directory.
+
+### Available Skills
+
+- **commit-workflow.md** - Complete guide for committing changes
+  - ⚠️ **USE THIS BEFORE EVERY COMMIT**
+  - Covers: commit message format, versioning, ROADMAP updates
+  - Includes: checklist, common mistakes, quick reference
+  - **Critical**: NO Claude/Anthropic attribution in commits
+  - **Critical**: Always update ROADMAP.md when completing a phase
+
+### When to Use Skills
+
+1. **Before committing**: Read `.claude/skills/commit-workflow.md`
+2. **When completing a phase**: Follow version tagging guidelines
+3. **When unsure about workflow**: Check relevant skill file
+
+Skills are stored in `.claude/skills/` and should be treated as authoritative documentation for Claude Code workflows.
+
+---
+
 ## Project Overview
 
 This is a FastAPI-based flight claim management system with secure file storage and Nextcloud integration. The application handles customer claims for flight compensation (delays, cancellations, denied boarding, baggage delays) and manages associated documents with encryption, validation, and security scanning.

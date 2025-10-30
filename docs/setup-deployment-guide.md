@@ -107,7 +107,65 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 \q
 ```
 
-### 3. Environment Configuration
+### 3. Redis Setup (Phase 2 - Required for Email Notifications)
+
+#### Install Redis
+
+**Ubuntu/Debian**:
+```bash
+sudo apt update
+sudo apt install redis-server
+sudo systemctl start redis
+sudo systemctl enable redis
+
+# Verify installation
+redis-cli ping  # Should return PONG
+```
+
+**macOS (Homebrew)**:
+```bash
+brew install redis
+brew services start redis
+
+# Verify installation
+redis-cli ping  # Should return PONG
+```
+
+**Windows**:
+- Download Redis for Windows from https://github.com/microsoftarchive/redis/releases
+- Or use WSL2 with Linux installation above
+
+#### Test Redis Connection
+```bash
+# Connect to Redis
+redis-cli
+
+# Test basic operations
+SET test "hello"
+GET test
+# Should return "hello"
+
+# Exit Redis CLI
+exit
+```
+
+#### Start Celery Worker (Local Development)
+```bash
+# Make sure you're in the project directory with virtual environment activated
+# Start Celery worker in a separate terminal
+celery -A app.celery_app worker --loglevel=info
+
+# You should see output showing:
+# - Worker started
+# - Connected to redis://localhost:6379
+# - Registered tasks: send_claim_submitted_email, send_status_update_email, send_document_rejected_email
+```
+
+**Note**: For local development, you need both the FastAPI server AND the Celery worker running:
+- Terminal 1: `uvicorn app.main:app --reload` (API server)
+- Terminal 2: `celery -A app.celery_app worker --loglevel=info` (Background worker)
+
+### 4. Environment Configuration
 
 #### Create Environment File
 ```bash
@@ -118,10 +176,25 @@ cp .env.example .env
 nano .env
 ```
 
-#### Environment Variables (`.env`)
+#### Environment Variables (`.env`) - Updated Phase 2
 ```bash
 # Database Configuration
 DATABASE_URL=postgresql+asyncpg://flight_claim_user:your_secure_password@localhost:5432/flight_claim
+
+# Redis Configuration (Phase 2)
+REDIS_URL=redis://localhost:6379
+
+# Celery Configuration (Phase 2)
+CELERY_BROKER_URL=redis://localhost:6379
+CELERY_RESULT_BACKEND=redis://localhost:6379
+
+# Email/SMTP Configuration (Phase 2)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password-here
+SMTP_FROM_EMAIL=noreply@easyairclaim.com
+NOTIFICATIONS_ENABLED=true
 
 # Application Settings
 ENVIRONMENT=development
@@ -138,6 +211,11 @@ PORT=8000
 # CORS Settings (adjust for production)
 CORS_ORIGINS=["http://localhost:3000", "http://localhost:8080"]
 ```
+
+**Phase 2 Additions**:
+- **REDIS_URL**: Redis connection for Celery task queue
+- **SMTP Settings**: Gmail SMTP for email notifications (requires App Password)
+- **NOTIFICATIONS_ENABLED**: Toggle email notifications on/off
 
 ### 4. Database Initialization
 
@@ -270,16 +348,22 @@ curl http://localhost/health
 curl http://localhost/health/db
 ```
 
-### 2. Docker Compose Configuration
+### 2. Docker Compose Configuration (Updated Phase 2)
 
 #### Service Overview
 ```yaml
 # docker-compose.yml structure
 services:
-  db:        # PostgreSQL 15 database
-  api:       # FastAPI application
-  nginx:     # Reverse proxy and load balancer
+  db:             # PostgreSQL 15 database
+  redis:          # Redis for Celery broker (Phase 2)
+  celery_worker:  # Celery background worker (Phase 2)
+  api:            # FastAPI application
+  nginx:          # Reverse proxy and load balancer (optional)
 ```
+
+**Phase 2 Additions**:
+- **Redis**: Message broker and result backend for Celery task queue
+- **Celery Worker**: Background worker for async email notifications
 
 #### Database Service Configuration
 ```yaml
@@ -301,23 +385,108 @@ db:
     retries: 5
 ```
 
-#### API Service Configuration
+#### Redis Service Configuration (Phase 2)
+```yaml
+redis:
+  image: redis:7-alpine
+  container_name: flight_claim_redis
+  ports:
+    - "6379:6379"
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 5s
+    timeout: 3s
+    retries: 5
+  restart: unless-stopped
+```
+
+**Purpose**: Redis serves as the message broker and result backend for Celery task queue
+**Health Check**: Verifies Redis is accepting connections before starting dependent services
+**Persistence**: By default uses in-memory storage; add volume for persistence if needed
+
+#### Celery Worker Service Configuration (Phase 2)
+```yaml
+celery_worker:
+  build: .
+  container_name: flight_claim_celery
+  command: celery -A app.celery_app worker --loglevel=info
+  environment:
+    DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/flight_claim
+    REDIS_URL: redis://redis:6379
+    CELERY_BROKER_URL: redis://redis:6379
+    CELERY_RESULT_BACKEND: redis://redis:6379
+    # SMTP Configuration for Email Notifications
+    SMTP_HOST: smtp.gmail.com
+    SMTP_PORT: 587
+    SMTP_USERNAME: ${SMTP_USERNAME}
+    SMTP_PASSWORD: ${SMTP_PASSWORD}
+    SMTP_FROM_EMAIL: noreply@easyairclaim.com
+    NOTIFICATIONS_ENABLED: true
+  depends_on:
+    redis:
+      condition: service_healthy
+    db:
+      condition: service_healthy
+  restart: unless-stopped
+```
+
+**Purpose**: Background worker for async email notifications (claim submitted, status updates, document rejections)
+**Task Types**:
+- `send_claim_submitted_email`
+- `send_status_update_email`
+- `send_document_rejected_email`
+
+**Monitoring Celery Worker**:
+```bash
+# View worker logs
+docker-compose logs -f celery_worker
+
+# Check worker status
+docker-compose exec celery_worker celery -A app.celery_app inspect active
+
+# See registered tasks
+docker-compose exec celery_worker celery -A app.celery_app inspect registered
+```
+
+**SMTP Configuration**:
+For Gmail SMTP, you need to:
+1. Enable 2-factor authentication on your Google account
+2. Generate an App Password: https://myaccount.google.com/apppasswords
+3. Set `SMTP_USERNAME` to your Gmail address
+4. Set `SMTP_PASSWORD` to the generated App Password
+
+#### API Service Configuration (Updated Phase 2)
 ```yaml
 api:
   build: .
   container_name: flight_claim_api
   environment:
     DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/flight_claim
+    REDIS_URL: redis://redis:6379  # Phase 2
     ENVIRONMENT: development
+    # SMTP Configuration for Email Notifications (Phase 2)
+    SMTP_HOST: smtp.gmail.com
+    SMTP_PORT: 587
+    SMTP_USERNAME: ${SMTP_USERNAME}
+    SMTP_PASSWORD: ${SMTP_PASSWORD}
+    SMTP_FROM_EMAIL: noreply@easyairclaim.com
+    NOTIFICATIONS_ENABLED: true
   ports:
     - "8000:8000"
   depends_on:
     db:
       condition: service_healthy
+    redis:
+      condition: service_healthy  # Phase 2
   volumes:
     - ./app:/app/app  # For development hot-reload
   command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+**Phase 2 Updates**:
+- Added `REDIS_URL` for Celery task queue
+- Added SMTP environment variables for email notifications
+- Added dependency on Redis service health check
 
 #### Nginx Service Configuration
 ```yaml

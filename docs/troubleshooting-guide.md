@@ -757,6 +757,436 @@ docker-compose -f docker-compose.yml -f docker-compose.debug.yml up
 docker-compose exec api python -m pdb app/main.py
 ```
 
+## Phase 2: Async Task Processing Issues
+
+### Issue: Redis Connection Refused
+
+**Symptoms**:
+```
+redis.exceptions.ConnectionError: Error connecting to Redis
+Connection refused (localhost:6379)
+Celery worker unable to connect to broker
+```
+
+**Diagnostic Steps**:
+```bash
+# Check if Redis container is running
+docker-compose ps redis
+
+# Test Redis connection
+docker exec flight_claim_redis redis-cli ping
+# Should return PONG
+
+# Check Redis logs
+docker-compose logs redis
+
+# For local development (non-Docker):
+redis-cli ping
+```
+
+**Solutions**:
+
+#### Solution A: Redis Not Started
+```bash
+# Start Redis service
+docker-compose up -d redis
+
+# Verify Redis is running
+docker-compose ps redis
+docker-compose exec redis redis-cli ping
+```
+
+#### Solution B: Wrong Redis URL
+```bash
+# Check environment variables
+docker-compose exec api env | grep REDIS_URL
+
+# Docker: Should be redis://redis:6379
+# Local: Should be redis://localhost:6379
+
+# Update docker-compose.yml or .env file if incorrect
+```
+
+#### Solution C: Redis Port Conflict
+```bash
+# Check if port 6379 is in use
+lsof -i :6379
+# or on Linux:
+netstat -tulpn | grep 6379
+
+# If another service is using 6379, change Redis port:
+# docker-compose.yml:
+  redis:
+    ports:
+      - "6380:6379"  # Map to different host port
+
+# Then update REDIS_URL to redis://redis:6379 (internal) or redis://localhost:6380 (local)
+```
+
+### Issue: Celery Worker Not Starting
+
+**Symptoms**:
+```
+celery_worker container keeps restarting
+ImportError: cannot import name 'celery_app'
+ModuleNotFoundError: No module named 'app.tasks'
+Worker startup failed
+```
+
+**Diagnostic Steps**:
+```bash
+# Check Celery worker status
+docker-compose ps celery_worker
+
+# Check Celery worker logs
+docker-compose logs celery_worker
+
+# For local development:
+celery -A app.celery_app inspect ping
+```
+
+**Solutions**:
+
+#### Solution A: Import Errors
+```bash
+# Verify celery_app.py exists
+ls app/celery_app.py
+
+# Verify tasks directory exists
+ls app/tasks/
+
+# Check for syntax errors
+docker-compose exec celery_worker python -m py_compile app/celery_app.py
+```
+
+#### Solution B: Redis Connection Issues
+```bash
+# Verify Redis is accessible from worker
+docker-compose exec celery_worker ping redis
+
+# Check CELERY_BROKER_URL environment variable
+docker-compose exec celery_worker env | grep CELERY
+
+# Should be: CELERY_BROKER_URL=redis://redis:6379
+```
+
+#### Solution C: Missing Dependencies
+```bash
+# Check if celery is installed
+docker-compose exec celery_worker pip list | grep celery
+
+# Rebuild worker with updated requirements
+docker-compose build celery_worker
+docker-compose up -d celery_worker
+```
+
+### Issue: Celery Tasks Not Executing
+
+**Symptoms**:
+```
+Tasks queued but never executed
+No task output in Celery logs
+Tasks stuck in "PENDING" state
+Emails not being sent
+```
+
+**Diagnostic Steps**:
+```bash
+# Check active tasks
+docker-compose exec celery_worker celery -A app.celery_app inspect active
+
+# Check registered tasks
+docker-compose exec celery_worker celery -A app.celery_app inspect registered
+
+# Check worker stats
+docker-compose exec celery_worker celery -A app.celery_app inspect stats
+
+# Monitor task execution in real-time
+docker-compose logs -f celery_worker
+```
+
+**Solutions**:
+
+#### Solution A: Worker Not Consuming Tasks
+```bash
+# Restart Celery worker
+docker-compose restart celery_worker
+
+# Check worker is connected to correct broker
+docker-compose logs celery_worker | grep "Connected to"
+# Should show: Connected to redis://redis:6379
+```
+
+#### Solution B: Tasks Not Registered
+```bash
+# Verify tasks are registered
+docker-compose exec celery_worker celery -A app.celery_app inspect registered
+
+# Should show:
+# - send_claim_submitted_email
+# - send_status_update_email
+# - send_document_rejected_email
+
+# If missing, check app/tasks/__init__.py imports
+docker-compose exec celery_worker cat app/tasks/__init__.py
+```
+
+#### Solution C: Task Failures
+```bash
+# Check for task errors
+docker-compose logs celery_worker | grep -i error
+
+# Check task revocations
+docker-compose exec celery_worker celery -A app.celery_app inspect revoked
+
+# Purge all queued tasks (nuclear option)
+docker-compose exec celery_worker celery -A app.celery_app purge
+```
+
+## Phase 2: Email Notification Issues
+
+### Issue: SMTP Authentication Failed
+
+**Symptoms**:
+```
+aiosmtplib.errors.SMTPAuthenticationError: (535, b'5.7.8 Username and Password not accepted')
+SMTP connection refused
+Email tasks failing repeatedly
+```
+
+**Diagnostic Steps**:
+```bash
+# Check SMTP environment variables
+docker-compose exec api env | grep SMTP
+
+# Check Celery worker SMTP config
+docker-compose exec celery_worker env | grep SMTP
+
+# Test SMTP connection manually
+docker-compose exec celery_worker python -c "
+import asyncio
+import aiosmtplib
+
+async def test_smtp():
+    try:
+        await aiosmtplib.send(
+            message='Test',
+            hostname='smtp.gmail.com',
+            port=587,
+            username='your-email@gmail.com',
+            password='your-app-password',
+            start_tls=True
+        )
+        print('SMTP connection successful')
+    except Exception as e:
+        print(f'SMTP error: {e}')
+
+asyncio.run(test_smtp())
+"
+```
+
+**Solutions**:
+
+#### Solution A: Invalid Gmail App Password
+```bash
+# Gmail requires App Passwords when 2FA is enabled
+# 1. Go to: https://myaccount.google.com/apppasswords
+# 2. Generate new App Password for "Mail"
+# 3. Update SMTP_PASSWORD in docker-compose.yml
+
+# Update environment variable
+docker-compose down
+# Edit docker-compose.yml with new password
+docker-compose up -d
+
+# Verify with logs
+docker-compose logs celery_worker | grep -i smtp
+```
+
+#### Solution B: Gmail "Less Secure Apps" Blocked
+```
+# Gmail no longer allows "less secure apps"
+# You MUST use App Passwords with 2FA enabled
+
+# Steps:
+1. Enable 2-Factor Authentication on Google Account
+2. Generate App Password: https://myaccount.google.com/apppasswords
+3. Use App Password (NOT regular password) in SMTP_PASSWORD
+```
+
+#### Solution C: Wrong SMTP Configuration
+```bash
+# Verify Gmail SMTP settings
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587  # Use 587 for TLS, NOT 465
+SMTP_USERNAME=your-email@gmail.com  # Full email address
+SMTP_PASSWORD=your-16-char-app-password  # App Password only
+
+# Check logs for specific error
+docker-compose logs celery_worker | grep -A 5 "SMTPAuthenticationError"
+```
+
+### Issue: Emails Not Being Sent
+
+**Symptoms**:
+```
+No emails received by customers
+Celery tasks show success but no emails
+No errors in logs
+Email tasks completing but recipients not receiving
+```
+
+**Diagnostic Steps**:
+```bash
+# Check if notifications are enabled
+docker-compose exec api env | grep NOTIFICATIONS_ENABLED
+# Should be: NOTIFICATIONS_ENABLED=true
+
+# Check Celery task execution
+docker-compose logs celery_worker | grep "send_.*_email"
+
+# Check for task success
+docker-compose logs celery_worker | grep "Task.*succeeded"
+
+# Monitor email task execution
+docker-compose logs -f celery_worker
+# Then trigger an action (submit claim) and watch logs
+```
+
+**Solutions**:
+
+#### Solution A: Notifications Disabled
+```bash
+# Check if notifications are enabled
+docker-compose exec api env | grep NOTIFICATIONS_ENABLED
+
+# If false or missing, update docker-compose.yml:
+environment:
+  NOTIFICATIONS_ENABLED: "true"
+
+# Restart services
+docker-compose restart api celery_worker
+```
+
+#### Solution B: Tasks Not Being Queued
+```bash
+# Check API logs for task queueing
+docker-compose logs api | grep ".delay("
+
+# You should see lines like:
+# "Queued email task: send_claim_submitted_email"
+
+# If not appearing, check code in routers (admin_claims.py, claims.py, admin_files.py)
+```
+
+#### Solution C: Email in Spam Folder
+```bash
+# Check spam/junk folder in email client
+
+# Improve email deliverability:
+1. Use verified email domain (not noreply@easyairclaim.com)
+2. Set up SPF/DKIM records for domain
+3. Use authenticated Gmail account as SMTP_FROM_EMAIL
+4. Test with multiple email providers (Gmail, Outlook, Yahoo)
+```
+
+### Issue: Email Templates Not Rendering
+
+**Symptoms**:
+```
+Emails sent but show blank content
+Template errors in Celery logs
+TemplateNotFound error
+Jinja2 rendering errors
+```
+
+**Diagnostic Steps**:
+```bash
+# Check if email templates exist
+docker-compose exec celery_worker ls app/templates/emails/
+
+# Should show:
+# - claim_submitted.html
+# - status_updated.html
+# - document_rejected.html
+
+# Check template syntax
+docker-compose logs celery_worker | grep -i "template"
+docker-compose logs celery_worker | grep -i "jinja"
+```
+
+**Solutions**:
+
+#### Solution A: Templates Not in Container
+```bash
+# Verify templates are in the built image
+docker-compose exec celery_worker ls -la app/templates/emails/
+
+# If missing, check Dockerfile includes templates
+# Add to Dockerfile if missing:
+COPY app/templates/ ./app/templates/
+
+# Rebuild services
+docker-compose build celery_worker
+docker-compose up -d celery_worker
+```
+
+#### Solution B: Template Syntax Errors
+```bash
+# Test template rendering
+docker-compose exec celery_worker python -c "
+from jinja2 import Template
+with open('app/templates/emails/claim_submitted.html') as f:
+    template = Template(f.read())
+    print(template.render(
+        customer_name='Test User',
+        claim_id='123',
+        flight_number='AA123',
+        airline='American Airlines'
+    ))
+"
+
+# Fix any Jinja2 syntax errors shown
+```
+
+### Quick Email Notification Test
+
+```bash
+# Test complete email notification flow
+
+# 1. Ensure services are running
+docker-compose ps
+
+# 2. Enable verbose Celery logging
+docker-compose logs -f celery_worker &
+
+# 3. Submit a test claim via API
+curl -X POST http://localhost:8000/claims/submit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerInfo": {
+      "email": "your-test-email@gmail.com",
+      "firstName": "Test",
+      "lastName": "User"
+    },
+    "flightInfo": {
+      "flightNumber": "AA123",
+      "airline": "American Airlines",
+      "departureDate": "2024-02-01",
+      "departureAirport": "JFK",
+      "arrivalAirport": "LAX"
+    },
+    "incidentType": "delay"
+  }'
+
+# 4. Watch Celery logs for task execution
+# You should see:
+# - Task send_claim_submitted_email received
+# - Task send_claim_submitted_email succeeded
+
+# 5. Check email inbox (including spam folder)
+```
+
 ## Recovery Procedures
 
 ### Complete System Reset

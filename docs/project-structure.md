@@ -11,40 +11,80 @@ flight_claim/
 ├── app/                          # Main application package
 │   ├── __init__.py              # Package initialization with version
 │   ├── main.py                  # FastAPI application entry point
+│   ├── config.py                # Configuration and environment variables
 │   ├── database.py              # Database configuration and session management
-│   ├── models.py                # SQLAlchemy ORM models
-│   ├── schemas.py               # Pydantic validation schemas
+│   ├── models.py                # SQLAlchemy ORM models (7 tables)
+│   ├── schemas.py               # Pydantic validation schemas (customer/claim)
 │   ├── exceptions.py            # Custom exception definitions
 │   ├── middleware.py            # Error handling middleware
+│   ├── celery_app.py            # Celery configuration (Phase 2)
 │   ├── repositories/            # Data access layer
 │   │   ├── __init__.py         # Repository exports
 │   │   ├── base.py             # Generic base repository
-│   │   ├── customer_repository.py  # Customer data operations
-│   │   └── claim_repository.py     # Claim data operations
-│   └── routers/                 # API route handlers
-│       ├── __init__.py         # Router exports
-│       ├── customers.py        # Customer API endpoints
-│       ├── claims.py          # Claim API endpoints
-│       └── health.py          # System health endpoints
+│   │   ├── customer_repository.py    # Customer data operations
+│   │   ├── claim_repository.py       # Claim data operations
+│   │   ├── admin_claim_repository.py # Admin claim operations (Phase 1)
+│   │   └── file_repository.py        # File management operations (Phase 1)
+│   ├── routers/                 # API route handlers
+│   │   ├── __init__.py         # Router exports
+│   │   ├── customers.py        # Customer API endpoints
+│   │   ├── claims.py           # Claim API endpoints (with notifications)
+│   │   ├── files.py            # File upload/download endpoints
+│   │   ├── admin_claims.py     # Admin claim management (Phase 1)
+│   │   ├── admin_files.py      # Admin file review (Phase 1)
+│   │   └── health.py           # System health endpoints
+│   ├── services/                # Business logic and external integrations
+│   │   ├── compensation_service.py      # EU261/2004 calculations (Phase 1)
+│   │   ├── claim_workflow_service.py    # Status workflow management (Phase 1)
+│   │   ├── email_service.py             # Email sending service (Phase 2)
+│   │   ├── encryption_service.py        # File encryption
+│   │   ├── file_validation_service.py   # Document validation
+│   │   └── nextcloud_service.py         # Nextcloud WebDAV integration
+│   ├── schemas/                 # Pydantic schemas (organized by domain)
+│   │   └── admin_schemas.py     # Admin-specific schemas (Phase 1)
+│   ├── tasks/                   # Celery async tasks (Phase 2)
+│   │   ├── __init__.py         # Task package initialization
+│   │   └── claim_tasks.py      # Email notification tasks
+│   └── templates/               # Email templates (Phase 2)
+│       └── emails/              # HTML email templates
+│           ├── claim_submitted.html      # Claim confirmation email
+│           ├── status_updated.html       # Status change notification
+│           └── document_rejected.html    # Document rejection notice
 ├── docs/                        # Project documentation
 │   ├── system-architecture-overview.md  # Architecture documentation
-│   ├── database-schema.md              # Database design documentation
+│   ├── database-schema.md              # Database design (updated Phase 1)
+│   ├── api-reference.md                # Complete API reference (updated Phase 1)
 │   ├── api-flow-diagrams.md            # API flow documentation
 │   ├── project-structure.md            # This file
-│   ├── mvp_plan.md                     # Original MVP planning
-│   ├── db_schema.md                    # Legacy schema documentation
-│   └── [other legacy docs]
+│   ├── setup-deployment-guide.md       # Setup and deployment instructions
+│   ├── troubleshooting-guide.md        # Common issues and solutions
+│   ├── security-best-practices.md      # Security guidelines
+│   ├── file-management-system-design.md        # File system design
+│   ├── file-management-implementation-guide.md # File system implementation
+│   ├── implementation-deep-dive.md     # Detailed implementation notes
+│   ├── interactive-examples.md         # Code examples
+│   └── data-flow-visualization.md      # Data flow diagrams
 ├── API/                         # API specification files
 │   └── openapi.yaml            # Complete OpenAPI specification
-├── requirements.txt             # Python dependency specifications
+├── requirements.txt             # Python dependencies (FastAPI, SQLAlchemy, Celery, etc.)
 ├── Dockerfile                   # Container build configuration
-├── docker-compose.yml          # Multi-container deployment setup
+├── docker-compose.yml          # Multi-container setup (API, DB, Redis, Celery)
 ├── nginx.conf                  # Nginx reverse proxy configuration
 ├── .env                        # Environment variables (not committed)
 ├── .gitignore                  # Git ignore patterns
-├── README.md                   # Project overview and quick start
+├── README.md                   # Project overview (updated Phase 2)
+├── ROADMAP.md                  # Development roadmap (Phase 2 complete)
+├── VERSIONING.md               # Version strategy and release process
+├── CLAUDE.md                   # Instructions for AI-assisted development
+├── DEVELOPMENT_WORKFLOW.md     # Environment setup and workflow
+├── PHASE1_SUMMARY.md           # Phase 1 implementation details
+├── PHASE2_SUMMARY.md           # Phase 2 implementation details
+├── PHASE2_TESTING_GUIDE.md     # Phase 2 testing procedures
+├── DOCS_CLEANUP_ANALYSIS.md    # Documentation cleanup analysis
 ├── init_db.py                  # Database initialization script
-└── [test files]                # Various testing scripts
+└── scripts/                    # Utility and test scripts
+    ├── test_nextcloud_integration.py
+    └── generate_secrets.py
 ```
 
 ## Application Package (`app/`)
@@ -54,13 +94,14 @@ flight_claim/
 #### `__init__.py`
 ```python
 """Flight Claim System API"""
-__version__ = "1.0.0"
+__version__ = "0.2.0"
 ```
 
 **Purpose**: Package initialization and version management
 - Defines the application version used throughout the system
 - Enables import of the app package
 - Centralizes version information for consistency
+- **Current Version**: v0.2.0 (Phase 2 Complete - Notifications & Async Processing)
 
 #### `main.py` - Application Entry Point
 **Responsibilities**:
@@ -164,45 +205,149 @@ class Customer(Base):
         return f"{self.first_name} {self.last_name}"
 ```
 
-##### Claim Model
+##### Claim Model (Updated Phase 1)
 ```python
 class Claim(Base):
     __tablename__ = "claims"
-    
+
     # Status and incident type enums
     INCIDENT_TYPES = ["delay", "cancellation", "denied_boarding", "baggage_delay"]
-    STATUS_TYPES = ["draft", "submitted", "under_review", "approved", "rejected", "paid", "closed"]
-    
+    STATUS_TYPES = ["draft", "submitted", "under_review", "documents_requested",
+                   "approved", "rejected", "paid", "closed"]
+
     # Primary fields
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     customer_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
-    
+
     # Flight information
     flight_number = Column(String(10), nullable=False)
     airline = Column(String(100), nullable=False)
     departure_date = Column(Date, nullable=False)
     departure_airport = Column(String(3), nullable=False)  # IATA code
     arrival_airport = Column(String(3), nullable=False)    # IATA code
-    
+
     # Claim details
     incident_type = Column(String(50), nullable=False)
     status = Column(String(50), default=STATUS_SUBMITTED)
     compensation_amount = Column(Numeric(10, 2), nullable=True)
     currency = Column(String(3), default="EUR")
     notes = Column(Text, nullable=True)
-    
+
+    # Phase 1 Admin workflow fields
+    assigned_to = Column(PGUUID(as_uuid=True), nullable=True)  # Admin reviewer
+    assigned_at = Column(DateTime(timezone=True), nullable=True)
+    calculated_compensation = Column(Numeric(10, 2), nullable=True)  # EU261 calculation
+
     # Audit timestamps
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    
+
     # Relationships
     customer = relationship("Customer", back_populates="claims")
-    
+    files = relationship("ClaimFile", back_populates="claim", cascade="all, delete-orphan")
+    notes = relationship("ClaimNote", back_populates="claim", cascade="all, delete-orphan")
+    status_history = relationship("ClaimStatusHistory", back_populates="claim", cascade="all, delete-orphan")
+
     # Validation methods for business rules
     @validates('incident_type', 'status', 'departure_airport', 'arrival_airport', 'flight_number')
     def validate_fields(self, key, value):
         # Field-specific validation logic
 ```
+
+##### ClaimNote Model (Phase 1)
+```python
+class ClaimNote(Base):
+    __tablename__ = "claim_notes"
+
+    # Primary fields
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False)
+    author_id = Column(PGUUID(as_uuid=True), nullable=False)  # Admin user ID
+
+    # Note content
+    note_text = Column(Text, nullable=False)
+    is_internal = Column(Boolean, default=True)  # Internal vs customer-facing
+
+    # Audit timestamp
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    claim = relationship("Claim", back_populates="notes")
+```
+
+**Purpose**: Audit trail for claim discussions and decisions
+- Internal notes for admin-only communication
+- Customer-facing notes for transparency
+- Chronological history of all claim communication
+
+##### ClaimStatusHistory Model (Phase 1)
+```python
+class ClaimStatusHistory(Base):
+    __tablename__ = "claim_status_history"
+
+    # Primary fields
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False)
+
+    # Status change details
+    previous_status = Column(String(50), nullable=False)
+    new_status = Column(String(50), nullable=False)
+    changed_by = Column(PGUUID(as_uuid=True), nullable=False)  # Admin user ID
+    change_reason = Column(Text, nullable=True)
+
+    # Audit timestamp
+    changed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    claim = relationship("Claim", back_populates="status_history")
+```
+
+**Purpose**: Complete audit trail for status changes
+- Track every status transition
+- Record who made the change and why
+- Support compliance and transparency requirements
+- Enable analytics on processing times
+
+##### ClaimFile Model
+```python
+class ClaimFile(Base):
+    __tablename__ = "claim_files"
+
+    # File statuses
+    STATUS_UPLOADED = "uploaded"
+    STATUS_VALIDATED = "validated"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+
+    # Document types
+    DOCUMENT_TYPES = ["boarding_pass", "id_document", "receipt", "bank_statement",
+                     "flight_ticket", "delay_certificate", "cancellation_notice", "other"]
+
+    # Primary fields with relationships
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False)
+    customer_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+
+    # File metadata
+    document_type = Column(String(50), nullable=False)
+    file_name = Column(String(255), nullable=False)
+    mime_type = Column(String(100), nullable=False)
+    file_size = Column(BigInteger, nullable=False)
+
+    # Security and validation
+    status = Column(String(50), default=STATUS_UPLOADED)
+    validation_status = Column(String(50), nullable=True)
+    rejection_reason = Column(Text, nullable=True)
+
+    # Admin review fields (Phase 1)
+    reviewed_by = Column(PGUUID(as_uuid=True), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    claim = relationship("Claim", back_populates="files")
+    customer = relationship("Customer")
+```
+
 
 #### `schemas.py` - Pydantic Validation Schemas
 **Responsibilities**:
@@ -443,7 +588,7 @@ async def get_claims_by_status(status: str, skip: int = 0, limit: int = 100, db:
 async def health_check(db: AsyncSession = Depends(get_db))
 # Basic health check with database connectivity
 
-@router.get("/health/db")  
+@router.get("/health/db")
 async def database_health(db: AsyncSession = Depends(get_db))
 # Detailed database information (version, name, user)
 
@@ -451,6 +596,321 @@ async def database_health(db: AsyncSession = Depends(get_db))
 async def detailed_health_check(db: AsyncSession = Depends(get_db))
 # Comprehensive system health (Python version, platform, environment)
 ```
+
+#### `admin_claims.py` - Admin Claim Management (Phase 1)
+**Responsibilities**:
+- Admin dashboard claim operations
+- Status workflow management
+- Claim assignment to reviewers
+- Compensation calculations and updates
+- Note management (internal and customer-facing)
+- Status history tracking
+- Bulk operations
+- Analytics and reporting
+
+**Authentication**: Requires `X-Admin-ID` header (Phase 3 will implement JWT)
+
+**Key Endpoints**:
+- `GET /admin/claims` - List claims with advanced filtering
+- `GET /admin/claims/{claim_id}` - Get full claim details
+- `PUT /admin/claims/{claim_id}/status` - Update claim status (triggers email)
+- `PUT /admin/claims/{claim_id}/assign` - Assign to reviewer
+- `PUT /admin/claims/{claim_id}/compensation` - Set compensation amount
+- `POST /admin/claims/{claim_id}/notes` - Add note
+- `GET /admin/claims/{claim_id}/history` - View status history
+- `POST /admin/claims/bulk-action` - Bulk status updates/assignments
+- `GET /admin/claims/analytics/summary` - Dashboard analytics
+- `POST /admin/claims/calculate-compensation` - EU261/2004 calculator
+- `GET /admin/claims/{claim_id}/status-transitions` - Valid next statuses
+
+**Integration**:
+- Uses `AdminClaimRepository` for complex queries
+- Uses `ClaimWorkflowService` for status validation
+- Uses `CompensationService` for EU261/2004 calculations
+- Triggers async email notifications via Celery tasks (Phase 2)
+
+#### `admin_files.py` - Admin File Review (Phase 1)
+**Responsibilities**:
+- Document review and approval
+- Document rejection with reasons
+- Re-upload request management
+- File statistics and reporting
+- Document-type based batch processing
+
+**Authentication**: Requires `X-Admin-ID` header
+
+**Key Endpoints**:
+- `GET /admin/files/claim/{claim_id}/documents` - List all claim files
+- `GET /admin/files/{file_id}/metadata` - Get detailed file info
+- `PUT /admin/files/{file_id}/review` - Approve/reject document (triggers email)
+- `POST /admin/files/{file_id}/request-reupload` - Request re-upload with deadline
+- `GET /admin/files/pending-review` - Get files awaiting review
+- `GET /admin/files/by-document-type/{type}` - Filter by document type
+- `GET /admin/files/statistics` - File system statistics
+- `DELETE /admin/files/{file_id}` - Soft delete file
+
+**Integration**:
+- Uses `FileRepository` for file queries
+- Triggers async document rejected emails (Phase 2)
+- Updates file status and validation_status
+- Records reviewer ID and review timestamps
+
+### Services Layer (`services/`)
+
+#### `compensation_service.py` - EU261/2004 Calculations (Phase 1)
+**Responsibilities**:
+- Flight distance calculation using airport coordinates
+- EU261/2004 compensation amount determination
+- Distance category classification (short/medium/long haul)
+- Extraordinary circumstances detection
+- Eligibility verification
+
+**Key Methods**:
+```python
+class CompensationService:
+    @staticmethod
+    def calculate_compensation(
+        departure_airport: str,
+        arrival_airport: str,
+        delay_hours: float,
+        incident_type: str,
+        extraordinary_circumstances: bool = False
+    ) -> dict
+    # Returns: eligible, amount, currency, distance_km, category, reason
+
+    @staticmethod
+    def get_airport_coordinates(iata_code: str) -> tuple[float, float]
+    # Airport coordinate lookup
+
+    @staticmethod
+    def calculate_distance(lat1, lon1, lat2, lon2) -> float
+    # Haversine formula distance calculation
+
+    @staticmethod
+    def detect_extraordinary_circumstances(notes: str) -> bool
+    # Keyword-based detection (weather, strike, security, etc.)
+```
+
+**Compensation Rules**:
+- Short haul (< 1500 km): €250
+- Medium haul (1500-3500 km): €400
+- Long haul (> 3500 km): €600
+- Delay threshold: 3+ hours
+- No compensation if extraordinary circumstances
+
+**Testing**: 35 comprehensive test cases covering edge cases
+
+#### `claim_workflow_service.py` - Status Workflow Management (Phase 1)
+**Responsibilities**:
+- Valid status transition enforcement
+- Status change audit logging
+- Claim assignment management
+- Compensation update tracking
+- Status-based business rules
+
+**Status Workflow**:
+```
+draft → submitted → under_review → documents_requested
+                                 ↓
+                              approved → paid → closed
+                                 ↓
+                              rejected → closed
+```
+
+**Key Methods**:
+```python
+class ClaimWorkflowService:
+    @staticmethod
+    async def transition_status(
+        session: AsyncSession,
+        claim: Claim,
+        new_status: str,
+        changed_by: UUID,
+        change_reason: Optional[str] = None
+    ) -> Claim
+    # Validates transition, updates status, creates history record
+
+    @staticmethod
+    async def assign_claim(
+        session: AsyncSession,
+        claim: Claim,
+        assigned_to: UUID,
+        assigned_by: UUID
+    )
+    # Assigns claim to reviewer
+
+    @staticmethod
+    async def set_compensation(
+        session: AsyncSession,
+        claim: Claim,
+        compensation_amount: float,
+        set_by: UUID,
+        reason: Optional[str] = None
+    )
+    # Sets compensation with audit trail
+
+    @staticmethod
+    def get_valid_next_statuses(current_status: str) -> List[str]
+    # Returns allowed next statuses
+
+    @staticmethod
+    def get_status_display_info(status: str) -> dict
+    # Returns: display_name, description, color
+```
+
+#### `email_service.py` - Email Notifications (Phase 2)
+**Responsibilities**:
+- Async SMTP email sending
+- HTML email template rendering
+- Three notification types
+- Error handling and logging
+
+**Key Methods**:
+```python
+class EmailService:
+    @staticmethod
+    async def send_email(
+        to_email: str,
+        subject: str,
+        html_content: str,
+        text_content: str
+    )
+    # Generic async email sender using aiosmtplib
+
+    @staticmethod
+    async def send_claim_submitted_email(
+        customer_email: str,
+        customer_name: str,
+        claim_id: str,
+        flight_number: str,
+        airline: str
+    )
+    # Sends claim confirmation with flight details
+
+    @staticmethod
+    async def send_status_update_email(
+        customer_email: str,
+        customer_name: str,
+        claim_id: str,
+        old_status: str,
+        new_status: str,
+        flight_number: str,
+        airline: str,
+        change_reason: Optional[str],
+        compensation_amount: Optional[float]
+    )
+    # Sends dynamic color-coded status update
+
+    @staticmethod
+    async def send_document_rejected_email(
+        customer_email: str,
+        customer_name: str,
+        claim_id: str,
+        document_type: str,
+        rejection_reason: str,
+        flight_number: str,
+        airline: str
+    )
+    # Sends document rejection with tips
+```
+
+**Configuration**:
+- Uses Gmail SMTP (smtp.gmail.com:587)
+- Custom "From" address: noreply@easyairclaim.com
+- TLS encryption
+- Configurable via environment variables
+
+### Async Task Processing (Phase 2)
+
+#### `celery_app.py` - Celery Configuration
+**Responsibilities**:
+- Celery app initialization
+- Redis broker configuration
+- Task discovery and registration
+- Retry policy configuration
+- Task time limits
+
+**Configuration**:
+```python
+celery_app = Celery(
+    'flight_claim_worker',
+    broker=config.CELERY_BROKER_URL,    # Redis
+    backend=config.CELERY_RESULT_BACKEND # Redis
+)
+
+celery_app.conf.update(
+    task_track_started=True,
+    task_serializer='json',
+    result_serializer='json',
+    accept_content=['json'],
+    timezone='UTC',
+    enable_utc=True,
+    task_time_limit=30 * 60,  # 30 minute timeout
+    task_default_retry_delay=60,
+    task_max_retries=3
+)
+
+# Auto-discover tasks in app.tasks
+celery_app.autodiscover_tasks(['app.tasks'])
+```
+
+#### `tasks/claim_tasks.py` - Email Notification Tasks
+**Responsibilities**:
+- Async email task execution
+- Retry logic with exponential backoff
+- Error logging
+- Async function wrapping
+
+**Key Tasks**:
+```python
+@celery_app.task(name="send_claim_submitted_email", bind=True, max_retries=3)
+def send_claim_submitted_email(self, customer_email, customer_name, claim_id, flight_number, airline)
+# Queued after claim creation
+
+@celery_app.task(name="send_status_update_email", bind=True, max_retries=3)
+def send_status_update_email(self, customer_email, customer_name, claim_id, old_status, new_status, ...)
+# Queued after status change
+
+@celery_app.task(name="send_document_rejected_email", bind=True, max_retries=3)
+def send_document_rejected_email(self, customer_email, customer_name, claim_id, document_type, rejection_reason, ...)
+# Queued after document rejection
+```
+
+**Retry Strategy**:
+- Max retries: 3
+- Exponential backoff: 60s, 120s, 240s
+- Logs all failures for monitoring
+
+### Email Templates (`templates/emails/`)
+
+#### HTML Email Templates (Phase 2)
+**Responsibilities**:
+- Professional branded emails
+- Dynamic content rendering
+- Mobile-responsive design
+- Color-coded status indicators
+
+**Templates**:
+
+##### `claim_submitted.html`
+- **Purpose**: Claim submission confirmation
+- **Style**: Green header, welcoming tone
+- **Content**: Claim ID, flight details, next steps
+- **CTA**: Track claim status link
+
+##### `status_updated.html`
+- **Purpose**: Status change notification
+- **Style**: Dynamic color (green=approved, red=rejected, blue=in progress, orange=documents needed)
+- **Content**: Old/new status, reason, compensation (if applicable), flight details
+- **Conditional**: Shows compensation section only for approved claims
+
+##### `document_rejected.html`
+- **Purpose**: Document rejection notification
+- **Style**: Orange warning header
+- **Content**: Document type, rejection reason, re-upload instructions
+- **Tips**: Helpful tips for submitting valid documents
+
+**Rendering**: Uses Jinja2 for template rendering with variable substitution
 
 ### Error Handling
 
@@ -513,17 +973,47 @@ async def general_exception_handler(request: Request, exc: Exception)
 - Runtime user setup
 - Health check configuration
 
-### `docker-compose.yml` - Multi-Container Setup
+### `docker-compose.yml` - Multi-Container Setup (Updated Phase 2)
 **Services**:
 - **db**: PostgreSQL 15 database with persistent storage
+- **redis**: Redis 7 for Celery message broker and result backend
+- **celery_worker**: Background task worker for async email processing
 - **api**: FastAPI application container
-- **nginx**: Reverse proxy for load balancing
+- **nginx**: Reverse proxy for load balancing (optional)
+
+**Phase 2 Additions**:
+```yaml
+redis:
+  image: redis:7-alpine
+  ports:
+    - "6379:6379"
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 5s
+    timeout: 3s
+    retries: 5
+
+celery_worker:
+  build: .
+  command: celery -A app.celery_app worker --loglevel=info
+  environment:
+    - REDIS_URL=redis://redis:6379
+    - SMTP_HOST=smtp.gmail.com
+    - SMTP_PORT=587
+    - SMTP_USERNAME=${SMTP_USERNAME}
+    - SMTP_PASSWORD=${SMTP_PASSWORD}
+    - SMTP_FROM_EMAIL=noreply@easyairclaim.com
+  depends_on:
+    - redis
+    - db
+```
 
 **Key Features**:
 - Health checks for service dependencies
 - Volume mounting for development
-- Environment variable configuration
+- Environment variable configuration for SMTP
 - Network isolation and communication
+- Shared environment between API and Celery worker
 
 ### `nginx.conf` - Reverse Proxy Configuration
 **Responsibilities**:
@@ -533,14 +1023,26 @@ async def general_exception_handler(request: Request, exc: Exception)
 - Connection timeout configuration
 - Upstream server health monitoring
 
-### `requirements.txt` - Dependency Management
+### `requirements.txt` - Dependency Management (Updated Phase 2)
 **Categories**:
 - **Web Framework**: FastAPI, Uvicorn
-- **Database**: SQLAlchemy, AsyncPG, Alembic  
+- **Database**: SQLAlchemy, AsyncPG, Alembic
 - **Validation**: Pydantic, email-validator
-- **Security**: python-jose, passlib
+- **Security**: python-jose, passlib, cryptography (Fernet)
+- **File Management**: python-magic (libmagic), PyPDF2
+- **File Storage**: Nextcloud WebDAV integration
+- **Task Queue (Phase 2)**: Celery, Redis
+- **Email (Phase 2)**: aiosmtplib, Jinja2
 - **Development**: pytest, httpx
 - **Utilities**: python-dotenv, structlog
+
+**Phase 2 Additions**:
+```txt
+celery==5.3.4
+redis==5.0.1
+aiosmtplib==3.0.1
+jinja2==3.1.2
+```
 
 ## Documentation Structure (`docs/`)
 

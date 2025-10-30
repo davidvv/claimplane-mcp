@@ -9,6 +9,44 @@ This roadmap outlines the next development phases for the flight claim managemen
 
 ---
 
+## 🎯 NEXT STEPS - START HERE
+
+**Current State**: Phase 2 Complete (v0.2.0)
+- ✅ Admin Dashboard & Claim Workflow (Phase 1)
+- ✅ Async Task Processing & Email Notifications (Phase 2)
+
+**Next Phase**: **Phase 3 - Authentication & Authorization System**
+
+**Target Version**: v0.3.0
+
+**What to Implement Next**:
+1. JWT-based authentication system (replace X-Customer-ID and X-Admin-ID headers)
+2. User registration and login endpoints
+3. Password reset flow with email verification
+4. Role-based access control (RBAC) for customers and admins
+5. Protected routes with JWT middleware
+6. Token refresh mechanism
+7. Admin user management
+
+**Why Phase 3 Next**:
+- Currently using header-based authentication (X-Customer-ID, X-Admin-ID) which is insecure
+- Required before public launch or adding customer-facing frontend
+- Enables proper multi-user support and security
+- Foundation for future features (user profiles, permissions, audit trails)
+
+**Estimated Effort**: 2-3 weeks (or 1-2 sessions depending on complexity)
+
+**Key Files to Create**:
+- `app/routers/auth.py` - Authentication endpoints
+- `app/services/auth_service.py` - JWT token management
+- `app/services/password_service.py` - Password hashing and validation
+- `app/middleware/jwt_middleware.py` - JWT authentication middleware
+- `app/models.py` - Add User, RefreshToken, PasswordReset models
+
+**See Phase 3 section below for complete feature list and implementation details.**
+
+---
+
 ## Phase 1: Admin Dashboard & Claim Workflow Management
 
 **Priority**: HIGHEST
@@ -399,12 +437,13 @@ NOTIFICATIONS_ENABLED = os.getenv("NOTIFICATIONS_ENABLED", "true").lower() == "t
 
 ---
 
-## Phase 3: Authentication & Authorization System
+## Phase 3: Authentication & Authorization System ⬅️ **NEXT PHASE**
 
-**Priority**: MEDIUM (for MVP) / CRITICAL (for scale)
-**Status**: Not Started
+**Priority**: HIGH - Required before public launch
+**Status**: 🔜 **NOT STARTED** - Next to implement
 **Estimated Effort**: 2-3 weeks
-**Business Value**: Medium for MVP, Critical for public launch
+**Target Version**: v0.3.0
+**Business Value**: Critical for security and public launch
 
 ### Overview
 Replace the current header-based authentication (`X-Customer-ID`) with a proper JWT-based authentication system with role-based access control.

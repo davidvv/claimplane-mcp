@@ -27,6 +27,8 @@ from app.schemas.admin_schemas import (
     StatusTransitionInfo,
     ClaimStatusHistoryResponse
 )
+from app.tasks.claim_tasks import send_status_update_email
+from app.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +168,31 @@ async def update_claim_status(
 
     # Reload with full details
     claim_detail = await repository.get_claim_with_full_details(claim_id)
+
+    # Send status update email notification (Phase 2)
+    if config.NOTIFICATIONS_ENABLED and claim_detail.customer:
+        try:
+            # Get compensation amount if claim is approved
+            compensation = None
+            if claim_detail.calculated_compensation:
+                compensation = float(claim_detail.calculated_compensation)
+
+            # Trigger async email task (runs in background via Celery)
+            send_status_update_email.delay(
+                customer_email=claim_detail.customer.email,
+                customer_name=f"{claim_detail.customer.first_name} {claim_detail.customer.last_name}",
+                claim_id=str(claim_id),
+                old_status=claim.status,  # Old status from before update
+                new_status=update_request.new_status,
+                flight_number=claim_detail.flight_number,
+                airline=claim_detail.airline,
+                change_reason=update_request.change_reason,
+                compensation_amount=compensation
+            )
+            logger.info(f"Status update email task queued for customer {claim_detail.customer.email}")
+        except Exception as e:
+            # Don't fail the API request if email queueing fails
+            logger.error(f"Failed to queue status update email: {str(e)}")
 
     logger.info(f"Admin {admin_id} updated claim {claim_id} status to {update_request.new_status}")
 

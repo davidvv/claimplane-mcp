@@ -81,7 +81,30 @@ class Config:
     
     # Redis Configuration
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-    
+
+    # Email Configuration (Phase 2)
+    SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "noreply@flightclaim.com")
+    SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Flight Claim System")
+    SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+
+    # Celery Configuration (Phase 2)
+    CELERY_BROKER_URL = REDIS_URL  # Use Redis as broker
+    CELERY_RESULT_BACKEND = REDIS_URL  # Use Redis as result backend
+    CELERY_TASK_SERIALIZER = "json"
+    CELERY_RESULT_SERIALIZER = "json"
+    CELERY_ACCEPT_CONTENT = ["json"]
+    CELERY_TIMEZONE = "UTC"
+    CELERY_ENABLE_UTC = True
+    CELERY_TASK_TRACK_STARTED = True
+    CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes max per task
+
+    # Notification Settings (Phase 2)
+    NOTIFICATIONS_ENABLED = os.getenv("NOTIFICATIONS_ENABLED", "true").lower() == "true"
+
     # Security Settings
     VIRUS_SCAN_ENABLED = os.getenv("VIRUS_SCAN_ENABLED", "true").lower() == "true"
     CLAMAV_URL = os.getenv("CLAMAV_URL", "clamav:3310")

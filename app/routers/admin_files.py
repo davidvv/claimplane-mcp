@@ -16,6 +16,8 @@ from app.schemas.admin_schemas import (
     FileMetadataResponse,
     ClaimFileResponse
 )
+from app.tasks.claim_tasks import send_document_rejected_email
+from app.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +136,30 @@ async def review_file(
     await session.flush()
     await session.refresh(file)
     await session.commit()
+
+    # Send document rejected email notification (Phase 2)
+    if not review_request.approved and config.NOTIFICATIONS_ENABLED:
+        try:
+            # Load claim and customer information for the email
+            from app.repositories.claim_repository import ClaimRepository
+            claim_repo = ClaimRepository(session)
+            claim = await claim_repo.get_by_id(file.claim_id)
+
+            if claim and claim.customer:
+                # Trigger async email task
+                send_document_rejected_email.delay(
+                    customer_email=claim.customer.email,
+                    customer_name=f"{claim.customer.first_name} {claim.customer.last_name}",
+                    claim_id=str(file.claim_id),
+                    document_type=file.document_type,
+                    rejection_reason=file.rejection_reason,
+                    flight_number=claim.flight_number,
+                    airline=claim.airline
+                )
+                logger.info(f"Document rejected email task queued for customer {claim.customer.email}")
+        except Exception as e:
+            # Don't fail the API request if email queueing fails
+            logger.error(f"Failed to queue document rejected email: {str(e)}")
 
     action = "approved" if review_request.approved else "rejected"
     logger.info(f"Admin {admin_id} {action} file {file_id}")

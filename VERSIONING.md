@@ -1,6 +1,6 @@
 # Versioning Strategy
 
-## Current Version: v0.1.0
+## Current Version: v0.2.0
 
 This project follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
 
@@ -11,7 +11,7 @@ During MVP development (v0.x.x), versions track major feature milestones:
 | Version | Status | Description |
 |---------|--------|-------------|
 | **v0.1.0** | ✅ Released (2025-10-29) | Phase 1: Admin Dashboard & Claim Workflow |
-| **v0.2.0** | 🔄 Planned | Phase 2: Notifications & Async Processing |
+| **v0.2.0** | ✅ Released (2025-10-30) | Phase 2: Notifications & Async Processing |
 | **v0.3.0** | 📋 Planned | Phase 3: Authentication & Authorization |
 | **v1.0.0** | 🎯 Target | Production-Ready MVP |
 
@@ -149,5 +149,5 @@ Update these when creating a new version.
 
 ---
 
-**Current Status**: MVP Phase - v0.1.0 Complete
-**Next Milestone**: v0.2.0 (Phase 2: Notifications)
+**Current Status**: MVP Phase - v0.2.0 Complete
+**Next Milestone**: v0.3.0 (Phase 3: Authentication & Authorization)

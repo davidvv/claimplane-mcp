@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Re-upload Required</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #FF9800;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 5px 5px;
+        }
+        .claim-details {
+            background-color: white;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #FF9800;
+        }
+        .claim-details p {
+            margin: 8px 0;
+        }
+        .issue-box {
+            background-color: #fff3cd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            border: 2px solid #FF9800;
+        }
+        .action-box {
+            background-color: #e8f5e9;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            border: 1px solid #4CAF50;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+        }
+        .tips {
+            background-color: #e3f2fd;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            border-left: 4px solid #2196F3;
+        }
+        .tips ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚠ Document Re-upload Required</h1>
+    </div>
+
+    <div class="content">
+        <p>Hello <strong>{{ customer_name }}</strong>,</p>
+
+        <p>We've reviewed the documents for your flight compensation claim and need you to upload a new version of one of your documents.</p>
+
+        <div class="claim-details">
+            <h3>Claim Details</h3>
+            <p><strong>Claim ID:</strong> {{ claim_id }}</p>
+            <p><strong>Flight:</strong> {{ airline }} {{ flight_number }}</p>
+        </div>
+
+        <div class="issue-box">
+            <h3>Document Issue</h3>
+            <p><strong>Document Type:</strong> {{ document_type }}</p>
+            <p><strong>Issue Found:</strong></p>
+            <p style="margin-top: 10px; font-size: 14px;">{{ rejection_reason }}</p>
+        </div>
+
+        <div class="action-box">
+            <h3>Action Required</h3>
+            <p><strong>Please upload a new version of your {{ document_type }}</strong></p>
+            <p>To continue processing your claim, we need a clear and valid document that addresses the issue mentioned above.</p>
+        </div>
+
+        <div class="tips">
+            <h4>Tips for a successful upload:</h4>
+            <ul>
+                <li><strong>File Quality:</strong> Ensure the document is clear and all text is readable</li>
+                <li><strong>Complete Information:</strong> All relevant details should be visible</li>
+                <li><strong>File Format:</strong> Use PDF, JPG, or PNG format</li>
+                <li><strong>File Size:</strong> Keep files under 10MB for faster upload</li>
+                <li><strong>No Edits:</strong> Upload the original document without modifications</li>
+            </ul>
+        </div>
+
+        <p><strong>What happens next?</strong></p>
+        <ul>
+            <li>Upload the corrected document using your claim ID: <strong>{{ claim_id }}</strong></li>
+            <li>Our team will review the new document within 1-2 business days</li>
+            <li>Once approved, we'll continue processing your claim</li>
+            <li>You'll receive an email confirmation once the document is accepted</li>
+        </ul>
+
+        <p><strong>Common Document Types and Requirements:</strong></p>
+        <ul>
+            <li><strong>Boarding Pass:</strong> Must show passenger name, flight number, date, and gate information</li>
+            <li><strong>ID Document:</strong> Must be a valid government-issued ID (passport, driver's license, etc.)</li>
+            <li><strong>Flight Ticket:</strong> Must show booking reference, passenger name, and flight details</li>
+            <li><strong>Receipt:</strong> Must show amount paid, date, and merchant information</li>
+        </ul>
+
+        <p>If you have any questions about the document requirements, please contact our support team with your claim ID.</p>
+
+        <p>Best regards,<br>
+        <strong>The Flight Claim Team</strong></p>
+    </div>
+
+    <div class="footer">
+        <p>This is an automated email. Please do not reply directly to this message.</p>
+        <p>&copy; 2025 Flight Claim System. All rights reserved.</p>
+    </div>
+</body>
+</html>

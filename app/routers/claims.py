@@ -15,6 +15,11 @@ from app.schemas import (
     ClaimUpdateSchema,
     ClaimPatchSchema
 )
+from app.tasks.claim_tasks import send_claim_submitted_email
+from app.config import config
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/claims", tags=["claims"])
 
@@ -61,7 +66,23 @@ async def create_claim(
         incident_type=claim_data.incident_type,
         notes=claim_data.notes
     )
-    
+
+    # Send claim submitted email notification (Phase 2)
+    if config.NOTIFICATIONS_ENABLED and customer:
+        try:
+            # Trigger async email task
+            send_claim_submitted_email.delay(
+                customer_email=customer.email,
+                customer_name=f"{customer.first_name} {customer.last_name}",
+                claim_id=str(claim.id),
+                flight_number=claim.flight_number,
+                airline=claim.airline
+            )
+            logger.info(f"Claim submitted email task queued for customer {customer.email}")
+        except Exception as e:
+            # Don't fail the API request if email queueing fails
+            logger.error(f"Failed to queue claim submitted email: {str(e)}")
+
     return ClaimResponseSchema.model_validate(claim)
 
 
@@ -114,7 +135,23 @@ async def submit_claim_with_customer(
         incident_type=claim_request.incident_type,
         notes=claim_request.notes
     )
-    
+
+    # Send claim submitted email notification (Phase 2)
+    if config.NOTIFICATIONS_ENABLED and customer:
+        try:
+            # Trigger async email task
+            send_claim_submitted_email.delay(
+                customer_email=customer.email,
+                customer_name=f"{customer.first_name} {customer.last_name}",
+                claim_id=str(claim.id),
+                flight_number=claim.flight_number,
+                airline=claim.airline
+            )
+            logger.info(f"Claim submitted email task queued for customer {customer.email}")
+        except Exception as e:
+            # Don't fail the API request if email queueing fails
+            logger.error(f"Failed to queue claim submitted email: {str(e)}")
+
     return ClaimResponseSchema.model_validate(claim)
 
 

@@ -4,133 +4,195 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## ⚠️ CRITICAL - READ FIRST ⚠️
 
-**ENVIRONMENT MANAGEMENT**: This project uses a dedicated conda environment called **EasyAirClaim**.
+### Environment Management
 
 **YOU MUST READ `DEVELOPMENT_WORKFLOW.md` BEFORE DOING ANYTHING ELSE.**
 
-Key rules:
-- ✅ ALWAYS activate the EasyAirClaim conda environment first
-- ❌ NEVER install packages to base environment
-- ✅ Activate: `source /Users/david/miniconda3/bin/activate EasyAirClaim`
+This project uses a dedicated conda environment called **EasyAirClaim**.
+
+**MANDATORY RULES**:
+- ✅ ALWAYS activate: `source /Users/david/miniconda3/bin/activate EasyAirClaim`
 - ✅ Verify: `which python` should show `/Users/david/miniconda3/envs/EasyAirClaim/bin/python`
+- ❌ NEVER install packages to base environment
 
-See [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) for complete instructions.
+### Claude Code Skills
 
----
+**IMPORTANT**: Before committing changes, ALWAYS read `.claude/skills/commit-workflow.md`
 
-## 📚 Claude Code Skills
+This skill documents:
+- Commit message format (Conventional Commits)
+- Version tagging guidelines
+- **CRITICAL**: Always update ROADMAP.md when completing a phase
+- **CRITICAL**: NO Claude/Anthropic attribution in commits
 
-This project uses Claude Code skills to document workflows and best practices.
+### Project Context
 
-**IMPORTANT**: Before committing changes, ALWAYS check `.claude/skills/` directory.
+**Current Status**: v0.2.0 (Phase 2 Complete - Email Notifications & Async Processing)
 
-### Available Skills
-
-- **commit-workflow.md** - Complete guide for committing changes
-  - ⚠️ **USE THIS BEFORE EVERY COMMIT**
-  - Covers: commit message format, versioning, ROADMAP updates
-  - Includes: checklist, common mistakes, quick reference
-  - **Critical**: NO Claude/Anthropic attribution in commits
-  - **Critical**: Always update ROADMAP.md when completing a phase
-
-### When to Use Skills
-
-1. **Before committing**: Read `.claude/skills/commit-workflow.md`
-2. **When completing a phase**: Follow version tagging guidelines
-3. **When unsure about workflow**: Check relevant skill file
-
-Skills are stored in `.claude/skills/` and should be treated as authoritative documentation for Claude Code workflows.
+**Next Priority**: Phase 3 - Authentication & Authorization System (v0.3.0)
+- See `ROADMAP.md` "NEXT STEPS" section for detailed requirements
+- See `docs/SECURITY_AUDIT_v0.2.0.md` for security vulnerabilities Phase 3 will fix
 
 ---
 
 ## Project Overview
 
-This is a FastAPI-based flight claim management system with secure file storage and Nextcloud integration. The application handles customer claims for flight compensation (delays, cancellations, denied boarding, baggage delays) and manages associated documents with encryption, validation, and security scanning.
+FastAPI-based flight compensation claim management platform with:
+- EU261/2004 compensation calculation
+- Admin dashboard for claim processing
+- Secure file storage with encryption (Nextcloud integration)
+- Async email notifications (Celery + Redis)
+- Document validation and security scanning
 
 ## Architecture
 
-### Layered Architecture Pattern
+### High-Level Flow
 
-The codebase follows a clean layered architecture:
+**Claim Submission Flow**:
+```
+Customer → FastAPI Router → Service Layer → Repository → Database
+                                ↓
+                          Celery Task → Email Service → Customer
+```
 
-1. **Models Layer** (`app/models.py`): SQLAlchemy ORM models with validators
-   - `Customer`: Customer information with address as a nested property
-   - `Claim`: Flight claims with incident types and status workflow
-   - `ClaimFile`: File metadata with encryption, access control, and versioning
-   - `FileAccessLog`: Audit trail for file operations
-   - `FileValidationRule`: Document-specific validation rules
+**File Upload Flow**:
+```
+Upload → Validation → Encryption → Nextcloud → Database → Verification
+         (MIME,        (Fernet)     (WebDAV)              (SHA256)
+          Security)
+```
 
-2. **Repository Layer** (`app/repositories/`): Data access abstraction
-   - `BaseRepository`: Generic CRUD operations with pagination
-   - `CustomerRepository`, `ClaimRepository`, `FileRepository`: Domain-specific queries
-   - All repositories use async SQLAlchemy sessions
+### Layered Architecture
 
-3. **Service Layer** (`app/services/`): Business logic and external integrations
-   - `EncryptionService`: Fernet-based file encryption/decryption with streaming support
-   - `FileValidationService`: Document type validation, MIME type checking, security scanning
-   - `NextcloudService`: WebDAV integration with retry logic and error classification
-   - `FileService`: Orchestrates file upload/download with all security checks
+The codebase follows strict separation of concerns:
 
-4. **Router Layer** (`app/routers/`): FastAPI endpoint handlers
-   - `customers.py`: Customer CRUD operations
-   - `claims.py`: Claim submission and tracking
-   - `files.py`: File upload/download with streaming support
-   - `health.py`: System health checks (basic, database, detailed)
+1. **Router Layer** (`app/routers/`): Thin HTTP handlers
+   - Extract request data
+   - Call service methods
+   - Return responses
+   - **Never contain business logic**
 
-### Key Architectural Patterns
+2. **Service Layer** (`app/services/`): Business logic and orchestration
+   - `compensation_service.py`: EU261/2004 calculation engine
+   - `claim_workflow_service.py`: Status transition validation
+   - `file_service.py`: Orchestrates upload/download flow
+   - `encryption_service.py`: Fernet encryption (streaming for large files)
+   - `nextcloud_service.py`: WebDAV integration with retry logic
+   - `email_service.py`: SMTP email sending with templates
 
-- **Repository Pattern**: Abstracts database operations from business logic
-- **Service Layer Pattern**: Encapsulates complex business logic and external service integration
-- **Async/Await**: Full async support throughout the stack for better performance
-- **Dependency Injection**: FastAPI's dependency system for database sessions
-- **Error Classification**: Structured exception hierarchy for Nextcloud operations (retryable vs permanent errors)
+3. **Repository Layer** (`app/repositories/`): Database access
+   - `BaseRepository`: Generic CRUD with pagination
+   - Domain-specific repositories inherit from base
+   - All use async SQLAlchemy sessions
+   - **Never accessed directly from routers**
 
-### File Management Flow
+4. **Model Layer** (`app/models.py`): SQLAlchemy ORM models
+   - `Customer`, `Claim`, `ClaimFile`, `FileAccessLog`
+   - Phase 1: `ClaimNote`, `ClaimStatusHistory` (audit trail)
+   - Phase 2: Email notification tracking
+   - Phase 3 (planned): `User`, `RefreshToken`, `PasswordResetToken`
 
-1. **Upload**: Client → Router → FileService → Validation → Encryption → NextcloudService → Database
-2. **Download**: Client → Router → FileService → Database → NextcloudService → Decryption → Client
-3. **Verification**: Post-upload integrity check with SHA256 hash comparison
+### Key Patterns
+
+**Async/Await Everywhere**: Full async stack
+```python
+async def get_session() -> AsyncSession:
+    # FastAPI dependency for DB sessions
+```
+
+**Repository Pattern**: Never query models directly
+```python
+# Good
+await customer_repository.get_by_id(customer_id)
+
+# Bad - Don't do this
+await session.execute(select(Customer).where(...))
+```
+
+**Service Orchestration**: Complex operations in services
+```python
+# FileService orchestrates:
+# validation → encryption → Nextcloud upload → DB record → verification
+```
+
+**Error Classification**: Nextcloud errors are categorized
+- Retryable: Network issues, 500/502/503, timeouts
+- Permanent: 401/403 (auth), 404 (not found), 507 (quota)
+
+### Authentication Architecture (Current MVP)
+
+**TEMPORARY DESIGN - Phase 3 will replace**:
+- Current: `X-Customer-ID` and `X-Admin-ID` headers (insecure)
+- Phase 3: JWT-based authentication with RBAC
+- See `docs/SECURITY_AUDIT_v0.2.0.md` for security implications
+
+User ID extraction pattern:
+```python
+user_id = request.headers.get("X-Customer-ID")  # Current
+# Phase 3: user_id = current_user.id (from JWT)
+```
+
+### Async Task Processing (Phase 2)
+
+**Celery + Redis Architecture**:
+```
+FastAPI → Celery Task Queue (Redis) → Celery Worker → Email Service
+         (non-blocking)              (background)
+```
+
+Key files:
+- `app/celery_app.py`: Celery configuration
+- `app/tasks/claim_tasks.py`: Email notification tasks
+- All tasks use automatic retry with exponential backoff
 
 ### Database Relationships
 
-- `Customer` has many `Claim` (one-to-many)
-- `Claim` has many `ClaimFile` (one-to-many)
-- `Customer` has many `ClaimFile` (one-to-many, for ownership tracking)
-- `ClaimFile` has many `FileAccessLog` (one-to-many, audit trail)
+```
+Customer 1→N Claim
+Claim 1→N ClaimFile
+Claim 1→N ClaimNote (Phase 1 - admin notes)
+Claim 1→N ClaimStatusHistory (Phase 1 - audit trail)
+ClaimFile 1→N FileAccessLog
+```
+
+---
 
 ## Development Commands
 
 ### Running the Application
 
 ```bash
-# Local development (requires Python 3.11+)
+# Activate environment first
+source /Users/david/miniconda3/bin/activate EasyAirClaim
+
+# Local development
 python app/main.py
 
-# With uvicorn directly
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+# Or with uvicorn
+uvicorn app.main:app --reload
 
-# Docker Compose (full stack with Nextcloud)
-docker-compose -f docker-compose.nextcloud.yml up -d  # Start Nextcloud first
-docker-compose up -d  # Start main application
+# Docker full stack (requires Nextcloud)
+docker-compose -f docker-compose.nextcloud.yml up -d  # Nextcloud first
+docker-compose up -d  # Main application
 
-# Check health
-curl http://localhost:8000/health
-curl http://localhost:8000/health/detailed
+# Phase 2: Run Celery worker (separate terminal)
+celery -A app.celery_app worker --loglevel=info
 ```
 
 ### Testing
 
 ```bash
+# Activate environment first
+source /Users/david/miniconda3/bin/activate EasyAirClaim
+
 # Run all tests
 pytest
 
-# Run with coverage
+# With coverage
 pytest --cov=app --cov-report=html
 
-# Run specific test files
-pytest app/tests/test_file_operations.py
-pytest app/tests/test_edge_cases.py
-pytest scripts/test_nextcloud_integration.py
+# Specific test file
+pytest app/tests/test_compensation_service.py -v
 
 # Run async tests
 pytest app/tests/test_api.py -v
@@ -139,91 +201,81 @@ pytest app/tests/test_api.py -v
 ### Database Operations
 
 ```bash
-# The application auto-creates tables on startup via lifespan manager in app/main.py
-# For production, use Alembic migrations:
+# Tables auto-create on startup (lifespan manager in app/main.py)
+# For production, use Alembic:
 
-alembic init alembic  # Initialize (if not done)
-alembic revision --autogenerate -m "migration description"
+alembic revision --autogenerate -m "description"
 alembic upgrade head
-alembic downgrade -1  # Rollback
+alembic downgrade -1
 ```
+
+---
 
 ## Important Configuration
 
-### Environment Variables
+### Critical Environment Variables
 
-Critical environment variables (see `app/config.py`):
+See `app/config.py` for full list:
 
-- `DATABASE_URL`: PostgreSQL connection string (must use `postgresql+asyncpg://` for async)
-- `FILE_ENCRYPTION_KEY`: Fernet key for file encryption (generate with `scripts/generate_secrets.py`)
-- `NEXTCLOUD_URL`, `NEXTCLOUD_USERNAME`, `NEXTCLOUD_PASSWORD`: Nextcloud WebDAV credentials
-- `MAX_FILE_SIZE`: Maximum file size in bytes (default: 52428800 = 50MB)
-- `STREAMING_THRESHOLD`: Files above this size use streaming (default: 50MB)
-- `CHUNK_SIZE`: Chunk size for streaming operations (default: 8MB)
-- `UPLOAD_VERIFICATION_ENABLED`: Enable post-upload integrity verification (default: true)
+- `DATABASE_URL`: Must use `postgresql+asyncpg://` for async
+- `FILE_ENCRYPTION_KEY`: Fernet key (generate with `scripts/generate_secrets.py`)
+- `NEXTCLOUD_URL`, `NEXTCLOUD_USERNAME`, `NEXTCLOUD_PASSWORD`: WebDAV credentials
+- `REDIS_URL`: Redis connection for Celery (Phase 2)
+- `SMTP_HOST`, `SMTP_USERNAME`, `SMTP_PASSWORD`: Email configuration (Phase 2)
 
-### Configuration Classes
+### Configuration Pattern
 
-- `Config`: Base configuration with secure defaults
-- `DevelopmentConfig`: Relaxed security for local dev (permissive CORS, higher rate limits)
-- `ProductionConfig`: Strict security settings with validation checks
+```python
+class Config:
+    # Uses SecureConfig helper for validation
+    DATABASE_URL = SecureConfig.get_required_env_var("DATABASE_URL", default)
+```
+
+Two config classes:
+- `Config`: Base with secure defaults
+- `DevelopmentConfig` / `ProductionConfig`: Environment-specific overrides
+
+---
 
 ## Code Patterns and Conventions
 
-### User ID Handling
+### Async Session Management
 
-**IMPORTANT**: The user ID is dynamically extracted from the `X-Customer-ID` header, NOT from authentication tokens. This is a design choice for the MVP phase. See `app/routers/files.py` for implementation.
+**CRITICAL**: Never call `session.commit()` manually in routers.
 
-```python
-# Always get user_id from headers
-user_id = request.headers.get("X-Customer-ID")
-```
-
-### Async Database Sessions
-
-Always use async context managers for database operations:
-
+The `get_session` dependency handles lifecycle:
 ```python
 from app.database import get_session
 
-async def my_function(session: AsyncSession = Depends(get_session)):
-    # Operations are automatically committed/rolled back
-    result = await repository.create(**data)
-    return result
+async def my_endpoint(session: AsyncSession = Depends(get_session)):
+    # Session auto-commits on success, auto-rollbacks on exception
+    await repository.create(**data)
 ```
 
-### Error Handling with Nextcloud
+### File Encryption Pattern
 
-The Nextcloud service has sophisticated error classification:
-
-- **Retryable Errors**: Network issues, server errors (500, 502, 503), timeouts
-- **Permanent Errors**: Auth failures (401, 403), file not found (404), quota exceeded (507)
-- **Retry Strategy**: Exponential backoff with jitter, configurable max retries
-
+All files encrypted at rest with Fernet:
 ```python
-# Automatic retry for transient errors
-result = await nextcloud_service.upload_file_stream(...)
-# Raises NextcloudPermanentError for unrecoverable issues
+# Streaming for large files (> STREAMING_THRESHOLD)
+async for chunk in file.stream():
+    encrypted_chunk = EncryptionService.encrypt_chunk(chunk, cipher)
 ```
 
-### File Encryption
+### Nextcloud Error Handling
 
-All files are encrypted at rest using Fernet encryption:
-
+Automatic retry for transient errors:
 ```python
-from app.services.encryption_service import EncryptionService
-
-# Streaming encryption for large files
-encrypted_chunks = EncryptionService.encrypt_file_stream(file_stream)
-
-# Decryption
-decrypted_data = EncryptionService.decrypt_file(encrypted_content)
+try:
+    await nextcloud_service.upload_file_stream(...)
+except NextcloudRetryableError:
+    # Auto-retries with exponential backoff
+except NextcloudPermanentError:
+    # No retry - auth failure, quota exceeded, etc.
 ```
 
 ### Model Validators
 
-SQLAlchemy models use `@validates` decorators for data validation:
-
+SQLAlchemy models use `@validates` decorators:
 ```python
 @validates('email')
 def validate_email(self, key, address):
@@ -232,97 +284,90 @@ def validate_email(self, key, address):
     return address
 ```
 
-### Repository Pattern Usage
-
-Always use repositories for database operations, never direct model access:
+### Celery Task Pattern (Phase 2)
 
 ```python
-# Good
-customer = await customer_repository.get_by_id(customer_id)
-await customer_repository.update(customer, email="new@email.com")
-
-# Avoid direct model manipulation
-# customer.email = "new@email.com"  # Don't do this
+@celery_app.task(bind=True, max_retries=3)
+def send_claim_submitted_email(self, claim_id: str, customer_email: str):
+    try:
+        # Send email
+    except Exception as exc:
+        # Auto-retry with exponential backoff
+        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
 ```
 
-## File Management Specifics
-
-### Document Types and Validation
-
-Document types are defined in `ClaimFile.DOCUMENT_TYPES`:
-- `boarding_pass`, `id_document`, `receipt`, `bank_statement`, `flight_ticket`, `delay_certificate`, `cancellation_notice`, `other`
-
-Each document type has validation rules in `FileValidationService.default_rules`:
-- Max file size
-- Allowed MIME types
-- Required file extensions
-- Security scan requirements
-- Encryption requirements
-
-### File Upload Flow
-
-1. Multipart form data received at `/files/upload`
-2. MIME type detection using python-magic (libmagic)
-3. Document-specific validation
-4. Security content scanning (PDF JavaScript, embedded files, suspicious patterns)
-5. Fernet encryption (streaming for large files)
-6. Upload to Nextcloud via WebDAV with retry logic
-7. Post-upload verification (SHA256 hash comparison)
-8. Database record creation with metadata
-9. Access log entry
-
-### Streaming for Large Files
-
-Files above `STREAMING_THRESHOLD` use streaming to avoid memory exhaustion:
-
-```python
-# Streaming upload
-async for chunk in file.stream():
-    encrypted_chunk = EncryptionService.encrypt_chunk(chunk, cipher)
-    await nextcloud_service.upload_chunk(encrypted_chunk)
-```
+---
 
 ## Common Gotchas
 
-### 1. Customer Address Handling
+### 1. Customer Address Property
 
-The `address` field in Customer is a computed property, not a database column. It returns `None` if all address fields are `None`, otherwise returns a dict with snake_case database fields mapped to camelCase:
-
+`address` is a computed property, not a DB column:
 ```python
-# Database fields: street, city, postal_code, country
-# API returns: {"street": "...", "city": "...", "postalCode": "...", "country": "..."}
+# Returns None if all address fields are None
+# Otherwise returns dict with camelCase keys
+customer.address  # {"street": "...", "postalCode": "..."}
 ```
 
-### 2. Nextcloud Network Configuration
+### 2. Nextcloud Docker Networking
 
-When running with Docker Compose, the Nextcloud service is on a shared network (`flight_claim_nextcloud_network`). The `NEXTCLOUD_URL` must use the Docker service name: `http://nextcloud:80`, not `localhost`.
+When using Docker Compose:
+- `NEXTCLOUD_URL` must be `http://nextcloud:80` (service name)
+- NOT `http://localhost:8081`
 
-### 3. File Encryption Keys
+### 3. File Path Construction
 
-The `FILE_ENCRYPTION_KEY` must be a valid Fernet key. Generate with:
+Nextcloud paths must include username:
 ```python
-from cryptography.fernet import Fernet
-key = Fernet.generate_key().decode()
+webdav_path = f"/files/{username}/flight_claims/{customer_id}/{file_id}"
 ```
 
-Never commit encryption keys to the repository.
+### 4. Streaming Threshold
 
-### 4. Async Session Management
+Files above `STREAMING_THRESHOLD` (50MB default) use streaming:
+- Different code path for upload/download
+- Chunk-based encryption/decryption
+- No full file in memory
 
-Do NOT manually call `session.commit()` in routers. The `get_session` dependency handles transaction lifecycle:
+### 5. Phase 2 Requirements
 
-```python
-# Repository methods handle commit internally
-# get_session dependency ensures rollback on exception
-```
+Email notifications require both services running:
+- Terminal 1: FastAPI server (`uvicorn app.main:app --reload`)
+- Terminal 2: Celery worker (`celery -A app.celery_app worker --loglevel=info`)
 
-### 5. File Path Construction
+---
 
-Nextcloud file paths must include the username:
-```python
-# Correct: /files/{username}/{path}
-webdav_path = f"/files/{self.username}/flight_claims/{customer_id}/{file_id}"
-```
+## File Management Specifics
+
+### Document Types
+
+Defined in `ClaimFile.DOCUMENT_TYPES`:
+- `boarding_pass`, `id_document`, `receipt`, `bank_statement`
+- `flight_ticket`, `delay_certificate`, `cancellation_notice`, `other`
+
+### Validation Rules
+
+Each document type has rules in `FileValidationService.default_rules`:
+- Max file size
+- Allowed MIME types
+- Required extensions
+- Security scan requirements
+- Encryption requirements
+
+### Upload Pipeline
+
+9-step process (see `FileService.upload_file`):
+1. MIME type detection (python-magic)
+2. Document-specific validation
+3. Security scanning (PDF JavaScript, embedded files, malware patterns)
+4. Fernet encryption (streaming if large)
+5. Nextcloud upload via WebDAV with retry
+6. Post-upload verification (SHA256)
+7. Database record creation
+8. Access log entry
+9. Return metadata
+
+---
 
 ## Testing Guidelines
 
@@ -330,81 +375,133 @@ webdav_path = f"/files/{self.username}/flight_claims/{customer_id}/{file_id}"
 
 - `app/tests/`: Core application tests
 - `scripts/test_*.py`: Integration tests for external services
-- Use `pytest-asyncio` for async test functions
+- Use `pytest-asyncio` for async functions
 - Use `httpx.AsyncClient` for API testing
 
-### Running Specific Tests
+### Coverage Requirements
 
-```bash
-# File operations
-pytest app/tests/test_file_operations.py -v
+- Write tests for all new features
+- Aim for 80%+ coverage
+- Test edge cases (large files, special characters, errors)
 
-# Nextcloud integration
-pytest scripts/test_nextcloud_integration.py -v
-
-# Edge cases (large files, special characters, etc.)
-pytest app/tests/test_edge_cases.py -v
-```
-
-## API Documentation
-
-Interactive API documentation is available at:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-- OpenAPI spec: `API/openapi.yaml`
+---
 
 ## Security Considerations
 
+### Current Security Model (v0.2.0)
+
+**CRITICAL**: See `docs/SECURITY_AUDIT_v0.2.0.md` for complete security audit.
+
+**Known Issues** (to be fixed in Phase 3):
+- Header-based auth (X-Customer-ID) is insecure
+- IDOR vulnerabilities in file downloads
+- CORS wildcard configuration
+- SQL injection in ILIKE queries (needs parameterization)
+
 ### File Security Pipeline
 
-Every uploaded file goes through:
-1. MIME type validation
-2. File size limits
+Every uploaded file:
+1. MIME validation
+2. Size limits
 3. Extension validation
-4. Content security scanning (malicious patterns, PDF JavaScript)
+4. Content security scanning
 5. Encryption before storage
-6. Access control checks on download
+6. Access control on download
 
 ### Content Scanning
 
-The `FileValidationService` scans for:
-- Suspicious file patterns (scripts, executables)
-- PDF-specific threats (JavaScript, embedded files, excessive pages)
-- Malware signatures (if ClamAV is enabled)
+`FileValidationService` scans for:
+- Suspicious patterns (scripts, executables)
+- PDF threats (JavaScript, embedded files)
+- Malware signatures (if ClamAV enabled)
 
-### Access Control
-
-Files are associated with both a claim and a customer. Access is controlled via:
-- `X-Customer-ID` header validation
-- File ownership checks in `FileRepository.get_files_for_customer()`
-- Access logs for audit trails
+---
 
 ## Deployment Notes
 
-### Docker Build
-
-Multi-stage Dockerfile with:
-1. Base Python 3.11 image
-2. System dependency installation (libmagic)
-3. Python package installation
-4. Application code copy
-
-### Services
+### Docker Services
 
 - `db`: PostgreSQL 15 with health checks
-- `api`: FastAPI application with uvicorn
-- `nginx`: Reverse proxy (optional)
-- `nextcloud`: External network for Nextcloud integration
+- `redis`: Redis for Celery broker (Phase 2)
+- `api`: FastAPI with uvicorn
+- `celery_worker`: Background task processing (Phase 2)
+- `nextcloud`: External network for file storage
 
 ### Production Checklist
 
-1. Set `ENVIRONMENT=production`
-2. Generate secure `SECRET_KEY` and `FILE_ENCRYPTION_KEY`
-3. Change default `NEXTCLOUD_PASSWORD`
+Before production deployment:
+1. **Complete Phase 3** (JWT authentication) - MANDATORY
+2. Fix SQL injection vulnerabilities (parameterize queries)
+3. Set `ENVIRONMENT=production`
 4. Configure `CORS_ORIGINS` to specific domains
-5. Enable `SECURITY_HEADERS_ENABLED=true`
-6. Set appropriate rate limits
-7. Use managed PostgreSQL service
-8. Configure SSL/TLS termination
-9. Enable virus scanning with ClamAV
-10. Set up backup strategy for database and Nextcloud storage
+5. Generate secure keys (`FILE_ENCRYPTION_KEY`, `SECRET_KEY`)
+6. Change default Nextcloud password
+7. Enable `SECURITY_HEADERS_ENABLED=true`
+8. Set up managed PostgreSQL
+9. Configure SSL/TLS termination
+10. Review security audit (`docs/SECURITY_AUDIT_v0.2.0.md`)
+
+---
+
+## Key Files to Know
+
+### Configuration & Setup
+- `DEVELOPMENT_WORKFLOW.md`: Environment setup (READ FIRST)
+- `ROADMAP.md`: Development priorities and next steps
+- `VERSIONING.md`: Version bump guidelines
+- `.claude/skills/commit-workflow.md`: Commit workflow (use before every commit)
+
+### Documentation
+- `docs/SECURITY_AUDIT_v0.2.0.md`: Security vulnerabilities and Phase 3 requirements
+- `docs/api-reference.md`: Complete API documentation
+- `docs/database-schema.md`: Database schema and relationships
+- `docs/project-structure.md`: Detailed component documentation
+
+### Core Application
+- `app/main.py`: FastAPI app initialization
+- `app/config.py`: Configuration management
+- `app/models.py`: All database models
+- `app/database.py`: Async database connection
+- `app/celery_app.py`: Celery configuration (Phase 2)
+
+### Business Logic
+- `app/services/compensation_service.py`: EU261/2004 calculation
+- `app/services/claim_workflow_service.py`: Status transitions
+- `app/services/file_service.py`: File orchestration
+- `app/services/email_service.py`: Email sending (Phase 2)
+
+---
+
+## Development Principles
+
+When working on this codebase:
+
+1. **Business Value First**: Focus on features that enable revenue
+2. **Security by Default**: Every endpoint needs proper authorization
+3. **Async Throughout**: Use async/await patterns consistently
+4. **Repository Pattern**: Never query models directly from routers
+5. **Service Orchestration**: Complex logic belongs in services
+6. **Test Coverage**: Every feature needs tests
+7. **Incremental Delivery**: Ship small, working increments
+8. **Documentation**: Update docs as you build
+
+---
+
+## Next Steps for New Sessions
+
+1. ✅ Read `DEVELOPMENT_WORKFLOW.md` (environment setup)
+2. ✅ Activate EasyAirClaim conda environment
+3. ✅ Read `ROADMAP.md` "NEXT STEPS" section (current priorities)
+4. ✅ Check `docs/SECURITY_AUDIT_v0.2.0.md` (security context)
+5. ✅ Before committing: Read `.claude/skills/commit-workflow.md`
+
+**Current Priority**: Phase 3 - Authentication & Authorization (v0.3.0)
+- See ROADMAP.md for complete Phase 3 requirements
+- Will fix 10/26 security vulnerabilities automatically
+- Enables public launch
+
+---
+
+**Project Status**: MVP Phase - v0.2.0 Complete (Email Notifications & Async Processing)
+**Next Milestone**: v0.3.0 (Phase 3: Authentication & Authorization)
+**Last Updated**: 2025-10-30

@@ -3,6 +3,10 @@ import os
 import secrets
 from typing import Optional
 from cryptography.fernet import Fernet
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class SecureConfig:

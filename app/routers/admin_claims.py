@@ -155,6 +155,9 @@ async def update_claim_status(
             detail=f"Claim {claim_id} not found"
         )
 
+    # Store old status before transition
+    old_status = claim.status
+
     # Use workflow service to transition status
     updated_claim = await ClaimWorkflowService.transition_status(
         session=session,
@@ -182,7 +185,7 @@ async def update_claim_status(
                 customer_email=claim_detail.customer.email,
                 customer_name=f"{claim_detail.customer.first_name} {claim_detail.customer.last_name}",
                 claim_id=str(claim_id),
-                old_status=claim.status,  # Old status from before update
+                old_status=old_status,  # Use stored old status
                 new_status=update_request.new_status,
                 flight_number=claim_detail.flight_number,
                 airline=claim_detail.airline,

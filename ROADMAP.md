@@ -277,8 +277,8 @@ class ClaimStatusHistory(Base):
 
 **📄 Documentation:**
 - [PHASE2_SUMMARY.md](PHASE2_SUMMARY.md) - Complete implementation details
-- [PHASE2_TESTING_GUIDE.md](PHASE2_TESTING_GUIDE.md) - Testing guide
 - [PHASE2_COMPLETION.md](PHASE2_COMPLETION.md) - Final completion report with test results
+- [Testing Guide](docs/testing/PHASE2_TESTING_GUIDE.md) - Detailed testing procedures
 
 **✅ What Was Delivered:**
 - Celery + Redis async task processing

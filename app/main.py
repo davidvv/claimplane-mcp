@@ -8,7 +8,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 
 from app.database import engine, Base
-from app.routers import health, customers, claims, files, admin_claims, admin_files
+from app.routers import health, customers, claims, files, admin_claims, admin_files, eligibility
 from app.exceptions import setup_exception_handlers
 
 # Configure logging
@@ -65,6 +65,7 @@ setup_exception_handlers(app)
 
 # Include routers
 app.include_router(health.router)
+app.include_router(eligibility.router)
 app.include_router(customers.router)
 app.include_router(claims.router)
 app.include_router(files.router)
@@ -103,7 +104,8 @@ async def info():
             "Admin claim management and workflow (Phase 1)",
             "EU261/2004 compensation calculation",
             "Document review and approval system",
-            "Bulk operations and analytics"
+            "Bulk operations and analytics",
+            "Public eligibility check endpoint (no auth required)"
         ]
     }
 

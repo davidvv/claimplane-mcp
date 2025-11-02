@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_session
+from app.database import get_db
 from app.repositories.admin_claim_repository import AdminClaimRepository
 from app.services.compensation_service import CompensationService
 from app.services.claim_workflow_service import ClaimWorkflowService
@@ -74,7 +74,7 @@ async def list_claims(
     search: str = Query(None),
     sort_by: str = Query("submitted_at"),
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -112,7 +112,7 @@ async def list_claims(
 @router.get("/{claim_id}", response_model=ClaimDetailResponse)
 async def get_claim_detail(
     claim_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -138,7 +138,7 @@ async def get_claim_detail(
 async def update_claim_status(
     claim_id: UUID,
     update_request: ClaimStatusUpdateRequest,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -203,7 +203,7 @@ async def update_claim_status(
 async def assign_claim(
     claim_id: UUID,
     assign_request: ClaimAssignRequest,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -240,7 +240,7 @@ async def assign_claim(
 async def set_compensation(
     claim_id: UUID,
     compensation_request: ClaimCompensationUpdateRequest,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -278,7 +278,7 @@ async def set_compensation(
 async def add_note(
     claim_id: UUID,
     note_request: ClaimNoteRequest,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -314,7 +314,7 @@ async def add_note(
 async def get_notes(
     claim_id: UUID,
     include_internal: bool = Query(True),
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -333,7 +333,7 @@ async def get_notes(
 @router.get("/{claim_id}/history", response_model=List[ClaimStatusHistoryResponse])
 async def get_status_history(
     claim_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -349,7 +349,7 @@ async def get_status_history(
 @router.post("/bulk-action", response_model=BulkActionResponse)
 async def bulk_action(
     bulk_request: BulkActionRequest,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -422,7 +422,7 @@ async def bulk_action(
 
 @router.get("/analytics/summary", response_model=AnalyticsSummaryResponse)
 async def get_analytics_summary(
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -461,7 +461,7 @@ async def calculate_compensation(
 @router.get("/{claim_id}/status-transitions", response_model=StatusTransitionInfo)
 async def get_valid_transitions(
     claim_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """

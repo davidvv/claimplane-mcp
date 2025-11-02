@@ -29,7 +29,7 @@ class Customer(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    claims = relationship("Claim", back_populates="customer", cascade="all, delete-orphan")
+    claims = relationship("Claim", back_populates="customer", foreign_keys="Claim.customer_id", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Customer(id={self.id}, email={self.email}, name={self.first_name} {self.last_name})>"
@@ -130,9 +130,11 @@ class Claim(Base):
     extraordinary_circumstances = Column(String(255), nullable=True)
 
     # Relationships
-    customer = relationship("Customer", back_populates="claims")
+    customer = relationship("Customer", back_populates="claims", foreign_keys=[customer_id])
     assignee = relationship("Customer", foreign_keys=[assigned_to])
     reviewer = relationship("Customer", foreign_keys=[reviewed_by])
+    claim_notes = relationship("ClaimNote", back_populates="claim", cascade="all, delete-orphan")
+    status_history = relationship("ClaimStatusHistory", back_populates="claim", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Claim(id={self.id}, flight={self.flight_number}, incident={self.incident_type}, status={self.status})>"
@@ -446,7 +448,7 @@ class ClaimNote(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    claim = relationship("Claim", back_populates="notes")
+    claim = relationship("Claim", back_populates="claim_notes")
     author = relationship("Customer")
 
     def __repr__(self):
@@ -474,8 +476,6 @@ class ClaimStatusHistory(Base):
         return f"<ClaimStatusHistory(id={self.id}, claim_id={self.claim_id}, {self.previous_status} -> {self.new_status})>"
 
 
-# Add relationships to existing models
+# Add relationships to existing models (these are defined here because ClaimFile is defined after Claim)
 Customer.files = relationship("ClaimFile", back_populates="customer", foreign_keys="ClaimFile.customer_id")
 Claim.files = relationship("ClaimFile", back_populates="claim", cascade="all, delete-orphan")
-Claim.claim_notes = relationship("ClaimNote", back_populates="claim", cascade="all, delete-orphan")
-Claim.status_history = relationship("ClaimStatusHistory", back_populates="claim", cascade="all, delete-orphan", order_by="ClaimStatusHistory.changed_at")

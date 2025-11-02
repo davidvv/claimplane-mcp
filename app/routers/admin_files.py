@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_session
+from app.database import get_db
 from app.repositories.file_repository import FileRepository
 from app.models import ClaimFile
 from app.schemas.admin_schemas import (
@@ -52,7 +52,7 @@ def get_admin_user_id(request: Request) -> UUID:
 @router.get("/claim/{claim_id}/documents", response_model=List[ClaimFileResponse])
 async def list_claim_documents(
     claim_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -75,7 +75,7 @@ async def list_claim_documents(
 @router.get("/{file_id}/metadata", response_model=FileMetadataResponse)
 async def get_file_metadata(
     file_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -101,7 +101,7 @@ async def get_file_metadata(
 async def review_file(
     file_id: UUID,
     review_request: FileReviewRequest,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -171,7 +171,7 @@ async def review_file(
 async def request_file_reupload(
     file_id: UUID,
     reupload_request: FileReuploadRequest,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -223,7 +223,7 @@ async def request_file_reupload(
 
 @router.get("/pending-review", response_model=List[ClaimFileResponse])
 async def get_pending_review_files(
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -250,7 +250,7 @@ async def get_pending_review_files(
 @router.get("/by-document-type/{document_type}", response_model=List[ClaimFileResponse])
 async def get_files_by_document_type(
     document_type: str,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -274,7 +274,7 @@ async def get_files_by_document_type(
 
 @router.get("/statistics")
 async def get_file_statistics(
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """
@@ -336,7 +336,7 @@ async def get_file_statistics(
 @router.delete("/{file_id}")
 async def delete_file(
     file_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id)
 ):
     """

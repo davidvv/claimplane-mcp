@@ -141,7 +141,7 @@ class AdminClaimRepository(BaseRepository[Claim]):
             selectinload(Claim.files),
             selectinload(Claim.assignee),
             selectinload(Claim.reviewer),
-            selectinload(Claim.notes),
+            selectinload(Claim.claim_notes),  # Fixed: use claim_notes relationship
             selectinload(Claim.status_history)
         )
 

@@ -1,4 +1,6 @@
 """Authentication router for user registration, login, and token management."""
+import logging
+import os
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
@@ -20,6 +22,8 @@ from app.schemas.auth_schemas import (
     AuthResponseSchema,
 )
 from app.services.auth_service import AuthService
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -99,15 +103,21 @@ async def register(
         return AuthResponseSchema(user=user_response, tokens=token_response)
 
     except ValueError as e:
+        await session.rollback()
+        logger.error(f"Validation error during registration: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
     except Exception as e:
         await session.rollback()
+        logger.error(f"Unexpected error during registration: {str(e)}", exc_info=True)
+        # In development, show the actual error; in production, hide it
+        is_development = os.getenv("ENVIRONMENT", "development") == "development"
+        detail = str(e) if is_development else "An error occurred during registration"
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred during registration"
+            detail=detail
         )
 
 

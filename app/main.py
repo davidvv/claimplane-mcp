@@ -68,6 +68,10 @@ app.include_router(health.router)
 app.include_router(auth.router)  # Phase 3: Authentication
 app.include_router(flights.router)  # Mock flight lookup
 app.include_router(eligibility.router)
+
+# Authentication router (Phase 3)
+app.include_router(auth.router)
+
 app.include_router(customers.router)
 app.include_router(claims.router)
 app.include_router(files.router)
@@ -107,7 +111,12 @@ async def info():
             "EU261/2004 compensation calculation",
             "Document review and approval system",
             "Bulk operations and analytics",
-            "Public eligibility check endpoint (no auth required)"
+            "Public eligibility check endpoint (no auth required)",
+            "JWT-based authentication (Phase 3)",
+            "User registration and login",
+            "Password reset flow",
+            "Role-based access control (RBAC)",
+            "Email verification support"
         ]
     }
 

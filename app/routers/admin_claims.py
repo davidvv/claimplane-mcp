@@ -3,10 +3,12 @@ import logging
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models import Customer
+from app.dependencies.auth import get_current_admin
 from app.repositories.admin_claim_repository import AdminClaimRepository
 from app.services.compensation_service import CompensationService
 from app.services.claim_workflow_service import ClaimWorkflowService
@@ -39,28 +41,6 @@ router = APIRouter(
 )
 
 
-def get_admin_user_id(request: Request) -> UUID:
-    """
-    Get admin user ID from headers.
-
-    TODO: Replace with proper JWT authentication in Phase 3.
-    For now, using X-Admin-ID header similar to X-Customer-ID pattern.
-    """
-    admin_id = request.headers.get("X-Admin-ID")
-    if not admin_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Admin authentication required (X-Admin-ID header)"
-        )
-    try:
-        return UUID(admin_id)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid admin ID format"
-        )
-
-
 @router.get("", response_model=PaginatedClaimsResponse)
 async def list_claims(
     skip: int = Query(0, ge=0),
@@ -75,7 +55,7 @@ async def list_claims(
     sort_by: str = Query("submitted_at"),
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     List all claims with filtering and pagination.
@@ -104,7 +84,7 @@ async def list_claims(
         sort_order=sort_order
     )
 
-    logger.info(f"Admin {admin_id} listed {len(result['claims'])} claims (total: {result['total']})")
+    logger.info(f"Admin {admin.id} listed {len(result['claims'])} claims (total: {result['total']})")
 
     return result
 
@@ -113,7 +93,7 @@ async def list_claims(
 async def get_claim_detail(
     claim_id: UUID,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Get detailed claim information including all files, notes, and history.
@@ -129,7 +109,7 @@ async def get_claim_detail(
             detail=f"Claim {claim_id} not found"
         )
 
-    logger.info(f"Admin {admin_id} viewed claim {claim_id}")
+    logger.info(f"Admin {admin.id} viewed claim {claim_id}")
 
     return claim
 
@@ -139,7 +119,7 @@ async def update_claim_status(
     claim_id: UUID,
     update_request: ClaimStatusUpdateRequest,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Update claim status with validation and audit trail.
@@ -163,7 +143,7 @@ async def update_claim_status(
         session=session,
         claim=claim,
         new_status=update_request.new_status,
-        changed_by=admin_id,
+        changed_by=admin.id,
         change_reason=update_request.change_reason
     )
 
@@ -197,7 +177,7 @@ async def update_claim_status(
             # Don't fail the API request if email queueing fails
             logger.error(f"Failed to queue status update email: {str(e)}")
 
-    logger.info(f"Admin {admin_id} updated claim {claim_id} status to {update_request.new_status}")
+    logger.info(f"Admin {admin.id} updated claim {claim_id} status to {update_request.new_status}")
 
     return claim_detail
 
@@ -207,7 +187,7 @@ async def assign_claim(
     claim_id: UUID,
     assign_request: ClaimAssignRequest,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Assign claim to a reviewer.
@@ -226,7 +206,7 @@ async def assign_claim(
         session=session,
         claim=claim,
         assigned_to=assign_request.assigned_to,
-        assigned_by=admin_id
+        assigned_by=admin.id
     )
 
     await session.commit()
@@ -234,7 +214,7 @@ async def assign_claim(
     # Reload with full details
     claim_detail = await repository.get_claim_with_full_details(claim_id)
 
-    logger.info(f"Admin {admin_id} assigned claim {claim_id} to {assign_request.assigned_to}")
+    logger.info(f"Admin {admin.id} assigned claim {claim_id} to {assign_request.assigned_to}")
 
     return claim_detail
 
@@ -244,7 +224,7 @@ async def set_compensation(
     claim_id: UUID,
     compensation_request: ClaimCompensationUpdateRequest,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Set or update compensation amount for a claim.
@@ -263,7 +243,7 @@ async def set_compensation(
         session=session,
         claim=claim,
         compensation_amount=float(compensation_request.compensation_amount),
-        set_by=admin_id,
+        set_by=admin.id,
         reason=compensation_request.reason
     )
 
@@ -272,7 +252,7 @@ async def set_compensation(
     # Reload with full details
     claim_detail = await repository.get_claim_with_full_details(claim_id)
 
-    logger.info(f"Admin {admin_id} set compensation for claim {claim_id} to €{compensation_request.compensation_amount}")
+    logger.info(f"Admin {admin.id} set compensation for claim {claim_id} to €{compensation_request.compensation_amount}")
 
     return claim_detail
 
@@ -282,7 +262,7 @@ async def add_note(
     claim_id: UUID,
     note_request: ClaimNoteRequest,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Add a note to a claim.
@@ -301,14 +281,14 @@ async def add_note(
 
     note = await repository.add_note(
         claim_id=claim_id,
-        author_id=admin_id,
+        author_id=admin.id,
         note_text=note_request.note_text,
         is_internal=note_request.is_internal
     )
 
     await session.commit()
 
-    logger.info(f"Admin {admin_id} added {'internal' if note_request.is_internal else 'customer-facing'} note to claim {claim_id}")
+    logger.info(f"Admin {admin.id} added {'internal' if note_request.is_internal else 'customer-facing'} note to claim {claim_id}")
 
     return note
 
@@ -318,7 +298,7 @@ async def get_notes(
     claim_id: UUID,
     include_internal: bool = Query(True),
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Get all notes for a claim.
@@ -337,7 +317,7 @@ async def get_notes(
 async def get_status_history(
     claim_id: UUID,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Get status change history for a claim.
@@ -353,7 +333,7 @@ async def get_status_history(
 async def bulk_action(
     bulk_request: BulkActionRequest,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Perform bulk operations on multiple claims.
@@ -381,7 +361,7 @@ async def bulk_action(
             affected_count = await repository.bulk_update_status(
                 claim_ids=bulk_request.claim_ids,
                 new_status=new_status,
-                changed_by=admin_id,
+                changed_by=admin.id,
                 change_reason=change_reason
             )
 
@@ -397,7 +377,7 @@ async def bulk_action(
             affected_count = await repository.bulk_assign(
                 claim_ids=bulk_request.claim_ids,
                 assigned_to=UUID(assigned_to),
-                assigned_by=admin_id
+                assigned_by=admin.id
             )
 
         else:
@@ -408,7 +388,7 @@ async def bulk_action(
 
         await session.commit()
 
-        logger.info(f"Admin {admin_id} performed bulk {bulk_request.action} on {affected_count} claims")
+        logger.info(f"Admin {admin.id} performed bulk {bulk_request.action} on {affected_count} claims")
 
         return BulkActionResponse(
             success=True,
@@ -426,7 +406,7 @@ async def bulk_action(
 @router.get("/analytics/summary", response_model=AnalyticsSummaryResponse)
 async def get_analytics_summary(
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Get analytics summary for admin dashboard.
@@ -435,7 +415,7 @@ async def get_analytics_summary(
 
     summary = await repository.get_analytics_summary()
 
-    logger.info(f"Admin {admin_id} requested analytics summary")
+    logger.info(f"Admin {admin.id} requested analytics summary")
 
     return summary
 
@@ -443,7 +423,7 @@ async def get_analytics_summary(
 @router.post("/calculate-compensation", response_model=CompensationCalculationResponse)
 async def calculate_compensation(
     calculation_request: CompensationCalculationRequest,
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Calculate compensation for a claim based on EU261/2004 regulations.
@@ -465,7 +445,7 @@ async def calculate_compensation(
 async def get_valid_transitions(
     claim_id: UUID,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Get valid status transitions for a claim.

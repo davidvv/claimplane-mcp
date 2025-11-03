@@ -4,12 +4,13 @@ from typing import List
 from uuid import UUID
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models import Customer, ClaimFile
+from app.dependencies.auth import get_current_admin
 from app.repositories.file_repository import FileRepository
-from app.models import ClaimFile
 from app.schemas.admin_schemas import (
     FileReviewRequest,
     FileReuploadRequest,
@@ -28,32 +29,11 @@ router = APIRouter(
 )
 
 
-def get_admin_user_id(request: Request) -> UUID:
-    """
-    Get admin user ID from headers.
-
-    TODO: Replace with proper JWT authentication in Phase 3.
-    """
-    admin_id = request.headers.get("X-Admin-ID")
-    if not admin_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Admin authentication required (X-Admin-ID header)"
-        )
-    try:
-        return UUID(admin_id)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid admin ID format"
-        )
-
-
 @router.get("/claim/{claim_id}/documents", response_model=List[ClaimFileResponse])
 async def list_claim_documents(
     claim_id: UUID,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     List all documents for a specific claim.
@@ -67,7 +47,7 @@ async def list_claim_documents(
     if not files:
         logger.info(f"No files found for claim {claim_id}")
 
-    logger.info(f"Admin {admin_id} listed {len(files)} files for claim {claim_id}")
+    logger.info(f"Admin {admin.id} listed {len(files)} files for claim {claim_id}")
 
     return files
 
@@ -76,7 +56,7 @@ async def list_claim_documents(
 async def get_file_metadata(
     file_id: UUID,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Get detailed metadata for a file.
@@ -92,7 +72,7 @@ async def get_file_metadata(
             detail=f"File {file_id} not found"
         )
 
-    logger.info(f"Admin {admin_id} viewed metadata for file {file_id}")
+    logger.info(f"Admin {admin.id} viewed metadata for file {file_id}")
 
     return file
 
@@ -102,7 +82,7 @@ async def review_file(
     file_id: UUID,
     review_request: FileReviewRequest,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Approve or reject a document.
@@ -130,7 +110,7 @@ async def review_file(
         file.rejection_reason = review_request.rejection_reason or "Document did not meet requirements"
 
     # Set reviewer and review timestamp
-    file.reviewed_by = admin_id
+    file.reviewed_by = admin.id
     file.reviewed_at = datetime.utcnow()
 
     await session.flush()
@@ -162,7 +142,7 @@ async def review_file(
             logger.error(f"Failed to queue document rejected email: {str(e)}")
 
     action = "approved" if review_request.approved else "rejected"
-    logger.info(f"Admin {admin_id} {action} file {file_id}")
+    logger.info(f"Admin {admin.id} {action} file {file_id}")
 
     return file
 
@@ -172,7 +152,7 @@ async def request_file_reupload(
     file_id: UUID,
     reupload_request: FileReuploadRequest,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Request customer to re-upload a document.
@@ -193,7 +173,7 @@ async def request_file_reupload(
     file.status = ClaimFile.STATUS_REJECTED
     file.validation_status = "reupload_required"
     file.rejection_reason = reupload_request.reason
-    file.reviewed_by = admin_id
+    file.reviewed_by = admin.id
     file.reviewed_at = datetime.utcnow()
 
     # Set deadline for re-upload
@@ -205,7 +185,7 @@ async def request_file_reupload(
     await session.commit()
 
     logger.info(
-        f"Admin {admin_id} requested re-upload for file {file_id}. "
+        f"Admin {admin.id} requested re-upload for file {file_id}. "
         f"Deadline: {deadline.date()}"
     )
 
@@ -224,7 +204,7 @@ async def request_file_reupload(
 @router.get("/pending-review", response_model=List[ClaimFileResponse])
 async def get_pending_review_files(
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Get all files pending review.
@@ -242,7 +222,7 @@ async def get_pending_review_files(
     result = await session.execute(query)
     files = result.scalars().all()
 
-    logger.info(f"Admin {admin_id} listed {len(files)} files pending review")
+    logger.info(f"Admin {admin.id} listed {len(files)} files pending review")
 
     return files
 
@@ -251,7 +231,7 @@ async def get_pending_review_files(
 async def get_files_by_document_type(
     document_type: str,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Get all files of a specific document type.
@@ -267,7 +247,7 @@ async def get_files_by_document_type(
     result = await session.execute(query)
     files = result.scalars().all()
 
-    logger.info(f"Admin {admin_id} listed {len(files)} files of type {document_type}")
+    logger.info(f"Admin {admin.id} listed {len(files)} files of type {document_type}")
 
     return files
 
@@ -275,7 +255,7 @@ async def get_files_by_document_type(
 @router.get("/statistics")
 async def get_file_statistics(
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Get statistics about files in the system.
@@ -321,7 +301,7 @@ async def get_file_statistics(
     pending_result = await session.execute(pending_query)
     pending_count = pending_result.scalar()
 
-    logger.info(f"Admin {admin_id} requested file statistics")
+    logger.info(f"Admin {admin.id} requested file statistics")
 
     return {
         "status_counts": status_counts,
@@ -337,7 +317,7 @@ async def get_file_statistics(
 async def delete_file(
     file_id: UUID,
     session: AsyncSession = Depends(get_db),
-    admin_id: UUID = Depends(get_admin_user_id)
+    admin: Customer = Depends(get_current_admin)
 ):
     """
     Soft delete a file.
@@ -361,7 +341,7 @@ async def delete_file(
     await session.flush()
     await session.commit()
 
-    logger.warning(f"Admin {admin_id} deleted file {file_id} (soft delete)")
+    logger.warning(f"Admin {admin.id} deleted file {file_id} (soft delete)")
 
     return {
         "success": True,

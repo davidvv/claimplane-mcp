@@ -8,70 +8,118 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Customer
+from app.models import Customer, Claim
+from app.repositories import ClaimRepository
 from app.schemas import (
     FileResponseSchema, FileListResponseSchema, FileAccessLogSchema,
     FileSearchSchema, FileSummarySchema, FileValidationRuleSchema
 )
 from app.services.file_service import FileService, get_file_service
 from app.services.file_validation_service import file_validation_service
+from app.dependencies.auth import get_current_user
 
 
 router = APIRouter(prefix="/files", tags=["files"])
 
 
+async def verify_file_access(file_info, current_user: Customer) -> None:
+    """
+    Verify that the current user has access to the file.
+    Admins can access all files.
+    Customers can only access their own files.
+
+    Args:
+        file_info: File information object
+        current_user: Currently authenticated user
+
+    Raises:
+        HTTPException: 403 if user doesn't have access
+    """
+    # Admins can access all files
+    if current_user.role in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
+        return
+
+    # Customers can only access their own files
+    if file_info.customer_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: You can only access your own files"
+        )
+
+
 @router.post("/upload", response_model=FileResponseSchema, status_code=status.HTTP_201_CREATED)
 async def upload_file(
-    request: Request,
     file: UploadFile = File(...),
     claim_id: str = Form(...),
-    customer_id: str = Form(...),
     document_type: str = Form(...),
     description: Optional[str] = Form(None),
     access_level: str = Form("private"),
+    current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Upload a file to the system.
-    
+
+    Requires authentication. The file will be associated with the authenticated user.
+    Customers can only upload files to their own claims.
+    Admins can upload files to any claim.
+
     Args:
         file: The file to upload
         claim_id: ID of the claim this file belongs to
-        customer_id: ID of the customer uploading the file
         document_type: Type of document (boarding_pass, id_document, etc.)
         description: Optional description of the file
         access_level: Access level for the file (public, private, restricted)
+        current_user: Currently authenticated user
         db: Database session
-        
+
     Returns:
         FileResponseSchema: Information about the uploaded file
-        
+
     Raises:
-        HTTPException: If validation fails or upload errors occur
+        HTTPException: If validation fails, access denied, or upload errors occur
     """
     try:
+        # Verify claim ownership (customers can only upload to their own claims)
+        claim_repo = ClaimRepository(db)
+        claim = await claim_repo.get_by_id(uuid.UUID(claim_id))
+
+        if not claim:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Claim with id {claim_id} not found"
+            )
+
+        # Customers can only upload files to their own claims
+        if current_user.role not in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
+            if claim.customer_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied: You can only upload files to your own claims"
+                )
+
         # Validate file size
         if file.size > 50 * 1024 * 1024:  # 50MB limit
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 detail="File size exceeds 50MB limit"
             )
-        
+
         # Get file service
         file_service = get_file_service(db)
-        
-        # Upload file
+
+        # Upload file (use authenticated user's ID)
         uploaded_file = await file_service.upload_file(
             file=file,
             claim_id=claim_id,
-            customer_id=customer_id,
+            customer_id=str(current_user.id),
             document_type=document_type,
             description=description,
             access_level=access_level
         )
-        
+
         return FileResponseSchema.model_validate(uploaded_file)
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -84,33 +132,35 @@ async def upload_file(
 @router.get("/{file_id}", response_model=FileResponseSchema)
 async def get_file_info(
     file_id: str,
-    request: Request,
+    current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Get information about a specific file.
-    
+
+    Requires authentication. Customers can only access their own files.
+    Admins can access all files.
+
     Args:
         file_id: ID of the file
-        request: FastAPI request object
+        current_user: Currently authenticated user
         db: Database session
-        
+
     Returns:
         FileResponseSchema: File information
-        
+
     Raises:
         HTTPException: If file not found or access denied
     """
     try:
-        # For now, we'll use a placeholder user ID - in production this would come from auth
-        # For testing, try to get customer_id from headers first
-        user_id = request.headers.get("X-Customer-ID", "123e4567-e89b-12d3-a456-426614174000")  # Placeholder
-
         file_service = get_file_service(db)
-        file_info = await file_service.get_file_info(file_id, user_id)
-        
+        file_info = await file_service.get_file_info(file_id, str(current_user.id))
+
+        # Verify access
+        await verify_file_access(file_info, current_user)
+
         return FileResponseSchema.model_validate(file_info)
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -123,30 +173,38 @@ async def get_file_info(
 @router.get("/{file_id}/download")
 async def download_file(
     file_id: str,
-    request: Request,
+    current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Download a file.
-    
+
+    Requires authentication. Customers can only download their own files.
+    Admins can download any file.
+
     Args:
         file_id: ID of the file to download
-        request: FastAPI request object
+        current_user: Currently authenticated user
         db: Database session
-        
+
     Returns:
         StreamingResponse: File content as downloadable response
-        
+
     Raises:
         HTTPException: If file not found or access denied
     """
     try:
-        # For testing, try to get customer_id from headers first
-        user_id = request.headers.get("X-Customer-ID", "123e4567-e89b-12d3-a456-426614174000")
-
         file_service = get_file_service(db)
-        file_content, file_info = await file_service.download_file(file_id, user_id)
-        
+
+        # Get file info first to verify access
+        file_info = await file_service.get_file_info(file_id, str(current_user.id))
+
+        # Verify access
+        await verify_file_access(file_info, current_user)
+
+        # Download file
+        file_content, file_info = await file_service.download_file(file_id, str(current_user.id))
+
         return StreamingResponse(
             iter([file_content]),
             media_type=file_info.mime_type,
@@ -155,7 +213,7 @@ async def download_file(
                 "Content-Length": str(file_info.file_size)
             }
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -168,36 +226,44 @@ async def download_file(
 @router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_file(
     file_id: str,
-    request: Request,
+    current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Delete (soft delete) a file.
-    
+
+    Requires authentication. Customers can only delete their own files.
+    Admins can delete any file.
+
     Args:
         file_id: ID of the file to delete
-        request: FastAPI request object
+        current_user: Currently authenticated user
         db: Database session
-        
+
     Returns:
         None
-        
+
     Raises:
         HTTPException: If file not found or access denied
     """
     try:
-        # Placeholder user ID
-        user_id = "123e4567-e89b-12d3-a456-426614174000"
-        
         file_service = get_file_service(db)
-        success = await file_service.delete_file(file_id, user_id)
-        
+
+        # Get file info first to verify access
+        file_info = await file_service.get_file_info(file_id, str(current_user.id))
+
+        # Verify access
+        await verify_file_access(file_info, current_user)
+
+        # Delete file
+        success = await file_service.delete_file(file_id, str(current_user.id))
+
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="File not found"
             )
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -210,40 +276,58 @@ async def delete_file(
 @router.get("/claim/{claim_id}", response_model=FileListResponseSchema)
 async def get_files_by_claim(
     claim_id: str,
-    request: Request,
     page: int = 1,
     per_page: int = 20,
+    current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Get files for a specific claim.
-    
+
+    Requires authentication. Customers can only access files for their own claims.
+    Admins can access files for any claim.
+
     Args:
         claim_id: ID of the claim
-        request: FastAPI request object
         page: Page number for pagination
         per_page: Items per page
+        current_user: Currently authenticated user
         db: Database session
-        
+
     Returns:
         FileListResponseSchema: List of files with pagination info
-        
+
     Raises:
         HTTPException: If claim not found or access denied
     """
     try:
-        # Placeholder user ID
-        user_id = "123e4567-e89b-12d3-a456-426614174000"
-        
+        # Verify claim access first
+        claim_repo = ClaimRepository(db)
+        claim = await claim_repo.get_by_id(uuid.UUID(claim_id))
+
+        if not claim:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Claim with id {claim_id} not found"
+            )
+
+        # Customers can only access their own claims
+        if current_user.role not in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
+            if claim.customer_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied: You can only access files for your own claims"
+                )
+
         file_service = get_file_service(db)
-        files = await file_service.get_files_by_claim(claim_id, user_id)
-        
+        files = await file_service.get_files_by_claim(claim_id, str(current_user.id))
+
         # Simple pagination (in production, this would be done in the database)
         total = len(files)
         start = (page - 1) * per_page
         end = start + per_page
         paginated_files = files[start:end]
-        
+
         return FileListResponseSchema(
             files=[FileResponseSchema.model_validate(f) for f in paginated_files],
             total=total,

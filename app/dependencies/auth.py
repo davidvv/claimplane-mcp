@@ -1,4 +1,5 @@
 """Authentication dependencies for FastAPI endpoints."""
+import logging
 from typing import Optional
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from app.database import get_db
 from app.models import Customer
 from app.services.auth_service import AuthService
 
+logger = logging.getLogger(__name__)
 
 # HTTP Bearer token security scheme
 security = HTTPBearer()

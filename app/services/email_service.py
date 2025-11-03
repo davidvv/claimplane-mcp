@@ -73,13 +73,15 @@ class EmailService:
 
             # Connect to SMTP server and send
             # aiosmtplib is the async version of smtplib
+            # Gmail port 587 requires STARTTLS (not implicit TLS)
             await aiosmtplib.send(
                 message,
                 hostname=config.SMTP_HOST,
                 port=config.SMTP_PORT,
                 username=config.SMTP_USERNAME,
                 password=config.SMTP_PASSWORD,
-                use_tls=config.SMTP_USE_TLS,
+                start_tls=True,  # Use STARTTLS for port 587
+                use_tls=False,   # Don't use implicit TLS
             )
 
             logger.info(f"Email sent successfully to {to_email}: {subject}")

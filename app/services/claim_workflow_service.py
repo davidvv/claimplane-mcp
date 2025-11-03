@@ -143,9 +143,9 @@ class ClaimWorkflowService:
         if new_status == Claim.STATUS_UNDER_REVIEW and claim.assigned_to is None:
             result["warnings"].append("No reviewer assigned. Consider assigning a reviewer.")
 
-        # Check if documents are present
-        if new_status == Claim.STATUS_APPROVED and not hasattr(claim, 'files'):
-            result["warnings"].append("Claim has no uploaded documents. Verify documents are present.")
+        # Note: Removed document check to avoid lazy-loading 'files' relationship
+        # which would trigger sync DB query in async context.
+        # Document validation should be done separately via explicit query if needed.
 
         return result
 

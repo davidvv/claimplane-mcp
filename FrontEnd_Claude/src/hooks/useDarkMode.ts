@@ -1,22 +1,27 @@
-/**
- * Dark mode hook with localStorage persistence
- */
-import { useEffect } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useState, useEffect } from 'react';
 
 export function useDarkMode() {
-  const [isDark, setIsDark] = useLocalStorage<boolean>('dark-mode', false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('darkMode');
+      return stored ? JSON.parse(stored) : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
 
   useEffect(() => {
-    const root = window.document.documentElement;
     if (isDark) {
-      root.classList.add('dark');
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('darkMode', JSON.stringify(true));
     } else {
-      root.classList.remove('dark');
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('darkMode', JSON.stringify(false));
     }
   }, [isDark]);
 
-  const toggleDarkMode = () => setIsDark(!isDark);
+  const toggleDarkMode = () => {
+    setIsDark((prev: boolean) => !prev);
+  };
 
   return { isDark, toggleDarkMode };
 }

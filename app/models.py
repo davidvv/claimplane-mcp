@@ -13,11 +13,19 @@ from app.database import Base
 
 class Customer(Base):
     """Customer model representing a user who can submit claims."""
-    
+
     __tablename__ = "customers"
-    
+
+    # User roles
+    ROLE_CUSTOMER = "customer"
+    ROLE_ADMIN = "admin"
+    ROLE_SUPERADMIN = "superadmin"
+
+    ROLES = [ROLE_CUSTOMER, ROLE_ADMIN, ROLE_SUPERADMIN]
+
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=True)  # Nullable for migration compatibility
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False)
     phone = Column(String(20), nullable=True)
@@ -25,11 +33,21 @@ class Customer(Base):
     city = Column(String(100), nullable=True)
     postal_code = Column(String(20), nullable=True)
     country = Column(String(100), nullable=True)
+
+    # Authentication fields (Phase 3)
+    role = Column(String(20), nullable=False, default=ROLE_CUSTOMER, server_default=ROLE_CUSTOMER)
+    is_active = Column(Boolean, nullable=False, default=True, server_default="true")
+    is_email_verified = Column(Boolean, nullable=False, default=False, server_default="false")
+    email_verified_at = Column(DateTime(timezone=True), nullable=True)
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    
+
     # Relationships
     claims = relationship("Claim", back_populates="customer", foreign_keys="Claim.customer_id", cascade="all, delete-orphan")
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Customer(id={self.id}, email={self.email}, name={self.first_name} {self.last_name})>"
@@ -42,6 +60,13 @@ class Customer(Base):
             if '@' not in address or '.' not in address.split('@')[-1]:
                 raise ValueError("Invalid email format")
         return address
+
+    @validates('role')
+    def validate_role(self, key, role):
+        """Validate user role."""
+        if role not in self.ROLES:
+            raise ValueError(f"Invalid role. Must be one of: {', '.join(self.ROLES)}")
+        return role
     
     @hybrid_property
     def full_name(self):
@@ -479,3 +504,67 @@ class ClaimStatusHistory(Base):
 # Add relationships to existing models (these are defined here because ClaimFile is defined after Claim)
 Customer.files = relationship("ClaimFile", back_populates="customer", foreign_keys="ClaimFile.customer_id")
 Claim.files = relationship("ClaimFile", back_populates="claim", cascade="all, delete-orphan")
+
+
+class RefreshToken(Base):
+    """Refresh token model for JWT authentication (Phase 3)."""
+
+    __tablename__ = "refresh_tokens"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False, index=True)
+    token = Column(String(500), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    replaced_by_token = Column(String(500), nullable=True)
+
+    # Device/session tracking
+    ip_address = Column(String(45), nullable=True)  # IPv6 compatible
+    user_agent = Column(Text, nullable=True)
+    device_id = Column(String(255), nullable=True)
+
+    # Relationships
+    user = relationship("Customer", back_populates="refresh_tokens")
+
+    def __repr__(self):
+        return f"<RefreshToken(id={self.id}, user_id={self.user_id}, expires_at={self.expires_at})>"
+
+    @property
+    def is_valid(self):
+        """Check if token is still valid."""
+        return (
+            self.revoked_at is None and
+            self.expires_at > datetime.utcnow()
+        )
+
+
+class PasswordResetToken(Base):
+    """Password reset token model (Phase 3)."""
+
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False, index=True)
+    token = Column(String(500), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    used_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Security tracking
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(Text, nullable=True)
+
+    # Relationships
+    user = relationship("Customer", back_populates="password_reset_tokens")
+
+    def __repr__(self):
+        return f"<PasswordResetToken(id={self.id}, user_id={self.user_id}, expires_at={self.expires_at})>"
+
+    @property
+    def is_valid(self):
+        """Check if token is still valid."""
+        return (
+            self.used_at is None and
+            self.expires_at > datetime.utcnow()
+        )

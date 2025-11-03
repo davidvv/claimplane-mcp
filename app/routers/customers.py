@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models import Customer
 from app.repositories import CustomerRepository
 from app.schemas import CustomerCreateSchema, CustomerResponseSchema, CustomerUpdateSchema, CustomerPatchSchema
+from app.dependencies.auth import get_current_user, get_current_admin, get_current_superadmin
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -17,26 +18,171 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/customers", tags=["customers"])
 
 
-@router.post("/", response_model=CustomerResponseSchema, status_code=status.HTTP_201_CREATED)
-async def create_customer(
-    customer_data: CustomerCreateSchema,
+# ==================== "ME" ENDPOINTS (Customer Self-Service) ====================
+
+@router.get("/me", response_model=CustomerResponseSchema)
+async def get_my_profile(
+    current_user: Customer = Depends(get_current_user)
+) -> CustomerResponseSchema:
+    """
+    Get current user's profile.
+
+    Requires authentication.
+
+    Returns:
+        Current user's profile data
+    """
+    return CustomerResponseSchema.model_validate(current_user)
+
+
+@router.put("/me", response_model=CustomerResponseSchema)
+async def update_my_profile(
+    customer_data: CustomerUpdateSchema,
+    current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> CustomerResponseSchema:
     """
-    Create a new customer.
-    
+    Update current user's profile (complete update).
+
+    Requires authentication. Users can only update their own profile.
+
+    Args:
+        customer_data: Complete customer update data
+        current_user: Currently authenticated user
+        db: Database session
+
+    Returns:
+        Updated profile data
+
+    Raises:
+        HTTPException: If email already exists
+    """
+    repo = CustomerRepository(db)
+
+    # Check if email is being changed and if new email already exists
+    if customer_data.email != current_user.email:
+        email_customer = await repo.get_by_email(customer_data.email)
+        if email_customer:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Customer with email {customer_data.email} already exists"
+            )
+
+    # Update customer with all fields
+    address_data = customer_data.address.dict() if customer_data.address else {}
+
+    updated_customer = await repo.update_customer(
+        customer_id=current_user.id,
+        allow_null_values=True,
+        email=customer_data.email,
+        first_name=customer_data.first_name,
+        last_name=customer_data.last_name,
+        phone=customer_data.phone,
+        **address_data
+    )
+
+    return CustomerResponseSchema.model_validate(updated_customer)
+
+
+@router.patch("/me", response_model=CustomerResponseSchema)
+async def patch_my_profile(
+    customer_data: CustomerPatchSchema,
+    current_user: Customer = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> CustomerResponseSchema:
+    """
+    Partially update current user's profile.
+
+    Requires authentication. Users can only update their own profile.
+
+    Args:
+        customer_data: Partial customer update data
+        current_user: Currently authenticated user
+        db: Database session
+
+    Returns:
+        Updated profile data
+
+    Raises:
+        HTTPException: If email already exists
+    """
+    repo = CustomerRepository(db)
+
+    # Check if email is being changed and if new email already exists
+    if (customer_data.email is not None and
+        customer_data.email.strip() and
+        customer_data.email.lower() != current_user.email.lower()):
+
+        email_customer = await repo.get_by_email(customer_data.email)
+        if email_customer:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Customer with email {customer_data.email} already exists"
+            )
+
+    # Build update data, filtering out None values
+    update_data = {}
+
+    if customer_data.email is not None and customer_data.email.strip():
+        update_data['email'] = customer_data.email.strip()
+    if customer_data.first_name is not None:
+        update_data['first_name'] = customer_data.first_name.strip() if customer_data.first_name else customer_data.first_name
+    if customer_data.last_name is not None:
+        update_data['last_name'] = customer_data.last_name.strip() if customer_data.last_name else customer_data.last_name
+    if customer_data.phone is not None:
+        update_data['phone'] = customer_data.phone.strip() if customer_data.phone else customer_data.phone
+
+    # Handle address updates
+    if customer_data.address is not None:
+        address_data = customer_data.address.dict()
+        if address_data.get('street') is not None:
+            update_data['street'] = address_data.get('street')
+        if address_data.get('city') is not None:
+            update_data['city'] = address_data.get('city')
+        if address_data.get('postal_code') is not None:
+            update_data['postal_code'] = address_data.get('postal_code')
+        if address_data.get('country') is not None:
+            update_data['country'] = address_data.get('country')
+
+    # If no fields to update, return existing customer
+    if not update_data:
+        return CustomerResponseSchema.model_validate(current_user)
+
+    # Update customer
+    updated_customer = await repo.update_customer(customer_id=current_user.id, **update_data)
+
+    return CustomerResponseSchema.model_validate(updated_customer)
+
+
+# ==================== ADMIN ENDPOINTS ====================
+
+
+@router.post("/", response_model=CustomerResponseSchema, status_code=status.HTTP_201_CREATED)
+async def create_customer(
+    customer_data: CustomerCreateSchema,
+    admin: Customer = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+) -> CustomerResponseSchema:
+    """
+    Create a new customer (Admin only).
+
+    Note: Regular user registration should use /auth/register endpoint.
+
+    Requires admin or superadmin role.
+
     Args:
         customer_data: Customer creation data
+        admin: Currently authenticated admin
         db: Database session
-        
+
     Returns:
         Created customer data
-        
+
     Raises:
         HTTPException: If customer with email already exists
     """
     repo = CustomerRepository(db)
-    
+
     # Check if customer with email already exists
     existing_customer = await repo.get_by_email(customer_data.email)
     if existing_customer:
@@ -44,10 +190,10 @@ async def create_customer(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Customer with email {customer_data.email} already exists"
         )
-    
+
     # Create customer
     address_data = customer_data.address.dict() if customer_data.address else {}
-    
+
     customer = await repo.create_customer(
         email=customer_data.email,
         first_name=customer_data.first_name,
@@ -55,37 +201,41 @@ async def create_customer(
         phone=customer_data.phone,
         **address_data
     )
-    
+
     return CustomerResponseSchema.model_validate(customer)
 
 
 @router.get("/{customer_id}", response_model=CustomerResponseSchema)
 async def get_customer(
     customer_id: UUID,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ) -> CustomerResponseSchema:
     """
-    Get customer by ID.
-    
+    Get customer by ID (Admin only).
+
+    Requires admin or superadmin role.
+
     Args:
         customer_id: Customer UUID
+        admin: Currently authenticated admin
         db: Database session
-        
+
     Returns:
         Customer data
-        
+
     Raises:
         HTTPException: If customer not found
     """
     repo = CustomerRepository(db)
     customer = await repo.get_by_id(customer_id)
-    
+
     if not customer:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Customer with id {customer_id} not found"
         )
-    
+
     return CustomerResponseSchema.model_validate(customer)
 
 
@@ -93,22 +243,26 @@ async def get_customer(
 async def list_customers(
     skip: int = 0,
     limit: int = 100,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ) -> List[CustomerResponseSchema]:
     """
-    List all customers with pagination.
-    
+    List all customers with pagination (Admin only).
+
+    Requires admin or superadmin role.
+
     Args:
         skip: Number of records to skip
         limit: Maximum number of records to return
+        admin: Currently authenticated admin
         db: Database session
-        
+
     Returns:
         List of customers
     """
     repo = CustomerRepository(db)
     customers = await repo.get_all(skip=skip, limit=limit)
-    
+
     return [CustomerResponseSchema.model_validate(customer) for customer in customers]
 
 
@@ -117,23 +271,27 @@ async def search_customers_by_email(
     email: str,
     skip: int = 0,
     limit: int = 100,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ) -> List[CustomerResponseSchema]:
     """
-    Search customers by email (partial match).
-    
+    Search customers by email (partial match) - Admin only.
+
+    Requires admin or superadmin role.
+
     Args:
         email: Email search term
         skip: Number of records to skip
         limit: Maximum number of records to return
+        admin: Currently authenticated admin
         db: Database session
-        
+
     Returns:
         List of matching customers
     """
     repo = CustomerRepository(db)
     customers = await repo.search_by_email(email, skip=skip, limit=limit)
-    
+
     return [CustomerResponseSchema.model_validate(customer) for customer in customers]
 
 
@@ -142,23 +300,27 @@ async def search_customers_by_name(
     name: str,
     skip: int = 0,
     limit: int = 100,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ) -> List[CustomerResponseSchema]:
     """
-    Search customers by name (first name or last name).
-    
+    Search customers by name (first name or last name) - Admin only.
+
+    Requires admin or superadmin role.
+
     Args:
         name: Name search term
         skip: Number of records to skip
         limit: Maximum number of records to return
+        admin: Currently authenticated admin
         db: Database session
-        
+
     Returns:
         List of matching customers
     """
     repo = CustomerRepository(db)
     customers = await repo.search_by_name(name, skip=skip, limit=limit)
-    
+
     return [CustomerResponseSchema.model_validate(customer) for customer in customers]
 
 
@@ -166,24 +328,28 @@ async def search_customers_by_name(
 async def update_customer(
     customer_id: UUID,
     customer_data: CustomerUpdateSchema,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ) -> CustomerResponseSchema:
     """
-    Update a customer completely (all fields required).
-    
+    Update a customer completely (Admin only).
+
+    Requires admin or superadmin role.
+
     Args:
         customer_id: Customer UUID
         customer_data: Complete customer update data
+        admin: Currently authenticated admin
         db: Database session
-        
+
     Returns:
         Updated customer data
-        
+
     Raises:
         HTTPException: If customer not found or email already exists
     """
     repo = CustomerRepository(db)
-    
+
     # Check if customer exists
     existing_customer = await repo.get_by_id(customer_id)
     if not existing_customer:
@@ -191,7 +357,7 @@ async def update_customer(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Customer with id {customer_id} not found"
         )
-    
+
     # Check if email is being changed and if new email already exists
     if customer_data.email != existing_customer.email:
         email_customer = await repo.get_by_email(customer_data.email)
@@ -200,10 +366,10 @@ async def update_customer(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Customer with email {customer_data.email} already exists"
             )
-    
+
     # Update customer with all fields (allow null values for PUT)
     address_data = customer_data.address.dict() if customer_data.address else {}
-    
+
     updated_customer = await repo.update_customer(
         customer_id=customer_id,
         allow_null_values=True,  # PUT should allow setting fields to null
@@ -213,7 +379,7 @@ async def update_customer(
         phone=customer_data.phone,
         **address_data
     )
-    
+
     return CustomerResponseSchema.model_validate(updated_customer)
 
 
@@ -221,27 +387,31 @@ async def update_customer(
 async def patch_customer(
     customer_id: UUID,
     customer_data: CustomerPatchSchema,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ) -> CustomerResponseSchema:
     """
-    Partially update a customer (only specified fields are updated).
-    
+    Partially update a customer (Admin only).
+
+    Requires admin or superadmin role.
+
     Args:
         customer_id: Customer UUID
         customer_data: Partial customer update data
+        admin: Currently authenticated admin
         db: Database session
-        
+
     Returns:
         Updated customer data
-        
+
     Raises:
         HTTPException: If customer not found or email already exists
     """
-    logger.info(f"PATCH request received for customer {customer_id}")
+    logger.info(f"PATCH request received for customer {customer_id} by admin {admin.id}")
     logger.info(f"Request data: {customer_data.model_dump()}")
-    
+
     repo = CustomerRepository(db)
-    
+
     # Check if customer exists
     existing_customer = await repo.get_by_id(customer_id)
     if not existing_customer:
@@ -250,15 +420,14 @@ async def patch_customer(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Customer with id {customer_id} not found"
         )
-    
+
     logger.info(f"Found existing customer: {existing_customer.email}")
-    
+
     # Check if email is being changed and if new email already exists
-    # Handle edge cases: empty strings, whitespace, and case sensitivity
     if (customer_data.email is not None and
-        customer_data.email.strip() and  # Not empty or whitespace
+        customer_data.email.strip() and
         customer_data.email.lower() != existing_customer.email.lower()):
-        
+
         logger.info(f"Email change detected: {existing_customer.email} -> {customer_data.email}")
         email_customer = await repo.get_by_email(customer_data.email)
         if email_customer:
@@ -267,26 +436,23 @@ async def patch_customer(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Customer with email {customer_data.email} already exists"
             )
-    
-    # Build update data, filtering out None values and empty strings
+
+    # Build update data, filtering out None values
     update_data = {}
-    
-    # Only update email if it's provided and not empty/whitespace
-    if (customer_data.email is not None and
-        customer_data.email.strip()):  # Not empty or whitespace
+
+    if customer_data.email is not None and customer_data.email.strip():
         update_data['email'] = customer_data.email.strip()
-    
+
     if customer_data.first_name is not None:
         update_data['first_name'] = customer_data.first_name.strip() if customer_data.first_name else customer_data.first_name
     if customer_data.last_name is not None:
         update_data['last_name'] = customer_data.last_name.strip() if customer_data.last_name else customer_data.last_name
     if customer_data.phone is not None:
         update_data['phone'] = customer_data.phone.strip() if customer_data.phone else customer_data.phone
-    
+
     # Handle address updates
     if customer_data.address is not None:
         address_data = customer_data.address.dict()
-        # Only update address fields that are explicitly provided (not None)
         if address_data.get('street') is not None:
             update_data['street'] = address_data.get('street')
         if address_data.get('city') is not None:
@@ -295,17 +461,17 @@ async def patch_customer(
             update_data['postal_code'] = address_data.get('postal_code')
         if address_data.get('country') is not None:
             update_data['country'] = address_data.get('country')
-    
+
     logger.info(f"Update data after filtering: {update_data}")
-    
+
     # If no fields to update, return existing customer
     if not update_data:
         logger.info("No fields to update, returning existing customer")
         return CustomerResponseSchema.model_validate(existing_customer)
-    
+
     # Update customer
     logger.info(f"Updating customer with data: {update_data}")
     updated_customer = await repo.update_customer(customer_id=customer_id, **update_data)
-    
+
     logger.info(f"Customer updated successfully: {updated_customer.email}")
     return CustomerResponseSchema.model_validate(updated_customer)

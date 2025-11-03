@@ -67,7 +67,7 @@ A modern, production-ready single-page application (SPA) for filing and tracking
    npm run dev
    ```
 
-   The app will be available at [http://localhost:3000](http://localhost:3000)
+   The app will be available at [http://localhost:3001](http://localhost:3001)
 
 ### Build for Production
 

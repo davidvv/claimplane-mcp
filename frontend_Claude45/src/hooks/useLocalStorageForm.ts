@@ -3,7 +3,7 @@
  * Allows users to resume their claim form if they refresh the page
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export function useLocalStorageForm<T>(
   key: string,

@@ -3,8 +3,9 @@
  */
 
 import { Link, useLocation } from 'react-router-dom';
-import { Plane } from 'lucide-react';
+import { Plane, LogIn, UserPlus } from 'lucide-react';
 import { DarkModeToggle } from './DarkModeToggle';
+import { Button } from './ui/Button';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -62,6 +63,18 @@ export function Layout({ children }: LayoutProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            <Link to="/auth">
+              <Button variant="ghost" size="sm" className="hidden sm:flex">
+                <LogIn className="w-4 h-4 mr-2" />
+                Login
+              </Button>
+            </Link>
+            <Link to="/auth?mode=register">
+              <Button size="sm" className="hidden sm:flex">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Sign Up
+              </Button>
+            </Link>
             <DarkModeToggle />
           </div>
         </div>

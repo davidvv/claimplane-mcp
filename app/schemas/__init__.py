@@ -3,9 +3,11 @@
 # Import all schemas from the parent module's schemas.py file
 import sys
 import importlib.util
+from pathlib import Path
 
-# Load the schemas.py file from parent directory
-spec = importlib.util.spec_from_file_location("app_schemas", "/Users/david/Documents/Proyectos/flight_claim/app/schemas.py")
+# Load the schemas.py file from parent directory (using relative path)
+schemas_path = Path(__file__).parent.parent / "schemas.py"
+spec = importlib.util.spec_from_file_location("app_schemas", str(schemas_path))
 schemas_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(schemas_module)
 

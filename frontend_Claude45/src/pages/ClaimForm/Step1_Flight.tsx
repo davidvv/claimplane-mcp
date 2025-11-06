@@ -105,7 +105,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
 
               {/* Departure Date */}
               <div className="space-y-2">
-                <Label htmlFor="departureDate">Departure Date</Label>
+                <Label htmlFor="departureDate">Departure Date *</Label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -113,7 +113,10 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
                     type="date"
                     className="pl-10"
                     max={new Date().toISOString().split('T')[0]}
-                    {...register('departureDate')}
+                    required
+                    {...register('departureDate', {
+                      required: 'Departure date is required',
+                    })}
                   />
                 </div>
                 {errors.departureDate && (

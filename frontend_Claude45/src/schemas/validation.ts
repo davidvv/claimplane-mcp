@@ -179,7 +179,12 @@ export const flightLookupSchema = z.object({
     .regex(/^[A-Z0-9]{2,3}\d{1,4}$/i, 'Invalid flight number format (e.g., LH1234)'),
   departureDate: z.string()
     .min(1, 'Departure date is required')
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+    .refine((val) => val !== '' && val !== undefined && val !== null, {
+      message: 'Departure date is required',
+    })
+    .refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), {
+      message: 'Invalid date format (YYYY-MM-DD)',
+    }),
 });
 
 // Step 2: Eligibility (auto-populated, minimal validation)
@@ -213,7 +218,7 @@ export const passengerInfoSchema = z.object({
 export const claimStatusLookupSchema = z.object({
   claimId: z.string()
     .min(1, 'Claim ID is required')
-    .uuid('Invalid Claim ID format'),
+    .uuid('Invalid Claim ID format. Please enter the full Claim ID from your email (e.g., 123e4567-e89b-12d3-a456-426614174000)'),
 });
 
 // Auth (Mock)

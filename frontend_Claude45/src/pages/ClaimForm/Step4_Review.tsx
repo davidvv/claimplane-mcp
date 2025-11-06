@@ -10,11 +10,11 @@ import { submitClaim } from '@/services/claims';
 import { uploadDocument } from '@/services/documents';
 import type { FlightStatus, EligibilityResponse, ClaimRequest } from '@/types/api';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingOverlay } from '@/components/LoadingSpinner';
-import { formatCurrency, formatDateTime, getIncidentLabel } from '@/lib/utils';
+import { formatCurrency, getIncidentLabel } from '@/lib/utils';
 
 interface Step4Props {
   flightData: FlightStatus;

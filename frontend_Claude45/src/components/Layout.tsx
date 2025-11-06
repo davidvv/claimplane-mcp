@@ -2,10 +2,12 @@
  * Main application layout with navigation
  */
 
-import { Link, useLocation } from 'react-router-dom';
-import { Plane } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Plane, LogIn, UserPlus, LogOut, User } from 'lucide-react';
 import { DarkModeToggle } from './DarkModeToggle';
+import { Button } from './ui/Button';
 import { cn } from '@/lib/utils';
+import { isAuthenticated, getStoredUserInfo, logout } from '@/services/auth';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,8 +15,22 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const authenticated = isAuthenticated();
+  const userInfo = getStoredUserInfo();
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Clear local storage anyway
+      navigate('/');
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -62,6 +78,33 @@ export function Layout({ children }: LayoutProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {authenticated ? (
+              <>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm">
+                  <User className="w-4 h-4" />
+                  <span>{userInfo.name || userInfo.email}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="ghost" size="sm" className="hidden sm:flex">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/auth?mode=register">
+                  <Button size="sm" className="hidden sm:flex">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
             <DarkModeToggle />
           </div>
         </div>
@@ -82,15 +125,15 @@ export function Layout({ children }: LayoutProps) {
             </div>
 
             <div className="flex gap-6 text-sm text-muted-foreground">
-              <a href="#" className="hover:text-foreground transition-colors">
+              <Link to="/privacy" className="hover:text-foreground transition-colors">
                 Privacy Policy
-              </a>
-              <a href="#" className="hover:text-foreground transition-colors">
+              </Link>
+              <Link to="/terms" className="hover:text-foreground transition-colors">
                 Terms of Service
-              </a>
-              <a href="#" className="hover:text-foreground transition-colors">
+              </Link>
+              <Link to="/contact" className="hover:text-foreground transition-colors">
                 Contact
-              </a>
+              </Link>
             </div>
           </div>
 

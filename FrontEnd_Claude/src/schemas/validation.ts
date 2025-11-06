@@ -96,7 +96,9 @@ export const CustomerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required').max(50),
   phone: z
     .string()
-    .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format')
+    .regex(/^\+?[\d\s\-()]+$/, 'Invalid phone number format')
+    .min(8, 'Phone number is too short')
+    .max(20, 'Phone number is too long')
     .nullable()
     .optional(),
   address: AddressSchema.optional(),
@@ -110,7 +112,9 @@ export const CustomerUpdateSchema = z.object({
   lastName: z.string().min(1).max(50).optional(),
   phone: z
     .string()
-    .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format')
+    .regex(/^\+?[\d\s\-()]+$/, 'Invalid phone number format')
+    .min(8, 'Phone number is too short')
+    .max(20, 'Phone number is too long')
     .nullable()
     .optional(),
   address: AddressSchema.optional(),
@@ -204,7 +208,9 @@ export const Step3PassengerInfoSchema = z.object({
   lastName: z.string().min(1, 'Last name is required').max(50),
   phone: z
     .string()
-    .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format (e.g., +491234567890)')
+    .regex(/^\+?[\d\s\-()]+$/, 'Invalid phone number format')
+    .min(8, 'Phone number is too short')
+    .max(20, 'Phone number is too long')
     .nullable()
     .optional(),
   region: RegionEnum,

@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Search,
   CheckCircle,
-  Clock,
   FileText,
   Euro,
   Download,
@@ -124,7 +123,7 @@ export function Status() {
           <CardHeader>
             <CardTitle>Lookup Claim</CardTitle>
             <CardDescription>
-              Your Claim ID was sent to your email when you submitted your claim
+              Your Claim ID was sent to your email when you submitted your claim. It looks like: 123e4567-e89b-12d3-a456-426614174000
             </CardDescription>
           </CardHeader>
 
@@ -136,7 +135,7 @@ export function Status() {
                   <div className="flex-1">
                     <Input
                       id="claimId"
-                      placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
+                      placeholder="Paste your Claim ID here (e.g., 123e4567-e89b-12d3-a456-426614174000)"
                       {...register('claimId')}
                     />
                     {errors.claimId && (
@@ -144,6 +143,9 @@ export function Status() {
                         {errors.claimId.message}
                       </p>
                     )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      The Claim ID is a long alphanumeric string (UUID format) sent to your email after submitting your claim
+                    </p>
                   </div>
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? (

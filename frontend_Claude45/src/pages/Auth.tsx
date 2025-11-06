@@ -3,7 +3,7 @@
  * Integrated with Phase 3 JWT backend
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,6 +52,14 @@ export function Auth() {
   const redirectTo = searchParams.get('redirect') || '/';
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
+
+  // Initialize mode from URL query parameter
+  useEffect(() => {
+    const modeParam = searchParams.get('mode');
+    if (modeParam === 'register' || modeParam === 'login') {
+      setMode(modeParam);
+    }
+  }, [searchParams]);
 
   // Login form
   const loginForm = useForm<LoginForm>({

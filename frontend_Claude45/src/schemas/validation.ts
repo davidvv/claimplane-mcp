@@ -65,7 +65,9 @@ export const customerSchema = z.object({
     .min(1, 'Last name is required')
     .max(50, 'Last name must be less than 50 characters'),
   phone: z.string()
-    .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format')
+    .regex(/^\+?[\d\s\-()]+$/, 'Invalid phone number format')
+    .min(8, 'Phone number is too short')
+    .max(20, 'Phone number is too long')
     .nullable()
     .optional(),
   address: addressSchema.optional(),

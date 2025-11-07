@@ -16,14 +16,29 @@ import type {
 export const checkEligibility = async (
   request: EligibilityRequest
 ): Promise<EligibilityResponse> => {
-  const response = await apiClient.post<ApiResponse<EligibilityResponse>>(
+  // Transform frontend format to backend format
+  const backendRequest = {
+    departure_airport: request.flightInfo.departureAirport,
+    arrival_airport: request.flightInfo.arrivalAirport,
+    delay_hours: request.flightInfo.delayMinutes ? request.flightInfo.delayMinutes / 60 : null,
+    incident_type: request.flightInfo.status === 'cancelled' ? 'cancellation' : 'delay',
+  };
+
+  const response = await apiClient.post<any>(
     '/eligibility/check',
-    request
+    backendRequest
   );
 
-  if (!response.data.data) {
-    throw new Error('Eligibility data not found');
-  }
+  // Transform backend response to frontend format
+  const backendResult = response.data;
+  const result: EligibilityResponse = {
+    eligible: backendResult.eligible,
+    compensationAmount: parseFloat(backendResult.amount),
+    currency: 'EUR',
+    regulation: 'EU261',
+    reasons: [backendResult.reason],
+    requirements: backendResult.requires_manual_review ? ['Manual review required'] : [],
+  };
 
-  return response.data.data;
+  return result;
 };

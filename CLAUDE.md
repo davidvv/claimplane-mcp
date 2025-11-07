@@ -44,6 +44,14 @@ FastAPI-based flight compensation claim management platform with:
 - Async email notifications (Celery + Redis)
 - Document validation and security scanning
 
+### Frontend
+
+**IMPORTANT**: We are using `frontend_Claude45` as the official frontend.
+- Location: `/frontend_Claude45`
+- Dev server: `npm run dev` (runs on port 3000)
+- Old frontends (`FrontEnd_Claude`, `FrontEnd_Haiku`) have been removed
+- DO NOT create or switch to other frontend directories
+
 ## Architecture
 
 ### High-Level Flow
@@ -177,6 +185,22 @@ docker-compose up -d  # Main application
 
 # Phase 2: Run Celery worker (separate terminal)
 celery -A app.celery_app worker --loglevel=info
+```
+
+### Frontend Development
+
+```bash
+# Navigate to frontend directory
+cd frontend_Claude45
+
+# Install dependencies (first time only)
+npm install
+
+# Start dev server (runs on port 3000)
+npm run dev
+
+# Build for production
+npm run build
 ```
 
 ### Testing

@@ -346,7 +346,7 @@ async def list_claims(
         else:
             claims = await repo.get_by_customer_id(current_user.id, skip=skip, limit=limit)
 
-    return [ClaimResponseSchema.model_validate(claim) for claim in claims]
+    return [ClaimResponseSchema.from_orm(claim) for claim in claims]
 
 
 @router.get("/customer/{customer_id}", response_model=List[ClaimResponseSchema])
@@ -397,7 +397,7 @@ async def get_customer_claims(
 
     claims = await claim_repo.get_by_customer_id(customer_id, skip=skip, limit=limit)
 
-    return [ClaimResponseSchema.model_validate(claim) for claim in claims]
+    return [ClaimResponseSchema.from_orm(claim) for claim in claims]
 
 
 @router.put("/{claim_id}", response_model=ClaimResponseSchema)
@@ -575,4 +575,4 @@ async def get_claims_by_status(
     if current_user.role not in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
         claims = [c for c in claims if c.customer_id == current_user.id]
 
-    return [ClaimResponseSchema.model_validate(claim) for claim in claims]
+    return [ClaimResponseSchema.from_orm(claim) for claim in claims]

@@ -33,9 +33,20 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Log request in development
+    // Enhanced debugging for status page issues
     if (import.meta.env.DEV) {
-      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, config.data);
+      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+      console.log('Headers:', config.headers);
+      console.log('Token present:', !!token);
+      if (token) {
+        // Decode JWT token for debugging (without verification)
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          console.log('Token payload:', payload);
+        } catch (e) {
+          console.log('Could not decode token');
+        }
+      }
     }
 
     return config;

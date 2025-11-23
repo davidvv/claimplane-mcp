@@ -76,7 +76,6 @@ export function Step3_Passenger({
               <Label htmlFor="firstName">First Name *</Label>
               <Input
                 id="firstName"
-                placeholder="John"
                 {...register('firstName')}
               />
               {errors.firstName && (
@@ -91,7 +90,6 @@ export function Step3_Passenger({
               <Label htmlFor="lastName">Last Name *</Label>
               <Input
                 id="lastName"
-                placeholder="Doe"
                 {...register('lastName')}
               />
               {errors.lastName && (
@@ -111,7 +109,6 @@ export function Step3_Passenger({
                 <Input
                   id="email"
                   type="email"
-                  placeholder="john.doe@example.com"
                   className="pl-10"
                   {...register('email')}
                 />
@@ -129,7 +126,6 @@ export function Step3_Passenger({
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="+49123456789"
                   className="pl-10"
                   {...register('phone')}
                 />
@@ -159,7 +155,6 @@ export function Step3_Passenger({
             <Label htmlFor="street">Street Address *</Label>
             <Input
               id="street"
-              placeholder="123 Main Street"
               {...register('street')}
             />
             {errors.street && (
@@ -170,7 +165,7 @@ export function Step3_Passenger({
           <div className="grid md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="city">City *</Label>
-              <Input id="city" placeholder="Berlin" {...register('city')} />
+              <Input id="city" {...register('city')} />
               {errors.city && (
                 <p className="text-sm text-destructive">{errors.city.message}</p>
               )}
@@ -180,7 +175,6 @@ export function Step3_Passenger({
               <Label htmlFor="postalCode">Postal Code *</Label>
               <Input
                 id="postalCode"
-                placeholder="10115"
                 {...register('postalCode')}
               />
               {errors.postalCode && (
@@ -194,7 +188,6 @@ export function Step3_Passenger({
               <Label htmlFor="country">Country *</Label>
               <Input
                 id="country"
-                placeholder="Germany"
                 {...register('country')}
               />
               {errors.country && (

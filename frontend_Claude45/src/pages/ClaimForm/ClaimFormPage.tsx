@@ -81,13 +81,34 @@ export function ClaimFormPage() {
     }
   };
 
+  const handleStartNewClaim = () => {
+    if (confirm('Are you sure you want to start a new claim? This will clear all current form data.')) {
+      clearFormData();
+      setCurrentStep(1);
+      setFlightData(null);
+      setEligibilityData(null);
+      setPassengerData(null);
+      setDocuments([]);
+    }
+  };
+
   return (
     <div className="py-12 md:py-20">
       <div className="container max-w-4xl">
         <div className="mb-12 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            File Your Compensation Claim
-          </h1>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold flex-1">
+              File Your Compensation Claim
+            </h1>
+            {(flightData || currentStep > 1) && (
+              <button
+                onClick={handleStartNewClaim}
+                className="text-sm text-muted-foreground hover:text-foreground underline"
+              >
+                Start New Claim
+              </button>
+            )}
+          </div>
           <p className="text-muted-foreground">
             Complete the form below to submit your claim. Takes about 5 minutes.
           </p>

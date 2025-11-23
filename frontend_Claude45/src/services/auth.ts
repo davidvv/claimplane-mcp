@@ -108,6 +108,9 @@ export async function logout(): Promise<void> {
   localStorage.removeItem('user_email');
   localStorage.removeItem('user_id');
   localStorage.removeItem('user_name');
+
+  // Clear form data on logout to prevent state persistence issues
+  localStorage.removeItem('easyairclaim_form_data');
 }
 
 /**

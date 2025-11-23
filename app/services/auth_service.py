@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import config
-from app.models import Customer, RefreshToken, PasswordResetToken
+from app.models import Customer, RefreshToken, PasswordResetToken, MagicLinkToken
 from app.services.password_service import PasswordService
 
 
@@ -505,3 +505,90 @@ class AuthService:
         await session.flush()
 
         return True
+
+    @staticmethod
+    async def create_magic_link_token(
+        session: AsyncSession,
+        user_id: UUID,
+        claim_id: Optional[UUID] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None
+    ) -> Tuple[str, MagicLinkToken]:
+        """
+        Create a magic link token for passwordless authentication.
+
+        Args:
+            session: Database session
+            user_id: User's UUID
+            claim_id: Optional claim ID if magic link is for a specific claim
+            ip_address: Optional client IP address
+            user_agent: Optional client user agent
+
+        Returns:
+            Tuple of (token_string, MagicLinkToken instance)
+        """
+        # Generate secure random token
+        token_string = secrets.token_urlsafe(64)
+
+        # Token expires in 48 hours
+        expiration = datetime.utcnow() + timedelta(hours=48)
+
+        # Create magic link token record
+        magic_token = MagicLinkToken(
+            user_id=user_id,
+            claim_id=claim_id,
+            token=token_string,
+            expires_at=expiration,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+
+        session.add(magic_token)
+        await session.flush()
+
+        return token_string, magic_token
+
+    @staticmethod
+    async def verify_magic_link_token(
+        session: AsyncSession,
+        token: str
+    ) -> Optional[Tuple[Customer, Optional[UUID]]]:
+        """
+        Verify a magic link token and mark it as used.
+
+        Args:
+            session: Database session
+            token: Magic link token string
+
+        Returns:
+            Tuple of (Customer, claim_id) if valid, None otherwise
+        """
+        # Find token
+        stmt = select(MagicLinkToken).where(MagicLinkToken.token == token)
+        result = await session.execute(stmt)
+        magic_token = result.scalar_one_or_none()
+
+        if not magic_token:
+            return None
+
+        # Check if token is valid
+        if not magic_token.is_valid:
+            return None
+
+        # Mark token as used
+        magic_token.used_at = datetime.utcnow()
+        await session.flush()
+
+        # Get customer
+        stmt = select(Customer).where(Customer.id == magic_token.user_id)
+        result = await session.execute(stmt)
+        customer = result.scalar_one_or_none()
+
+        if not customer:
+            return None
+
+        # Update last login
+        customer.last_login_at = datetime.utcnow()
+        await session.flush()
+
+        return customer, magic_token.claim_id

@@ -48,6 +48,7 @@ class Customer(Base):
     claims = relationship("Claim", back_populates="customer", foreign_keys="Claim.customer_id", cascade="all, delete-orphan")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
+    magic_link_tokens = relationship("MagicLinkToken", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Customer(id={self.id}, email={self.email}, name={self.first_name} {self.last_name})>"
@@ -504,6 +505,7 @@ class ClaimStatusHistory(Base):
 # Add relationships to existing models (these are defined here because ClaimFile is defined after Claim)
 Customer.files = relationship("ClaimFile", back_populates="customer", foreign_keys="ClaimFile.customer_id")
 Claim.files = relationship("ClaimFile", back_populates="claim", cascade="all, delete-orphan")
+Claim.magic_link_tokens = relationship("MagicLinkToken", back_populates="claim", cascade="all, delete-orphan")
 
 
 class RefreshToken(Base):
@@ -560,6 +562,39 @@ class PasswordResetToken(Base):
 
     def __repr__(self):
         return f"<PasswordResetToken(id={self.id}, user_id={self.user_id}, expires_at={self.expires_at})>"
+
+    @property
+    def is_valid(self):
+        """Check if token is still valid."""
+        return (
+            self.used_at is None and
+            self.expires_at > datetime.utcnow()
+        )
+
+
+class MagicLinkToken(Base):
+    """Magic link token model for passwordless authentication."""
+
+    __tablename__ = "magic_link_tokens"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False, index=True)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=True, index=True)
+    token = Column(String(500), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    used_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Security tracking
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(Text, nullable=True)
+
+    # Relationships
+    user = relationship("Customer", back_populates="magic_link_tokens")
+    claim = relationship("Claim", back_populates="magic_link_tokens")
+
+    def __repr__(self):
+        return f"<MagicLinkToken(id={self.id}, user_id={self.user_id}, claim_id={self.claim_id}, expires_at={self.expires_at})>"
 
     @property
     def is_valid(self):

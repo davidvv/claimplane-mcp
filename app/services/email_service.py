@@ -182,6 +182,76 @@ Best regards,
             return False
 
     @staticmethod
+    async def send_magic_link_login_email(
+        customer_email: str,
+        customer_name: str,
+        magic_link_token: str,
+        ip_address: Optional[str] = None
+    ) -> bool:
+        """
+        Send magic link email for passwordless login.
+
+        Args:
+            customer_email: Customer's email address
+            customer_name: Customer's full name
+            magic_link_token: Magic link token for authentication
+            ip_address: IP address where the request originated
+
+        Returns:
+            True if sent successfully
+        """
+        logger.info(f"Sending magic link login email to {customer_email}")
+
+        try:
+            # Prepare data for the template
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+            magic_link_url = f"{frontend_url}/auth/magic-link?token={magic_link_token}"
+
+            from datetime import datetime
+            context = {
+                "customer_name": customer_name,
+                "magic_link_url": magic_link_url,
+                "ip_address": ip_address or "Unknown",
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"),
+            }
+
+            # Render HTML template
+            html_content = EmailService.render_template("magic_link_login.html", context)
+
+            # Plain text fallback
+            text_content = f"""
+Hello {customer_name},
+
+You requested a magic link to access your account.
+
+Click this link to securely log in:
+{magic_link_url}
+
+This link is valid for 48 hours and can only be used once.
+
+Security Information:
+- IP Address: {ip_address or "Unknown"}
+- Time: {context['timestamp']}
+
+If you didn't request this, you can safely ignore this email.
+
+Best regards,
+{config.SMTP_FROM_NAME}
+            """.strip()
+
+            # Send the email
+            return await EmailService.send_email(
+                to_email=customer_email,
+                subject="Your Secure Login Link",
+                html_content=html_content,
+                text_content=text_content
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to send magic link login email: {str(e)}")
+            return False
+
+    @staticmethod
     async def send_status_update_email(
         customer_email: str,
         customer_name: str,

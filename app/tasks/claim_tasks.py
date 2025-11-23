@@ -241,6 +241,61 @@ def send_document_rejected_email(
         raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
 
 
+@celery_app.task(
+    name="send_magic_link_login_email",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60
+)
+def send_magic_link_login_email(
+    self,
+    customer_email: str,
+    customer_name: str,
+    magic_link_token: str,
+    ip_address: Optional[str] = None
+):
+    """
+    Celery task: Send magic link email for passwordless login.
+
+    Args:
+        self: Task instance
+        customer_email: Customer's email address
+        customer_name: Customer's full name
+        magic_link_token: Magic link token for authentication
+        ip_address: IP address where the request originated
+
+    Usage:
+        send_magic_link_login_email.delay(
+            customer_email="john@example.com",
+            customer_name="John Doe",
+            magic_link_token="abc123...",
+            ip_address="192.168.1.1"
+        )
+    """
+    logger.info(f"Task started: Sending magic link login email to {customer_email}")
+
+    try:
+        success = run_async(
+            EmailService.send_magic_link_login_email(
+                customer_email=customer_email,
+                customer_name=customer_name,
+                magic_link_token=magic_link_token,
+                ip_address=ip_address
+            )
+        )
+
+        if success:
+            logger.info(f"Task completed: Magic link login email sent successfully to {customer_email}")
+            return {"status": "success", "email": customer_email}
+        else:
+            logger.error(f"Task failed: Magic link login email failed for {customer_email}")
+            raise Exception(f"Email sending failed for {customer_email}")
+
+    except Exception as exc:
+        logger.error(f"Task error: {str(exc)}")
+        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+
+
 # Example: How to check task status
 # If you save the result: task_result = send_claim_submitted_email.delay(...)
 # You can check status: task_result.status (PENDING, STARTED, SUCCESS, FAILURE, RETRY)

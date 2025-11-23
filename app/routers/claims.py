@@ -1,8 +1,8 @@
 """Claims API endpoints."""
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -15,6 +15,7 @@ from app.schemas import (
     ClaimUpdateSchema,
     ClaimPatchSchema
 )
+from app.services.auth_service import AuthService
 from app.tasks.claim_tasks import send_claim_submitted_email
 from app.config import config
 from app.dependencies.auth import get_current_user, get_optional_current_user
@@ -23,6 +24,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/claims", tags=["claims"])
+
+
+def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
+    """Extract client IP and user agent from request."""
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    return ip_address, user_agent
 
 
 def verify_claim_access(claim: Claim, current_user: Customer) -> None:
@@ -53,6 +61,7 @@ def verify_claim_access(claim: Claim, current_user: Customer) -> None:
 @router.post("/", response_model=ClaimResponseSchema, status_code=status.HTTP_201_CREATED)
 async def create_claim(
     claim_data: ClaimCreateSchema,
+    request: Request,
     current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> ClaimResponseSchema:
@@ -107,13 +116,27 @@ async def create_claim(
     # Send claim submitted email notification (Phase 2)
     if config.NOTIFICATIONS_ENABLED and customer:
         try:
-            # Trigger async email task
+            # Get client info
+            ip_address, user_agent = get_client_info(request)
+
+            # Create magic link token
+            magic_token, _ = await AuthService.create_magic_link_token(
+                session=db,
+                user_id=customer.id,
+                claim_id=claim.id,
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
+            await db.commit()
+
+            # Trigger async email task with magic link token
             send_claim_submitted_email.delay(
                 customer_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}",
                 claim_id=str(claim.id),
                 flight_number=claim.flight_number,
-                airline=claim.airline
+                airline=claim.airline,
+                magic_link_token=magic_token
             )
             logger.info(f"Claim submitted email task queued for customer {customer.email}")
         except Exception as e:
@@ -126,63 +149,103 @@ async def create_claim(
 @router.post("/submit", response_model=ClaimResponseSchema, status_code=status.HTTP_201_CREATED)
 async def submit_claim_with_customer(
     claim_request: ClaimRequestSchema,
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ) -> ClaimResponseSchema:
     """
     Submit a new claim with customer information (creates customer if needed).
-    
+
     Args:
         claim_request: Claim request with customer and flight info
         db: Database session
-        
+
     Returns:
         Created claim data
-        
+
     Raises:
         HTTPException: If validation fails
     """
-    customer_repo = CustomerRepository(db)
-    claim_repo = ClaimRepository(db)
-    
-    # Check if customer exists by email
-    customer_data = claim_request.customer_info
-    customer = await customer_repo.get_by_email(customer_data.email)
-    
-    if not customer:
-        # Create new customer
-        address_data = customer_data.address.dict() if customer_data.address else {}
-        customer = await customer_repo.create_customer(
-            email=customer_data.email,
-            first_name=customer_data.first_name,
-            last_name=customer_data.last_name,
-            phone=customer_data.phone,
-            **address_data
+    try:
+        customer_repo = CustomerRepository(db)
+        claim_repo = ClaimRepository(db)
+
+        # Check if customer exists by email
+        customer_data = claim_request.customer_info
+        customer = await customer_repo.get_by_email(customer_data.email)
+
+        if not customer:
+            # Create new customer
+            logger.info(f"Creating new customer: {customer_data.email}")
+            address_data = customer_data.address.dict() if customer_data.address else {}
+            customer = await customer_repo.create_customer(
+                email=customer_data.email,
+                first_name=customer_data.first_name,
+                last_name=customer_data.last_name,
+                phone=customer_data.phone,
+                **address_data
+            )
+            logger.info(f"Customer created: {customer.id}")
+
+        # Create claim
+        flight_data = claim_request.flight_info
+        logger.info(f"Creating claim for customer {customer.id}")
+        logger.info(f"Flight data: {flight_data.dict()}")
+        logger.info(f"Incident type: {claim_request.incident_type}")
+
+        claim = await claim_repo.create_claim(
+            customer_id=customer.id,
+            flight_number=flight_data.flight_number,
+            airline=flight_data.airline,
+            departure_date=flight_data.departure_date,
+            departure_airport=flight_data.departure_airport,
+            arrival_airport=flight_data.arrival_airport,
+            incident_type=claim_request.incident_type,
+            notes=claim_request.notes
         )
-    
-    # Create claim
-    flight_data = claim_request.flight_info
-    
-    claim = await claim_repo.create_claim(
-        customer_id=customer.id,
-        flight_number=flight_data.flight_number,
-        airline=flight_data.airline,
-        departure_date=flight_data.departure_date,
-        departure_airport=flight_data.departure_airport,
-        arrival_airport=flight_data.arrival_airport,
-        incident_type=claim_request.incident_type,
-        notes=claim_request.notes
-    )
+        logger.info(f"Claim created: {claim.id}")
+
+        # Commit the claim to database before sending email
+        await db.commit()
+        logger.info(f"Claim {claim.id} committed to database")
+    except ValueError as e:
+        logger.error(f"Validation error in claim submission: {str(e)}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in claim submission: {str(e)}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while submitting your claim: {str(e)}"
+        )
 
     # Send claim submitted email notification (Phase 2)
     if config.NOTIFICATIONS_ENABLED and customer:
         try:
-            # Trigger async email task
+            # Get client info
+            ip_address, user_agent = get_client_info(request)
+
+            # Create magic link token
+            magic_token, _ = await AuthService.create_magic_link_token(
+                session=db,
+                user_id=customer.id,
+                claim_id=claim.id,
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
+            await db.commit()
+
+            # Trigger async email task with magic link token
             send_claim_submitted_email.delay(
                 customer_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}",
                 claim_id=str(claim.id),
                 flight_number=claim.flight_number,
-                airline=claim.airline
+                airline=claim.airline,
+                magic_link_token=magic_token
             )
             logger.info(f"Claim submitted email task queued for customer {customer.email}")
         except Exception as e:

@@ -1,111 +1,52 @@
 /**
- * Authentication Page - Login and Registration
- * Integrated with Phase 3 JWT backend
+ * Authentication Information Page
+ * Explains the passwordless authentication system
  */
 
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Mail, CheckCircle, Shield, Clock, Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Lock, Mail, User, Phone } from 'lucide-react';
-import { toast } from 'sonner';
 import { z } from 'zod';
-
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import * as authService from '@/services/auth';
+import apiClient from '@/services/api';
 
-// Login schema
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
+// Magic link request schema
+const magicLinkSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
 });
 
-// Registration schema (matching Phase 3 backend requirements)
-const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z
-    .string()
-    .min(12, 'Password must be at least 12 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
-  confirmPassword: z.string(),
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  phone: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
-type RegisterForm = z.infer<typeof registerSchema>;
+type MagicLinkForm = z.infer<typeof magicLinkSchema>;
 
 export function Auth() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/';
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<'login' | 'register'>('login');
 
-  // Initialize mode from URL query parameter
-  useEffect(() => {
-    const modeParam = searchParams.get('mode');
-    if (modeParam === 'register' || modeParam === 'login') {
-      setMode(modeParam);
-    }
-  }, [searchParams]);
-
-  // Login form
-  const loginForm = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<MagicLinkForm>({
+    resolver: zodResolver(magicLinkSchema),
   });
 
-  // Registration form
-  const registerForm = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
-  });
-
-  const onLogin = async (data: LoginForm) => {
+  const onSubmit = async (data: MagicLinkForm) => {
     setIsLoading(true);
     try {
-      const response = await authService.login({
-        email: data.email,
-        password: data.password,
+      await apiClient.post('/auth/magic-link/request', { email: data.email });
+
+      toast.success('Magic link sent!', {
+        description: 'Check your email for the login link. It will arrive shortly.',
       });
 
-      toast.success(`Welcome back, ${response.user.first_name}!`);
-      navigate(redirectTo);
+      form.reset();
     } catch (error: any) {
-      console.error('Login error:', error);
-      toast.error(error.response?.data?.detail || 'Login failed. Please check your credentials.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onRegister = async (data: RegisterForm) => {
-    setIsLoading(true);
-    try {
-      const response = await authService.register({
-        email: data.email,
-        password: data.password,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        phone: data.phone,
+      console.error('Magic link request error:', error);
+      toast.error('Request failed', {
+        description: error.response?.data?.detail || 'Please try again later.',
       });
-
-      toast.success(`Welcome, ${response.user.first_name}! Your account has been created.`);
-      navigate('/');
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      const errorMessage = error.response?.data?.detail || 'Registration failed. Please try again.';
-      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -113,231 +54,234 @@ export function Auth() {
 
   return (
     <div className="py-12 md:py-20">
-      <div className="container max-w-md">
+      <div className="container max-w-3xl">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            {mode === 'login' ? 'Sign In' : 'Create Account'}
+            Passwordless Authentication
           </h1>
-          <p className="text-muted-foreground">
-            {mode === 'login'
-              ? 'Access your account to manage claims'
-              : 'Start your flight compensation journey'}
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            We use magic links for secure, password-free access. No passwords to remember, no passwords to forget.
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex gap-2 mb-4">
-              <Button
-                variant={mode === 'login' ? 'default' : 'outline'}
-                className="flex-1"
-                onClick={() => setMode('login')}
-                type="button"
-              >
-                Sign In
-              </Button>
-              <Button
-                variant={mode === 'register' ? 'default' : 'outline'}
-                className="flex-1"
-                onClick={() => setMode('register')}
-                type="button"
-              >
-                Sign Up
-              </Button>
+        {/* Login Form */}
+        <Card className="mb-12 border-primary/20 shadow-lg">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Send className="w-8 h-8 text-primary" />
             </div>
-            <CardTitle>{mode === 'login' ? 'Login' : 'Register'}</CardTitle>
+            <CardTitle className="text-2xl">Access Your Account</CardTitle>
             <CardDescription>
-              {mode === 'login'
-                ? 'Enter your credentials to access your account'
-                : 'Create a new account to submit and track claims'}
+              Enter your email to receive a magic link and log in instantly
             </CardDescription>
           </CardHeader>
-
           <CardContent>
-            {/* Login Form */}
-            {mode === 'login' && (
-              <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      className="pl-10"
-                      {...loginForm.register('email')}
-                    />
-                  </div>
-                  {loginForm.formState.errors.email && (
-                    <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>
-                  )}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    className="pl-11 h-12 text-base"
+                    {...form.register('email')}
+                    disabled={isLoading}
+                  />
                 </div>
-
-                {/* Password */}
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      className="pl-10"
-                      {...loginForm.register('password')}
-                    />
-                  </div>
-                  {loginForm.formState.errors.password && (
-                    <p className="text-sm text-destructive">
-                      {loginForm.formState.errors.password.message}
-                    </p>
-                  )}
-                </div>
-
-                <Button type="submit" disabled={isLoading} className="w-full">
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner size="sm" className="mr-2" />
-                      Signing in...
-                    </>
-                  ) : (
-                    'Sign In'
-                  )}
-                </Button>
-
-                <div className="mt-4 text-center text-sm text-muted-foreground">
-                  <p>Demo account: john.doe@example.com / SecurePassword123!</p>
-                </div>
-              </form>
-            )}
-
-            {/* Registration Form */}
-            {mode === 'register' && (
-              <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
-                {/* Name Fields */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="first_name">First Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="first_name"
-                        type="text"
-                        placeholder="John"
-                        className="pl-10"
-                        {...registerForm.register('first_name')}
-                      />
-                    </div>
-                    {registerForm.formState.errors.first_name && (
-                      <p className="text-sm text-destructive">
-                        {registerForm.formState.errors.first_name.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="last_name">Last Name</Label>
-                    <Input
-                      id="last_name"
-                      type="text"
-                      placeholder="Doe"
-                      {...registerForm.register('last_name')}
-                    />
-                    {registerForm.formState.errors.last_name && (
-                      <p className="text-sm text-destructive">
-                        {registerForm.formState.errors.last_name.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="reg-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="reg-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      className="pl-10"
-                      {...registerForm.register('email')}
-                    />
-                  </div>
-                  {registerForm.formState.errors.email && (
-                    <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>
-                  )}
-                </div>
-
-                {/* Phone (Optional) */}
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone (Optional)</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+1 234 567 8900"
-                      className="pl-10"
-                      {...registerForm.register('phone')}
-                    />
-                  </div>
-                </div>
-
-                {/* Password */}
-                <div className="space-y-2">
-                  <Label htmlFor="reg-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="reg-password"
-                      type="password"
-                      placeholder="Create a strong password"
-                      className="pl-10"
-                      {...registerForm.register('password')}
-                    />
-                  </div>
-                  {registerForm.formState.errors.password && (
-                    <p className="text-sm text-destructive">{registerForm.formState.errors.password.message}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Min 12 chars with uppercase, lowercase, number, and special character
+                {form.formState.errors.email && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.email.message}
                   </p>
-                </div>
+                )}
+              </div>
 
-                {/* Confirm Password */}
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="Re-enter your password"
-                      className="pl-10"
-                      {...registerForm.register('confirmPassword')}
-                    />
-                  </div>
-                  {registerForm.formState.errors.confirmPassword && (
-                    <p className="text-sm text-destructive">
-                      {registerForm.formState.errors.confirmPassword.message}
-                    </p>
-                  )}
-                </div>
+              <Button type="submit" disabled={isLoading} className="w-full h-12 text-base">
+                {isLoading ? (
+                  <>
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    Sending Magic Link...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5 mr-2" />
+                    Send Magic Link
+                  </>
+                )}
+              </Button>
 
-                <Button type="submit" disabled={isLoading} className="w-full">
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner size="sm" className="mr-2" />
-                      Creating account...
-                    </>
-                  ) : (
-                    'Create Account'
-                  )}
-                </Button>
-              </form>
-            )}
+              <p className="text-center text-sm text-muted-foreground">
+                A secure login link will be sent to your email
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          {/* How It Works */}
+          <Card>
+            <CardHeader>
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                <Mail className="w-6 h-6 text-primary" />
+              </div>
+              <CardTitle>How It Works</CardTitle>
+              <CardDescription>Simple, secure authentication via email</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-3">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-xs font-semibold text-primary">1</span>
+                </div>
+                <div>
+                  <p className="font-medium">Submit Your Claim</p>
+                  <p className="text-sm text-muted-foreground">No account or login required</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-xs font-semibold text-primary">2</span>
+                </div>
+                <div>
+                  <p className="font-medium">Check Your Email</p>
+                  <p className="text-sm text-muted-foreground">We'll send you a secure magic link</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-xs font-semibold text-primary">3</span>
+                </div>
+                <div>
+                  <p className="font-medium">Click the Link</p>
+                  <p className="text-sm text-muted-foreground">Instantly logged in, view your claim</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Benefits */}
+          <Card>
+            <CardHeader>
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mb-4">
+                <Shield className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+              <CardTitle>Why Magic Links?</CardTitle>
+              <CardDescription>Modern, secure, and convenient</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">No Passwords</p>
+                  <p className="text-sm text-muted-foreground">Nothing to create, store, or remember</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">More Secure</p>
+                  <p className="text-sm text-muted-foreground">No password leaks or brute force attacks</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">One-Click Access</p>
+                  <p className="text-sm text-muted-foreground">Instant authentication from your email</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Important Information */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mb-4">
+              <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <CardTitle>Important Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-3">
+              <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+              <p className="text-muted-foreground">
+                <strong className="text-foreground">Magic links expire after 48 hours</strong> for security.
+                If your link expires, simply submit a new claim or request a new link.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+              <p className="text-muted-foreground">
+                <strong className="text-foreground">Links are single-use only</strong>.
+                Once you click a magic link and log in, that link cannot be used again.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+              <p className="text-muted-foreground">
+                <strong className="text-foreground">Your session lasts 7 days</strong>.
+                After logging in via magic link, you'll stay logged in for a week.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+              <p className="text-muted-foreground">
+                <strong className="text-foreground">Check your spam folder</strong> if you don't see the email.
+                Magic link emails are sent instantly from noreply@easyairclaim.com.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Call to Action */}
+        <div className="text-center space-y-4">
+          <Button
+            size="lg"
+            onClick={() => navigate('/claim/new')}
+            className="px-8"
+          >
+            Submit a Claim
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            No registration required. Get started in seconds.
+          </p>
+        </div>
+
+        {/* FAQ */}
+        <Card className="mt-12">
+          <CardHeader>
+            <CardTitle>Frequently Asked Questions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="font-semibold mb-2">What if I don't receive the magic link email?</h3>
+              <p className="text-sm text-muted-foreground">
+                Check your spam/junk folder first. If you still don't see it, verify you entered the correct
+                email address when submitting your claim. You can submit another claim to receive a new magic link.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Can I use magic links on multiple devices?</h3>
+              <p className="text-sm text-muted-foreground">
+                Yes! Once you log in via a magic link, your session is valid for 7 days on that device.
+                You can click a new magic link on a different device to log in there as well.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Is this more secure than passwords?</h3>
+              <p className="text-sm text-muted-foreground">
+                Absolutely. Magic links eliminate common security issues like weak passwords, password reuse,
+                and phishing attacks. Each link is unique, time-limited, and single-use.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Do I need to create an account?</h3>
+              <p className="text-sm text-muted-foreground">
+                No! Your account is automatically created when you submit your first claim.
+                We use your email address to identify you, and magic links to authenticate you.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

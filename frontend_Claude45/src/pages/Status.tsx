@@ -2,8 +2,9 @@
  * Claim Status Tracker Page
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useSearchParams } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Search,
@@ -35,6 +36,7 @@ import {
 } from '@/lib/utils';
 
 export function Status() {
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [claim, setClaim] = useState<Claim | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -42,10 +44,21 @@ export function Status() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<ClaimStatusLookupForm>({
     resolver: zodResolver(claimStatusLookupSchema),
   });
+
+  // Auto-load claim if claimId is in URL (e.g., from magic link redirect)
+  useEffect(() => {
+    const claimIdFromUrl = searchParams.get('claimId');
+    if (claimIdFromUrl) {
+      setValue('claimId', claimIdFromUrl);
+      // Automatically submit the form to load the claim
+      onSubmit({ claimId: claimIdFromUrl });
+    }
+  }, [searchParams]);
 
   const onSubmit = async (data: ClaimStatusLookupForm) => {
     setIsLoading(true);

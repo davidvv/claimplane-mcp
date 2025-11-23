@@ -30,68 +30,28 @@ export const listClaims = async (
  * GET /claims/{claimId}
  */
 export const getClaim = async (claimId: string): Promise<Claim> => {
-  const response = await apiClient.get<ApiResponse<Claim>>(`/claims/${claimId}`);
+  const response = await apiClient.get<Claim>(`/claims/${claimId}`);
 
-  if (!response.data.data) {
+  if (!response.data) {
     throw new Error('Claim not found');
   }
 
-  return response.data.data;
+  return response.data;
 };
 
 /**
- * Submit new claim (auto-registers user if not authenticated)
- * POST /claims
+ * Submit new claim (passwordless - auto-creates customer and sends magic link)
+ * POST /claims/submit
  */
 export const submitClaim = async (request: ClaimRequest): Promise<Claim> => {
-  try {
-    // First try authenticated submission
-    const response = await apiClient.post<ApiResponse<Claim>>('/claims', request);
+  // Use passwordless endpoint - auto-creates customer and sends magic link email
+  const response = await apiClient.post<Claim>('/claims/submit', request);
 
-    if (!response.data.data) {
-      throw new Error('Failed to submit claim');
-    }
-
-    return response.data.data;
-  } catch (error: any) {
-    // If 401/403 (not authenticated), auto-register and retry
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      console.log('Not authenticated, attempting auto-registration...');
-
-      // Auto-register with minimal info - use simple password for now
-      const { register } = await import('./auth');
-      const simplePassword = 'TempPass123!'; // Simple temporary password (will be reset via email)
-
-      try {
-        await register({
-          email: request.customerInfo.email,
-          password: simplePassword,
-          first_name: request.customerInfo.firstName,
-          last_name: request.customerInfo.lastName,
-          phone: request.customerInfo.phone || undefined,
-        });
-
-        // Retry claim submission now that user is authenticated
-        const response = await apiClient.post<ApiResponse<Claim>>('/claims', request);
-
-        if (!response.data.data) {
-          throw new Error('Failed to submit claim after registration');
-        }
-
-        // TODO: Send magic link/password reset email automatically
-        console.log('User auto-registered. Password reset email should be sent.');
-
-        return response.data.data;
-      } catch (registerError: any) {
-        // If registration fails (e.g., email already exists), show helpful message
-        if (registerError.response?.status === 400) {
-          throw new Error('An account with this email already exists. Please login first.');
-        }
-        throw registerError;
-      }
-    }
-    throw error;
+  if (!response.data) {
+    throw new Error('Failed to submit claim');
   }
+
+  return response.data;
 };
 
 /**

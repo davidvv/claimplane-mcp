@@ -566,9 +566,10 @@ class PasswordResetToken(Base):
     @property
     def is_valid(self):
         """Check if token is still valid."""
+        from datetime import timezone
         return (
             self.used_at is None and
-            self.expires_at > datetime.utcnow()
+            self.expires_at > datetime.now(timezone.utc)
         )
 
 
@@ -598,8 +599,24 @@ class MagicLinkToken(Base):
 
     @property
     def is_valid(self):
-        """Check if token is still valid."""
-        return (
-            self.used_at is None and
-            self.expires_at > datetime.utcnow()
-        )
+        """
+        Check if token is still valid.
+
+        Tokens are valid if:
+        - Not expired (within 48 hours of creation)
+        - Either never used OR used within last 5 minutes (grace period for retries)
+        """
+        from datetime import timezone, timedelta
+        now = datetime.now(timezone.utc)
+
+        # Check expiration
+        if self.expires_at <= now:
+            return False
+
+        # If never used, it's valid
+        if self.used_at is None:
+            return True
+
+        # If used, allow reuse within 5 minute grace period
+        grace_period = timedelta(minutes=5)
+        return (now - self.used_at.replace(tzinfo=timezone.utc)) < grace_period

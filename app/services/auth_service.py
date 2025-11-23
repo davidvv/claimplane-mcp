@@ -575,9 +575,11 @@ class AuthService:
         if not magic_token.is_valid:
             return None
 
-        # Mark token as used
-        magic_token.used_at = datetime.utcnow()
-        await session.flush()
+        # Mark token as used (only if not already used)
+        # This allows reuse within the 5-minute grace period
+        if magic_token.used_at is None:
+            magic_token.used_at = datetime.utcnow()
+            await session.flush()
 
         # Get customer
         stmt = select(Customer).where(Customer.id == magic_token.user_id)

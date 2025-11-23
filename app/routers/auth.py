@@ -20,8 +20,10 @@ from app.schemas.auth_schemas import (
     PasswordChangeSchema,
     UserResponseSchema,
     AuthResponseSchema,
+    MagicLinkRequestSchema,
 )
 from app.services.auth_service import AuthService
+from app.tasks.claim_tasks import send_magic_link_login_email
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +297,140 @@ async def logout(
     await session.commit()
 
     return None
+
+
+@router.post(
+    "/magic-link/request",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Request magic link login",
+    description="Send a magic link to the user's email for passwordless login."
+)
+async def request_magic_link(
+    data: MagicLinkRequestSchema,
+    request: Request,
+    session: AsyncSession = Depends(get_db)
+):
+    """
+    Request a magic link for passwordless login.
+
+    Args:
+        data: Email request data
+        request: FastAPI request object
+        session: Database session
+
+    Returns:
+        Success message (always returns success to prevent email enumeration)
+    """
+    from sqlalchemy import select
+
+    # Always return success to prevent email enumeration
+    # But only send email if user exists
+    stmt = select(Customer).where(Customer.email == data.email)
+    result = await session.execute(stmt)
+    customer = result.scalar_one_or_none()
+
+    if customer:
+        # Get client info
+        ip_address, user_agent = get_client_info(request)
+
+        # Create magic link token (no claim_id for login-only magic links)
+        magic_token, _ = await AuthService.create_magic_link_token(
+            session=session,
+            user_id=customer.id,
+            claim_id=None,  # No claim associated
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+
+        await session.commit()
+
+        # Send magic link email via Celery task
+        try:
+            send_magic_link_login_email.delay(
+                customer_email=customer.email,
+                customer_name=f"{customer.first_name} {customer.last_name}",
+                magic_link_token=magic_token,
+                ip_address=ip_address
+            )
+            logger.info(f"Magic link email task queued for user {customer.email}")
+        except Exception as e:
+            # Don't fail the request if email queueing fails
+            logger.error(f"Failed to queue magic link email: {str(e)}")
+
+    return {
+        "message": "If an account exists with this email, a magic link has been sent"
+    }
+
+
+@router.post(
+    "/magic-link/verify/{token}",
+    response_model=AuthResponseSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Verify magic link token",
+    description="Verify a magic link token and return JWT tokens for authentication."
+)
+async def verify_magic_link(
+    token: str,
+    request: Request,
+    session: AsyncSession = Depends(get_db)
+):
+    """
+    Verify magic link token and authenticate user.
+
+    Args:
+        token: Magic link token from email URL
+        request: FastAPI request object
+        session: Database session
+
+    Returns:
+        AuthResponseSchema with user info and JWT tokens
+
+    Raises:
+        HTTPException: 400 if token is invalid or expired
+    """
+    # Verify token
+    result = await AuthService.verify_magic_link_token(
+        session=session,
+        token=token
+    )
+
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired magic link token"
+        )
+
+    customer, claim_id = result
+
+    # Get client info
+    ip_address, user_agent = get_client_info(request)
+
+    # Generate JWT tokens
+    access_token = AuthService.create_access_token(
+        user_id=customer.id,
+        email=customer.email,
+        role=customer.role
+    )
+
+    refresh_token_str, _ = await AuthService.create_refresh_token(
+        session=session,
+        user_id=customer.id,
+        ip_address=ip_address,
+        user_agent=user_agent
+    )
+
+    await session.commit()
+
+    # Return auth response
+    return AuthResponseSchema(
+        user=UserResponseSchema.model_validate(customer),
+        tokens=TokenResponseSchema(
+            access_token=access_token,
+            refresh_token=refresh_token_str,
+            token_type="bearer",
+            expires_in=config.JWT_EXPIRATION_MINUTES * 60
+        )
+    )
 
 
 @router.post(

@@ -214,3 +214,15 @@ class AuthResponseSchema(BaseModel):
                 }
             }
         }
+
+
+class MagicLinkRequestSchema(BaseModel):
+    """Schema for requesting a magic link."""
+    email: EmailStr
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "user@example.com"
+            }
+        }

@@ -44,9 +44,12 @@ export function MyClaims() {
         console.log('[MyClaims] Fetching claims...');
         const response = await listClaims({ limit: 100 }); // Get all user's claims
         console.log('[MyClaims] Claims response:', response);
-        console.log('[MyClaims] Claims count:', response.items?.length || 0);
 
-        setClaims(response.items || []);
+        // Backend returns plain array, not paginated response
+        const claimsArray = Array.isArray(response) ? response : (response.data || response.items || []);
+        console.log('[MyClaims] Claims count:', claimsArray.length);
+
+        setClaims(claimsArray);
       } catch (error: any) {
         console.error('[MyClaims] Failed to fetch claims:', error);
         console.error('[MyClaims] Error response:', error.response);

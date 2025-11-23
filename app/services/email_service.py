@@ -116,7 +116,8 @@ class EmailService:
         customer_name: str,
         claim_id: str,
         flight_number: str,
-        airline: str
+        airline: str,
+        magic_link_token: Optional[str] = None
     ) -> bool:
         """
         Send confirmation email when a claim is submitted.
@@ -127,6 +128,7 @@ class EmailService:
             claim_id: UUID of the claim
             flight_number: Flight number (e.g., "LH123")
             airline: Airline name
+            magic_link_token: Optional magic link token for passwordless access
 
         Returns:
             True if sent successfully
@@ -135,11 +137,17 @@ class EmailService:
 
         try:
             # Prepare data for the template
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+            magic_link_url = None
+            if magic_link_token:
+                magic_link_url = f"{frontend_url}/auth/magic-link?token={magic_link_token}&claim_id={claim_id}"
+
             context = {
                 "customer_name": customer_name,
                 "claim_id": claim_id,
                 "flight_number": flight_number,
                 "airline": airline,
+                "magic_link_url": magic_link_url,
             }
 
             # Render HTML template

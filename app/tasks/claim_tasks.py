@@ -43,7 +43,8 @@ def send_claim_submitted_email(
     customer_name: str,
     claim_id: str,
     flight_number: str,
-    airline: str
+    airline: str,
+    magic_link_token: Optional[str] = None
 ):
     """
     Celery task: Send email when a claim is submitted.
@@ -55,6 +56,7 @@ def send_claim_submitted_email(
         claim_id: UUID of the claim
         flight_number: Flight number (e.g., "LH123")
         airline: Airline name
+        magic_link_token: Optional magic link token for passwordless access
 
     Usage:
         # In your router, call it like this:
@@ -63,7 +65,8 @@ def send_claim_submitted_email(
             customer_name="John Doe",
             claim_id="123e4567-e89b-12d3-a456-426614174000",
             flight_number="LH123",
-            airline="Lufthansa"
+            airline="Lufthansa",
+            magic_link_token="abc123..."
         )
     """
     logger.info(f"Task started: Sending claim submitted email to {customer_email}")
@@ -76,7 +79,8 @@ def send_claim_submitted_email(
                 customer_name=customer_name,
                 claim_id=claim_id,
                 flight_number=flight_number,
-                airline=airline
+                airline=airline,
+                magic_link_token=magic_link_token
             )
         )
 

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Tuple
 from uuid import UUID
 
-from jose import jwt
+from jose import jwt, exceptions as jose_exceptions
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,7 +17,7 @@ class AuthService:
     """Service for handling authentication operations."""
 
     @staticmethod
-    def create_access_token(user_id: UUID, email: str, role: str) -> str:
+    def create_access_token(user_id: UUID, email: str, role: str, claim_id: Optional[UUID] = None) -> str:
         """
         Create a JWT access token.
 
@@ -25,6 +25,7 @@ class AuthService:
             user_id: User's UUID
             email: User's email address
             role: User's role (customer, admin, superadmin)
+            claim_id: Optional claim ID for magic link authentication
 
         Returns:
             JWT access token string
@@ -39,6 +40,10 @@ class AuthService:
             "iat": datetime.utcnow(),
             "type": "access"
         }
+
+        # Include claim_id if provided (for magic link access)
+        if claim_id:
+            payload["claim_id"] = str(claim_id)
 
         token = jwt.encode(payload, config.SECRET_KEY, algorithm=config.JWT_ALGORITHM)
         return token
@@ -104,9 +109,9 @@ class AuthService:
                 return None
 
             return payload
-        except jwt.ExpiredSignatureError:
+        except jose_exceptions.ExpiredSignatureError:
             return None
-        except jwt.InvalidTokenError:
+        except jose_exceptions.JWTError:
             return None
 
     @staticmethod
@@ -576,7 +581,7 @@ class AuthService:
             return None
 
         # Mark token as used (only if not already used)
-        # This allows reuse within the 5-minute grace period
+        # This allows reuse within the 24-hour grace period
         if magic_token.used_at is None:
             magic_token.used_at = datetime.utcnow()
             await session.flush()

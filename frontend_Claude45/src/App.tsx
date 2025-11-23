@@ -13,6 +13,7 @@ import { Status } from './pages/Status';
 import { Success } from './pages/Success';
 import { Auth } from './pages/Auth';
 import { MagicLinkPage } from './pages/Auth/MagicLinkPage';
+import { MyClaims } from './pages/MyClaims';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/claim/new" element={<ClaimFormPage />} />
           <Route path="/claim/success" element={<Success />} />
           <Route path="/status" element={<Status />} />
+          <Route path="/my-claims" element={<MyClaims />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/magic-link" element={<MagicLinkPage />} />
           <Route path="*" element={<NotFound />} />

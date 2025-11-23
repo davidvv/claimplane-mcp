@@ -18,7 +18,7 @@ from app.schemas import (
 from app.services.auth_service import AuthService
 from app.tasks.claim_tasks import send_claim_submitted_email
 from app.config import config
-from app.dependencies.auth import get_current_user, get_optional_current_user
+from app.dependencies.auth import get_current_user, get_optional_current_user, get_current_user_with_claim_access
 import logging
 
 logger = logging.getLogger(__name__)
@@ -33,21 +33,26 @@ def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
     return ip_address, user_agent
 
 
-def verify_claim_access(claim: Claim, current_user: Customer) -> None:
+def verify_claim_access(claim: Claim, current_user: Customer, token_claim_id: Optional[UUID] = None) -> None:
     """
     Verify that the current user has access to the claim.
     Admins and superadmins can access all claims.
-    Customers can only access their own claims.
+    Customers can access their own claims OR claims via magic link (token_claim_id).
 
     Args:
         claim: Claim to verify access for
         current_user: Currently authenticated user
+        token_claim_id: Optional claim ID from JWT token (magic link access)
 
     Raises:
         HTTPException: 403 if user doesn't have access
     """
     # Admins can access all claims
     if current_user.role in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
+        return
+
+    # Magic link holders can access the specific claim
+    if token_claim_id and claim.id == token_claim_id:
         return
 
     # Customers can only access their own claims
@@ -143,7 +148,7 @@ async def create_claim(
             # Don't fail the API request if email queueing fails
             logger.error(f"Failed to queue claim submitted email: {str(e)}")
 
-    return ClaimResponseSchema.model_validate(claim)
+    return ClaimResponseSchema.from_orm(claim)
 
 
 @router.post("/submit", response_model=ClaimResponseSchema, status_code=status.HTTP_201_CREATED)
@@ -252,24 +257,24 @@ async def submit_claim_with_customer(
             # Don't fail the API request if email queueing fails
             logger.error(f"Failed to queue claim submitted email: {str(e)}")
 
-    return ClaimResponseSchema.model_validate(claim)
+    return ClaimResponseSchema.from_orm(claim)
 
 
 @router.get("/{claim_id}", response_model=ClaimResponseSchema)
 async def get_claim(
     claim_id: UUID,
-    current_user: Customer = Depends(get_current_user),
+    user_data: tuple = Depends(get_current_user_with_claim_access),
     db: AsyncSession = Depends(get_db)
 ) -> ClaimResponseSchema:
     """
     Get claim by ID.
 
-    Requires authentication. Customers can only access their own claims.
+    Requires authentication. Customers can access their own claims or claims via magic link.
     Admins and superadmins can access all claims.
 
     Args:
         claim_id: Claim UUID
-        current_user: Currently authenticated user
+        user_data: Tuple of (current_user, token_claim_id) from JWT
         db: Database session
 
     Returns:
@@ -278,6 +283,8 @@ async def get_claim(
     Raises:
         HTTPException: If claim not found or access denied
     """
+    current_user, token_claim_id = user_data
+
     repo = ClaimRepository(db)
     claim = await repo.get_by_id(claim_id)
 
@@ -287,10 +294,10 @@ async def get_claim(
             detail=f"Claim with id {claim_id} not found"
         )
 
-    # Verify access
-    verify_claim_access(claim, current_user)
+    # Verify access (pass token_claim_id for magic link access)
+    verify_claim_access(claim, current_user, token_claim_id)
 
-    return ClaimResponseSchema.model_validate(claim)
+    return ClaimResponseSchema.from_orm(claim)
 
 
 @router.get("/", response_model=List[ClaimResponseSchema])

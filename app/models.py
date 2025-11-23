@@ -604,7 +604,7 @@ class MagicLinkToken(Base):
 
         Tokens are valid if:
         - Not expired (within 48 hours of creation)
-        - Either never used OR used within last 5 minutes (grace period for retries)
+        - Either never used OR used within last 24 hours (grace period for multiple uses)
         """
         from datetime import timezone, timedelta
         now = datetime.now(timezone.utc)
@@ -617,6 +617,7 @@ class MagicLinkToken(Base):
         if self.used_at is None:
             return True
 
-        # If used, allow reuse within 5 minute grace period
-        grace_period = timedelta(minutes=5)
+        # Allow reuse within 24 hour grace period
+        # This lets users click the link multiple times within a day
+        grace_period = timedelta(hours=24)
         return (now - self.used_at.replace(tzinfo=timezone.utc)) < grace_period

@@ -55,8 +55,71 @@ export function Status() {
     const claimIdFromUrl = searchParams.get('claimId');
     if (claimIdFromUrl) {
       setValue('claimId', claimIdFromUrl);
-      // Automatically submit the form to load the claim
-      onSubmit({ claimId: claimIdFromUrl });
+      
+      // Comprehensive debugging for authentication state
+      console.log('=== STATUS PAGE DEBUGGING ===');
+      console.log('Claim ID from URL:', claimIdFromUrl);
+      console.log('Current URL:', window.location.href);
+      console.log('LocalStorage auth_token:', localStorage.getItem('auth_token'));
+      console.log('LocalStorage refresh_token:', localStorage.getItem('refresh_token'));
+      console.log('LocalStorage user_email:', localStorage.getItem('user_email'));
+      console.log('LocalStorage user_id:', localStorage.getItem('user_id'));
+      
+      // Check if we have authentication tokens before auto-loading
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        console.log('Auth token found, proceeding with auto-load');
+        setIsLoading(true); // Show loading for auto-load
+        
+        // Add additional debugging for the API call
+        const debugOnSubmit = async (claimId: string) => {
+          console.log('Starting claim lookup for:', claimId);
+          try {
+            const claimData = await getClaim(claimId);
+            console.log('Claim lookup successful:', claimData);
+            setClaim(claimData);
+            
+            // Fetch documents
+            if (claimData.id) {
+              const docs = await listClaimDocuments(claimData.id);
+              console.log('Documents loaded:', docs);
+              setDocuments(docs);
+            }
+            
+            toast.success('Claim found!');
+          } catch (error: any) {
+            console.error('Claim lookup failed:', error);
+            console.error('Error response:', error.response);
+            console.error('Error status:', error.response?.status);
+            console.error('Error data:', error.response?.data);
+            
+            if (error.response?.status === 401) {
+              toast.error('Authentication expired. Please log in again.');
+              // Clear invalid token
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('refresh_token');
+            } else if (error.response?.status === 403) {
+              toast.error('Access denied. This claim may belong to another user.');
+            } else if (error.response?.status === 404) {
+              toast.error('Claim not found. Please check your Claim ID.');
+            } else {
+              toast.error('Error loading claim. Please try again.');
+            }
+            setClaim(null);
+            setDocuments([]);
+          } finally {
+            setIsLoading(false);
+          }
+        };
+        
+        // Delay slightly to ensure auth state is ready
+        setTimeout(() => {
+          debugOnSubmit(claimIdFromUrl);
+        }, 500); // Short delay to ensure localStorage is accessible
+      } else {
+        console.log('No auth token found, manual submission required');
+        // Don't show error toast for missing token - let user manually enter claim ID
+      }
     }
   }, [searchParams]);
 
@@ -75,8 +138,23 @@ export function Status() {
 
       toast.success('Claim found!');
     } catch (error: any) {
-      toast.error('Claim not found. Please check your Claim ID.');
       console.error('Claim lookup error:', error);
+      
+      if (error.response?.status === 401) {
+        toast.error('Authentication expired. Please log in again.');
+        // Clear invalid tokens
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('user_name');
+      } else if (error.response?.status === 403) {
+        toast.error('Access denied. This claim may belong to another user.');
+      } else if (error.response?.status === 404) {
+        toast.error('Claim not found. Please check your Claim ID.');
+      } else {
+        toast.error('Error loading claim. Please try again.');
+      }
       setClaim(null);
       setDocuments([]);
     } finally {
@@ -120,16 +198,26 @@ export function Status() {
   const currentStepIndex = getCurrentStepIndex();
 
   return (
-    <div className="py-12 md:py-20">
-      <div className="container max-w-4xl">
-        <div className="mb-12 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            Check Claim Status
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Track Your Claim
           </h1>
-          <p className="text-muted-foreground">
-            Enter your Claim ID to view the status of your compensation claim
+          <p className="text-gray-600">
+            Enter your Claim ID to check the status of your flight compensation claim.
           </p>
         </div>
+        
+        {/* Auto-loading indicator for magic link redirects */}
+        {isLoading && searchParams.get('claimId') && (
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span>Loading your claim...</span>
+            </div>
+          </div>
+        )}
 
         {/* Claim ID Lookup */}
         <Card className="mb-8">

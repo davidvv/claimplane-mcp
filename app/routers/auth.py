@@ -405,11 +405,12 @@ async def verify_magic_link(
     # Get client info
     ip_address, user_agent = get_client_info(request)
 
-    # Generate JWT tokens
+    # Generate JWT tokens (include claim_id if provided)
     access_token = AuthService.create_access_token(
         user_id=customer.id,
         email=customer.email,
-        role=customer.role
+        role=customer.role,
+        claim_id=claim_id  # Pass claim_id for magic link access authorization
     )
 
     refresh_token_str, _ = await AuthService.create_refresh_token(

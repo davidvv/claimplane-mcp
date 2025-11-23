@@ -32,16 +32,24 @@ export function MyClaims() {
       try {
         // Check if user is authenticated
         const token = localStorage.getItem('auth_token');
+        console.log('[MyClaims] Auth token present:', !!token);
+
         if (!token) {
+          console.log('[MyClaims] No token found, redirecting to auth');
           toast.error('Please log in to view your claims');
           navigate('/auth');
           return;
         }
 
+        console.log('[MyClaims] Fetching claims...');
         const response = await listClaims({ limit: 100 }); // Get all user's claims
-        setClaims(response.items);
+        console.log('[MyClaims] Claims response:', response);
+        console.log('[MyClaims] Claims count:', response.items?.length || 0);
+
+        setClaims(response.items || []);
       } catch (error: any) {
-        console.error('Failed to fetch claims:', error);
+        console.error('[MyClaims] Failed to fetch claims:', error);
+        console.error('[MyClaims] Error response:', error.response);
 
         if (error.response?.status === 401) {
           toast.error('Session expired. Please log in again');
@@ -52,6 +60,7 @@ export function MyClaims() {
           toast.error('Failed to load your claims');
         }
       } finally {
+        console.log('[MyClaims] Setting isLoading to false');
         setIsLoading(false);
       }
     };

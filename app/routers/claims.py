@@ -285,17 +285,24 @@ async def get_claim(
     """
     current_user, token_claim_id = user_data
 
+    logger.info(f"[get_claim] Request for claim_id={claim_id}, user={current_user.id}, token_claim_id={token_claim_id}")
+
     repo = ClaimRepository(db)
     claim = await repo.get_by_id(claim_id)
 
     if not claim:
+        logger.warning(f"[get_claim] Claim {claim_id} not found in database")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Claim with id {claim_id} not found"
         )
 
+    logger.info(f"[get_claim] Found claim: id={claim.id}, customer_id={claim.customer_id}")
+
     # Verify access (pass token_claim_id for magic link access)
     verify_claim_access(claim, current_user, token_claim_id)
+
+    logger.info(f"[get_claim] Access verified, returning claim")
 
     return ClaimResponseSchema.from_orm(claim)
 
@@ -346,7 +353,18 @@ async def list_claims(
         else:
             claims = await repo.get_by_customer_id(current_user.id, skip=skip, limit=limit)
 
-    return [ClaimResponseSchema.from_orm(claim) for claim in claims]
+    # Debug logging to verify claim IDs
+    logger.info(f"[list_claims] Returning {len(claims)} claims for user {current_user.id}")
+    for claim in claims:
+        logger.info(f"[list_claims] Claim: id={claim.id}, customer_id={claim.customer_id}, flight={claim.flight_number}")
+
+    response_claims = [ClaimResponseSchema.from_orm(claim) for claim in claims]
+
+    # Log the serialized response
+    for idx, resp_claim in enumerate(response_claims):
+        logger.info(f"[list_claims] Response[{idx}]: id={resp_claim.id}, customerId={resp_claim.customer_id}")
+
+    return response_claims
 
 
 @router.get("/customer/{customer_id}", response_model=List[ClaimResponseSchema])

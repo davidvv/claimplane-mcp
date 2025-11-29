@@ -78,14 +78,19 @@ export function Status() {
             const claimData = await getClaim(claimId);
             console.log('Claim lookup successful:', claimData);
             setClaim(claimData);
-            
-            // Fetch documents
+
+            // Fetch documents (optional - don't fail if not available)
             if (claimData.id) {
-              const docs = await listClaimDocuments(claimData.id);
-              console.log('Documents loaded:', docs);
-              setDocuments(docs);
+              try {
+                const docs = await listClaimDocuments(claimData.id);
+                console.log('Documents loaded:', docs);
+                setDocuments(docs);
+              } catch (docError) {
+                console.log('Documents not available or endpoint not implemented:', docError);
+                setDocuments([]);
+              }
             }
-            
+
             toast.success('Claim found!');
           } catch (error: any) {
             console.error('Claim lookup failed:', error);
@@ -130,10 +135,15 @@ export function Status() {
       const claimData = await getClaim(data.claimId);
       setClaim(claimData);
 
-      // Fetch documents
+      // Fetch documents (optional - don't fail if not available)
       if (claimData.id) {
-        const docs = await listClaimDocuments(claimData.id);
-        setDocuments(docs);
+        try {
+          const docs = await listClaimDocuments(claimData.id);
+          setDocuments(docs);
+        } catch (docError) {
+          console.log('Documents not available or endpoint not implemented:', docError);
+          setDocuments([]);
+        }
       }
 
       toast.success('Claim found!');

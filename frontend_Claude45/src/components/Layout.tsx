@@ -3,9 +3,17 @@
  */
 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Plane, LogIn, UserPlus, LogOut, User } from 'lucide-react';
+import { Plane, LogIn, UserPlus, LogOut, User, FileText, Settings, ChevronDown } from 'lucide-react';
 import { DarkModeToggle } from './DarkModeToggle';
 import { Button } from './ui/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/DropdownMenu';
 import { cn } from '@/lib/utils';
 import { isAuthenticated, getStoredUserInfo, logout } from '@/services/auth';
 
@@ -80,14 +88,39 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex items-center gap-2">
             {authenticated ? (
               <>
-                <div className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm">
-                  <User className="w-4 h-4" />
-                  <span>{userInfo.name || userInfo.email}</span>
-                </div>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <User className="w-4 h-4" />
+                      <span className="hidden sm:inline">{userInfo.name || userInfo.email}</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{userInfo.name || 'My Account'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {userInfo.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/my-claims')}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      My Claims
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/account/settings')}>
+                      <Settings className="w-4 h-4 mr-2" />
+                      Account Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <>

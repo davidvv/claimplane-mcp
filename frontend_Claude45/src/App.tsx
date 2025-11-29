@@ -15,6 +15,10 @@ import { Auth } from './pages/Auth';
 import { MagicLinkPage } from './pages/Auth/MagicLinkPage';
 import { MyClaims } from './pages/MyClaims';
 
+// Admin Pages
+import { AdminDashboard } from './pages/Admin/AdminDashboard';
+import { ClaimDetailPage } from './pages/Admin/ClaimDetailPage';
+
 function App() {
   return (
     <BrowserRouter>
@@ -27,6 +31,11 @@ function App() {
           <Route path="/my-claims" element={<MyClaims />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/magic-link" element={<MagicLinkPage />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/claims/:claimId" element={<ClaimDetailPage />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>

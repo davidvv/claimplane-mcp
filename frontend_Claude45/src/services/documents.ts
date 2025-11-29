@@ -60,10 +60,10 @@ export const uploadDocument = async (
 
 /**
  * Download document
- * GET /documents/{documentId}
+ * GET /files/{documentId}/download
  */
 export const downloadDocument = async (documentId: string): Promise<Blob> => {
-  const response = await apiClient.get(`/documents/${documentId}`, {
+  const response = await apiClient.get(`/files/${documentId}/download`, {
     responseType: 'blob',
   });
 

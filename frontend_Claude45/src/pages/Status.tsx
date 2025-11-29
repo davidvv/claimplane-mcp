@@ -12,13 +12,15 @@ import {
   FileText,
   Euro,
   Download,
+  Upload,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { claimStatusLookupSchema, type ClaimStatusLookupForm } from '@/schemas/validation';
 import { getClaim } from '@/services/claims';
-import { listClaimDocuments, downloadDocument } from '@/services/documents';
-import type { Claim, Document } from '@/types/api';
+import { listClaimDocuments, downloadDocument, uploadDocument } from '@/services/documents';
+import type { Claim, Document, DocumentType } from '@/types/api';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -26,6 +28,7 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { FileUploadZone } from '@/components/FileUploadZone';
 import {
   formatCurrency,
   formatDateTime,
@@ -41,6 +44,8 @@ export function Status() {
   const [claim, setClaim] = useState<Claim | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [hasAutoLoaded, setHasAutoLoaded] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pendingUploads, setPendingUploads] = useState<Array<{file: File; documentType: DocumentType; status: string}>>([]);
 
   const {
     register,
@@ -50,6 +55,12 @@ export function Status() {
   } = useForm<ClaimStatusLookupForm>({
     resolver: zodResolver(claimStatusLookupSchema),
   });
+
+  // Debug: Track documents state changes
+  useEffect(() => {
+    console.log('[STATE] Documents state changed:', documents);
+    console.log('[STATE] Documents count:', documents.length);
+  }, [documents]);
 
   // Auto-load claim if claimId is in URL (e.g., from magic link redirect)
   useEffect(() => {
@@ -84,11 +95,15 @@ export function Status() {
             // Fetch documents (optional - don't fail if not available)
             if (claimData.id) {
               try {
+                console.log('[AUTO-LOAD] Fetching documents for claim:', claimData.id);
                 const docs = await listClaimDocuments(claimData.id);
-                console.log('Documents loaded:', docs);
+                console.log('[AUTO-LOAD] Documents API response:', docs);
+                console.log('[AUTO-LOAD] Number of documents:', docs?.length || 0);
+                console.log('[AUTO-LOAD] Setting documents state with:', docs);
                 setDocuments(docs);
+                console.log('[AUTO-LOAD] Documents state updated');
               } catch (docError) {
-                console.log('Documents not available or endpoint not implemented:', docError);
+                console.error('[AUTO-LOAD] Error fetching documents:', docError);
                 setDocuments([]);
               }
             }
@@ -140,10 +155,15 @@ export function Status() {
       // Fetch documents (optional - don't fail if not available)
       if (claimData.id) {
         try {
+          console.log('[MANUAL LOAD] Fetching documents for claim:', claimData.id);
           const docs = await listClaimDocuments(claimData.id);
+          console.log('[MANUAL LOAD] Documents API response:', docs);
+          console.log('[MANUAL LOAD] Number of documents:', docs?.length || 0);
+          console.log('[MANUAL LOAD] Setting documents state with:', docs);
           setDocuments(docs);
+          console.log('[MANUAL LOAD] Documents state updated');
         } catch (docError) {
-          console.log('Documents not available or endpoint not implemented:', docError);
+          console.error('[MANUAL LOAD] Error fetching documents:', docError);
           setDocuments([]);
         }
       }
@@ -182,7 +202,7 @@ export function Status() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = doc.filename;
+      a.download = doc.originalFilename || doc.filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -192,6 +212,45 @@ export function Status() {
       toast.error('Failed to download document');
       console.error('Document download error:', error);
     }
+  };
+
+  const handleFilesChange = (files: Array<{file: File; documentType: DocumentType; status: string}>) => {
+    setPendingUploads(files);
+  };
+
+  const handleUploadDocuments = async () => {
+    if (pendingUploads.length === 0 || !claim?.id) return;
+
+    setIsUploading(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const pending of pendingUploads) {
+      try {
+        console.log('[UPLOAD] Uploading document:', pending.file.name);
+        const uploadedDoc = await uploadDocument(claim.id, pending.file, pending.documentType);
+        console.log('[UPLOAD] Upload successful:', uploadedDoc);
+        console.log('[UPLOAD] Adding to documents state, current length:', documents.length);
+        setDocuments(prev => {
+          const updated = [uploadedDoc, ...prev];
+          console.log('[UPLOAD] Documents state after update, length:', updated.length);
+          return updated;
+        });
+        successCount++;
+      } catch (error: any) {
+        console.error('[UPLOAD] Upload error:', error);
+        toast.error(`Failed to upload ${pending.file.name}`);
+        failCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`${successCount} document${successCount > 1 ? 's' : ''} uploaded successfully!`);
+    }
+
+    // Clear pending uploads
+    setPendingUploads([]);
+    setIsUploading(false);
   };
 
   // Status timeline steps
@@ -422,44 +481,84 @@ export function Status() {
             </Card>
 
             {/* Documents */}
-            {documents.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Uploaded Documents</CardTitle>
-                </CardHeader>
+            <Card>
+              <CardHeader>
+                <CardTitle>Documents</CardTitle>
+                <CardDescription>
+                  Upload supporting documents for your claim (boarding passes, receipts, etc.)
+                </CardDescription>
+              </CardHeader>
 
-                <CardContent>
-                  <ul className="space-y-2">
-                    {documents.map((doc) => (
-                      <li
-                        key={doc.id}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-5 h-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-sm">{doc.filename}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {doc.documentType.replace('_', ' ')} •{' '}
-                              {doc.uploadedAt &&
-                                formatDateTime(doc.uploadedAt)}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDownloadDocument(doc)}
+              <CardContent className="space-y-6">
+                {/* Upload Form */}
+                <div className="space-y-4">
+                  <FileUploadZone
+                    onFilesChange={handleFilesChange}
+                    maxFiles={5}
+                    maxSizeMB={10}
+                  />
+
+                  {pendingUploads.length > 0 && (
+                    <Button
+                      onClick={handleUploadDocuments}
+                      disabled={isUploading}
+                      className="w-full"
+                    >
+                      {isUploading ? (
+                        <>
+                          <LoadingSpinner size="sm" className="mr-2" />
+                          Uploading {pendingUploads.length} document{pendingUploads.length > 1 ? 's' : ''}...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload {pendingUploads.length} Document{pendingUploads.length > 1 ? 's' : ''}
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Documents List */}
+                {documents.length > 0 ? (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium">Uploaded Documents ({documents.length})</h3>
+                    <ul className="space-y-2">
+                      {documents.map((doc) => (
+                        <li
+                          key={doc.id}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                         >
-                          <Download className="w-4 h-4 mr-2" />
-                          Download
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-5 h-5 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium text-sm">{doc.originalFilename || doc.filename}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {doc.documentType.replace('_', ' ')} •{' '}
+                                {doc.uploadedAt && formatDateTime(doc.uploadedAt)}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDownloadDocument(doc)}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No documents uploaded yet</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

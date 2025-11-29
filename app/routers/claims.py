@@ -2,20 +2,24 @@
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import Claim, Customer
 from app.repositories import ClaimRepository, CustomerRepository
+from app.repositories.file_repository import FileRepository
 from app.schemas import (
     ClaimCreateSchema,
     ClaimResponseSchema,
     ClaimRequestSchema,
+    ClaimSubmitResponseSchema,
     ClaimUpdateSchema,
-    ClaimPatchSchema
+    ClaimPatchSchema,
+    FileResponseSchema
 )
 from app.services.auth_service import AuthService
+from app.services.file_service import FileService, get_file_service
 from app.tasks.claim_tasks import send_claim_submitted_email
 from app.config import config
 from app.dependencies.auth import get_current_user, get_optional_current_user, get_current_user_with_claim_access
@@ -151,21 +155,24 @@ async def create_claim(
     return ClaimResponseSchema.from_orm(claim)
 
 
-@router.post("/submit", response_model=ClaimResponseSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/submit", response_model=ClaimSubmitResponseSchema, status_code=status.HTTP_201_CREATED)
 async def submit_claim_with_customer(
     claim_request: ClaimRequestSchema,
     request: Request,
     db: AsyncSession = Depends(get_db)
-) -> ClaimResponseSchema:
+) -> ClaimSubmitResponseSchema:
     """
     Submit a new claim with customer information (creates customer if needed).
+
+    Returns an access token for immediate authentication, allowing the user
+    to upload documents without needing to click the magic link first.
 
     Args:
         claim_request: Claim request with customer and flight info
         db: Database session
 
     Returns:
-        Created claim data
+        Created claim data with access token for immediate authentication
 
     Raises:
         HTTPException: If validation fails
@@ -257,7 +264,21 @@ async def submit_claim_with_customer(
             # Don't fail the API request if email queueing fails
             logger.error(f"Failed to queue claim submitted email: {str(e)}")
 
-    return ClaimResponseSchema.from_orm(claim)
+    # Generate access token for immediate authentication
+    # This allows users to upload documents without clicking the magic link first
+    access_token = AuthService.create_access_token(
+        user_id=customer.id,
+        email=customer.email,
+        role=customer.role,
+        claim_id=claim.id
+    )
+    logger.info(f"Generated access token for customer {customer.id} with claim {claim.id}")
+
+    return ClaimSubmitResponseSchema(
+        claim=ClaimResponseSchema.from_orm(claim),
+        accessToken=access_token,
+        tokenType="bearer"
+    )
 
 
 @router.get("/{claim_id}", response_model=ClaimResponseSchema)
@@ -594,3 +615,119 @@ async def get_claims_by_status(
         claims = [c for c in claims if c.customer_id == current_user.id]
 
     return [ClaimResponseSchema.from_orm(claim) for claim in claims]
+
+
+@router.get("/{claim_id}/documents", response_model=List[FileResponseSchema])
+async def list_claim_documents(
+    claim_id: UUID,
+    current_user: Customer = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> List[FileResponseSchema]:
+    """
+    List all documents for a specific claim.
+
+    Customers can only access documents for their own claims.
+    Admins can access documents for any claim.
+
+    Args:
+        claim_id: ID of the claim
+        current_user: Currently authenticated user
+        db: Database session
+
+    Returns:
+        List of documents for the claim
+
+    Raises:
+        HTTPException: If claim not found or access denied
+    """
+    # Verify claim exists
+    claim_repo = ClaimRepository(db)
+    claim = await claim_repo.get_by_id(claim_id)
+
+    if not claim:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Claim with id {claim_id} not found"
+        )
+
+    # Verify access
+    verify_claim_access(claim, current_user)
+
+    # Get documents
+    file_repo = FileRepository(db)
+    files = await file_repo.get_by_claim_id(claim_id, include_deleted=False)
+
+    logger.info(f"[list_claim_documents] Found {len(files)} documents for claim {claim_id}")
+    return [FileResponseSchema.model_validate(f) for f in files]
+
+
+@router.post("/{claim_id}/documents", response_model=FileResponseSchema, status_code=status.HTTP_201_CREATED)
+async def upload_claim_document(
+    claim_id: UUID,
+    file: UploadFile = File(...),
+    document_type: str = Form(...),
+    description: Optional[str] = Form(None),
+    current_user: Customer = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Upload a document for a specific claim.
+
+    Customers can only upload documents to their own claims.
+    Admins can upload documents to any claim.
+
+    Args:
+        claim_id: ID of the claim to attach document to
+        file: File to upload
+        document_type: Type of document (boarding_pass, id_document, etc.)
+        description: Optional description
+        current_user: Currently authenticated user
+        db: Database session
+
+    Returns:
+        FileResponseSchema: Uploaded file information
+
+    Raises:
+        HTTPException: If claim not found or access denied
+    """
+    # Verify claim exists
+    claim_repo = ClaimRepository(db)
+    claim = await claim_repo.get_by_id(claim_id)
+
+    if not claim:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Claim with id {claim_id} not found"
+        )
+
+    # Verify access
+    verify_claim_access(claim, current_user)
+
+    # Upload file
+    try:
+        logger.info(f"[upload_claim_document] Uploading {file.filename} for claim {claim_id}")
+        file_service = get_file_service(db)
+        file_info = await file_service.upload_file(
+            file=file,
+            claim_id=str(claim_id),
+            customer_id=str(current_user.id),
+            document_type=document_type,
+            description=description,
+            access_level="private"
+        )
+
+        # Commit the transaction to persist the file record
+        await db.commit()
+
+        logger.info(f"[upload_claim_document] Successfully uploaded file {file_info.id}")
+        return FileResponseSchema.model_validate(file_info)
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"[upload_claim_document] Upload failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"File upload failed: {str(e)}"
+        )

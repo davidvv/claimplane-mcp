@@ -76,6 +76,7 @@ export function Step4_Review({
       toast.success('Claim submitted successfully!');
 
       // Step 2: Upload documents
+      let uploadErrors = 0;
       if (documents.length > 0 && claim.id) {
         for (let i = 0; i < documents.length; i++) {
           const doc = documents[i];
@@ -94,11 +95,20 @@ export function Step4_Review({
           } catch (error) {
             console.error('Document upload error:', error);
             toast.error(`Failed to upload ${doc.file.name}`);
+            uploadErrors++;
           }
         }
       }
 
-      toast.success('All documents uploaded!');
+      // Show success message only if all documents uploaded successfully
+      if (documents.length > 0) {
+        if (uploadErrors === 0) {
+          toast.success('All documents uploaded successfully!');
+        } else if (uploadErrors < documents.length) {
+          toast.warning(`${documents.length - uploadErrors} of ${documents.length} documents uploaded`);
+        }
+        // If all failed, individual error toasts already shown
+      }
 
       // Analytics tracking stub
       if (typeof window !== 'undefined' && (window as any).analytics) {

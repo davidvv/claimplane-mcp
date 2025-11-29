@@ -31,6 +31,7 @@ ClaimUpdateSchema = schemas_module.ClaimUpdateSchema
 ClaimPatchSchema = schemas_module.ClaimPatchSchema
 ClaimResponseSchema = schemas_module.ClaimResponseSchema
 ClaimRequestSchema = schemas_module.ClaimRequestSchema
+ClaimSubmitResponseSchema = schemas_module.ClaimSubmitResponseSchema
 FileUploadSchema = schemas_module.FileUploadSchema
 FileResponseSchema = schemas_module.FileResponseSchema
 FileListResponseSchema = schemas_module.FileListResponseSchema
@@ -53,6 +54,7 @@ __all__ = [
     "ClaimPatchSchema",
     "ClaimResponseSchema",
     "ClaimRequestSchema",
+    "ClaimSubmitResponseSchema",
     "FileUploadSchema",
     "FileResponseSchema",
     "FileListResponseSchema",

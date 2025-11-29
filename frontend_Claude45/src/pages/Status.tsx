@@ -40,6 +40,7 @@ export function Status() {
   const [isLoading, setIsLoading] = useState(false);
   const [claim, setClaim] = useState<Claim | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [hasAutoLoaded, setHasAutoLoaded] = useState(false);
 
   const {
     register,
@@ -53,9 +54,9 @@ export function Status() {
   // Auto-load claim if claimId is in URL (e.g., from magic link redirect)
   useEffect(() => {
     const claimIdFromUrl = searchParams.get('claimId');
-    if (claimIdFromUrl) {
+    if (claimIdFromUrl && !hasAutoLoaded) {
       setValue('claimId', claimIdFromUrl);
-      
+
       // Comprehensive debugging for authentication state
       console.log('=== STATUS PAGE DEBUGGING ===');
       console.log('Claim ID from URL:', claimIdFromUrl);
@@ -64,11 +65,12 @@ export function Status() {
       console.log('LocalStorage refresh_token:', localStorage.getItem('refresh_token'));
       console.log('LocalStorage user_email:', localStorage.getItem('user_email'));
       console.log('LocalStorage user_id:', localStorage.getItem('user_id'));
-      
+
       // Check if we have authentication tokens before auto-loading
       const token = localStorage.getItem('auth_token');
       if (token) {
         console.log('Auth token found, proceeding with auto-load');
+        setHasAutoLoaded(true);  // Mark as auto-loaded to prevent duplicate execution
         setIsLoading(true); // Show loading for auto-load
         
         // Add additional debugging for the API call

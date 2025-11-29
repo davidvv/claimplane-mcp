@@ -42,16 +42,29 @@ export const getClaim = async (claimId: string): Promise<Claim> => {
 /**
  * Submit new claim (passwordless - auto-creates customer and sends magic link)
  * POST /claims/submit
+ *
+ * Returns claim data and also stores access token for immediate authentication,
+ * allowing document uploads without clicking the magic link first.
  */
 export const submitClaim = async (request: ClaimRequest): Promise<Claim> => {
-  // Use passwordless endpoint - auto-creates customer and sends magic link email
-  const response = await apiClient.post<Claim>('/claims/submit', request);
+  // Use passwordless endpoint - auto-creates customer, sends magic link, and returns access token
+  const response = await apiClient.post<{
+    claim: Claim;
+    accessToken: string;
+    tokenType: string;
+  }>('/claims/submit', request);
 
-  if (!response.data) {
+  if (!response.data || !response.data.claim) {
     throw new Error('Failed to submit claim');
   }
 
-  return response.data;
+  // Store access token for immediate authentication (allows document uploads)
+  if (response.data.accessToken) {
+    localStorage.setItem('auth_token', response.data.accessToken);
+    console.log('[submitClaim] Access token stored for immediate authentication');
+  }
+
+  return response.data.claim;
 };
 
 /**

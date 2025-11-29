@@ -225,6 +225,18 @@ class ClaimResponseSchema(BaseModel):
         from_attributes = True
 
 
+class ClaimSubmitResponseSchema(BaseModel):
+    """Schema for claim submission response with access token."""
+
+    claim: ClaimResponseSchema
+    access_token: str = Field(..., alias="accessToken")
+    token_type: str = Field(default="bearer", alias="tokenType")
+
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+
+
 class ClaimRequestSchema(BaseModel):
     """Schema for claim request with customer info."""
     

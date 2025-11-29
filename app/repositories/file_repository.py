@@ -20,24 +20,24 @@ class FileRepository(BaseRepository[ClaimFile]):
     async def get_by_claim_id(self, claim_id: UUID, include_deleted: bool = False) -> List[ClaimFile]:
         """Get files by claim ID."""
         stmt = select(ClaimFile).where(ClaimFile.claim_id == claim_id)
-        
+
         if not include_deleted:
             stmt = stmt.where(ClaimFile.is_deleted == 0)
-        
-        stmt = stmt.order_by(ClaimFile.created_at.desc())
-        
+
+        stmt = stmt.order_by(ClaimFile.uploaded_at.desc())
+
         result = await self.session.execute(stmt)
         return result.scalars().all()
     
     async def get_by_customer_id(self, customer_id: UUID, include_deleted: bool = False) -> List[ClaimFile]:
         """Get files by customer ID."""
         stmt = select(ClaimFile).where(ClaimFile.customer_id == customer_id)
-        
+
         if not include_deleted:
             stmt = stmt.where(ClaimFile.is_deleted == 0)
-        
-        stmt = stmt.order_by(ClaimFile.created_at.desc())
-        
+
+        stmt = stmt.order_by(ClaimFile.uploaded_at.desc())
+
         result = await self.session.execute(stmt)
         return result.scalars().all()
     
@@ -65,7 +65,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         if customer_id:
             stmt = stmt.where(ClaimFile.customer_id == customer_id)
         
-        stmt = stmt.order_by(ClaimFile.created_at.desc())
+        stmt = stmt.order_by(ClaimFile.uploaded_at.desc())
         
         result = await self.session.execute(stmt)
         return result.scalars().all()
@@ -82,7 +82,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         if customer_id:
             stmt = stmt.where(ClaimFile.customer_id == customer_id)
         
-        stmt = stmt.order_by(ClaimFile.created_at.desc())
+        stmt = stmt.order_by(ClaimFile.uploaded_at.desc())
         
         result = await self.session.execute(stmt)
         return result.scalars().all()
@@ -136,7 +136,7 @@ class FileRepository(BaseRepository[ClaimFile]):
                 ClaimFile.customer_id == customer_id,
                 ClaimFile.is_deleted == 0
             )
-        ).order_by(ClaimFile.created_at.desc()).limit(5)
+        ).order_by(ClaimFile.uploaded_at.desc()).limit(5)
         
         recent_result = await self.session.execute(recent_stmt)
         recent_files = recent_result.scalars().all()
@@ -179,12 +179,12 @@ class FileRepository(BaseRepository[ClaimFile]):
             stmt = stmt.where(ClaimFile.document_type == document_type)
         
         if date_from:
-            stmt = stmt.where(ClaimFile.created_at >= date_from)
+            stmt = stmt.where(ClaimFile.uploaded_at >= date_from)
         
         if date_to:
-            stmt = stmt.where(ClaimFile.created_at <= date_to)
+            stmt = stmt.where(ClaimFile.uploaded_at <= date_to)
         
-        stmt = stmt.order_by(ClaimFile.created_at.desc()).limit(limit).offset(offset)
+        stmt = stmt.order_by(ClaimFile.uploaded_at.desc()).limit(limit).offset(offset)
         
         result = await self.session.execute(stmt)
         return result.scalars().all()

@@ -37,10 +37,10 @@ export const uploadDocument = async (
 ): Promise<Document> => {
   const formData = createFormData({
     file,
-    documentType,
+    document_type: documentType,  // Backend expects snake_case
   });
 
-  const response = await apiClient.post<ApiResponse<Document>>(
+  const response = await apiClient.post<Document>(
     `/claims/${claimId}/documents`,
     formData,
     {
@@ -51,11 +51,11 @@ export const uploadDocument = async (
     }
   );
 
-  if (!response.data.data) {
+  if (!response.data) {
     throw new Error('Failed to upload document');
   }
 
-  return response.data.data;
+  return response.data;
 };
 
 /**

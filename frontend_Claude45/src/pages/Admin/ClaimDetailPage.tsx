@@ -40,12 +40,12 @@ export function ClaimDetailPage() {
 
   useEffect(() => {
     if (!claimId) {
-      navigate('/admin/dashboard');
+      navigate('/panel/dashboard');
       return;
     }
 
     loadClaimData();
-  }, [claimId]);
+  }, [claimId, navigate]);
 
   const loadClaimData = async () => {
     if (!claimId) return;
@@ -62,7 +62,7 @@ export function ClaimDetailPage() {
     } catch (error: any) {
       console.error('Failed to load claim:', error);
       toast.error(error.response?.data?.detail || 'Failed to load claim details');
-      navigate('/admin/dashboard');
+      navigate('/panel/dashboard');
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +129,7 @@ export function ClaimDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate('/admin/dashboard')}>
+          <Button variant="outline" onClick={() => navigate('/panel/dashboard')}>
             ← Back
           </Button>
           <div>

@@ -128,7 +128,7 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
                   <tr
                     key={claim.id}
                     className="hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => navigate(`/admin/claims/${claim.id}`)}
+                    onClick={() => navigate(`/panel/claims/${claim.id}`)}
                   >
                     <td className="px-4 py-3">
                       <div className="flex flex-col">
@@ -183,7 +183,7 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/admin/claims/${claim.id}`);
+                          navigate(`/panel/claims/${claim.id}`);
                         }}
                       >
                         View

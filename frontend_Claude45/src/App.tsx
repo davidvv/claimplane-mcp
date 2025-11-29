@@ -32,9 +32,9 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/magic-link" element={<MagicLinkPage />} />
 
-          {/* Admin Routes */}
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/claims/:claimId" element={<ClaimDetailPage />} />
+          {/* Admin Panel Routes (non-obvious path for security) */}
+          <Route path="/panel/dashboard" element={<AdminDashboard />} />
+          <Route path="/panel/claims/:claimId" element={<ClaimDetailPage />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

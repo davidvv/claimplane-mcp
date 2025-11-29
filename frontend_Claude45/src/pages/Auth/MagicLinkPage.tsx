@@ -50,10 +50,19 @@ export function MagicLinkPage() {
 
           // Ensure authentication state is ready before redirecting
           setTimeout(() => {
-            if (claimId) {
+            // Check user role and redirect accordingly
+            const userRole = response.data.user.role;
+
+            if (userRole === 'admin' || userRole === 'superadmin') {
+              // Admin users go to admin panel
+              console.log('Admin user detected, redirecting to panel dashboard');
+              navigate('/panel/dashboard');
+            } else if (claimId) {
+              // Customer with specific claim goes to status page
               console.log('Redirecting to status page with claim ID:', claimId);
               navigate(`/status?claimId=${claimId}`);
             } else {
+              // Customer without claim goes to claims list
               console.log('Redirecting to My Claims page (no specific claim ID)');
               navigate('/my-claims');
             }

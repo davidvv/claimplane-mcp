@@ -53,7 +53,7 @@ export function AdminDashboard() {
   };
 
   useEffect(() => {
-    // Check if user is authenticated and is admin
+    // Check if user is authenticated
     const token = localStorage.getItem('auth_token');
     if (!token) {
       navigate('/auth');
@@ -62,7 +62,7 @@ export function AdminDashboard() {
 
     loadClaims();
     loadAnalytics();
-  }, []);
+  }, [navigate]);
 
   const handleFiltersChange = (newFilters: Partial<ClaimFilters>) => {
     const updatedFilters = {

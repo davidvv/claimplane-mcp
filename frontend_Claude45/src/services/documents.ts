@@ -14,15 +14,16 @@ import type {
  * GET /claims/{claimId}/documents
  */
 export const listClaimDocuments = async (claimId: string): Promise<Document[]> => {
-  const response = await apiClient.get<ApiResponse<Document[]>>(
+  const response = await apiClient.get<Document[]>(
     `/claims/${claimId}/documents`
   );
 
-  if (!response.data.data) {
+  // Backend returns direct array, not wrapped in ApiResponse
+  if (!response.data) {
     return [];
   }
 
-  return response.data.data;
+  return response.data;
 };
 
 /**

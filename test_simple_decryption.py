@@ -4,9 +4,11 @@
 import base64
 import os
 import sys
+from pathlib import Path
 
-# Add the app directory to the path
-sys.path.insert(0, '/Users/david/Documents/Proyectos/flight_claim')
+# Add the app directory to the path (using relative path from script location)
+script_dir = Path(__file__).parent
+sys.path.insert(0, str(script_dir))
 
 def test_basic_encryption():
     """Test basic encryption/decryption without full app context."""

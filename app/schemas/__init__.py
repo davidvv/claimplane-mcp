@@ -3,9 +3,11 @@
 # Import all schemas from the parent module's schemas.py file
 import sys
 import importlib.util
+from pathlib import Path
 
-# Load the schemas.py file from parent directory
-spec = importlib.util.spec_from_file_location("app_schemas", "/Users/david/Documents/Proyectos/flight_claim/app/schemas.py")
+# Load the schemas.py file from parent directory (using relative path)
+schemas_path = Path(__file__).parent.parent / "schemas.py"
+spec = importlib.util.spec_from_file_location("app_schemas", str(schemas_path))
 schemas_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(schemas_module)
 
@@ -29,6 +31,7 @@ ClaimUpdateSchema = schemas_module.ClaimUpdateSchema
 ClaimPatchSchema = schemas_module.ClaimPatchSchema
 ClaimResponseSchema = schemas_module.ClaimResponseSchema
 ClaimRequestSchema = schemas_module.ClaimRequestSchema
+ClaimSubmitResponseSchema = schemas_module.ClaimSubmitResponseSchema
 FileUploadSchema = schemas_module.FileUploadSchema
 FileResponseSchema = schemas_module.FileResponseSchema
 FileListResponseSchema = schemas_module.FileListResponseSchema
@@ -51,6 +54,7 @@ __all__ = [
     "ClaimPatchSchema",
     "ClaimResponseSchema",
     "ClaimRequestSchema",
+    "ClaimSubmitResponseSchema",
     "FileUploadSchema",
     "FileResponseSchema",
     "FileListResponseSchema",

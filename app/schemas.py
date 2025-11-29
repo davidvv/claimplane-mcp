@@ -186,14 +186,10 @@ class ClaimPatchSchema(BaseModel):
 
 class ClaimResponseSchema(BaseModel):
     """Schema for claim response."""
-    
+
     id: UUID
     customer_id: UUID = Field(..., alias="customerId")
-    flight_number: str = Field(..., alias="flightNumber")
-    airline: str
-    departure_date: date = Field(..., alias="departureDate")
-    departure_airport: str = Field(..., alias="departureAirport")
-    arrival_airport: str = Field(..., alias="arrivalAirport")
+    flight_info: FlightInfoSchema = Field(..., alias="flightInfo")
     incident_type: str = Field(..., alias="incidentType")
     status: str
     compensation_amount: Optional[Decimal] = Field(None, alias="compensationAmount")
@@ -201,7 +197,41 @@ class ClaimResponseSchema(BaseModel):
     notes: Optional[str]
     submitted_at: datetime = Field(..., alias="submittedAt")
     updated_at: datetime = Field(..., alias="updatedAt")
-    
+
+    @classmethod
+    def from_orm(cls, claim):
+        """Create response from ORM model by constructing flightInfo from flat fields."""
+        return cls(
+            id=claim.id,
+            customer_id=claim.customer_id,
+            flight_info=FlightInfoSchema(
+                flightNumber=claim.flight_number,
+                airline=claim.airline,
+                departureDate=claim.departure_date,
+                departureAirport=claim.departure_airport,
+                arrivalAirport=claim.arrival_airport
+            ),
+            incidentType=claim.incident_type,
+            status=claim.status,
+            compensationAmount=claim.compensation_amount,
+            currency=claim.currency,
+            notes=claim.notes,
+            submittedAt=claim.submitted_at,
+            updatedAt=claim.updated_at
+        )
+
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+
+
+class ClaimSubmitResponseSchema(BaseModel):
+    """Schema for claim submission response with access token."""
+
+    claim: ClaimResponseSchema
+    access_token: str = Field(..., alias="accessToken")
+    token_type: str = Field(default="bearer", alias="tokenType")
+
     class Config:
         populate_by_name = True
         from_attributes = True

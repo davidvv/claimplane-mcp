@@ -1,5 +1,6 @@
 """Authentication dependencies for FastAPI endpoints."""
-from typing import Optional
+import logging
+from typing import Optional, Tuple
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
@@ -11,6 +12,7 @@ from app.database import get_db
 from app.models import Customer
 from app.services.auth_service import AuthService
 
+logger = logging.getLogger(__name__)
 
 # HTTP Bearer token security scheme
 security = HTTPBearer()
@@ -232,3 +234,70 @@ async def get_optional_current_user(
     except Exception:
         # If any error occurs, just return None (optional auth)
         return None
+
+
+async def get_current_user_with_claim_access(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    session: AsyncSession = Depends(get_db)
+) -> Tuple[Customer, Optional[UUID]]:
+    """
+    Get the current authenticated user and extract claim_id from JWT token (if present).
+
+    This is useful for magic link authentication where the JWT token contains
+    a claim_id that grants access to a specific claim.
+
+    Args:
+        credentials: HTTP Authorization credentials (Bearer token)
+        session: Database session
+
+    Returns:
+        Tuple of (Customer instance, Optional claim_id from token)
+
+    Raises:
+        HTTPException: 401 if token is invalid or user not found
+    """
+    # Extract token
+    token = credentials.credentials
+
+    # Verify and decode token
+    payload = AuthService.verify_access_token(token)
+
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Extract user ID from token
+    try:
+        user_id = UUID(payload.get("user_id"))
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Extract claim_id if present (for magic link access)
+    token_claim_id = None
+    if "claim_id" in payload:
+        try:
+            token_claim_id = UUID(payload.get("claim_id"))
+        except (ValueError, TypeError):
+            # Invalid claim_id format - just ignore it
+            pass
+
+    # Fetch user from database
+    stmt = select(Customer).where(Customer.id == user_id)
+    result = await session.execute(stmt)
+    customer = result.scalar_one_or_none()
+
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return customer, token_claim_id

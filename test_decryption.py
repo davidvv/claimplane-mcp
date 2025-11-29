@@ -3,7 +3,11 @@
 
 import sys
 import os
-sys.path.append('/Users/david/Documents/Proyectos/flight_claim')
+from pathlib import Path
+
+# Add the app directory to the path (using relative path from script location)
+script_dir = Path(__file__).parent
+sys.path.append(str(script_dir))
 
 from app.services.encryption_service import encryption_service
 

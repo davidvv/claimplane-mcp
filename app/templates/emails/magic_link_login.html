@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Magic Link Login</title>
+    <style>
+        /* Simple, clean email styling that works across email clients */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 5px 5px;
+        }
+        .info-box {
+            background-color: white;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .info-box p {
+            margin: 8px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid: #ffc107;
+            padding: 12px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔐 Your Secure Login Link</h1>
+    </div>
+
+    <div class="content">
+        <p>Hello <strong>{{ customer_name }}</strong>,</p>
+
+        <p>You requested a magic link to access your account. Click the button below to securely log in to your Flight Claim account:</p>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ magic_link_url }}" class="button" style="background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 4px; display: inline-block; font-size: 16px; font-weight: bold;">
+                Log In to Your Account
+            </a>
+        </div>
+
+        <p style="text-align: center; color: #666; font-size: 14px;">
+            Or copy and paste this link into your browser: <br>
+            <a href="{{ magic_link_url }}" style="color: #4CAF50; word-break: break-all;">{{ magic_link_url }}</a>
+        </p>
+
+        <div class="info-box">
+            <h3 style="margin-top: 0;">🛡️ Security Information</h3>
+            <p><strong>This link is valid for 48 hours</strong> and can only be used once.</p>
+            <p><strong>IP Address:</strong> {{ ip_address }}</p>
+            <p><strong>Time:</strong> {{ timestamp }}</p>
+        </div>
+
+        <div class="warning">
+            <p style="margin: 0;"><strong>⚠️ Didn't request this?</strong></p>
+            <p style="margin: 5px 0 0 0;">If you didn't request this login link, you can safely ignore this email. Your account remains secure.</p>
+        </div>
+
+        <p><strong>What you can do once logged in:</strong></p>
+        <ul>
+            <li>View all your submitted claims</li>
+            <li>Track claim status in real-time</li>
+            <li>Upload additional documents</li>
+            <li>Communicate with our support team</li>
+        </ul>
+
+        <p>If you have any questions or concerns, please don't hesitate to contact us.</p>
+
+        <p>Best regards,<br>
+        <strong>The Flight Claim Team</strong></p>
+    </div>
+
+    <div class="footer">
+        <p>This is an automated email. Please do not reply directly to this message.</p>
+        <p>This login link will expire in 48 hours for your security.</p>
+        <p>&copy; 2025 Flight Claim System. All rights reserved.</p>
+    </div>
+</body>
+</html>

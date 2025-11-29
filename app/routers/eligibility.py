@@ -52,21 +52,38 @@ async def check_eligibility(request: EligibilityRequestSchema) -> EligibilityRes
     """
     Check eligibility for flight compensation (PUBLIC ENDPOINT).
 
-    This endpoint does not require authentication and returns only
-    eligibility information based on flight details.
+    Currently accepts all claims for manual review by admin team.
+    Automatic eligibility calculation will be implemented later.
 
     Args:
         request: Flight details for eligibility check
 
     Returns:
-        Eligibility result with compensation amount and reasons
+        Eligibility result indicating manual review is required
     """
-    # Call existing compensation service
-    result = CompensationService.calculate_compensation(
-        departure_airport=request.departure_airport.upper(),
-        arrival_airport=request.arrival_airport.upper(),
-        delay_hours=request.delay_hours,
-        incident_type=request.incident_type
-    )
+    # For now, accept all claims for manual review
+    # TODO: Implement automatic eligibility calculation when we have:
+    # - Real-time flight data API integration
+    # - Complete airport database
+    # - EU261 rule engine
 
-    return EligibilityResponseSchema(**result)
+    # Try to estimate distance for display purposes only
+    try:
+        result = CompensationService.calculate_compensation(
+            departure_airport=request.departure_airport.upper(),
+            arrival_airport=request.arrival_airport.upper(),
+            delay_hours=request.delay_hours,
+            incident_type=request.incident_type
+        )
+        distance = result.get("distance_km", 0)
+    except Exception:
+        distance = 0
+
+    # Return positive response that requires manual review
+    return EligibilityResponseSchema(
+        eligible=True,
+        amount=Decimal("0"),  # Amount to be determined by admin
+        distance_km=distance,
+        reason="Your claim will be reviewed by our team. We'll assess your eligibility based on EU261/2004 regulations and notify you of the outcome.",
+        requires_manual_review=True
+    )

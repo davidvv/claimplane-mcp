@@ -27,7 +27,8 @@ from app.schemas.admin_schemas import (
     CompensationCalculationRequest,
     CompensationCalculationResponse,
     StatusTransitionInfo,
-    ClaimStatusHistoryResponse
+    ClaimStatusHistoryResponse,
+    CustomerResponse
 )
 from app.tasks.claim_tasks import send_status_update_email
 from app.config import config
@@ -467,3 +468,29 @@ async def get_valid_transitions(
         valid_next_statuses=valid_next,
         status_info=status_info
     )
+
+
+@router.get("/users/admins", response_model=List[CustomerResponse])
+async def get_admin_users(
+    session: AsyncSession = Depends(get_db),
+    admin: Customer = Depends(get_current_admin)
+):
+    """
+    Get list of all admin users for assignment purposes.
+
+    Returns list of users with admin or superadmin role.
+    """
+    from app.repositories.customer_repository import CustomerRepository
+    from sqlalchemy import select
+
+    # Query for admin and superadmin users
+    query = select(Customer).where(
+        Customer.role.in_(['admin', 'superadmin'])
+    ).order_by(Customer.first_name, Customer.last_name)
+
+    result = await session.execute(query)
+    admin_users = result.scalars().all()
+
+    logger.info(f"Admin {admin.id} requested list of {len(admin_users)} admin users")
+
+    return admin_users

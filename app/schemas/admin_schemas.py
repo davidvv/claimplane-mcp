@@ -183,6 +183,7 @@ class ClaimDetailResponse(BaseModel):
 
     # Related data
     customer: Optional[CustomerResponse] = None
+    assignee: Optional[CustomerResponse] = None  # Admin assigned to this claim
     files: List[ClaimFileResponse] = []
     claim_notes: List[ClaimNoteResponse] = Field(default=[])  # List of notes on this claim
     status_history: List[ClaimStatusHistoryResponse] = []

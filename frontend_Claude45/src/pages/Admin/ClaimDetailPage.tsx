@@ -17,6 +17,8 @@ import {
   updateClaimStatus,
   addClaimNote,
   getValidStatusTransitions,
+  assignClaim,
+  getAdminUsers,
   type ClaimDetail,
   type ValidStatusTransitions,
 } from '../../services/admin';
@@ -41,6 +43,7 @@ export function ClaimDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
 
   // Status update form
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -50,6 +53,11 @@ export function ClaimDetailPage() {
   const [noteText, setNoteText] = useState('');
   const [isInternalNote, setIsInternalNote] = useState(true);
 
+  // Assignment form
+  const [adminUsers, setAdminUsers] = useState<Array<{ id: string; email: string; first_name: string; last_name: string }>>([]);
+  const [selectedAdmin, setSelectedAdmin] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+
   useEffect(() => {
     if (!claimId) {
       navigate('/panel/dashboard');
@@ -57,7 +65,25 @@ export function ClaimDetailPage() {
     }
 
     loadClaimData();
+    loadAdminUsers();
+
+    // Get current user ID from localStorage (set during login)
+    const authToken = localStorage.getItem('auth_token');
+    const userId = localStorage.getItem('user_id');
+    if (userId) {
+      setCurrentUserId(userId);
+    }
   }, [claimId, navigate]);
+
+  const loadAdminUsers = async () => {
+    try {
+      const users = await getAdminUsers();
+      setAdminUsers(users);
+    } catch (error: any) {
+      console.error('Failed to load admin users:', error);
+      // Don't show error toast - not critical
+    }
+  };
 
   const loadClaimData = async () => {
     if (!claimId) return;
@@ -129,6 +155,40 @@ export function ClaimDetailPage() {
       toast.error(error.response?.data?.detail || 'Failed to add note');
     } finally {
       setIsAddingNote(false);
+    }
+  };
+
+  const handleAssignToMe = async () => {
+    if (!claimId || !currentUserId) return;
+
+    setIsAssigning(true);
+    try {
+      const updatedClaim = await assignClaim(claimId, currentUserId);
+      setClaim(updatedClaim);
+      toast.success('Claim assigned to you');
+    } catch (error: any) {
+      console.error('Failed to assign claim:', error);
+      toast.error(error.response?.data?.detail || 'Failed to assign claim');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleAssignToAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!claimId || !selectedAdmin) return;
+
+    setIsAssigning(true);
+    try {
+      const updatedClaim = await assignClaim(claimId, selectedAdmin);
+      setClaim(updatedClaim);
+      toast.success('Claim assigned successfully');
+      setSelectedAdmin('');
+    } catch (error: any) {
+      console.error('Failed to assign claim:', error);
+      toast.error(error.response?.data?.detail || 'Failed to assign claim');
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -392,6 +452,63 @@ export function ClaimDetailPage() {
                 disabled={isUpdatingStatus || selectedStatus === claim.status}
               >
                 {isUpdatingStatus ? 'Updating...' : 'Update Status'}
+              </Button>
+            </form>
+          </Card>
+
+          {/* Assign Claim */}
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Assign Claim</h2>
+
+            {/* Current assignment */}
+            <div className="mb-4 p-3 bg-muted/30 rounded-lg">
+              <Label className="text-xs text-muted-foreground">Currently Assigned To</Label>
+              {claim.assignee ? (
+                <p className="font-medium text-sm mt-1">
+                  {claim.assignee.first_name} {claim.assignee.last_name}
+                  <br />
+                  <span className="text-xs text-muted-foreground">{claim.assignee.email}</span>
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic mt-1">Unassigned</p>
+              )}
+            </div>
+
+            {/* Quick assign to me */}
+            <Button
+              onClick={handleAssignToMe}
+              disabled={isAssigning}
+              className="w-full mb-4"
+              variant="outline"
+            >
+              {isAssigning ? 'Assigning...' : 'Assign to Me'}
+            </Button>
+
+            {/* Assign to specific admin */}
+            <form onSubmit={handleAssignToAdmin} className="space-y-4">
+              <div>
+                <Label htmlFor="assignTo">Or Assign To</Label>
+                <select
+                  id="assignTo"
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={selectedAdmin}
+                  onChange={(e) => setSelectedAdmin(e.target.value)}
+                  disabled={isAssigning}
+                >
+                  <option value="">Select admin...</option>
+                  {adminUsers.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.first_name} {user.last_name} ({user.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isAssigning || !selectedAdmin}
+              >
+                {isAssigning ? 'Assigning...' : 'Assign to Selected'}
               </Button>
             </form>
           </Card>

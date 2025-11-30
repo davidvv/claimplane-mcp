@@ -82,6 +82,12 @@ export interface ClaimDetail {
   files: ClaimFile[];
   claim_notes: ClaimNote[];  // Changed from 'notes' to 'claim_notes'
   status_history: StatusHistory[];
+  assignee: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+  } | null;
 }
 
 export interface ClaimFile {
@@ -308,5 +314,27 @@ export async function reviewFile(
  */
 export async function getPendingReviewFiles(): Promise<ClaimFile[]> {
   const response = await apiClient.get<ClaimFile[]>('/admin/files/pending-review');
+  return response.data;
+}
+
+/**
+ * Assign claim to an admin
+ */
+export async function assignClaim(
+  claimId: string,
+  assignedTo: string
+): Promise<ClaimDetail> {
+  const response = await apiClient.put<ClaimDetail>(
+    `/admin/claims/${claimId}/assign`,
+    { assigned_to: assignedTo }
+  );
+  return response.data;
+}
+
+/**
+ * Get list of admin users for assignment
+ */
+export async function getAdminUsers(): Promise<{ id: string; email: string; first_name: string; last_name: string }[]> {
+  const response = await apiClient.get<{ id: string; email: string; first_name: string; last_name: string }[]>('/admin/claims/users/admins');
   return response.data;
 }

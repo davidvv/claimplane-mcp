@@ -3,14 +3,16 @@
  * Displays paginated list of claims with filters
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { StatusBadge } from './StatusBadge';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { toast } from 'react-hot-toast';
 import type { ClaimListItem } from '../../services/admin';
+import { bulkAssignClaims, getAdminUsers } from '../../services/admin';
 
 interface ClaimsTableProps {
   claims: ClaimListItem[];
@@ -24,6 +26,26 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [airlineFilter, setAirlineFilter] = useState('');
+
+  // Bulk assignment state
+  const [selectedClaimIds, setSelectedClaimIds] = useState<string[]>([]);
+  const [adminUsers, setAdminUsers] = useState<Array<{ id: string; email: string; first_name: string; last_name: string }>>([]);
+  const [selectedAdminId, setSelectedAdminId] = useState<string>('');
+  const [isBulkAssigning, setIsBulkAssigning] = useState(false);
+
+  // Load admin users on mount
+  useEffect(() => {
+    loadAdminUsers();
+  }, []);
+
+  const loadAdminUsers = async () => {
+    try {
+      const users = await getAdminUsers();
+      setAdminUsers(users);
+    } catch (error) {
+      console.error('Failed to load admin users:', error);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +68,44 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
       status: undefined,
       airline: undefined,
     });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedClaimIds(claims.map((claim) => claim.id));
+    } else {
+      setSelectedClaimIds([]);
+    }
+  };
+
+  const handleSelectClaim = (claimId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedClaimIds([...selectedClaimIds, claimId]);
+    } else {
+      setSelectedClaimIds(selectedClaimIds.filter((id) => id !== claimId));
+    }
+  };
+
+  const handleBulkAssign = async () => {
+    if (!selectedAdminId || selectedClaimIds.length === 0) {
+      toast.error('Please select an admin and at least one claim');
+      return;
+    }
+
+    setIsBulkAssigning(true);
+    try {
+      const result = await bulkAssignClaims(selectedClaimIds, selectedAdminId);
+      toast.success(result.message);
+      setSelectedClaimIds([]);
+      setSelectedAdminId('');
+      // Trigger reload by calling parent's filter change
+      onFiltersChange({});
+    } catch (error: any) {
+      console.error('Bulk assign failed:', error);
+      toast.error(error.response?.data?.detail || 'Failed to assign claims');
+    } finally {
+      setIsBulkAssigning(false);
+    }
   };
 
   const formatCurrency = (amount: string | null) => {
@@ -108,12 +168,62 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
         </form>
       </Card>
 
+      {/* Bulk Assignment Controls */}
+      {selectedClaimIds.length > 0 && (
+        <Card className="p-4 bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                {selectedClaimIds.length} claim{selectedClaimIds.length > 1 ? 's' : ''} selected
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={selectedAdminId}
+                onChange={(e) => setSelectedAdminId(e.target.value)}
+                disabled={isBulkAssigning}
+              >
+                <option value="">Select admin to assign...</option>
+                {adminUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.first_name} {user.last_name} ({user.email})
+                  </option>
+                ))}
+              </select>
+              <Button
+                onClick={handleBulkAssign}
+                disabled={isBulkAssigning || !selectedAdminId}
+              >
+                {isBulkAssigning ? 'Assigning...' : 'Assign Selected'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedClaimIds([])}
+                disabled={isBulkAssigning}
+              >
+                Clear Selection
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Table */}
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted/50 border-b">
               <tr>
+                <th className="px-4 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300"
+                    checked={selectedClaimIds.length === claims.length && claims.length > 0}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    disabled={isLoading || claims.length === 0}
+                  />
+                </th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Customer</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Flight</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Route</th>
@@ -131,13 +241,13 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
             <tbody className="divide-y">
               {isLoading ? (
                 <tr>
-                  <td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={13} className="px-4 py-8 text-center text-muted-foreground">
                     Loading claims...
                   </td>
                 </tr>
               ) : claims.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={13} className="px-4 py-8 text-center text-muted-foreground">
                     No claims found
                   </td>
                 </tr>
@@ -148,6 +258,14 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
                     className="hover:bg-muted/50 cursor-pointer transition-colors"
                     onClick={() => navigate(`/panel/claims/${claim.id}`)}
                   >
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300"
+                        checked={selectedClaimIds.includes(claim.id)}
+                        onChange={(e) => handleSelectClaim(claim.id, e.target.checked)}
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col">
                         <span className="font-medium text-sm">

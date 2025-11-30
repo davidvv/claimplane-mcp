@@ -179,6 +179,19 @@ export interface ValidStatusTransitions {
   };
 }
 
+export interface BulkActionRequest {
+  claim_ids: string[];
+  action: string;
+  parameters: Record<string, any>;
+}
+
+export interface BulkActionResponse {
+  success: boolean;
+  affected_count: number;
+  message: string;
+  errors: string[];
+}
+
 // ============================================================================
 // API Functions
 // ============================================================================
@@ -336,5 +349,22 @@ export async function assignClaim(
  */
 export async function getAdminUsers(): Promise<{ id: string; email: string; first_name: string; last_name: string }[]> {
   const response = await apiClient.get<{ id: string; email: string; first_name: string; last_name: string }[]>('/admin/claims/users/admins');
+  return response.data;
+}
+
+/**
+ * Bulk assign claims to an admin
+ */
+export async function bulkAssignClaims(
+  claimIds: string[],
+  assignedTo: string
+): Promise<BulkActionResponse> {
+  const response = await apiClient.post<BulkActionResponse>('/admin/claims/bulk-action', {
+    claim_ids: claimIds,
+    action: 'assign',
+    parameters: {
+      assigned_to: assignedTo,
+    },
+  });
   return response.data;
 }

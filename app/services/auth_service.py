@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 from uuid import UUID
 
 from jose import jwt, exceptions as jose_exceptions
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import config
@@ -319,8 +319,8 @@ class AuthService:
         Raises:
             ValueError: If user already exists or validation fails
         """
-        # Check if user already exists
-        stmt = select(Customer).where(Customer.email == email)
+        # Check if user already exists (case-insensitive)
+        stmt = select(Customer).where(func.lower(Customer.email) == email.lower())
         result = await session.execute(stmt)
         existing_user = result.scalar_one_or_none()
 
@@ -364,8 +364,8 @@ class AuthService:
         Returns:
             Customer instance if authentication successful, None otherwise
         """
-        # Find user by email
-        stmt = select(Customer).where(Customer.email == email)
+        # Find user by email (case-insensitive)
+        stmt = select(Customer).where(func.lower(Customer.email) == email.lower())
         result = await session.execute(stmt)
         customer = result.scalar_one_or_none()
 

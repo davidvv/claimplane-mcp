@@ -458,9 +458,9 @@ async def request_password_reset(
     # Get client info
     ip_address, user_agent = get_client_info(request)
 
-    # Find user by email
-    from sqlalchemy import select
-    stmt = select(Customer).where(Customer.email == data.email)
+    # Find user by email (case-insensitive)
+    from sqlalchemy import select, func
+    stmt = select(Customer).where(func.lower(Customer.email) == data.email.lower())
     result = await session.execute(stmt)
     customer = result.scalar_one_or_none()
 

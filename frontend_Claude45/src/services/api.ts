@@ -5,6 +5,7 @@
 
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
+import { clearAuthTokens } from '@/utils/tokenStorage';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -78,8 +79,8 @@ apiClient.interceptors.response.use(
           break;
         case 401:
           toast.error('Unauthorized. Please log in.');
-          // Clear token and redirect to login
-          localStorage.removeItem('auth_token');
+          // Clear all tokens safely and redirect to login
+          clearAuthTokens();
           if (window.location.pathname !== '/auth') {
             window.location.href = '/auth';
           }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '@/services/api';
-import { storeAuthTokens } from '@/utils/tokenStorage';
+import { storeAuthTokens, clearAuthTokens } from '@/utils/tokenStorage';
 
 export function MagicLinkPage() {
   const [searchParams] = useSearchParams();
@@ -24,6 +24,11 @@ export function MagicLinkPage() {
         console.log('Verifying magic link token...');
         console.log('Token:', token);
         console.log('Claim ID:', claimId);
+
+        // IMPORTANT: Clear any old tokens BEFORE making the magic link verification request
+        // This ensures the API request doesn't include an old/invalid token that could cause 401 errors
+        clearAuthTokens();
+        console.log('[MagicLinkPage] Old tokens cleared before verification request');
 
         // Verify magic link token
         const response = await apiClient.post(`/auth/magic-link/verify/${token}`);

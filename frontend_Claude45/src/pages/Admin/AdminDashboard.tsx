@@ -18,6 +18,7 @@ export function AdminDashboard() {
   const [total, setTotal] = useState(0);
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ClaimFilters>({
     skip: 0,
     limit: 50,
@@ -28,6 +29,7 @@ export function AdminDashboard() {
   // Load claims
   const loadClaims = async (newFilters?: ClaimFilters) => {
     setIsLoading(true);
+    setError(null);
     try {
       const filterToUse = newFilters || filters;
       const response = await listClaims(filterToUse);
@@ -35,7 +37,9 @@ export function AdminDashboard() {
       setTotal(response.total);
     } catch (error: any) {
       console.error('Failed to load claims:', error);
-      toast.error(error.response?.data?.detail || 'Failed to load claims');
+      const errorMessage = error.response?.data?.detail || 'Failed to load claims. Please check your authentication.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -87,24 +91,40 @@ export function AdminDashboard() {
         </Button>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <Card className="p-6 border-destructive bg-destructive/10">
+          <div className="flex items-start gap-3">
+            <div className="text-destructive font-bold text-lg">⚠</div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-destructive mb-1">Error Loading Dashboard</h3>
+              <p className="text-sm text-muted-foreground">{error}</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Make sure you're logged in as an admin user. Check the browser console for more details.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Analytics Summary */}
       {analytics && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="p-6">
             <div className="text-sm text-muted-foreground mb-1">Total Claims</div>
-            <div className="text-3xl font-bold">{analytics.total_claims}</div>
+            <div className="text-3xl font-bold">{analytics.total_claims || 0}</div>
           </Card>
           <Card className="p-6">
             <div className="text-sm text-muted-foreground mb-1">Pending Review</div>
-            <div className="text-3xl font-bold text-yellow-600">{analytics.pending_review}</div>
+            <div className="text-3xl font-bold text-yellow-600">{analytics.pending_review || 0}</div>
           </Card>
           <Card className="p-6">
             <div className="text-sm text-muted-foreground mb-1">Approved</div>
-            <div className="text-3xl font-bold text-green-600">{analytics.approved}</div>
+            <div className="text-3xl font-bold text-green-600">{analytics.approved || 0}</div>
           </Card>
           <Card className="p-6">
             <div className="text-sm text-muted-foreground mb-1">Total Compensation</div>
-            <div className="text-3xl font-bold">€{analytics.total_compensation.toFixed(0)}</div>
+            <div className="text-3xl font-bold">€{(analytics.total_compensation || 0).toFixed(0)}</div>
           </Card>
         </div>
       )}

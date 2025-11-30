@@ -21,6 +21,18 @@ import {
   type ValidStatusTransitions,
 } from '../../services/admin';
 
+// Helper function to safely format dates
+const formatDate = (dateString: string | null, formatStr: string = 'PPpp'): string => {
+  if (!dateString) return 'N/A';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
+    return format(date, formatStr);
+  } catch {
+    return 'Invalid date';
+  }
+};
+
 export function ClaimDetailPage() {
   const { claimId } = useParams<{ claimId: string }>();
   const navigate = useNavigate();
@@ -172,14 +184,14 @@ export function ClaimDetailPage() {
               <div>
                 <Label className="text-muted-foreground">Scheduled Departure</Label>
                 <p className="font-medium">
-                  {format(new Date(claim.scheduled_departure), 'PPpp')}
+                  {formatDate(claim.scheduled_departure)}
                 </p>
               </div>
               {claim.actual_departure && (
                 <div>
                   <Label className="text-muted-foreground">Actual Departure</Label>
                   <p className="font-medium">
-                    {format(new Date(claim.actual_departure), 'PPpp')}
+                    {formatDate(claim.actual_departure)}
                   </p>
                 </div>
               )}
@@ -242,8 +254,8 @@ export function ClaimDetailPage() {
 
           {/* Documents */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Documents ({claim.files.length})</h2>
-            {claim.files.length === 0 ? (
+            <h2 className="text-xl font-semibold mb-4">Documents ({claim.files?.length || 0})</h2>
+            {!claim.files || claim.files.length === 0 ? (
               <p className="text-muted-foreground">No documents uploaded</p>
             ) : (
               <div className="space-y-2">
@@ -257,7 +269,7 @@ export function ClaimDetailPage() {
                       <p className="text-sm text-muted-foreground">
                         {file.document_type.replace(/_/g, ' ')} ·{' '}
                         {(file.file_size / 1024).toFixed(1)} KB ·{' '}
-                        {format(new Date(file.uploaded_at), 'MMM d, yyyy')}
+                        {formatDate(file.uploaded_at, 'MMM d, yyyy')}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -274,7 +286,7 @@ export function ClaimDetailPage() {
 
           {/* Notes */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Notes ({claim.notes.length})</h2>
+            <h2 className="text-xl font-semibold mb-4">Notes ({claim.notes?.length || 0})</h2>
 
             {/* Add Note Form */}
             <form onSubmit={handleAddNote} className="space-y-4 mb-6 pb-6 border-b">
@@ -306,7 +318,7 @@ export function ClaimDetailPage() {
             </form>
 
             {/* Notes List */}
-            {claim.notes.length === 0 ? (
+            {!claim.notes || claim.notes.length === 0 ? (
               <p className="text-muted-foreground">No notes yet</p>
             ) : (
               <div className="space-y-3">
@@ -314,11 +326,13 @@ export function ClaimDetailPage() {
                   <div key={note.id} className="p-3 border rounded-lg">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <p className="font-medium">
-                          {note.author.first_name} {note.author.last_name}
-                        </p>
+                        {note.author && (
+                          <p className="font-medium">
+                            {note.author.first_name} {note.author.last_name}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(note.created_at), 'PPpp')}
+                          {formatDate(note.created_at)}
                         </p>
                       </div>
                       {note.is_internal && (
@@ -381,7 +395,7 @@ export function ClaimDetailPage() {
           {/* Status History */}
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Status History</h2>
-            {claim.status_history.length === 0 ? (
+            {!claim.status_history || claim.status_history.length === 0 ? (
               <p className="text-muted-foreground text-sm">No status changes yet</p>
             ) : (
               <div className="space-y-3">
@@ -390,12 +404,14 @@ export function ClaimDetailPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <StatusBadge status={history.new_status} />
                     </div>
+                    {history.changed_by_user && (
+                      <p className="text-xs text-muted-foreground">
+                        by {history.changed_by_user.first_name}{' '}
+                        {history.changed_by_user.last_name}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
-                      by {history.changed_by_user.first_name}{' '}
-                      {history.changed_by_user.last_name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(history.changed_at), 'PPpp')}
+                      {formatDate(history.changed_at)}
                     </p>
                     {history.change_reason && (
                       <p className="text-sm mt-1">{history.change_reason}</p>
@@ -416,11 +432,11 @@ export function ClaimDetailPage() {
               </div>
               <div>
                 <Label className="text-muted-foreground">Submitted</Label>
-                <p>{format(new Date(claim.submitted_at), 'PPpp')}</p>
+                <p>{formatDate(claim.submitted_at)}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Last Updated</Label>
-                <p>{format(new Date(claim.updated_at), 'PPpp')}</p>
+                <p>{formatDate(claim.updated_at)}</p>
               </div>
               {claim.extraordinary_circumstances && (
                 <div>

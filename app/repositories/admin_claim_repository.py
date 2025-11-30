@@ -141,8 +141,8 @@ class AdminClaimRepository(BaseRepository[Claim]):
             selectinload(Claim.files),
             selectinload(Claim.assignee),
             selectinload(Claim.reviewer),
-            selectinload(Claim.claim_notes),  # Fixed: use claim_notes relationship
-            selectinload(Claim.status_history)
+            selectinload(Claim.claim_notes).selectinload(ClaimNote.author),  # Load note authors
+            selectinload(Claim.status_history).selectinload(ClaimStatusHistory.changed_by_user)  # Load status change users
         )
 
         result = await self.session.execute(query)

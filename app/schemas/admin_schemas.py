@@ -183,11 +183,12 @@ class ClaimDetailResponse(BaseModel):
     # Related data
     customer: Optional[CustomerResponse] = None
     files: List[ClaimFileResponse] = []
-    claim_notes: List[ClaimNoteResponse] = []  # Note: this maps to Claim.claim_notes relationship
+    notes: List[ClaimNoteResponse] = Field(default=[], alias="claim_notes")  # Maps to Claim.claim_notes relationship
     status_history: List[ClaimStatusHistoryResponse] = []
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class ClaimListResponse(BaseModel):

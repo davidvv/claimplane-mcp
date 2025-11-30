@@ -5,6 +5,8 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field, validator
 import re
 
+from app.utils.phone_validator import validate_phone_number
+
 
 class UserRegisterSchema(BaseModel):
     """Schema for user registration."""
@@ -28,6 +30,14 @@ class UserRegisterSchema(BaseModel):
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
             raise ValueError('Password must contain at least one special character')
         return v
+
+    @validator('phone')
+    def validate_phone_field(cls, v):
+        """Validate and normalize phone number."""
+        if v:
+            # This will remove spaces and validate format
+            return validate_phone_number(v)
+        return None
 
     class Config:
         json_schema_extra = {

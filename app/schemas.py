@@ -6,6 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
+from app.utils.phone_validator import validate_phone_number
+
 
 class AddressSchema(BaseModel):
     """Address schema for customer address information."""
@@ -21,26 +23,40 @@ class AddressSchema(BaseModel):
 
 class CustomerCreateSchema(BaseModel):
     """Schema for creating a new customer."""
-    
+
     email: EmailStr
     first_name: str = Field(..., max_length=50, alias="firstName")
     last_name: str = Field(..., max_length=50, alias="lastName")
     phone: Optional[str] = Field(None, max_length=20)
     address: Optional[AddressSchema] = None
-    
+
+    @validator('phone')
+    def validate_phone_field(cls, v):
+        """Validate and normalize phone number."""
+        if v:
+            return validate_phone_number(v)
+        return None
+
     class Config:
         populate_by_name = True
 
 
 class CustomerUpdateSchema(BaseModel):
     """Schema for updating a customer (PUT - all fields required)."""
-    
+
     email: EmailStr
     first_name: str = Field(..., max_length=50, alias="firstName")
     last_name: str = Field(..., max_length=50, alias="lastName")
     phone: Optional[str] = Field(None, max_length=20)
     address: Optional[AddressSchema] = None
-    
+
+    @validator('phone')
+    def validate_phone_field(cls, v):
+        """Validate and normalize phone number."""
+        if v:
+            return validate_phone_number(v)
+        return None
+
     class Config:
         populate_by_name = True
 
@@ -70,7 +86,14 @@ class CustomerPatchSchema(BaseModel):
             if '@' not in v or '.' not in v.split('@')[-1]:
                 raise ValueError("Invalid email format")
         return v
-    
+
+    @validator('phone')
+    def validate_phone_field(cls, v):
+        """Validate and normalize phone number if provided."""
+        if v:
+            return validate_phone_number(v)
+        return None
+
     class Config:
         populate_by_name = True
 

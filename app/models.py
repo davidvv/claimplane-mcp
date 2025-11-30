@@ -9,6 +9,7 @@ from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from app.database import Base
+from app.utils.phone_validator import validate_phone_number
 
 
 class Customer(Base):
@@ -68,7 +69,15 @@ class Customer(Base):
         if role not in self.ROLES:
             raise ValueError(f"Invalid role. Must be one of: {', '.join(self.ROLES)}")
         return role
-    
+
+    @validates('phone')
+    def validate_phone(self, key, phone):
+        """Validate and normalize phone number."""
+        if phone:
+            # Validate and normalize (removes spaces, validates format)
+            return validate_phone_number(phone)
+        return None
+
     @hybrid_property
     def full_name(self):
         """Return full name."""

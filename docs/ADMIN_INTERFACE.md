@@ -460,6 +460,10 @@ All endpoints require:
 
 ## Future Enhancements
 
+### short term improvements that I wanna take care of:
+now the table view with all the claims needs improvements: filters dont work; they do nothing. We need a filed showing which admin is taking care of that claim. Finally, we have a markdown file @docs/ADMIN_INTERFACE.md that has some to DOs. Please take care of the filtering, as we have it in there, claim asignment, in browser document viewer. I also want to have a field to see the 
+progress of a claim in days. Days since created, days since last update (and if you think there are some more data fields that are interesting for future analytics please suggest them). Finally: how hard would be the real-time updates (websocket)? 
+
 Planned features for future versions:
 
 - [ ] Bulk status updates (select multiple claims)

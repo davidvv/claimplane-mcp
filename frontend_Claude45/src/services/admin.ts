@@ -30,6 +30,12 @@ export interface ClaimListItem {
     last_name: string;
     phone: string | null;
   };
+  assignee: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+  } | null;
   file_count: number;
   note_count: number;
 }
@@ -74,7 +80,7 @@ export interface ClaimDetail {
     country: string | null;
   };
   files: ClaimFile[];
-  notes: ClaimNote[];
+  claim_notes: ClaimNote[];  // Changed from 'notes' to 'claim_notes'
   status_history: StatusHistory[];
 }
 
@@ -188,9 +194,11 @@ export async function listClaims(filters: ClaimFilters = {}): Promise<PaginatedC
   if (filters.sort_by) params.append('sort_by', filters.sort_by);
   if (filters.sort_order) params.append('sort_order', filters.sort_order);
 
-  const response = await apiClient.get<PaginatedClaimsResponse>(
-    `/admin/claims?${params.toString()}`
-  );
+  const url = `/admin/claims?${params.toString()}`;
+  console.log('[AdminService] Requesting:', url);
+  console.log('[AdminService] Filters:', filters);
+
+  const response = await apiClient.get<PaginatedClaimsResponse>(url);
 
   return response.data;
 }

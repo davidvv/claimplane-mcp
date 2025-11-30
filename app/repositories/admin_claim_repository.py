@@ -351,7 +351,7 @@ class AdminClaimRepository(BaseRepository[Claim]):
             is_internal: Whether note is internal or customer-facing
 
         Returns:
-            Created note
+            Created note with author loaded
         """
         note = ClaimNote(
             claim_id=claim_id,
@@ -361,7 +361,7 @@ class AdminClaimRepository(BaseRepository[Claim]):
         )
         self.session.add(note)
         await self.session.flush()
-        await self.session.refresh(note)
+        await self.session.refresh(note, ["author"])  # Refresh with author relationship loaded
 
         logger.info(f"Added {'internal' if is_internal else 'customer-facing'} note to claim {claim_id} by user {author_id}")
         return note

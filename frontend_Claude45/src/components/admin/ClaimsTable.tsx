@@ -27,6 +27,8 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[ClaimsTable] Filter button clicked');
+    console.log('[ClaimsTable] Search:', searchQuery, 'Status:', statusFilter, 'Airline:', airlineFilter);
     onFiltersChange({
       search: searchQuery,
       status: statusFilter || undefined,
@@ -38,12 +40,25 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
     setSearchQuery('');
     setStatusFilter('');
     setAirlineFilter('');
-    onFiltersChange({});
+    // Explicitly clear all filter fields
+    onFiltersChange({
+      search: undefined,
+      status: undefined,
+      airline: undefined,
+    });
   };
 
   const formatCurrency = (amount: string | null) => {
     if (!amount) return '—';
     return `€${parseFloat(amount).toFixed(0)}`;
+  };
+
+  const calculateDaysSince = (dateString: string): number => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   };
 
   return (
@@ -103,9 +118,12 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
                 <th className="px-4 py-3 text-left text-sm font-medium">Flight</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Route</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Incident</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">Assigned To</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Compensation</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Submitted</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">Age (days)</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">Last Update</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Files</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
               </tr>
@@ -113,13 +131,13 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
             <tbody className="divide-y">
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">
                     Loading claims...
                   </td>
                 </tr>
               ) : claims.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">
                     No claims found
                   </td>
                 </tr>
@@ -157,6 +175,20 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
                       </span>
                     </td>
                     <td className="px-4 py-3">
+                      {claim.assignee ? (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm">
+                            {claim.assignee.first_name} {claim.assignee.last_name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {claim.assignee.email}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
                       <StatusBadge status={claim.status} />
                     </td>
                     <td className="px-4 py-3">
@@ -167,6 +199,16 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
                     <td className="px-4 py-3">
                       <span className="text-sm text-muted-foreground">
                         {format(new Date(claim.submitted_at), 'MMM d, yyyy')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm font-medium">
+                        {calculateDaysSince(claim.submitted_at)}d
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-muted-foreground">
+                        {calculateDaysSince(claim.updated_at)}d ago
                       </span>
                     </td>
                     <td className="px-4 py-3">

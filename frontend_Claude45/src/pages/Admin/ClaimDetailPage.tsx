@@ -112,14 +112,18 @@ export function ClaimDetailPage() {
 
     setIsAddingNote(true);
     try {
-      await addClaimNote(claimId, {
+      console.log('[ClaimDetail] Adding note:', { noteText, isInternal: isInternalNote });
+      const newNote = await addClaimNote(claimId, {
         note_text: noteText,
         is_internal: isInternalNote,
       });
+      console.log('[ClaimDetail] Note created:', newNote);
       toast.success('Note added successfully');
       setNoteText('');
       // Reload claim to get updated notes
+      console.log('[ClaimDetail] Reloading claim data...');
       await loadClaimData();
+      console.log('[ClaimDetail] Claim reloaded, notes count:', claim?.claim_notes?.length);
     } catch (error: any) {
       console.error('Failed to add note:', error);
       toast.error(error.response?.data?.detail || 'Failed to add note');
@@ -286,7 +290,7 @@ export function ClaimDetailPage() {
 
           {/* Notes */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Notes ({claim.notes?.length || 0})</h2>
+            <h2 className="text-xl font-semibold mb-4">Notes ({claim.claim_notes?.length || 0})</h2>
 
             {/* Add Note Form */}
             <form onSubmit={handleAddNote} className="space-y-4 mb-6 pb-6 border-b">
@@ -318,11 +322,11 @@ export function ClaimDetailPage() {
             </form>
 
             {/* Notes List */}
-            {!claim.notes || claim.notes.length === 0 ? (
+            {!claim.claim_notes || claim.claim_notes.length === 0 ? (
               <p className="text-muted-foreground">No notes yet</p>
             ) : (
               <div className="space-y-3">
-                {claim.notes.map((note) => (
+                {claim.claim_notes.map((note) => (
                   <div key={note.id} className="p-3 border rounded-lg">
                     <div className="flex items-start justify-between mb-2">
                       <div>

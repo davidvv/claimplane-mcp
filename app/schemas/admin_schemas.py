@@ -119,6 +119,7 @@ class ClaimNoteResponse(BaseModel):
     note_text: str
     is_internal: bool
     created_at: datetime
+    author: Optional[CustomerResponse] = None  # Author details (loaded via relationship)
 
     class Config:
         from_attributes = True
@@ -166,7 +167,7 @@ class ClaimDetailResponse(BaseModel):
     compensation_amount: Optional[Decimal]
     calculated_compensation: Optional[Decimal]
     currency: str
-    notes: Optional[str]
+    claim_description: Optional[str] = Field(None, alias="notes")  # Claim description field
     submitted_at: datetime
     updated_at: datetime
 
@@ -183,7 +184,7 @@ class ClaimDetailResponse(BaseModel):
     # Related data
     customer: Optional[CustomerResponse] = None
     files: List[ClaimFileResponse] = []
-    notes: List[ClaimNoteResponse] = Field(default=[], alias="claim_notes")  # Maps to Claim.claim_notes relationship
+    claim_notes: List[ClaimNoteResponse] = Field(default=[])  # List of notes on this claim
     status_history: List[ClaimStatusHistoryResponse] = []
 
     class Config:
@@ -206,6 +207,7 @@ class ClaimListResponse(BaseModel):
     submitted_at: datetime
     assigned_to: Optional[UUID]
     customer: Optional[CustomerResponse]
+    assignee: Optional[CustomerResponse] = None  # Admin assigned to this claim
 
     class Config:
         from_attributes = True

@@ -466,17 +466,61 @@ progress of a claim in days. Days since created, days since last update (and if 
 
 Planned features for future versions:
 
+- [x] Filters working correctly
+- [x] Assigned admin field in claims table
+- [x] Days since created field
+- [x] Days since last update field
 - [ ] Bulk status updates (select multiple claims)
 - [ ] Advanced filtering (date range, compensation amount)
 - [ ] Export claims to CSV/Excel
 - [ ] In-browser document viewer (PDF, images)
 - [ ] Email templates customization
 - [ ] User management UI (promote users to admin)
-- [ ] Claim assignment (assign claims to specific admins)
+- [ ] Claim assignment UI (assign claims to specific admins)
 - [ ] Analytics dashboard with charts
 - [ ] Keyboard shortcuts
 - [ ] Dark mode toggle
 - [ ] Real-time updates (WebSocket)
+- [ ] Note editing functionality
+
+### Additional Analytics Fields (Suggestions for Future Implementation)
+
+These metrics would provide deeper insights into claim processing efficiency and help identify bottlenecks:
+
+1. **Days in Current Status**
+   - Track how long a claim has been in its current status
+   - Helps identify stuck claims that need attention
+   - Useful for SLA monitoring (e.g., "Claims pending review > 7 days")
+
+2. **Average Response Time**
+   - Time between status changes
+   - Measure admin performance and efficiency
+   - Identify slow-moving claims
+
+3. **Time to First Action**
+   - Time from submission to first status change
+   - Critical SLA metric for customer satisfaction
+   - Identify claims that haven't been touched
+
+4. **Compensation per Day**
+   - Calculated as: compensation_amount / claim_age_days
+   - Priority metric for high-value claims
+   - Help optimize which claims to process first
+
+5. **Admin Workload Distribution**
+   - Number of active claims assigned per admin
+   - Load balancing metric
+   - Identify overloaded or underutilized admins
+
+6. **Status Transition History Metrics**
+   - Average time spent in each status
+   - Common status paths (workflow analysis)
+   - Identify inefficient workflow patterns
+
+**Implementation Notes:**
+- Most of these require tracking status change timestamps more granularly
+- Could be calculated on-the-fly or pre-computed and cached
+- Consider adding database indexes on relevant timestamp fields
 
 ---
 

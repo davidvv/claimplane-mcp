@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '@/services/api';
+import { storeAuthTokens } from '@/utils/tokenStorage';
 
 export function MagicLinkPage() {
   const [searchParams] = useSearchParams();
@@ -31,11 +32,14 @@ export function MagicLinkPage() {
 
         // Store tokens and ensure they're available before redirecting
         try {
-          localStorage.setItem('auth_token', response.data.tokens.access_token);
-          localStorage.setItem('refresh_token', response.data.tokens.refresh_token);
-          localStorage.setItem('user_email', response.data.user.email);
-          localStorage.setItem('user_id', response.data.user.id);
-          localStorage.setItem('user_name', `${response.data.user.first_name} ${response.data.user.last_name}`);
+          // Use safe token storage to prevent token collision issues
+          storeAuthTokens(
+            response.data.tokens.access_token,
+            response.data.tokens.refresh_token,
+            response.data.user.email,
+            response.data.user.id,
+            `${response.data.user.first_name} ${response.data.user.last_name}`
+          );
           
           // Verify tokens are stored
           const storedToken = localStorage.getItem('auth_token');

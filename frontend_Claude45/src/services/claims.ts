@@ -3,6 +3,7 @@
  */
 
 import apiClient from './api';
+import { storeAccessTokenOnly } from '@/utils/tokenStorage';
 import type {
   Claim,
   ClaimRequest,
@@ -59,9 +60,9 @@ export const submitClaim = async (request: ClaimRequest): Promise<Claim> => {
   }
 
   // Store access token for immediate authentication (allows document uploads)
+  // Use safe token storage to prevent token collision issues
   if (response.data.accessToken) {
-    localStorage.setItem('auth_token', response.data.accessToken);
-    console.log('[submitClaim] Access token stored for immediate authentication');
+    storeAccessTokenOnly(response.data.accessToken);
   }
 
   return response.data.claim;

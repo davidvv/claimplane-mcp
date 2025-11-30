@@ -2,6 +2,7 @@
  * Authentication service - integrates with Phase 3 JWT backend
  */
 import apiClient from './api';
+import { storeAuthTokens, storeAccessTokenOnly, clearAuthTokens } from '@/utils/tokenStorage';
 
 // Types matching Phase 3 backend
 export interface RegisterRequest {
@@ -57,13 +58,15 @@ export interface UserProfile {
 export async function register(data: RegisterRequest): Promise<AuthResponse> {
   const response = await apiClient.post<AuthResponse>('/auth/register', data);
 
-  // Store tokens
+  // Store tokens safely (clears old tokens first)
   if (response.data.tokens) {
-    localStorage.setItem('auth_token', response.data.tokens.access_token);
-    localStorage.setItem('refresh_token', response.data.tokens.refresh_token);
-    localStorage.setItem('user_email', response.data.user.email);
-    localStorage.setItem('user_id', response.data.user.id);
-    localStorage.setItem('user_name', `${response.data.user.first_name} ${response.data.user.last_name}`);
+    storeAuthTokens(
+      response.data.tokens.access_token,
+      response.data.tokens.refresh_token,
+      response.data.user.email,
+      response.data.user.id,
+      `${response.data.user.first_name} ${response.data.user.last_name}`
+    );
   }
 
   return response.data;
@@ -75,13 +78,15 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
 export async function login(data: LoginRequest): Promise<AuthResponse> {
   const response = await apiClient.post<AuthResponse>('/auth/login', data);
 
-  // Store tokens
+  // Store tokens safely (clears old tokens first)
   if (response.data.tokens) {
-    localStorage.setItem('auth_token', response.data.tokens.access_token);
-    localStorage.setItem('refresh_token', response.data.tokens.refresh_token);
-    localStorage.setItem('user_email', response.data.user.email);
-    localStorage.setItem('user_id', response.data.user.id);
-    localStorage.setItem('user_name', `${response.data.user.first_name} ${response.data.user.last_name}`);
+    storeAuthTokens(
+      response.data.tokens.access_token,
+      response.data.tokens.refresh_token,
+      response.data.user.email,
+      response.data.user.id,
+      `${response.data.user.first_name} ${response.data.user.last_name}`
+    );
   }
 
   return response.data;
@@ -102,15 +107,8 @@ export async function logout(): Promise<void> {
     }
   }
 
-  // Clear all auth data
-  localStorage.removeItem('auth_token');
-  localStorage.removeItem('refresh_token');
-  localStorage.removeItem('user_email');
-  localStorage.removeItem('user_id');
-  localStorage.removeItem('user_name');
-
-  // Clear form data on logout to prevent state persistence issues
-  localStorage.removeItem('easyairclaim_form_data');
+  // Clear all auth data safely
+  clearAuthTokens();
 }
 
 /**
@@ -138,9 +136,18 @@ export async function refreshAccessToken(): Promise<{ access_token: string; refr
     expires_in: number;
   }>('/auth/refresh', { refresh_token: refreshToken });
 
-  // Update stored tokens
-  localStorage.setItem('auth_token', response.data.access_token);
-  localStorage.setItem('refresh_token', response.data.refresh_token);
+  // Update stored tokens safely (clears old tokens first)
+  const userEmail = localStorage.getItem('user_email') || '';
+  const userId = localStorage.getItem('user_id') || '';
+  const userName = localStorage.getItem('user_name') || '';
+
+  storeAuthTokens(
+    response.data.access_token,
+    response.data.refresh_token,
+    userEmail,
+    userId,
+    userName
+  );
 
   return {
     access_token: response.data.access_token,

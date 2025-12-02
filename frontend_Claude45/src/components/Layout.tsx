@@ -3,7 +3,7 @@
  */
 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Plane, LogIn, UserPlus, LogOut, User, FileText, Settings, ChevronDown } from 'lucide-react';
+import { Plane, LogIn, UserPlus, LogOut, User, FileText, Settings, ChevronDown, LayoutDashboard } from 'lucide-react';
 import { DarkModeToggle } from './DarkModeToggle';
 import { Button } from './ui/Button';
 import {
@@ -17,6 +17,24 @@ import {
 import { cn } from '@/lib/utils';
 import { isAuthenticated, getStoredUserInfo, logout } from '@/services/auth';
 
+/**
+ * Decode JWT token to get user role
+ * This is more reliable than localStorage as it reflects the actual token being used
+ */
+function getUserRoleFromToken(): string | null {
+  const token = localStorage.getItem('auth_token');
+  if (!token) return null;
+
+  try {
+    // Decode JWT token (without verification - just read the payload)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.role || null;
+  } catch (error) {
+    console.error('Failed to decode token:', error);
+    return null;
+  }
+}
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -26,6 +44,8 @@ export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const authenticated = isAuthenticated();
   const userInfo = getStoredUserInfo();
+  const userRole = getUserRoleFromToken();
+  const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -103,13 +123,31 @@ export function Layout({ children }: LayoutProps) {
                         <p className="text-xs leading-none text-muted-foreground">
                           {userInfo.email}
                         </p>
+                        {isAdmin && (
+                          <p className="text-xs leading-none text-primary font-semibold mt-1">
+                            {userRole === 'superadmin' ? 'Super Admin' : 'Admin'}
+                          </p>
+                        )}
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/my-claims')}>
-                      <FileText className="w-4 h-4 mr-2" />
-                      My Claims
-                    </DropdownMenuItem>
+                    {isAdmin ? (
+                      <>
+                        <DropdownMenuItem onClick={() => navigate('/panel/dashboard')}>
+                          <LayoutDashboard className="w-4 h-4 mr-2" />
+                          Admin Dashboard
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate('/my-claims')}>
+                          <FileText className="w-4 h-4 mr-2" />
+                          My Claims (Customer View)
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <DropdownMenuItem onClick={() => navigate('/my-claims')}>
+                        <FileText className="w-4 h-4 mr-2" />
+                        My Claims
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => navigate('/account/settings')}>
                       <Settings className="w-4 h-4 mr-2" />
                       Account Settings

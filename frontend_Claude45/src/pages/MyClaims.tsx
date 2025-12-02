@@ -1,5 +1,8 @@
 /**
  * My Claims Page - Shows all claims for the authenticated user
+ *
+ * Note: Admins and superadmins will be automatically redirected to the admin dashboard.
+ * This page is designed for customers to view their own claims.
  */
 
 import { useEffect, useState } from 'react';
@@ -22,6 +25,22 @@ import {
   getIncidentLabel,
 } from '@/lib/utils';
 
+/**
+ * Decode JWT token to get user role
+ */
+function getUserRoleFromToken(): string | null {
+  const token = localStorage.getItem('auth_token');
+  if (!token) return null;
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.role || null;
+  } catch (error) {
+    console.error('Failed to decode token:', error);
+    return null;
+  }
+}
+
 export function MyClaims() {
   const navigate = useNavigate();
   const [claims, setClaims] = useState<Claim[]>([]);
@@ -38,6 +57,20 @@ export function MyClaims() {
           console.log('[MyClaims] No token found, redirecting to auth');
           toast.error('Please log in to view your claims');
           navigate('/auth');
+          return;
+        }
+
+        // Redirect admins and superadmins to the admin dashboard
+        // The "My Claims" page is designed for customers only
+        const userRole = getUserRoleFromToken();
+        console.log('[MyClaims] User role:', userRole);
+
+        if (userRole === 'admin' || userRole === 'superadmin') {
+          console.log('[MyClaims] Admin/superadmin detected, redirecting to admin dashboard');
+          toast.info('Redirecting to Admin Dashboard...', {
+            description: 'Use the admin dashboard to manage all claims.'
+          });
+          navigate('/panel/dashboard', { replace: true });
           return;
         }
 

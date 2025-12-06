@@ -8,7 +8,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 
 from app.database import engine, Base
-from app.routers import health, customers, claims, files, admin_claims, admin_files, eligibility, auth, flights
+from app.routers import health, customers, claims, files, admin_claims, admin_files, eligibility, auth, flights, account
 from app.exceptions import setup_exception_handlers
 
 # Configure logging
@@ -66,11 +66,9 @@ setup_exception_handlers(app)
 # Include routers
 app.include_router(health.router)
 app.include_router(auth.router)  # Phase 3: Authentication
+app.include_router(account.router)  # Phase 4: Account Management
 app.include_router(flights.router)  # Mock flight lookup
 app.include_router(eligibility.router)
-
-# Authentication router (Phase 3)
-app.include_router(auth.router)
 
 app.include_router(customers.router)
 app.include_router(claims.router)

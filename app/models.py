@@ -42,6 +42,12 @@ class Customer(Base):
     email_verified_at = Column(DateTime(timezone=True), nullable=True)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
 
+    # Account deletion fields (Phase 4)
+    deletion_requested_at = Column(DateTime(timezone=True), nullable=True)
+    deletion_reason = Column(Text, nullable=True)
+    is_blacklisted = Column(Boolean, nullable=False, default=False, server_default="false")
+    blacklisted_at = Column(DateTime(timezone=True), nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -630,3 +636,52 @@ class MagicLinkToken(Base):
         # This lets users click the link multiple times within a day
         grace_period = timedelta(hours=24)
         return (now - self.used_at.replace(tzinfo=timezone.utc)) < grace_period
+
+
+class AccountDeletionRequest(Base):
+    """Account deletion request model for GDPR compliance (Phase 4)."""
+
+    __tablename__ = "account_deletion_requests"
+
+    # Request status types
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+    STATUS_COMPLETED = "completed"
+
+    STATUS_TYPES = [
+        STATUS_PENDING,
+        STATUS_APPROVED,
+        STATUS_REJECTED,
+        STATUS_COMPLETED
+    ]
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False, index=True)
+    email = Column(String(255), nullable=False)
+    reason = Column(Text, nullable=True)
+    requested_at = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String(50), nullable=False, default=STATUS_PENDING, server_default=STATUS_PENDING)
+
+    # Admin review tracking
+    reviewed_by = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    notes = Column(Text, nullable=True)
+
+    # Snapshot of user data at deletion time
+    open_claims_count = Column(Integer, default=0)
+    total_claims_count = Column(Integer, default=0)
+
+    # Relationships
+    customer = relationship("Customer", foreign_keys=[customer_id])
+    reviewer = relationship("Customer", foreign_keys=[reviewed_by])
+
+    def __repr__(self):
+        return f"<AccountDeletionRequest(id={self.id}, customer_id={self.customer_id}, status={self.status})>"
+
+    @validates('status')
+    def validate_status(self, key, status):
+        """Validate deletion request status."""
+        if status not in self.STATUS_TYPES:
+            raise ValueError(f"Invalid status. Must be one of: {', '.join(self.STATUS_TYPES)}")
+        return status

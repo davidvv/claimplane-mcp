@@ -15,6 +15,7 @@ import { Success } from './pages/Success';
 import { Auth } from './pages/Auth';
 import { MagicLinkPage } from './pages/Auth/MagicLinkPage';
 import { MyClaims } from './pages/MyClaims';
+import { AccountSettings } from './pages/AccountSettings';
 
 // Admin Pages
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
@@ -33,6 +34,7 @@ function App() {
             <Route path="/my-claims" element={<MyClaims />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/magic-link" element={<MagicLinkPage />} />
+            <Route path="/account/settings" element={<AccountSettings />} />
 
             {/* Admin Panel Routes (non-obvious path for security) */}
             <Route path="/panel/dashboard" element={<AdminDashboard />} />

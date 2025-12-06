@@ -1,9 +1,9 @@
 # Development Roadmap
 
-**Last Updated**: 2025-11-03
-**Current Version**: v0.3.0 (Phase 3 Complete)
-**Status**: MVP Phase - Ready for Frontend Integration 🚀
-**Strategy**: Business value first (#2 → #3 → #1)
+**Last Updated**: 2025-12-06
+**Current Version**: v0.3.0 (Phase 3 Complete, Phase 4 In Progress)
+**Status**: MVP Phase - Customer Account Management & GDPR Compliance 🔐
+**Strategy**: Business value first (#2 → #3 → #4 → GDPR)
 
 This roadmap outlines the next development phases for the flight claim management platform, prioritized for MVP launch.
 
@@ -11,10 +11,11 @@ This roadmap outlines the next development phases for the flight claim managemen
 
 ## 🎯 NEXT STEPS - START HERE
 
-**Current State**: Phase 3 Complete ✅ (v0.3.0)
+**Current State**: Phase 4 In Progress ⏳ (v0.3.0+)
 - ✅ Admin Dashboard & Claim Workflow (Phase 1)
 - ✅ Async Task Processing & Email Notifications (Phase 2)
 - ✅ JWT Authentication & Authorization System (Phase 3) 🎉
+- ⏳ **Customer Account Management & GDPR Compliance (Phase 4)** ⬅️ **CURRENT**
 
 **Phase 3 Status**: ✅ **COMPLETED** (2025-11-03) 🔐
 - ✅ Complete JWT authentication infrastructure
@@ -760,6 +761,175 @@ PASSWORD_RESET_TOKEN_EXPIRATION_HOURS = int(os.getenv("PASSWORD_RESET_TOKEN_EXPI
 - ✅ All existing endpoints use JWT instead of headers
 - ✅ Existing customers can migrate to new auth system
 - ✅ No regression in existing functionality
+
+---
+
+## Phase 4: Customer Account Management & GDPR Compliance ⬅️ **IN PROGRESS**
+
+**Priority**: HIGH - Required for production launch
+**Status**: ⏳ **IN PROGRESS** - ~30% Complete
+**Estimated Effort**: 1 week
+**Business Value**: Critical - enables customer self-service and GDPR compliance
+
+### Overview
+Implement customer account settings page and GDPR-compliant account deletion workflow. Customers should be able to manage their email, password, and request account deletion.
+
+### Features to Implement
+
+#### 4.1 Account Settings Page (Frontend)
+
+**File**: `frontend_Claude45/src/pages/AccountSettings.tsx` (new)
+
+- [ ] Account settings UI with sections:
+  - [ ] Email address change (with verification)
+  - [ ] Password change (require current password)
+  - [ ] Account deletion request
+  - [ ] Display account creation date and last login
+
+#### 4.2 Account Management Endpoints (Backend)
+
+**File**: `app/routers/account.py` (new)
+
+- [ ] `PUT /account/email` - Change email address
+  - Require current password for verification
+  - Send verification email to new address
+  - Update email only after verification
+  - Invalidate all existing tokens on email change
+
+- [ ] `PUT /account/password` - Change password
+  - Require current password
+  - Validate new password strength
+  - Invalidate all refresh tokens (force re-login on all devices)
+  - Send email notification about password change
+
+- [ ] `POST /account/delete-request` - Request account deletion
+  - **DO NOT delete immediately** - create deletion request
+  - Blacklist email to prevent login
+  - Notify admins via email about deletion request
+  - Include user info and open claims count
+  - Set deletion_requested_at timestamp
+
+- [ ] `GET /admin/deletion-requests` - List account deletion requests
+  - Show pending deletion requests with user details
+  - Display open claims count
+  - Allow admin to approve/reject deletion
+
+#### 4.3 Database Schema Updates
+
+**File**: `app/models.py` (update)
+
+Add fields to `Customer` model:
+```python
+# Account deletion fields
+deletion_requested_at = Column(DateTime(timezone=True), nullable=True)
+deletion_reason = Column(Text, nullable=True)
+is_blacklisted = Column(Boolean, default=False)
+blacklisted_at = Column(DateTime(timezone=True), nullable=True)
+```
+
+Add new `AccountDeletionRequest` model:
+```python
+class AccountDeletionRequest(Base):
+    __tablename__ = "account_deletion_requests"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    email = Column(String(255), nullable=False)
+    reason = Column(Text, nullable=True)
+    requested_at = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String(50), default="pending")  # pending, approved, rejected
+    reviewed_by = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    notes = Column(Text, nullable=True)
+
+    # Snapshot of user data at deletion time
+    open_claims_count = Column(Integer, default=0)
+    total_claims_count = Column(Integer, default=0)
+```
+
+#### 4.4 Email Notifications
+
+**File**: `app/tasks/account_tasks.py` (new)
+
+- [ ] Email to customer: Account deletion requested (confirmation)
+- [ ] Email to admins: New account deletion request (with user details and claims count)
+- [ ] Email to customer: Email changed (security notification)
+- [ ] Email to customer: Password changed (security notification)
+
+#### 4.5 Admin Interface for Deletion Requests
+
+**File**: `frontend_Claude45/src/pages/Admin/DeletionRequests.tsx` (new)
+
+- [ ] List pending deletion requests
+- [ ] Show customer details and claims summary
+- [ ] Approve/reject deletion with notes
+- [ ] Manual data deletion workflow documentation
+
+### 🚨 CRITICAL: GDPR Compliance Requirements
+
+**⚠️ IMPORTANT**: Before production launch, complete GDPR data removal process:
+
+#### Required for GDPR Compliance:
+1. **Data Inventory**
+   - [ ] Document all customer data stored (database, files, logs, backups)
+   - [ ] Map data dependencies (claims, files, notes, status history)
+   - [ ] Identify third-party data processors (email service, file storage)
+
+2. **Data Deletion Process**
+   - [ ] Create admin workflow to manually delete customer data
+   - [ ] Delete/anonymize all customer claims
+   - [ ] Delete uploaded files from Nextcloud
+   - [ ] Remove from email marketing lists
+   - [ ] Anonymize audit logs (replace customer_id with "DELETED_USER")
+   - [ ] Document deletion process in admin guide
+
+3. **Data Retention Policy**
+   - [ ] Define retention periods for different data types
+   - [ ] Keep financial records for 7 years (legal requirement)
+   - [ ] Anonymize vs. delete decision tree
+
+4. **Right to Data Portability**
+   - [ ] `GET /account/export-data` - Export all customer data as JSON/PDF
+   - [ ] Include claims, files metadata, account history
+   - [ ] GDPR Article 20 compliance
+
+5. **Privacy Policy & Terms**
+   - [ ] Update privacy policy with data deletion process
+   - [ ] Document 30-day deletion window
+   - [ ] Explain data retention for legal compliance
+
+### Testing Requirements
+
+- [ ] Test email change workflow with verification
+- [ ] Test password change and token invalidation
+- [ ] Test account deletion request flow
+- [ ] Test blacklist prevents login
+- [ ] Test admin can view and process deletion requests
+- [ ] Test GDPR data export
+
+### Success Criteria
+
+- ✅ Customers can change their email and password
+- ✅ Account deletion requests are tracked and require admin approval
+- ✅ Blacklisted emails cannot log in
+- ✅ Admins receive notification of deletion requests
+- ✅ Customer data can be exported for GDPR compliance
+- ✅ Clear manual process documented for data deletion
+- ✅ Privacy policy updated with deletion process
+
+### Notes
+
+**Why manual deletion approval?**
+- Allows admin to verify no open claims/disputes
+- Ensures financial records are properly archived
+- Prevents accidental data loss
+- Complies with legal retention requirements
+
+**Blacklist approach:**
+- Immediate effect (user can't login)
+- Preserves data temporarily for admin review
+- Allows cancellation of deletion request
+- Gives time to close open claims
 
 ---
 

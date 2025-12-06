@@ -11,11 +11,12 @@ This roadmap outlines the next development phases for the flight claim managemen
 
 ## 🎯 NEXT STEPS - START HERE
 
-**Current State**: Phase 4 In Progress ⏳ (v0.3.0+)
+**Current State**: Security Hardening Required 🚨 (v0.3.0+)
 - ✅ Admin Dashboard & Claim Workflow (Phase 1)
 - ✅ Async Task Processing & Email Notifications (Phase 2)
 - ✅ JWT Authentication & Authorization System (Phase 3) 🎉
-- ⏳ **Customer Account Management & GDPR Compliance (Phase 4)** ⬅️ **CURRENT**
+- ⏳ Customer Account Management & GDPR Compliance (Phase 4) - 80% Complete
+- 🚨 **CRITICAL: Pre-Production Security Fixes (Phase 4.5)** ⬅️ **BLOCKING DEPLOYMENT**
 
 **Phase 3 Status**: ✅ **COMPLETED** (2025-11-03) 🔐
 - ✅ Complete JWT authentication infrastructure
@@ -930,6 +931,290 @@ class AccountDeletionRequest(Base):
 - Preserves data temporarily for admin review
 - Allows cancellation of deletion request
 - Gives time to close open claims
+
+---
+
+## Phase 4.5: Pre-Production Security Fixes 🚨 **BLOCKING DEPLOYMENT**
+
+**Priority**: CRITICAL - MUST complete before production deployment
+**Status**: ⏳ **IN PROGRESS** - 0% Complete
+**Estimated Effort**: 1-2 days
+**Deadline**: BEFORE any production deployment
+
+### Overview
+Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deploying to production Ubuntu server. These issues were discovered during pre-deployment review on 2025-12-06.
+
+**DEPLOYMENT IS BLOCKED** until all critical issues are resolved.
+
+### 🚨 CRITICAL ISSUES (MUST FIX - Blocking)
+
+#### 4.5.1 SQL Injection Vulnerabilities - CVSS 9.0
+**Risk**: Complete database compromise, data exfiltration
+**Status**: ❌ Not Fixed
+
+**Affected Files**:
+- `app/repositories/customer_repository.py` (lines 27-28, 38)
+- `app/repositories/admin_claim_repository.py` (lines 71, 90-94)
+- `app/repositories/file_repository.py` (lines 169-171)
+
+**Problem**: User input directly interpolated into SQL ILIKE queries using f-strings
+
+**Decision Required**: Choose remediation approach:
+- [ ] **Option A (Recommended)**: Use SQLAlchemy bindparam for parameterized queries
+- [ ] **Option B**: Sanitize input with regex + escaping
+
+**Tasks**:
+- [ ] Fix customer_repository.py search functions
+- [ ] Fix admin_claim_repository.py search and filter functions
+- [ ] Fix file_repository.py search functions
+- [ ] Add SQL injection tests
+- [ ] Verify fixes with security scan
+
+#### 4.5.2 Exposed Secrets in Repository - CVSS 8.2
+**Risk**: Credential exposure, unauthorized access
+**Status**: ❌ Not Fixed
+
+**Problem**: `.env` file with SMTP password committed to git repository
+
+**Tasks**:
+- [ ] Revoke exposed Gmail app password immediately
+- [ ] Generate new app-specific password
+- [ ] Remove `.env` from git history (if committed)
+- [ ] Verify `.env` is in `.gitignore`
+- [ ] Add pre-commit hook to prevent future `.env` commits
+- [ ] Document secrets management for production
+
+#### 4.5.3 Wildcard CORS Configuration - CVSS 8.1
+**Risk**: Cross-origin data theft, CSRF attacks
+**Status**: ❌ Not Fixed
+
+**Location**: `app/main.py:50`
+
+**Problem**: `allow_origins=["*"]` combined with `allow_credentials=True`
+
+**Tasks**:
+- [ ] Update CORS middleware to use `config.CORS_ORIGINS`
+- [ ] Set specific production domains in `.env`
+- [ ] Remove hardcoded wildcard from main.py
+- [ ] Test CORS with specific origins
+
+#### 4.5.4 Blacklist Bypass in Authentication - CVSS 7.8
+**Risk**: Deleted users can still log in, GDPR violation
+**Status**: ❌ Not Fixed
+
+**Location**: `app/services/auth_service.py` (login_user function)
+
+**Problem**: Blacklisted users can still authenticate
+
+**Tasks**:
+- [ ] Add `is_blacklisted` check in `login_user` function
+- [ ] Add `is_active` check in `login_user` function
+- [ ] Add blacklist check in `verify_refresh_token`
+- [ ] Add blacklist check in magic link authentication
+- [ ] Add blacklist tests
+- [ ] Verify blacklisted users cannot log in
+
+### ⚠️ HIGH PRIORITY ISSUES (Fix Before Launch)
+
+#### 4.5.5 Missing Rate Limiting - CVSS 7.3
+**Risk**: Brute force attacks, account enumeration
+**Status**: ❌ Not Fixed
+
+**Decision Required**: Choose rate limiting implementation:
+- [ ] **Option A (Recommended)**: Install and use slowapi library
+- [ ] **Option B**: Extend existing FileSecurityMiddleware
+- [ ] **Option C**: Use nginx rate limiting
+
+**Tasks**:
+- [ ] Choose rate limiting approach
+- [ ] Implement rate limits on `/auth/login` (5/minute)
+- [ ] Implement rate limits on `/auth/register` (3/hour)
+- [ ] Implement rate limits on `/auth/password/reset-request` (3/15min)
+- [ ] Test rate limits with Apache Bench
+
+#### 4.5.6 Missing HTTPS Configuration - CVSS 7.4
+**Risk**: Man-in-the-middle attacks, credential interception
+**Status**: ❌ Not Fixed
+
+**Tasks**:
+- [ ] Obtain SSL certificate (Let's Encrypt recommended)
+- [ ] Update nginx.conf with SSL configuration
+- [ ] Add HTTP -> HTTPS redirect
+- [ ] Configure SSL protocols (TLSv1.2, TLSv1.3 only)
+- [ ] Add HSTS header
+- [ ] Update `CORS_ORIGINS` to use https://
+- [ ] Test SSL with SSL Labs
+
+#### 4.5.7 Password Strength Inconsistency - CVSS 6.5
+**Risk**: Weak passwords via account settings
+**Status**: ❌ Not Fixed
+
+**Problem**: Registration requires 12 chars, account change only 8
+
+**Tasks**:
+- [ ] Update `app/routers/account.py:162` to require 12 chars
+- [ ] Update `app/schemas/account_schemas.py` min_length to 12
+- [ ] Add complexity validator to account password change
+- [ ] Add tests for password strength validation
+
+#### 4.5.8 Security Headers Disabled - CVSS 6.5
+**Risk**: XSS, clickjacking, MIME-sniffing attacks
+**Status**: ❌ Not Fixed
+
+**Decision Required**: Choose security headers implementation:
+- [ ] **Option A**: Create SecurityHeadersMiddleware
+- [ ] **Option B**: Use existing middleware if available
+- [ ] **Option C**: Configure in nginx
+
+**Tasks**:
+- [ ] Check if security middleware exists
+- [ ] Create/activate security headers middleware
+- [ ] Set `SECURITY_HEADERS_ENABLED=true` for production
+- [ ] Add headers: HSTS, X-Frame-Options, CSP, etc.
+- [ ] Test header presence with curl
+
+### 📋 MEDIUM PRIORITY (Hardening)
+
+#### 4.5.9 Development Secrets in Config
+- [ ] Remove default passwords from config.py
+- [ ] Add production config validation
+- [ ] Fail fast if production secrets missing
+
+#### 4.5.10 Missing Database Connection Pool Limits
+- [ ] Configure pool_size=20 in database.py
+- [ ] Add max_overflow=10
+- [ ] Add pool_timeout=30
+- [ ] Add pool_recycle=3600
+
+#### 4.5.11 Insufficient Security Audit Logging
+- [ ] Create security logger
+- [ ] Log failed login attempts
+- [ ] Log successful logins with IP
+- [ ] Log admin privilege changes
+- [ ] Configure log rotation
+
+#### 4.5.12 Missing Input Sanitization for XSS
+- [ ] Install bleach library
+- [ ] Sanitize claim notes
+- [ ] Sanitize customer names in emails
+- [ ] Escape HTML in email templates
+
+#### 4.5.13 Admin Email Configuration
+- [ ] Add `ADMIN_EMAIL` to .env
+- [ ] Update account deletion notifications
+- [ ] Update error notifications
+
+### Success Criteria
+
+Before deployment is approved:
+
+- [ ] ✅ All 4 CRITICAL issues resolved
+- [ ] ✅ All 4 HIGH priority issues resolved
+- [ ] ✅ Security scan shows no critical/high vulnerabilities
+- [ ] ✅ Penetration testing completed
+- [ ] ✅ SSL certificate installed and tested
+- [ ] ✅ Rate limiting verified with load testing
+- [ ] ✅ CORS tested with production domains
+- [ ] ✅ Blacklist enforcement verified
+- [ ] ✅ All secrets rotated and secured
+- [ ] ✅ Production .env file created (not committed)
+- [ ] ✅ Deployment checklist completed
+
+### Testing Requirements
+
+**Security Testing**:
+```bash
+# SQL injection testing
+sqlmap -u "http://localhost:8000/api/customers?name=test" --batch
+
+# Dependency vulnerabilities
+safety check
+
+# OWASP ZAP scan
+docker run -t owasp/zap2docker-stable zap-baseline.py -t http://localhost:8000
+
+# SSL testing
+ssllabs.com scan
+```
+
+**Manual Testing**:
+- [ ] Attempt SQL injection in all search fields
+- [ ] Test CORS with different origins
+- [ ] Attempt login with blacklisted user
+- [ ] Brute force login (should rate limit after 5 attempts)
+- [ ] Test weak passwords (should reject <12 chars)
+- [ ] Verify JWT expiration enforcement
+- [ ] Test refresh token rotation
+
+### Deployment Readiness Checklist
+
+**Configuration**:
+- [ ] `ENVIRONMENT=production`
+- [ ] `DEBUG=false`
+- [ ] `SECRET_KEY` = 64+ char unique value
+- [ ] `FILE_ENCRYPTION_KEY` = Fernet key (backed up)
+- [ ] `DATABASE_URL` = production PostgreSQL
+- [ ] `REDIS_URL` = production Redis
+- [ ] `NEXTCLOUD_URL` = production instance
+- [ ] `NEXTCLOUD_PASSWORD` != default
+- [ ] `CORS_ORIGINS` = specific domains only (https://)
+- [ ] `SECURITY_HEADERS_ENABLED=true`
+- [ ] `SMTP_*` credentials rotated
+- [ ] `ADMIN_EMAIL` configured
+
+**Infrastructure**:
+- [ ] Ubuntu server prepared
+- [ ] Docker and docker-compose installed
+- [ ] Firewall configured (22, 80, 443)
+- [ ] SSL certificate obtained
+- [ ] nginx configured with HTTPS
+- [ ] Database backups configured
+- [ ] Log rotation configured
+- [ ] Monitoring setup (optional but recommended)
+
+**Documentation**:
+- [ ] Production deployment guide created
+- [ ] Secrets management documented
+- [ ] Incident response plan created
+- [ ] GDPR data deletion workflow documented
+
+### Estimated Timeline
+
+- **Day 1 (4-8 hours)**: Fix 4 critical issues
+  - SQL injection fixes (2-3 hours)
+  - Secret rotation (1 hour)
+  - CORS configuration (30 min)
+  - Blacklist enforcement (1 hour)
+  - Testing (2-3 hours)
+
+- **Day 2 (4-8 hours)**: Fix high priority issues
+  - Rate limiting (2 hours)
+  - HTTPS configuration (2 hours)
+  - Password consistency (1 hour)
+  - Security headers (1 hour)
+  - Testing (2 hours)
+
+- **Day 3 (Optional)**: Medium priority hardening
+  - Audit logging (2 hours)
+  - XSS sanitization (2 hours)
+  - Additional testing (2 hours)
+
+**Total**: 1-3 days depending on priority level
+
+### Notes
+
+**Why This Phase is Critical**:
+- Application has good architecture and features
+- Security fundamentals are in place (JWT, bcrypt, file encryption)
+- Only specific vulnerabilities need patching
+- Without fixes, production deployment would be **irresponsible and dangerous**
+
+**Post-Fix Benefits**:
+- Production-ready security posture
+- GDPR compliant
+- Protection against common attacks
+- Professional security standards
+- Multi-user concurrent access safe
 
 ---
 

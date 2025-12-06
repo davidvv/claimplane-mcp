@@ -5,6 +5,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Plane, LogIn, UserPlus, LogOut, User, FileText, Settings, ChevronDown, LayoutDashboard } from 'lucide-react';
 import { DarkModeToggle } from './DarkModeToggle';
+import { MobileNav } from './MobileNav';
 import { Button } from './ui/Button';
 import {
   DropdownMenu,
@@ -108,9 +109,10 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex items-center gap-2">
             {authenticated ? (
               <>
+                {/* Desktop User Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-2">
+                    <Button variant="ghost" size="sm" className="gap-2 hidden md:flex">
                       <User className="w-4 h-4" />
                       <span className="hidden sm:inline">{userInfo.name || userInfo.email}</span>
                       <ChevronDown className="w-4 h-4" />
@@ -162,14 +164,15 @@ export function Layout({ children }: LayoutProps) {
               </>
             ) : (
               <>
-                <Link to="/auth">
-                  <Button variant="ghost" size="sm" className="hidden sm:flex">
+                {/* Desktop Auth Buttons */}
+                <Link to="/auth" className="hidden md:block">
+                  <Button variant="ghost" size="sm">
                     <LogIn className="w-4 h-4 mr-2" />
                     Login
                   </Button>
                 </Link>
-                <Link to="/auth?mode=register">
-                  <Button size="sm" className="hidden sm:flex">
+                <Link to="/auth?mode=register" className="hidden md:block">
+                  <Button size="sm">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Sign Up
                   </Button>
@@ -177,6 +180,8 @@ export function Layout({ children }: LayoutProps) {
               </>
             )}
             <DarkModeToggle />
+            {/* Mobile Navigation Menu */}
+            <MobileNav userRole={userRole} />
           </div>
         </div>
       </header>

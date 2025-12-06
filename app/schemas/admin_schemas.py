@@ -227,9 +227,12 @@ class PaginatedClaimsResponse(BaseModel):
 class AnalyticsSummaryResponse(BaseModel):
     """Analytics summary response."""
     total_claims: int
-    status_counts: dict
-    total_compensation_approved: float
-    average_compensation: float
+    pending_review: int
+    approved: int
+    rejected: int
+    total_compensation: float
+    avg_processing_time_hours: float
+    claims_by_status: dict
     claims_by_airline: dict
     claims_by_incident_type: dict
 

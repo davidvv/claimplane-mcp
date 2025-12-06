@@ -35,7 +35,7 @@ services:
     build: .
     container_name: flight_claim_api
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/flight_claim}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/flight_claim?ssl=disable}
       ENVIRONMENT: ${ENVIRONMENT:-development}
       SECRET_KEY: ${SECRET_KEY:-development-secret-key}
       FILE_ENCRYPTION_KEY: ${FILE_ENCRYPTION_KEY:-development-encryption-key}
@@ -80,7 +80,7 @@ services:
     build: .
     container_name: flight_claim_celery_worker
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/flight_claim}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/flight_claim?ssl=disable}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       ENVIRONMENT: ${ENVIRONMENT:-development}
       SECRET_KEY: ${SECRET_KEY:-development-secret-key}

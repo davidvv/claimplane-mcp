@@ -248,9 +248,12 @@ class AdminClaimRepository(BaseRepository[Claim]):
 
         return {
             "total_claims": total_claims,
-            "status_counts": status_counts,
-            "total_compensation_approved": float(total_compensation),
-            "average_compensation": float(avg_compensation),
+            "pending_review": status_counts.get("submitted", 0) + status_counts.get("under_review", 0),
+            "approved": status_counts.get("approved", 0),
+            "rejected": status_counts.get("rejected", 0),
+            "total_compensation": float(total_compensation),
+            "avg_processing_time_hours": 0,  # TODO: Implement processing time calculation
+            "claims_by_status": status_counts,
             "claims_by_airline": claims_by_airline,
             "claims_by_incident_type": claims_by_incident
         }

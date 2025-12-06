@@ -73,9 +73,39 @@ apiClient.interceptors.response.use(
       const status = error.response.status;
       const data = error.response.data as any;
 
+      // Helper function to extract error message from various formats
+      const getErrorMessage = (data: any): string => {
+        // Handle nested error object with message property
+        if (data?.error?.message) {
+          if (typeof data.error.message === 'string') {
+            return data.error.message;
+          }
+          if (typeof data.error.message === 'object') {
+            // If message is an object with message property
+            if (data.error.message.message) {
+              return data.error.message.message;
+            }
+            // If message has errors array, join them
+            if (Array.isArray(data.error.message.errors)) {
+              return data.error.message.errors.join(', ');
+            }
+          }
+        }
+        // Handle detail field (FastAPI format)
+        if (data?.detail) {
+          if (typeof data.detail === 'string') {
+            return data.detail;
+          }
+          if (Array.isArray(data.detail)) {
+            return data.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ');
+          }
+        }
+        return null;
+      };
+
       switch (status) {
         case 400:
-          toast.error(data?.error?.message || 'Invalid request. Please check your input.');
+          toast.error(getErrorMessage(data) || 'Invalid request. Please check your input.');
           break;
         case 401:
           toast.error('Unauthorized. Please log in.');
@@ -89,7 +119,7 @@ apiClient.interceptors.response.use(
           toast.error('Access denied. You do not have permission.');
           break;
         case 404:
-          toast.error(data?.error?.message || 'Resource not found.');
+          toast.error(getErrorMessage(data) || 'Resource not found.');
           break;
         case 429:
           toast.error('Too many requests. Please try again later.');
@@ -100,7 +130,7 @@ apiClient.interceptors.response.use(
           toast.error('Server error. Please try again later.');
           break;
         default:
-          toast.error(data?.error?.message || 'An unexpected error occurred.');
+          toast.error(getErrorMessage(data) || 'An unexpected error occurred.');
       }
 
       // Log error in development

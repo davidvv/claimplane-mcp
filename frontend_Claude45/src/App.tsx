@@ -5,6 +5,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { Layout } from './components/Layout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Pages
 import { Home } from './pages/Home';
@@ -22,23 +23,25 @@ import { ClaimDetailPage } from './pages/Admin/ClaimDetailPage';
 function App() {
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/claim/new" element={<ClaimFormPage />} />
-          <Route path="/claim/success" element={<Success />} />
-          <Route path="/status" element={<Status />} />
-          <Route path="/my-claims" element={<MyClaims />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/magic-link" element={<MagicLinkPage />} />
+      <ErrorBoundary>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/claim/new" element={<ClaimFormPage />} />
+            <Route path="/claim/success" element={<Success />} />
+            <Route path="/status" element={<Status />} />
+            <Route path="/my-claims" element={<MyClaims />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/magic-link" element={<MagicLinkPage />} />
 
-          {/* Admin Panel Routes (non-obvious path for security) */}
-          <Route path="/panel/dashboard" element={<AdminDashboard />} />
-          <Route path="/panel/claims/:claimId" element={<ClaimDetailPage />} />
+            {/* Admin Panel Routes (non-obvious path for security) */}
+            <Route path="/panel/dashboard" element={<AdminDashboard />} />
+            <Route path="/panel/claims/:claimId" element={<ClaimDetailPage />} />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Layout>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Layout>
+      </ErrorBoundary>
 
       {/* Toast notifications */}
       <Toaster

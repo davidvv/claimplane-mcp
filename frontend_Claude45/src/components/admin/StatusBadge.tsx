@@ -10,7 +10,7 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'outline' }> = {
   // Initial states
   submitted: { label: 'Submitted', variant: 'secondary' },
   pending_review: { label: 'Pending Review', variant: 'secondary' },
@@ -20,13 +20,14 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   additional_info_required: { label: 'Info Required', variant: 'outline' },
 
   // Decision states
-  approved: { label: 'Approved', variant: 'default' },
+  approved: { label: 'Approved', variant: 'success' },
   rejected: { label: 'Rejected', variant: 'destructive' },
 
   // Processing states
   payment_processing: { label: 'Payment Processing', variant: 'default' },
-  payment_sent: { label: 'Payment Sent', variant: 'default' },
-  completed: { label: 'Completed', variant: 'default' },
+  payment_sent: { label: 'Payment Sent', variant: 'success' },
+  paid: { label: 'Paid', variant: 'success' },
+  completed: { label: 'Completed', variant: 'success' },
 
   // Cancellation
   cancelled: { label: 'Cancelled', variant: 'destructive' },

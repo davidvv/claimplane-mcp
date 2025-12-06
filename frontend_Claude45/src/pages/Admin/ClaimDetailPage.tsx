@@ -110,6 +110,12 @@ export function ClaimDetailPage() {
     e.preventDefault();
     if (!claimId || !selectedStatus) return;
 
+    // Validate that rejection reason is provided for rejected status
+    if (selectedStatus === 'rejected' && !changeReason?.trim()) {
+      toast.error('Rejection reason is required when changing status to "rejected"');
+      return;
+    }
+
     setIsUpdatingStatus(true);
     try {
       const updatedClaim = await updateClaimStatus(claimId, {
@@ -126,7 +132,7 @@ export function ClaimDetailPage() {
       setSelectedStatus(updatedClaim.status);
     } catch (error: any) {
       console.error('Failed to update status:', error);
-      toast.error(error.response?.data?.detail || 'Failed to update claim status');
+      // Error will be handled by API interceptor, so no need to show toast here
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -437,13 +443,17 @@ export function ClaimDetailPage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="reason">Reason (optional)</Label>
+                <Label htmlFor="reason">
+                  Reason {selectedStatus === 'rejected' && <span className="text-destructive">*</span>}
+                  {selectedStatus === 'rejected' ? ' (required)' : ' (optional)'}
+                </Label>
                 <Input
                   id="reason"
-                  placeholder="Reason for status change..."
+                  placeholder={selectedStatus === 'rejected' ? 'Why is this claim being rejected?' : 'Reason for status change...'}
                   value={changeReason}
                   onChange={(e) => setChangeReason(e.target.value)}
                   disabled={isUpdatingStatus}
+                  required={selectedStatus === 'rejected'}
                 />
               </div>
               <Button

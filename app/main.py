@@ -6,6 +6,9 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.database import engine, Base
 from app.routers import health, customers, claims, files, admin_claims, admin_files, eligibility, auth, flights, account
@@ -14,6 +17,35 @@ from app.config import get_config
 
 # Get configuration
 config = get_config()
+
+# Rate limiting - Get real IP from Cloudflare headers
+def get_real_ip(request: Request) -> str:
+    """
+    Get the real client IP address, accounting for Cloudflare tunnel.
+
+    Cloudflare adds these headers:
+    - CF-Connecting-IP: The original client IP
+    - X-Forwarded-For: Chain of proxy IPs
+    """
+    # Trust Cloudflare's CF-Connecting-IP header first
+    cf_ip = request.headers.get("CF-Connecting-IP")
+    if cf_ip:
+        return cf_ip
+
+    # Fallback to X-Forwarded-For (first IP in chain)
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+
+    # Fallback to direct connection IP
+    return get_remote_address(request)
+
+# Create rate limiter
+limiter = Limiter(
+    key_func=get_real_ip,
+    default_limits=["100/minute"],  # Global default
+    storage_uri="memory://"  # Use Redis in production: "redis://redis:6379"
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +79,10 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan
 )
+
+# Add rate limiting state and exception handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Setup CORS - Use config to prevent wildcard with credentials vulnerability
 app.add_middleware(

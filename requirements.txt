@@ -23,3 +23,6 @@ python-magic==0.4.27
 # Email dependencies (Phase 2)
 aiosmtplib==3.0.1
 jinja2==3.1.2
+
+# Rate limiting (Phase 4.5)
+slowapi==0.1.9

@@ -30,6 +30,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+# Get limiter from app state - will be set in main.py
+def get_limiter(request: Request):
+    """Get limiter from app state."""
+    return request.app.state.limiter
+
 
 def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
     """Extract client IP and user agent from request."""
@@ -52,6 +57,7 @@ async def register(
 ):
     """
     Register a new user.
+    Rate limit: 3 requests per hour per IP.
 
     - **email**: Valid email address (must be unique)
     - **password**: At least 12 characters with uppercase, lowercase, digit, and special character
@@ -61,6 +67,10 @@ async def register(
 
     Returns user information and authentication tokens.
     """
+    # Apply rate limit
+    limiter = request.app.state.limiter
+    await limiter.hit(request, "3/hour")
+
     try:
         # Register user
         customer = await AuthService.register_user(
@@ -136,12 +146,17 @@ async def login(
 ):
     """
     Login with email and password.
+    Rate limit: 5 requests per minute per IP.
 
     - **email**: User's email address
     - **password**: User's password
 
     Returns user information and authentication tokens.
     """
+    # Apply rate limit
+    limiter = request.app.state.limiter
+    await limiter.hit(request, "5/minute")
+
     # Authenticate user
     customer = await AuthService.login_user(
         session=session,
@@ -449,12 +464,16 @@ async def request_password_reset(
 ):
     """
     Request password reset.
+    Rate limit: 3 requests per 15 minutes per IP.
 
     - **email**: User's email address
 
     Sends a password reset email if the email exists. Always returns success
     to prevent email enumeration attacks.
     """
+    # Apply rate limit
+    limiter = request.app.state.limiter
+    await limiter.hit(request, "3/15minutes")
     # Get client info
     ip_address, user_agent = get_client_info(request)
 

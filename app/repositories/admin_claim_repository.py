@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime, date
 
-from sqlalchemy import select, func, and_, or_, desc, asc, String
+from sqlalchemy import select, func, and_, or_, desc, asc, String, bindparam
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -68,7 +68,9 @@ class AdminClaimRepository(BaseRepository[Claim]):
             filters.append(Claim.status == status)
 
         if airline:
-            filters.append(Claim.airline.ilike(f"%{airline}%"))
+            # Using bindparam to prevent SQL injection
+            airline_filter = Claim.airline.ilike(bindparam('airline_param'))
+            filters.append(airline_filter)
 
         if incident_type:
             filters.append(Claim.incident_type == incident_type)
@@ -86,21 +88,29 @@ class AdminClaimRepository(BaseRepository[Claim]):
         if search:
             # Join with Customer for searching customer details
             query = query.join(Customer)
+            # Using bindparam to prevent SQL injection
             search_filters = or_(
-                Claim.flight_number.ilike(f"%{search}%"),
-                Customer.first_name.ilike(f"%{search}%"),
-                Customer.last_name.ilike(f"%{search}%"),
-                Customer.email.ilike(f"%{search}%"),
-                func.cast(Claim.id, String).ilike(f"%{search}%")
+                Claim.flight_number.ilike(bindparam('search_param')),
+                Customer.first_name.ilike(bindparam('search_param')),
+                Customer.last_name.ilike(bindparam('search_param')),
+                Customer.email.ilike(bindparam('search_param')),
+                func.cast(Claim.id, String).ilike(bindparam('search_param'))
             )
             filters.append(search_filters)
 
         if filters:
             query = query.where(and_(*filters))
 
+        # Build parameters dict for bound parameters
+        params = {}
+        if airline:
+            params["airline_param"] = f"%{airline}%"
+        if search:
+            params["search_param"] = f"%{search}%"
+
         # Count total
         count_query = select(func.count()).select_from(query.subquery())
-        total_result = await self.session.execute(count_query)
+        total_result = await self.session.execute(count_query, params) if params else await self.session.execute(count_query)
         total = total_result.scalar()
 
         # Apply sorting
@@ -113,8 +123,8 @@ class AdminClaimRepository(BaseRepository[Claim]):
         # Apply pagination
         query = query.offset(skip).limit(limit)
 
-        # Execute query
-        result = await self.session.execute(query)
+        # Execute query with parameters
+        result = await self.session.execute(query, params) if params else await self.session.execute(query)
         claims = result.scalars().all()
 
         return {

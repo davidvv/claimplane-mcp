@@ -3,7 +3,7 @@ from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, bindparam
 
 from app.models import Customer
 from app.repositories.base import BaseRepository
@@ -22,23 +22,25 @@ class CustomerRepository(BaseRepository[Customer]):
     async def search_by_name(self, name: str, skip: int = 0, limit: int = 100) -> List[Customer]:
         """Search customers by name (first name or last name)."""
         # Search in both first_name and last_name
+        # Using bindparam to prevent SQL injection
         stmt = select(Customer).where(
             or_(
-                Customer.first_name.ilike(f"%{name}%"),
-                Customer.last_name.ilike(f"%{name}%")
+                Customer.first_name.ilike(bindparam('name_param')),
+                Customer.last_name.ilike(bindparam('name_param'))
             )
         ).offset(skip).limit(limit)
-        
-        result = await self.session.execute(stmt)
+
+        result = await self.session.execute(stmt, {"name_param": f"%{name}%"})
         return result.scalars().all()
     
     async def search_by_email(self, email: str, skip: int = 0, limit: int = 100) -> List[Customer]:
         """Search customers by email address (partial match)."""
+        # Using bindparam to prevent SQL injection
         stmt = select(Customer).where(
-            Customer.email.ilike(f"%{email}%")
+            Customer.email.ilike(bindparam('email_param'))
         ).offset(skip).limit(limit)
-        
-        result = await self.session.execute(stmt)
+
+        result = await self.session.execute(stmt, {"email_param": f"%{email}%"})
         return result.scalars().all()
     
     async def get_active_customers(self, skip: int = 0, limit: int = 100) -> List[Customer]:

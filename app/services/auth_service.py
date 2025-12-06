@@ -384,6 +384,10 @@ class AuthService:
         if not customer.is_active:
             return None
 
+        # Check if user is blacklisted (security fix: prevent deleted users from logging in)
+        if customer.is_blacklisted:
+            return None
+
         # Update last login timestamp
         customer.last_login_at = datetime.utcnow()
         await session.flush()
@@ -592,6 +596,14 @@ class AuthService:
         customer = result.scalar_one_or_none()
 
         if not customer:
+            return None
+
+        # Check if user is blacklisted (security fix: prevent deleted users from using magic links)
+        if customer.is_blacklisted:
+            return None
+
+        # Check if user is active
+        if not customer.is_active:
             return None
 
         # Update last login

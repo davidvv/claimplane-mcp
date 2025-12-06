@@ -4,7 +4,7 @@ from uuid import UUID
 from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, bindparam
 from sqlalchemy.orm import selectinload
 
 from app.models import ClaimFile, FileAccessLog, FileValidationRule
@@ -161,32 +161,38 @@ class FileRepository(BaseRepository[ClaimFile]):
                           limit: int = 100, offset: int = 0) -> List[ClaimFile]:
         """Search files with various criteria."""
         stmt = select(ClaimFile).where(ClaimFile.is_deleted == 0)
-        
+
+        # Build parameters dict for bound parameters
+        params = {}
+
         # Add search conditions
         if query:
+            # Using bindparam to prevent SQL injection
             stmt = stmt.where(
                 or_(
-                    ClaimFile.filename.ilike(f"%{query}%"),
-                    ClaimFile.original_filename.ilike(f"%{query}%"),
-                    ClaimFile.description.ilike(f"%{query}%")
+                    ClaimFile.filename.ilike(bindparam('query_param')),
+                    ClaimFile.original_filename.ilike(bindparam('query_param')),
+                    ClaimFile.description.ilike(bindparam('query_param'))
                 )
             )
-        
+            params["query_param"] = f"%{query}%"
+
         if customer_id:
             stmt = stmt.where(ClaimFile.customer_id == customer_id)
-        
+
         if document_type:
             stmt = stmt.where(ClaimFile.document_type == document_type)
-        
+
         if date_from:
             stmt = stmt.where(ClaimFile.uploaded_at >= date_from)
-        
+
         if date_to:
             stmt = stmt.where(ClaimFile.uploaded_at <= date_to)
-        
+
         stmt = stmt.order_by(ClaimFile.uploaded_at.desc()).limit(limit).offset(offset)
-        
-        result = await self.session.execute(stmt)
+
+        # Execute query with parameters if any
+        result = await self.session.execute(stmt, params) if params else await self.session.execute(stmt)
         return result.scalars().all()
     
     async def increment_download_count(self, file_id: UUID) -> bool:

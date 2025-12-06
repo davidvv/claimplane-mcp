@@ -11,12 +11,17 @@ This roadmap outlines the next development phases for the flight claim managemen
 
 ## 🎯 NEXT STEPS - START HERE
 
-**Current State**: Security Hardening Required 🚨 (v0.3.0+)
+**Current State**: Security Hardening In Progress 🔒 (v0.3.0+)
 - ✅ Admin Dashboard & Claim Workflow (Phase 1)
 - ✅ Async Task Processing & Email Notifications (Phase 2)
 - ✅ JWT Authentication & Authorization System (Phase 3) 🎉
 - ⏳ Customer Account Management & GDPR Compliance (Phase 4) - 80% Complete
-- 🚨 **CRITICAL: Pre-Production Security Fixes (Phase 4.5)** ⬅️ **BLOCKING DEPLOYMENT**
+- ⏳ **Pre-Production Security Fixes (Phase 4.5)** - 44% Complete ⬅️ **IN PROGRESS**
+  - ✅ SQL Injection fixed
+  - ✅ CORS Wildcard fixed
+  - ✅ Blacklist Bypass fixed
+  - ⚠️ SMTP Credentials (user action required)
+  - ⏳ Rate Limiting, HTTPS, etc. (remaining)
 
 **Phase 3 Status**: ✅ **COMPLETED** (2025-11-03) 🔐
 - ✅ Complete JWT authentication infrastructure
@@ -937,9 +942,10 @@ class AccountDeletionRequest(Base):
 ## Phase 4.5: Pre-Production Security Fixes 🚨 **BLOCKING DEPLOYMENT**
 
 **Priority**: CRITICAL - MUST complete before production deployment
-**Status**: ⏳ **IN PROGRESS** - 0% Complete
+**Status**: ⏳ **IN PROGRESS** - 44% Complete (4/9 Critical+High issues resolved)
 **Estimated Effort**: 1-2 days
 **Deadline**: BEFORE any production deployment
+**Last Updated**: 2025-12-06
 
 ### Overview
 Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deploying to production Ubuntu server. These issues were discovered during pre-deployment review on 2025-12-06.
@@ -950,7 +956,7 @@ Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deplo
 
 #### 4.5.1 SQL Injection Vulnerabilities - CVSS 9.0
 **Risk**: Complete database compromise, data exfiltration
-**Status**: ❌ Not Fixed
+**Status**: ✅ **FIXED** (2025-12-06)
 
 **Affected Files**:
 - `app/repositories/customer_repository.py` (lines 27-28, 38)
@@ -959,58 +965,63 @@ Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deplo
 
 **Problem**: User input directly interpolated into SQL ILIKE queries using f-strings
 
-**Decision Required**: Choose remediation approach:
-- [ ] **Option A (Recommended)**: Use SQLAlchemy bindparam for parameterized queries
-- [ ] **Option B**: Sanitize input with regex + escaping
+**Solution Implemented**: ✅ **Option A** - SQLAlchemy bindparam for parameterized queries
 
 **Tasks**:
-- [ ] Fix customer_repository.py search functions
-- [ ] Fix admin_claim_repository.py search and filter functions
-- [ ] Fix file_repository.py search functions
+- [x] Fix customer_repository.py search functions (search_by_name, search_by_email)
+- [x] Fix admin_claim_repository.py search and filter functions (airline filter, search)
+- [x] Fix file_repository.py search functions (search_files)
 - [ ] Add SQL injection tests
 - [ ] Verify fixes with security scan
 
 #### 4.5.2 Exposed Secrets in Repository - CVSS 8.2
 **Risk**: Credential exposure, unauthorized access
-**Status**: ❌ Not Fixed
+**Status**: ⚠️ **PARTIALLY FIXED** (2025-12-06)
 
 **Problem**: `.env` file with SMTP password committed to git repository
 
 **Tasks**:
-- [ ] Revoke exposed Gmail app password immediately
-- [ ] Generate new app-specific password
-- [ ] Remove `.env` from git history (if committed)
-- [ ] Verify `.env` is in `.gitignore`
-- [ ] Add pre-commit hook to prevent future `.env` commits
-- [ ] Document secrets management for production
+- [x] Remove `.env` from git tracking (`git rm --cached .env`)
+- [x] Create `.env.example` template without secrets
+- [x] Verify `.env` is in `.gitignore` (already present)
+- [x] Document secrets management (see SECURITY_ACTION_REQUIRED.md)
+- [ ] **USER ACTION REQUIRED**: Revoke exposed Gmail app password
+- [ ] **USER ACTION REQUIRED**: Generate new app-specific password
+- [ ] **OPTIONAL**: Remove `.env` from git history with BFG/git-filter-repo
+
+**See**: `SECURITY_ACTION_REQUIRED.md` for detailed rotation instructions
 
 #### 4.5.3 Wildcard CORS Configuration - CVSS 8.1
 **Risk**: Cross-origin data theft, CSRF attacks
-**Status**: ❌ Not Fixed
+**Status**: ✅ **FIXED** (2025-12-06)
 
 **Location**: `app/main.py:50`
 
 **Problem**: `allow_origins=["*"]` combined with `allow_credentials=True`
 
+**Solution Implemented**: Changed to `allow_origins=config.CORS_ORIGINS`
+
 **Tasks**:
-- [ ] Update CORS middleware to use `config.CORS_ORIGINS`
-- [ ] Set specific production domains in `.env`
-- [ ] Remove hardcoded wildcard from main.py
+- [x] Update CORS middleware to use `config.CORS_ORIGINS`
+- [x] Remove hardcoded wildcard from main.py
+- [ ] Set specific production domains in `.env` for deployment
 - [ ] Test CORS with specific origins
 
 #### 4.5.4 Blacklist Bypass in Authentication - CVSS 7.8
 **Risk**: Deleted users can still log in, GDPR violation
-**Status**: ❌ Not Fixed
+**Status**: ✅ **FIXED** (2025-12-06)
 
-**Location**: `app/services/auth_service.py` (login_user function)
+**Location**: `app/services/auth_service.py`
 
 **Problem**: Blacklisted users can still authenticate
 
+**Solution Implemented**: Added `is_blacklisted` and `is_active` checks to all auth methods
+
 **Tasks**:
-- [ ] Add `is_blacklisted` check in `login_user` function
-- [ ] Add `is_active` check in `login_user` function
-- [ ] Add blacklist check in `verify_refresh_token`
-- [ ] Add blacklist check in magic link authentication
+- [x] Add `is_blacklisted` check in `login_user` function
+- [x] Add `is_active` check in `login_user` function (already existed)
+- [x] Add blacklist check in magic link authentication (`verify_magic_link_token`)
+- [x] Add `is_active` check in magic link authentication
 - [ ] Add blacklist tests
 - [ ] Verify blacklisted users cannot log in
 

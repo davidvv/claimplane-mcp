@@ -10,6 +10,10 @@ from fastapi.responses import JSONResponse
 from app.database import engine, Base
 from app.routers import health, customers, claims, files, admin_claims, admin_files, eligibility, auth, flights, account
 from app.exceptions import setup_exception_handlers
+from app.config import get_config
+
+# Get configuration
+config = get_config()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -44,10 +48,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Setup CORS
+# Setup CORS - Use config to prevent wildcard with credentials vulnerability
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=config.CORS_ORIGINS,  # No longer uses wildcard ["*"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

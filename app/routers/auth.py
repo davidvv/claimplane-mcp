@@ -30,10 +30,47 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-# Get limiter from app state - will be set in main.py
-def get_limiter(request: Request):
-    """Get limiter from app state."""
-    return request.app.state.limiter
+
+# Simple in-memory rate limiter as fallback since slowapi isn't working correctly
+import time
+from collections import defaultdict
+
+rate_limit_store = defaultdict(lambda: {"count": 0, "reset_time": 0})
+
+def simple_rate_limit(request: Request, limit: int, window_seconds: int):
+    """Simple rate limiter implementation"""
+    # Get IP address using Cloudflare headers if available
+    cf_ip = request.headers.get("CF-Connecting-IP")
+    if cf_ip:
+        client_ip = cf_ip
+    else:
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+        else:
+            client_ip = request.client.host if request.client else "unknown"
+
+    # Create key for this endpoint and client
+    endpoint = request.url.path
+    key = f"{client_ip}:{endpoint}"
+
+    now = time.time()
+    record = rate_limit_store[key]
+
+    # Reset counter if window has passed
+    if now >= record["reset_time"]:
+        record["count"] = 0
+        record["reset_time"] = now + window_seconds
+
+    # Check limit
+    if record["count"] >= limit:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Rate limit exceeded: {limit} requests per {window_seconds} seconds"
+        )
+
+    # Increment counter
+    record["count"] += 1
 
 
 def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
@@ -67,9 +104,8 @@ async def register(
 
     Returns user information and authentication tokens.
     """
-    # Apply rate limit
-    limiter = request.app.state.limiter
-    await limiter.hit(request, "3/hour")
+    # Apply rate limit: 3 requests per hour
+    simple_rate_limit(request, limit=3, window_seconds=3600)
 
     try:
         # Register user
@@ -153,9 +189,8 @@ async def login(
 
     Returns user information and authentication tokens.
     """
-    # Apply rate limit
-    limiter = request.app.state.limiter
-    await limiter.hit(request, "5/minute")
+    # Apply rate limit: 5 requests per minute
+    simple_rate_limit(request, limit=5, window_seconds=60)
 
     # Authenticate user
     customer = await AuthService.login_user(
@@ -471,9 +506,8 @@ async def request_password_reset(
     Sends a password reset email if the email exists. Always returns success
     to prevent email enumeration attacks.
     """
-    # Apply rate limit
-    limiter = request.app.state.limiter
-    await limiter.hit(request, "3/15minutes")
+    # Apply rate limit: 3 requests per 15 minutes
+    simple_rate_limit(request, limit=3, window_seconds=900)
     # Get client info
     ip_address, user_agent = get_client_info(request)
 

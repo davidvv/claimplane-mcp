@@ -44,7 +44,8 @@ def get_real_ip(request: Request) -> str:
 limiter = Limiter(
     key_func=get_real_ip,
     default_limits=["100/minute"],  # Global default
-    storage_uri="memory://"  # Use Redis in production: "redis://redis:6379"
+    storage_uri="memory://",  # Use Redis in production: "redis://redis:6379"
+    headers_enabled=True  # Enable rate limit headers in responses
 )
 
 # Configure logging

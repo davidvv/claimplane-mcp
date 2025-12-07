@@ -943,10 +943,10 @@ class AccountDeletionRequest(Base):
 ## Phase 4.5: Pre-Production Security Fixes 🚨 **BLOCKING DEPLOYMENT**
 
 **Priority**: CRITICAL - MUST complete before production deployment
-**Status**: ⏳ **IN PROGRESS** - 56% Complete (5/9 Critical+High issues resolved)
-**Estimated Effort**: 1-2 days
+**Status**: ⏳ **IN PROGRESS** - 67% Complete (6/9 Critical+High issues resolved)
+**Estimated Effort**: 1 day remaining
 **Deadline**: BEFORE any production deployment
-**Last Updated**: 2025-12-06 (20:15 UTC)
+**Last Updated**: 2025-12-07 (09:37 UTC)
 
 ### Overview
 Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deploying to production Ubuntu server. These issues were discovered during pre-deployment review on 2025-12-06.
@@ -1030,25 +1030,25 @@ Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deplo
 
 #### 4.5.5 Missing Rate Limiting - CVSS 7.3
 **Risk**: Brute force attacks, account enumeration
-**Status**: ✅ **FIXED** (2025-12-06)
+**Status**: ✅ **FIXED** (2025-12-07)
 
-**Solution Implemented**: ✅ **Option A** - slowapi library with Cloudflare support
+**Solution Implemented**: ✅ **Custom in-memory rate limiter with Cloudflare support**
 
 **Implementation Details**:
-- Added slowapi to requirements.txt
-- Created custom `get_real_ip()` function for Cloudflare tunnel support
+- Created custom `simple_rate_limit()` function in `app/routers/auth.py`
   - Reads CF-Connecting-IP header (Cloudflare's real client IP)
   - Falls back to X-Forwarded-For, then direct IP
-- Configured in-memory rate limiting (can be upgraded to Redis)
-- Applied rate limits to all auth endpoints
+  - Fixed window rate limiting (in-memory, can be upgraded to Redis)
+  - Returns HTTP 429 when rate limit exceeded
+- Applied rate limits to all critical auth endpoints
+- Tested successfully with 7 sequential requests (5 allowed, 2 blocked)
 
 **Tasks**:
-- [x] Choose rate limiting approach (slowapi)
+- [x] Choose rate limiting approach (custom implementation)
 - [x] Implement rate limits on `/auth/login` (5/minute)
 - [x] Implement rate limits on `/auth/register` (3/hour)
 - [x] Implement rate limits on `/auth/password/reset-request` (3/15minutes)
-- [x] Test server startup (successful)
-- [ ] Test rate limits under load (optional - working in dev)
+- [x] Test rate limits (verified: requests 1-5 allowed, 6-7 blocked with HTTP 429)
 
 #### 4.5.6 Missing HTTPS Configuration - CVSS 7.4
 **Risk**: Man-in-the-middle attacks, credential interception

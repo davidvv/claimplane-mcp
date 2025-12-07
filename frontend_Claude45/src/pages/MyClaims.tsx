@@ -110,18 +110,18 @@ export function MyClaims() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Claims</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold mb-2">My Claims</h1>
+          <p className="text-muted-foreground">
             View and manage all your flight compensation claims
           </p>
         </div>
@@ -129,11 +129,11 @@ export function MyClaims() {
         {claims.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">
                 No claims yet
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-muted-foreground mb-6">
                 You haven't submitted any flight compensation claims yet.
               </p>
               <Button onClick={() => navigate('/claim')}>

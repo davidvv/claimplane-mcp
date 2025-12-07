@@ -43,6 +43,14 @@ export interface Customer {
   updatedAt?: string; // ISO datetime (readonly)
 }
 
+export interface CustomerCreateInfo {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+  address?: Address;
+}
+
 // ==================== Eligibility Types ====================
 export interface EligibilityRequest {
   flightInfo: FlightInfo;
@@ -93,7 +101,7 @@ export interface Claim {
 }
 
 export interface ClaimRequest {
-  customerInfo: Customer;
+  customerInfo: CustomerCreateInfo;
   flightInfo: FlightInfo;
   incidentType: IncidentType;
   notes?: string | null;

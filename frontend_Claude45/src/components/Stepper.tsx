@@ -38,7 +38,7 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                 <div
                   className={cn(
                     'absolute top-5 left-1/2 h-0.5 w-full transition-colors',
-                    isCompleted ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'
+                    isCompleted ? 'bg-primary' : 'bg-border'
                   )}
                 />
               )}
@@ -50,9 +50,9 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                   isCompleted &&
                     'bg-primary border-primary text-white',
                   isCurrent &&
-                    'border-primary bg-white dark:bg-background text-primary',
+                    'border-primary bg-background text-primary',
                   isUpcoming &&
-                    'border-gray-300 dark:border-gray-600 bg-white dark:bg-background text-gray-500'
+                    'border-border bg-background text-muted-foreground'
                 )}
               >
                 {isCompleted ? (

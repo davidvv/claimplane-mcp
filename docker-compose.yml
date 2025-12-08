@@ -65,7 +65,7 @@ services:
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Flight Claim System}
       SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
       NOTIFICATIONS_ENABLED: ${NOTIFICATIONS_ENABLED:-true}
-      FRONTEND_URL: ${FRONTEND_URL:-http://192.168.5.209:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-https://eac.dvvcloud.work}
     ports:
       - "8000:8000"
     depends_on:
@@ -93,7 +93,7 @@ services:
       SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@flightclaim.com}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Flight Claim System}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      FRONTEND_URL: ${FRONTEND_URL:-http://192.168.5.209:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-https://eac.dvvcloud.work}
     depends_on:
       redis:
         condition: service_healthy

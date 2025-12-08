@@ -19,7 +19,7 @@ import type {
 export const listClaims = async (
   params?: ClaimListParams
 ): Promise<PaginatedResponse<Claim>> => {
-  const response = await apiClient.get<PaginatedResponse<Claim>>('/claims', {
+  const response = await apiClient.get<PaginatedResponse<Claim>>('/claims/', {
     params,
   });
 

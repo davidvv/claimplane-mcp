@@ -78,7 +78,8 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
+    redirect_slashes=False  # Disable automatic slash redirects to avoid CORS issues
 )
 
 # Add rate limiting state and exception handler

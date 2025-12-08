@@ -59,37 +59,37 @@ async def get_flight_status(
     Returns:
         Flight status information
     """
-    # Parse flight number to extract airline code
+    # Parse flight number to extract airline code (flexible matching for mock)
     import re
     match = re.match(r'([A-Z]{2,3})(\d+)', flight_number.upper())
 
-    if not match:
-        raise HTTPException(
-            status_code=404,
-            detail="Invalid flight number format. Expected format: AA123 or AAA123"
-        )
+    if match:
+        airline_code = match.group(1)
+        flight_num = match.group(2)
 
-    airline_code = match.group(1)
-    flight_num = match.group(2)
+        # Mock airline mapping
+        airlines = {
+            "BA": "British Airways",
+            "AA": "American Airlines",
+            "DL": "Delta Air Lines",
+            "UA": "United Airlines",
+            "LH": "Lufthansa",
+            "AF": "Air France",
+            "KL": "KLM",
+            "IB": "Iberia",
+            "VY": "Vueling",
+            "FR": "Ryanair",
+            "U2": "easyJet",
+            "EZY": "easyJet",
+            "W6": "Wizz Air",
+        }
 
-    # Mock airline mapping
-    airlines = {
-        "BA": "British Airways",
-        "AA": "American Airlines",
-        "DL": "Delta Air Lines",
-        "UA": "United Airlines",
-        "LH": "Lufthansa",
-        "AF": "Air France",
-        "KL": "KLM",
-        "IB": "Iberia",
-        "VY": "Vueling",
-        "FR": "Ryanair",
-        "U2": "easyJet",
-        "EZY": "easyJet",
-        "W6": "Wizz Air",
-    }
-
-    airline_name = airlines.get(airline_code, f"{airline_code} Airlines")
+        airline_name = airlines.get(airline_code, f"{airline_code} Airlines")
+    else:
+        # Accept any flight number format for testing (no validation in mock mode)
+        airline_code = "XX"
+        flight_num = "000"
+        airline_name = "Mock Airlines"
 
     # Mock flight data - always returns a delayed flight for testing compensation
     flight_data = FlightStatusResponse(

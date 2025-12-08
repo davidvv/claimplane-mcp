@@ -8,7 +8,8 @@ import { toast } from 'sonner';
 import { clearAuthTokens } from '@/utils/tokenStorage';
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// Use environment variable or empty string to use relative URLs (Vite proxy)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 // Create axios instance

@@ -123,7 +123,7 @@ class Config:
     JWT_REFRESH_EXPIRATION_DAYS = int(os.getenv("JWT_REFRESH_EXPIRATION_DAYS", "7"))
     
     # CORS Configuration
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8081").split(",")
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8081,https://eac.dvvcloud.work").split(",")
     
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

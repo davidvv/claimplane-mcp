@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Stepper } from '@/components/Stepper';
 import { useClaimFormPersistence } from '@/hooks/useLocalStorageForm';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Step1_Flight } from './Step1_Flight';
 import { Step2_Eligibility } from './Step2_Eligibility';
 import { Step3_Passenger } from './Step3_Passenger';
@@ -20,6 +21,7 @@ const STEPS = [
 ];
 
 export function ClaimFormPage() {
+  useDocumentTitle('File Claim');
   const navigate = useNavigate();
   const {
     formData,

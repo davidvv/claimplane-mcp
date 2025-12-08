@@ -48,7 +48,7 @@ services:
       REDIS_HOST: nextcloud-redis
       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER:-admin}
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD:-admin_secure_password_2024}
-      NEXTCLOUD_TRUSTED_DOMAINS: "localhost 127.0.0.1 0.0.0.0 172.20.0.6"
+      NEXTCLOUD_TRUSTED_DOMAINS: "localhost 127.0.0.1 0.0.0.0 172.20.0.6 192.168.5.209"
     volumes:
        - nextcloud_data:/var/www/html
        - ./nextcloud/data:/var/www/html/data

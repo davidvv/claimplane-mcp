@@ -121,10 +121,10 @@ export function Step2_Eligibility({
               <div className="space-y-2">
                 <Label htmlFor="region">Your Region</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
                   <select
                     id="region"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pl-10"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pl-10 pr-8"
                     {...register('region')}
                   >
                     <option value="EU">European Union</option>
@@ -135,6 +135,9 @@ export function Step2_Eligibility({
                 {errors.region && (
                   <p className="text-sm text-destructive">{errors.region.message}</p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  Select the region where your flight originated or was destined
+                </p>
               </div>
             </div>
 

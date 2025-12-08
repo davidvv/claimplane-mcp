@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   formatCurrency,
   formatDateTime,
@@ -42,6 +43,7 @@ function getUserRoleFromToken(): string | null {
 }
 
 export function MyClaims() {
+  useDocumentTitle('My Claims');
   const navigate = useNavigate();
   const [claims, setClaims] = useState<Claim[]>([]);
   const [isLoading, setIsLoading] = useState(true);

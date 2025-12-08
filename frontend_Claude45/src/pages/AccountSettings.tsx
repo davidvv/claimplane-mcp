@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { User, Mail, Lock, Trash2, Calendar, Shield } from 'lucide-react';
 import apiClient from '@/services/api';
 import { isAuthenticated } from '@/services/auth';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 interface AccountInfo {
   id: string;
@@ -23,6 +24,7 @@ interface AccountInfo {
 }
 
 export function AccountSettings() {
+  useDocumentTitle('Account Settings');
   const navigate = useNavigate();
   const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
   const [loading, setLoading] = useState(true);

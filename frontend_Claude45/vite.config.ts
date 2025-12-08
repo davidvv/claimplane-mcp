@@ -74,6 +74,18 @@ export default defineConfig({
         target: 'http://localhost:80',
         changeOrigin: true,
       },
+      '/eligibility': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+      },
+      '/account': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+      },
+      '/admin': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+      },
     },
   },
   build: {

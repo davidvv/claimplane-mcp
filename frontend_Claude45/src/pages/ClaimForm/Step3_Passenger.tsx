@@ -9,6 +9,7 @@ import { User, Mail, Phone, MapPin, FileText } from 'lucide-react';
 
 import { passengerInfoSchema, type PassengerInfoForm } from '@/schemas/validation';
 import type { FlightStatus, EligibilityResponse } from '@/types/api';
+import type { UserProfile } from '@/services/auth';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -21,6 +22,8 @@ interface Step3Props {
   eligibilityData: EligibilityResponse;
   initialData: any;
   initialDocuments: any[];
+  customerEmail?: string | null;
+  userProfile?: UserProfile | null;
   onComplete: (data: PassengerInfoForm, documents: any[]) => void;
   onBack: () => void;
 }
@@ -30,10 +33,26 @@ export function Step3_Passenger({
   eligibilityData,
   initialData,
   initialDocuments,
+  customerEmail,
+  userProfile,
   onComplete,
   onBack,
 }: Step3Props) {
   const [documents, setDocuments] = useState<any[]>(initialDocuments || []);
+
+  // Merge default values with priority: initialData > customerEmail > userProfile
+  const defaultFormValues = {
+    incidentType: flightData.status === 'cancelled' ? 'cancellation' : 'delay',
+    email: customerEmail || userProfile?.email || '',
+    firstName: userProfile?.first_name || '',
+    lastName: userProfile?.last_name || '',
+    phone: userProfile?.phone || '',
+    street: userProfile?.address?.street || '',
+    city: userProfile?.address?.city || '',
+    postalCode: userProfile?.address?.postalCode || '',
+    country: userProfile?.address?.country || '',
+    notes: '',
+  };
 
   const {
     register,
@@ -41,9 +60,7 @@ export function Step3_Passenger({
     formState: { errors },
   } = useForm<PassengerInfoForm>({
     resolver: zodResolver(passengerInfoSchema),
-    defaultValues: initialData || {
-      incidentType: flightData.status === 'cancelled' ? 'cancellation' : 'delay',
-    },
+    defaultValues: initialData || defaultFormValues,
   });
 
   const onSubmit = (data: PassengerInfoForm) => {

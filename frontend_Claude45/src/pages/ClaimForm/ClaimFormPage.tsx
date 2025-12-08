@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Stepper } from '@/components/Stepper';
 import { useClaimFormPersistence } from '@/hooks/useLocalStorageForm';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { isAuthenticated, getCurrentUser, type UserProfile } from '@/services/auth';
 import { Step1_Flight } from './Step1_Flight';
 import { Step2_Eligibility } from './Step2_Eligibility';
 import { Step3_Passenger } from './Step3_Passenger';
@@ -40,10 +41,32 @@ export function ClaimFormPage() {
   const [eligibilityData, setEligibilityData] = useState<EligibilityResponse | null>(
     formData.eligibilityData || null
   );
+  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [passengerData, setPassengerData] = useState<any>(
     formData.passengerData || null
   );
   const [documents, setDocuments] = useState<any[]>(formData.documents || []);
+
+  // Fetch user profile if authenticated
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (isAuthenticated()) {
+        try {
+          const profile = await getCurrentUser();
+          // Only use profile for customers, not admins
+          if (profile.role === 'customer') {
+            setUserProfile(profile);
+          }
+        } catch (error) {
+          console.log('Could not fetch user profile:', error);
+          // Silently fail - user can still fill in the form manually
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   // Sync with localStorage
   useEffect(() => {
@@ -56,9 +79,10 @@ export function ClaimFormPage() {
     setCurrentStep(2);
   };
 
-  const handleEligibilityComplete = (data: EligibilityResponse) => {
+  const handleEligibilityComplete = (data: EligibilityResponse, email: string) => {
     setEligibilityData(data);
     updateEligibilityData(data);
+    setCustomerEmail(email);
     setCurrentStep(3);
   };
 
@@ -143,6 +167,8 @@ export function ClaimFormPage() {
               eligibilityData={eligibilityData}
               initialData={passengerData}
               initialDocuments={documents}
+              customerEmail={customerEmail}
+              userProfile={userProfile}
               onComplete={handlePassengerComplete}
               onBack={handleBack}
             />

@@ -22,7 +22,7 @@ import { formatCurrency } from '@/lib/utils';
 interface Step2Props {
   flightData: FlightStatus;
   initialData: EligibilityResponse | null;
-  onComplete: (data: EligibilityResponse) => void;
+  onComplete: (data: EligibilityResponse, email: string) => void;
   onBack: () => void;
 }
 
@@ -36,6 +36,7 @@ export function Step2_Eligibility({
   const [eligibilityResult, setEligibilityResult] = useState<EligibilityResponse | null>(
     initialData
   );
+  const [submittedEmail, setSubmittedEmail] = useState<string>('');
 
   const {
     register,
@@ -61,6 +62,7 @@ export function Step2_Eligibility({
       });
 
       setEligibilityResult(result);
+      setSubmittedEmail(data.email);
 
       if (result.eligible) {
         toast.success('Great news! You are eligible for compensation.');
@@ -76,8 +78,8 @@ export function Step2_Eligibility({
   };
 
   const handleContinue = () => {
-    if (eligibilityResult?.eligible) {
-      onComplete(eligibilityResult);
+    if (eligibilityResult?.eligible && submittedEmail) {
+      onComplete(eligibilityResult, submittedEmail);
     } else {
       toast.error('You must be eligible to continue with the claim.');
     }
@@ -120,18 +122,15 @@ export function Step2_Eligibility({
               {/* Region */}
               <div className="space-y-2">
                 <Label htmlFor="region">Your Region</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
-                  <select
-                    id="region"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pl-10 pr-8"
-                    {...register('region')}
-                  >
-                    <option value="EU">European Union</option>
-                    <option value="US">United States</option>
-                    <option value="CA">Canada</option>
-                  </select>
-                </div>
+                <select
+                  id="region"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  {...register('region')}
+                >
+                  <option value="EU">🇪🇺 European Union</option>
+                  <option value="US">🇺🇸 United States</option>
+                  <option value="CA">🇨🇦 Canada</option>
+                </select>
                 {errors.region && (
                   <p className="text-sm text-destructive">{errors.region.message}</p>
                 )}

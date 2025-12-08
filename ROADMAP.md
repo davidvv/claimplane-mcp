@@ -1,9 +1,10 @@
 # Development Roadmap
 
-**Last Updated**: 2025-12-06
-**Current Version**: v0.3.0 (Phase 3 Complete, Phase 4 In Progress)
-**Status**: MVP Phase - Customer Account Management & GDPR Compliance 🔐
+**Last Updated**: 2025-12-08
+**Current Version**: v0.3.0 (Phase 3 Complete, Phase 4 In Progress, Cloudflare Deployment Active)
+**Status**: MVP Phase - Production Testing via Cloudflare Tunnel 🌐
 **Strategy**: Business value first (#2 → #3 → #4 → GDPR)
+**Deployment URL**: https://eac.dvvcloud.work (Cloudflare Tunnel + OAuth)
 
 This roadmap outlines the next development phases for the flight claim management platform, prioritized for MVP launch.
 
@@ -62,7 +63,136 @@ This roadmap outlines the next development phases for the flight claim managemen
 - ✅ MFA Infrastructure ready (auth system extensible)
 - ✅ Account Lockout capability (token revocation)
 
-**Next Priority**: Frontend Integration or Payment Integration (Phase 4 or Phase 5)
+**Next Priority**: Complete Phase 4 (Customer Account Management), then Phase 5 (Multi-Passenger Claims)
+
+---
+
+## 🌐 Cloudflare Tunnel Deployment (2025-12-08)
+
+**Status**: ✅ **COMPLETED AND LIVE**
+**URL**: https://eac.dvvcloud.work
+**Access**: Cloudflare OAuth authentication required (team only)
+
+### Deployment Summary
+
+Successfully deployed the application through Cloudflare Tunnel for production testing. This milestone enables secure, remote access to the platform with OAuth protection during the testing phase.
+
+### Implementation Details
+
+#### Frontend Configuration
+- **Vite Host Allowlist**: Added `eac.dvvcloud.work` to `server.allowedHosts` in vite.config.ts:17
+- **Vite Proxy**: Comprehensive proxy configuration for all API endpoints (lines 18-89)
+  - Routes API requests from frontend (port 3000) → backend (port 80)
+  - Endpoints proxied: `/auth/*`, `/claims`, `/files`, `/customers`, `/flights`, `/eligibility`, `/account`, `/admin`, `/health`
+  - Each proxy uses `changeOrigin: true` for proper header forwarding
+
+#### Backend Configuration
+- **CORS Origins**: Updated to include Cloudflare domain in app/config.py:41
+  - Default: `http://localhost:3000,http://localhost:8081,https://eac.dvvcloud.work`
+- **FastAPI Redirects**: Set `redirect_slashes=False` in app/main.py to prevent CORS issues with automatic redirects
+- **Email Templates**: All email links now use `https://eac.dvvcloud.work` via FRONTEND_URL environment variable
+
+#### Docker Configuration
+- **Environment Variables**: Updated docker-compose.yml with Cloudflare domain defaults
+  - `FRONTEND_URL: ${FRONTEND_URL:-https://eac.dvvcloud.work}` (lines 68, 96)
+- **Container Recreation**: Learned that `docker compose restart` doesn't reload .env files
+  - Proper workflow: `docker compose down && docker compose up -d`
+
+#### URL Updates
+- **.env Files**: Updated all environment files with Cloudflare domain
+  - Backend: `/home/david/easyAirClaim/easyAirClaim/.env`
+  - Frontend: `/home/david/easyAirClaim/easyAirClaim/frontend_Claude45/.env`
+- **API Client**: Changed fallback from `localhost:8000` to empty string (uses Vite proxy)
+  - Location: frontend_Claude45/src/services/api.ts:10
+
+#### Flight API Enhancement
+- **Flexible Validation**: Made flight lookup accept any format for testing (app/routers/flights.py)
+  - Previously: Rejected non-standard formats like `AA123`
+  - Now: Accepts all flight numbers with graceful fallback
+
+### Architecture
+
+**Request Flow**:
+```
+Browser → Cloudflare Tunnel (OAuth) → Vite Dev Server (port 3000) → Proxy → FastAPI Backend (port 80)
+```
+
+**Key Design Decisions**:
+1. Vite proxy acts as bridge between frontend and backend
+2. All API requests go through proxy (no direct backend access from browser)
+3. Cloudflare handles HTTPS termination and OAuth authentication
+4. Frontend served on port 3000, backend on port 80 (Docker internal)
+
+### Testing Results
+
+✅ **Magic Link Authentication**: Email sending and verification working end-to-end
+✅ **Claim Submission Flow**: Flight lookup, eligibility check, claim submission all functional
+✅ **File Operations**: Document upload and download working through tunnel
+✅ **Admin Functions**: Superadmin accounts created and functional
+✅ **Email Notifications**: Credential emails successfully delivered via Gmail SMTP
+
+### Known Limitations
+
+- **Vite Proxy Required**: Frontend must run through Vite dev server (not direct nginx)
+- **Environment Variable Updates**: Require full container recreation (down/up, not restart)
+- **OAuth Protection**: Currently team-only access (will be public after testing phase)
+- **Mock Flight Data**: Flight API still using test data (not connected to real flight database)
+
+### Files Modified
+
+1. `vite.config.ts` - Added allowedHosts and comprehensive proxy config (lines 17-89)
+2. `app/main.py` - Set redirect_slashes=False to prevent CORS issues
+3. `docker-compose.yml` - Updated FRONTEND_URL defaults (lines 68, 96)
+4. `.env` - Updated FRONTEND_URL to Cloudflare domain
+5. `frontend_Claude45/.env` - Updated VITE_API_BASE_URL to Cloudflare domain
+6. `app/config.py` - Added Cloudflare domain to CORS defaults
+7. `.env.example` - Updated with Cloudflare domain for documentation
+8. `frontend_Claude45/.env.example` - Updated with Cloudflare domain
+9. `app/routers/flights.py` - Made flight validation flexible for testing
+10. `frontend_Claude45/src/services/claims.ts` - Added trailing slash to /claims/ call
+11. `frontend_Claude45/src/services/api.ts` - Changed fallback to empty string
+12. `scripts/send_admin_credentials.py` - Created admin credential email sender
+
+### Git Commits
+
+1. **b9a0446** - `feat(deployment): integrate Cloudflare tunnel support`
+2. **5164028** - `fix(flights): accept all flight numbers in mock API`
+3. **d51d464** - `fix(config): update hardcoded URLs to support Cloudflare tunnel`
+4. **efc283c** - `fix(proxy): add missing API endpoint proxies`
+5. **3252c3a** - `feat(admin): add admin credentials email sender script`
+
+### Superadmin Accounts
+
+Created two superadmin accounts for testing:
+- **David Vences Vaquero** (vences.david@icloud.com) - Credentials sent via email ✅
+- **Florian Luhn** (florian.luhn@gmail.com) - Credentials sent via email ✅
+
+Both accounts use magic link authentication (passwordless).
+
+### Next Steps for Production
+
+- [ ] Complete Phase 4 (GDPR compliance and customer account management)
+- [ ] Evaluate HTTPS requirements if removing Cloudflare tunnel
+- [ ] Consider security headers implementation (currently handled by Cloudflare)
+- [ ] Update to production frontend build (currently dev server)
+- [ ] Remove OAuth requirement for public access
+- [ ] Configure production email templates
+- [ ] Set up monitoring and logging
+
+### Security Considerations
+
+**Current Setup (Testing Phase)**:
+- ✅ HTTPS via Cloudflare Tunnel
+- ✅ OAuth authentication (team access only)
+- ✅ Rate limiting implemented (Phase 4.5)
+- ✅ SQL injection fixed (Phase 4.5)
+- ✅ CORS properly configured
+- ✅ JWT authentication active
+
+**Future Considerations**:
+- May need direct HTTPS if removing Cloudflare (GDPR concerns)
+- Security headers currently handled by Cloudflare
+- Production build required before public launch
 
 ---
 
@@ -1245,6 +1375,119 @@ ssllabs.com scan
 - Protection against common attacks
 - Professional security standards
 - Multi-user concurrent access safe
+
+---
+
+## Phase 5: Multi-Passenger Claims (Family/Group Claims)
+
+**Priority**: HIGH - Major UX improvement and revenue opportunity
+**Status**: 📋 **PLANNED** - Not yet implemented
+**Estimated Effort**: 3.5-5 weeks (18-27 days)
+**Business Value**: HIGH - Increases average order value and customer satisfaction
+**📄 Detailed Planning**: See [docs/MULTI_PASSENGER_CLAIMS.md](docs/MULTI_PASSENGER_CLAIMS.md)
+
+### Overview
+
+Allow a single account holder (e.g., a parent) to submit multiple related claims for different passengers (e.g., family members) on the same flight. This addresses a critical use case where families traveling together need to file separate claims while managing everything from one account.
+
+### Business Case
+
+**Problem**: A parent with 4 family members on a delayed flight must currently:
+- Submit 4 separate claims individually
+- Re-enter the same flight information 4 times
+- Re-enter the same address 4 times
+- Manage 4 disconnected claims
+
+**Solution**: Multi-passenger claim submission allowing:
+- One-time flight and eligibility check
+- Add multiple passengers to the same claim group
+- Shared account holder information
+- Separate claim processing per passenger
+- Grouped view for both customers and admins
+
+**Expected Impact**:
+- **Increased Conversions**: 15-25% higher completion rate for family travelers
+- **Higher Average Order Value**: 4 claims instead of 1 (4x compensation)
+- **Reduced Support Costs**: Fewer questions about linking claims
+- **Competitive Advantage**: Most competitors don't offer this feature
+- **Better Admin Efficiency**: Process family claims together, share flight eligibility verification
+
+### Key Features
+
+#### 5.1 Customer Features
+- **Claim Type Selection**: Choose single or multi-passenger claim at start
+- **Add Multiple Passengers**: Repeatable form to add each family member
+  - First/Last Name
+  - Date of Birth
+  - Relationship (self, spouse, child, parent, other)
+  - Checkbox to share address (default: checked)
+  - Document upload per passenger
+- **Group Management**: View all grouped claims together in dashboard
+- **Shared Information**: Flight details, address entered once
+- **Individual Tracking**: Each claim has own status and compensation
+
+#### 5.2 Admin Features
+- **Claim Groups View**: New admin page to view grouped claims
+- **Bulk Actions**: Approve all, request info from all
+- **Group Notes**: Add notes visible across all claims in group
+- **Efficiency Dashboard**: See processing time savings from grouping
+- **Individual Override**: Can process each claim separately if needed
+
+#### 5.3 Database Changes
+- New table: `claim_groups` (links claims together)
+- New table: `claim_group_notes` (admin notes for groups)
+- Modified `claims` table: Add `claim_group_id`, passenger details
+- All changes backward compatible with single claims
+
+### Success Metrics
+
+**Adoption Metrics** (6 months post-launch):
+- Target: 20% of claims submitted as grouped
+- Target: Average 3 passengers per group
+- Target: 95% completion rate for grouped claims
+
+**Business Metrics**:
+- Target: 25% increase in average compensation per customer
+- Target: 30% reduction in admin processing time for family claims
+
+### Implementation Phases
+
+1. **Backend Foundation** (3-5 days): Database models, repositories, services
+2. **Single Claim Group API** (2-3 days): Core API endpoints
+3. **Frontend Multi-Passenger Form** (5-7 days): Wizard with passenger addition
+4. **Customer Dashboard** (2-3 days): View grouped claims
+5. **Admin Interface** (4-6 days): Manage and process grouped claims
+6. **Notifications & Polish** (2-3 days): Email templates, testing
+
+### GDPR & Compliance
+
+- Account holder must confirm permission to file on behalf of others
+- Consent checkbox required: "I confirm I have permission to file claims for these passengers"
+- Passengers can claim ownership of their claim later if they register
+- Data deletion of account holder should NOT delete passenger claims
+
+### Technical Considerations
+
+- All claims in group must share same flight_number and flight_date
+- Passenger details must be unique within a group (no duplicates)
+- Bulk operations must be atomic (all succeed or all fail)
+- Each claim maintains independent status (can approve some, reject others)
+
+### Open Questions
+
+1. **Maximum Group Size**: Limit to 10 passengers? (Reasonable for family/small group)
+2. **Group Naming**: Auto-generate (e.g., "Smith Family - AB1234") or let user customize?
+3. **Payment Splitting**: Should we support different bank accounts per passenger?
+4. **Historical Migration**: Can customers group existing claims retroactively?
+5. **Pricing Impact**: Charge per claim or per group? (Currently: commission-based, no change needed)
+
+### Next Steps
+
+- [ ] Product team review and approval
+- [ ] Design UI mockups for multi-passenger flow
+- [ ] User research interviews with family travelers
+- [ ] Technical spike on database performance
+- [ ] Prioritize against other Phase 5+ features
 
 ---
 

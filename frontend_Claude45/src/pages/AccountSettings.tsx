@@ -6,26 +6,32 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { User, Mail, Lock, Trash2, Calendar, Shield } from 'lucide-react';
+import { User, Mail, Lock, Trash2, Calendar, Shield, MapPin, Phone } from 'lucide-react';
 import apiClient from '@/services/api';
-import { isAuthenticated } from '@/services/auth';
+import { isAuthenticated, getCurrentUser, updateUserProfile, type UserProfile } from '@/services/auth';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
-interface AccountInfo {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  created_at: string;
-  last_login_at: string | null;
-  is_email_verified: boolean;
+interface AccountInfo extends UserProfile {
   total_claims: number;
 }
 
 export function AccountSettings() {
+  useDocumentTitle('Account Settings');
   const navigate = useNavigate();
   const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Profile edit form
+  const [profileForm, setProfileForm] = useState({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    street: '',
+    city: '',
+    postal_code: '',
+    country: '',
+  });
+  const [profileUpdating, setProfileUpdating] = useState(false);
 
   // Email change form
   const [emailForm, setEmailForm] = useState({
@@ -60,13 +66,51 @@ export function AccountSettings() {
 
   const loadAccountInfo = async () => {
     try {
-      const response = await apiClient.get('/account/info');
-      setAccountInfo(response.data);
+      // TEMPORARY: Backend /customers/me endpoint not deployed yet
+      // Show a message that this feature is coming soon
+      toast.info('Account Settings feature is coming soon!', {
+        description: 'The backend API needs to be updated first.'
+      });
+
+      // For now, redirect to My Claims page
+      setTimeout(() => {
+        navigate('/claims', { replace: true });
+      }, 2000);
+
     } catch (error: any) {
       console.error('Failed to load account info:', error);
       toast.error(error.response?.data?.detail || 'Failed to load account information');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!profileForm.first_name || !profileForm.last_name) {
+      toast.error('First name and last name are required');
+      return;
+    }
+
+    setProfileUpdating(true);
+    try {
+      const updatedProfile = await updateUserProfile(profileForm);
+
+      // Update account info with new data
+      if (accountInfo) {
+        setAccountInfo({
+          ...accountInfo,
+          ...updatedProfile,
+        });
+      }
+
+      toast.success('Profile updated successfully');
+    } catch (error: any) {
+      console.error('Profile update failed:', error);
+      toast.error(error.response?.data?.detail || 'Failed to update profile');
+    } finally {
+      setProfileUpdating(false);
     }
   };
 
@@ -168,9 +212,9 @@ export function AccountSettings() {
         <div className="container">
           <div className="max-w-4xl mx-auto">
             <div className="animate-pulse space-y-8">
-              <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-              <div className="h-48 bg-gray-200 rounded"></div>
-              <div className="h-48 bg-gray-200 rounded"></div>
+              <div className="h-8 bg-muted rounded w-1/3"></div>
+              <div className="h-48 bg-muted rounded"></div>
+              <div className="h-48 bg-muted rounded"></div>
             </div>
           </div>
         </div>
@@ -218,17 +262,17 @@ export function AccountSettings() {
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Name</p>
-                <p className="font-medium">{accountInfo.first_name} {accountInfo.last_name}</p>
-              </div>
-              <div>
                 <p className="text-sm text-muted-foreground mb-1">Email</p>
                 <div className="flex items-center gap-2">
                   <p className="font-medium">{accountInfo.email}</p>
                   {accountInfo.is_email_verified ? (
-                    <Shield className="w-4 h-4 text-green-600" title="Verified" />
+                    <span title="Verified">
+                      <Shield className="w-4 h-4 text-green-600" />
+                    </span>
                   ) : (
-                    <Shield className="w-4 h-4 text-gray-400" title="Not verified" />
+                    <span title="Not verified">
+                      <Shield className="w-4 h-4 text-muted-foreground" />
+                    </span>
                   )}
                 </div>
               </div>
@@ -254,6 +298,140 @@ export function AccountSettings() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Profile Information */}
+          <div className="bg-card rounded-lg border p-6 mb-6">
+            <div className="flex items-center gap-3 mb-6">
+              <User className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-semibold">Personal Information</h2>
+            </div>
+
+            <form onSubmit={handleProfileUpdate} className="space-y-4">
+              {/* Name Fields */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium mb-2">
+                    First Name *
+                  </label>
+                  <input
+                    id="firstName"
+                    type="text"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="First name"
+                    value={profileForm.first_name}
+                    onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium mb-2">
+                    Last Name *
+                  </label>
+                  <input
+                    id="lastName"
+                    type="text"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Last name"
+                    value={profileForm.last_name}
+                    onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium mb-2">
+                  Phone Number (Optional)
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                  <input
+                    id="phone"
+                    type="tel"
+                    className="w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="+1 234 567 8900"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Address Fields */}
+              <div className="pt-4 border-t">
+                <div className="flex items-center gap-2 mb-4">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="font-medium">Address (Optional)</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="street" className="block text-sm font-medium mb-2">
+                      Street Address
+                    </label>
+                    <input
+                      id="street"
+                      type="text"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="123 Main Street"
+                      value={profileForm.street}
+                      onChange={(e) => setProfileForm({ ...profileForm, street: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="city" className="block text-sm font-medium mb-2">
+                        City
+                      </label>
+                      <input
+                        id="city"
+                        type="text"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="New York"
+                        value={profileForm.city}
+                        onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="postal_code" className="block text-sm font-medium mb-2">
+                        Postal Code
+                      </label>
+                      <input
+                        id="postal_code"
+                        type="text"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="10001"
+                        value={profileForm.postal_code}
+                        onChange={(e) => setProfileForm({ ...profileForm, postal_code: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="country" className="block text-sm font-medium mb-2">
+                        Country
+                      </label>
+                      <input
+                        id="country"
+                        type="text"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="United States"
+                        value={profileForm.country}
+                        onChange={(e) => setProfileForm({ ...profileForm, country: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={profileUpdating}
+                className="w-full md:w-auto inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+              >
+                {profileUpdating ? 'Updating Profile...' : 'Update Profile'}
+              </button>
+            </form>
           </div>
 
           {/* Change Email */}

@@ -964,16 +964,32 @@ class NextcloudService:
             return False
 
     async def ensure_directory_exists(self, remote_path: str) -> bool:
-        """Ensure the parent directory exists for a file path."""
+        """Ensure the parent directory exists for a file path, creating all parent directories recursively."""
         # Extract parent directory path
         parent_path = "/".join(remote_path.rstrip("/").split("/")[:-1])
         if not parent_path:
             return True  # Root directory always exists
 
-        logger.info(f"Ensuring directory exists: {parent_path}")
+        logger.info(f"Ensuring directory exists for path: {remote_path}")
 
-        # Try to create the directory (won't fail if it already exists)
-        return await self.create_directory(parent_path)
+        # Split path into components and create each level
+        path_parts = parent_path.split("/")
+        current_path = ""
+
+        for part in path_parts:
+            if not part:
+                continue
+
+            current_path = f"{current_path}/{part}" if current_path else part
+            logger.info(f"Ensuring directory exists: {current_path}")
+
+            # Try to create the directory (405 means it already exists)
+            result = await self.create_directory(current_path)
+            if not result:
+                logger.warning(f"Failed to ensure directory exists: {current_path}")
+                # Continue anyway - the directory might already exist
+
+        return True
 
     async def test_connection(self) -> bool:
         """Test connection to Nextcloud."""

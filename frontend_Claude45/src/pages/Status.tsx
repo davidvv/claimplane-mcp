@@ -269,13 +269,13 @@ export function Status() {
   const currentStepIndex = getCurrentStepIndex();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold mb-2">
             Track Your Claim
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Enter your Claim ID to check the status of your flight compensation claim.
           </p>
         </div>
@@ -283,8 +283,8 @@ export function Status() {
         {/* Auto-loading indicator for magic link redirects */}
         {isLoading && searchParams.get('claimId') && (
           <div className="text-center mb-6">
-            <div className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <div className="inline-flex items-center space-x-2 bg-primary/10 text-primary px-4 py-2 rounded-lg">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
               <span>Loading your claim...</span>
             </div>
           </div>

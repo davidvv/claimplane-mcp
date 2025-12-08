@@ -1,0 +1,54 @@
+# Nextcloud data and configuration
+nextcloud/
+nextcloud_data/
+
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Environment
+.env
+.env.*
+
+# Documentation
+docs/
+*.md
+
+# Frontend
+frontend_Claude45/node_modules/
+frontend_Claude45/.next/
+frontend_Claude45/out/
+
+# Alembic
+alembic.ini
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3

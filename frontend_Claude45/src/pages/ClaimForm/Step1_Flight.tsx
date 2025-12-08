@@ -124,6 +124,9 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
                     {errors.departureDate.message}
                   </p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  Enter the scheduled departure date in local time
+                </p>
               </div>
             </div>
 

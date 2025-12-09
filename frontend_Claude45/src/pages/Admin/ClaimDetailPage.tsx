@@ -252,19 +252,11 @@ export function ClaimDetailPage() {
                 </p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Scheduled Departure</Label>
+                <Label className="text-muted-foreground">Departure Date</Label>
                 <p className="font-medium">
-                  {formatDate(claim.scheduled_departure)}
+                  {formatDate(claim.departure_date, 'PPP')}
                 </p>
               </div>
-              {claim.actual_departure && (
-                <div>
-                  <Label className="text-muted-foreground">Actual Departure</Label>
-                  <p className="font-medium">
-                    {formatDate(claim.actual_departure)}
-                  </p>
-                </div>
-              )}
               {claim.delay_hours !== null && (
                 <div>
                   <Label className="text-muted-foreground">Delay Duration</Label>
@@ -416,6 +408,212 @@ export function ClaimDetailPage() {
                 ))}
               </div>
             )}
+          </Card>
+
+          {/* Airline Communication Data - Comprehensive View */}
+          <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-blue-900">
+                  📋 Complete Claim Data for Airline
+                </h2>
+                <p className="text-sm text-blue-700 mt-1">
+                  All information needed for airline communication in one place
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.print()}
+                className="hidden md:flex"
+              >
+                Print/Save
+              </Button>
+            </div>
+
+            {/* Two-column layout for comprehensive data */}
+            <div className="grid md:grid-cols-2 gap-6 bg-white p-6 rounded-lg shadow-sm">
+              {/* Column 1: Flight & Passenger Details */}
+              <div className="space-y-6">
+                {/* Flight Details */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 pb-2 border-b border-gray-200">
+                    ✈️ Flight Details
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Flight Number:</span>
+                      <span className="font-medium">{claim.flight_number}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Airline:</span>
+                      <span className="font-medium">{claim.airline}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Route:</span>
+                      <span className="font-medium">
+                        {claim.departure_airport} → {claim.arrival_airport}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Departure Date:</span>
+                      <span className="font-medium">
+                        {formatDate(claim.departure_date, 'PPPP')}
+                      </span>
+                    </div>
+                    {claim.flight_distance_km && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Flight Distance:</span>
+                        <span className="font-medium">{claim.flight_distance_km} km</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Passenger Information */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 pb-2 border-b border-gray-200">
+                    👤 Passenger Information
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Name:</span>
+                      <span className="font-medium">
+                        {claim.customer.first_name} {claim.customer.last_name}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email:</span>
+                      <span className="font-medium">{claim.customer.email}</span>
+                    </div>
+                    {claim.customer.phone && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Phone:</span>
+                        <span className="font-medium">{claim.customer.phone}</span>
+                      </div>
+                    )}
+                    {claim.customer.street && (
+                      <div className="pt-2">
+                        <span className="text-muted-foreground block mb-1">Address:</span>
+                        <div className="font-medium text-sm leading-relaxed">
+                          {claim.customer.street}<br />
+                          {claim.customer.postal_code} {claim.customer.city}<br />
+                          {claim.customer.country}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 2: Incident & Compensation Details */}
+              <div className="space-y-6">
+                {/* Incident Details */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 pb-2 border-b border-gray-200">
+                    ⚠️ Incident Details
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Incident Type:</span>
+                      <span className="font-medium capitalize">
+                        {claim.incident_type.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    {claim.delay_hours !== null && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Delay Duration:</span>
+                        <span className="font-medium">{claim.delay_hours} hours</span>
+                      </div>
+                    )}
+                    {claim.extraordinary_circumstances && (
+                      <div className="pt-2">
+                        <span className="text-muted-foreground block mb-1">
+                          Extraordinary Circumstances:
+                        </span>
+                        <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-yellow-800 text-xs">
+                          {claim.extraordinary_circumstances}
+                        </div>
+                      </div>
+                    )}
+                    {claim.incident_description && (
+                      <div className="pt-2">
+                        <span className="text-muted-foreground block mb-1">Description:</span>
+                        <div className="font-medium text-sm bg-gray-50 p-2 rounded">
+                          {claim.incident_description}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Compensation Details */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 pb-2 border-b border-gray-200">
+                    💰 Compensation Details
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Calculated Amount:</span>
+                      <span className="font-bold text-2xl text-green-600">
+                        {claim.calculated_compensation
+                          ? `€${parseFloat(claim.calculated_compensation).toFixed(0)}`
+                          : 'Not calculated'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground pt-2">
+                      <span>Submitted:</span>
+                      <span>{formatDate(claim.submitted_at, 'PPP')}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Claim ID:</span>
+                      <span className="font-mono">{claim.id.slice(0, 13)}...</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Documents Summary */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 pb-2 border-b border-gray-200">
+                    📎 Attached Documents
+                  </h3>
+                  <div className="text-sm space-y-1">
+                    {claim.files && claim.files.length > 0 ? (
+                      <ul className="space-y-1">
+                        {claim.files.map((file) => (
+                          <li key={file.id} className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground truncate">
+                              {file.document_type.replace(/_/g, ' ')}
+                            </span>
+                            <span className="font-medium ml-2">
+                              {file.original_filename.length > 20
+                                ? `${file.original_filename.substring(0, 20)}...`
+                                : file.original_filename}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-muted-foreground text-xs italic">No documents uploaded</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Copy Section */}
+            <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200">
+              <p className="text-xs text-blue-700 mb-2 font-semibold">
+                📧 Quick Reference for Airline Communication:
+              </p>
+              <div className="text-xs font-mono bg-gray-50 p-3 rounded border border-gray-200 leading-relaxed">
+                Claim #{claim.id.slice(0, 8)} | Flight {claim.flight_number} ({claim.airline}) |
+                {claim.departure_airport}→{claim.arrival_airport} |
+                {formatDate(claim.departure_date, 'yyyy-MM-dd')} |
+                Passenger: {claim.customer.first_name} {claim.customer.last_name} |
+                Compensation: €{claim.calculated_compensation ? parseFloat(claim.calculated_compensation).toFixed(0) : '0'}
+              </div>
+            </div>
           </Card>
         </div>
 
@@ -569,10 +767,16 @@ export function ClaimDetailPage() {
                 <Label className="text-muted-foreground">Last Updated</Label>
                 <p>{formatDate(claim.updated_at)}</p>
               </div>
+              {claim.flight_distance_km && (
+                <div>
+                  <Label className="text-muted-foreground">Flight Distance</Label>
+                  <p className="font-medium">{claim.flight_distance_km} km</p>
+                </div>
+              )}
               {claim.extraordinary_circumstances && (
                 <div>
                   <Label className="text-muted-foreground">Extraordinary Circumstances</Label>
-                  <p className="text-yellow-600 font-medium">Yes</p>
+                  <p className="text-yellow-600 font-medium text-xs">{claim.extraordinary_circumstances}</p>
                 </div>
               )}
             </div>

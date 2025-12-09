@@ -55,17 +55,17 @@ export interface ClaimDetail {
   airline: string;
   departure_airport: string;
   arrival_airport: string;
-  scheduled_departure: string;
-  actual_departure: string | null;
-  scheduled_arrival: string;
-  actual_arrival: string | null;
+  departure_date: string;  // Backend only has departure_date (Date field)
   delay_hours: number | null;
-  incident_type: 'delay' | 'cancellation' | 'denied_boarding' | 'missed_connection';
+  incident_type: 'delay' | 'cancellation' | 'denied_boarding' | 'baggage_delay';
   incident_description: string | null;
-  extraordinary_circumstances: boolean;
+  extraordinary_circumstances: string | null;  // String field, not boolean
   status: string;
   rejection_reason: string | null;
   calculated_compensation: string | null;
+  compensation_amount: string | null;
+  currency: string;
+  flight_distance_km: number | null;
   submitted_at: string;
   updated_at: string;
   customer: {
@@ -80,7 +80,7 @@ export interface ClaimDetail {
     country: string | null;
   };
   files: ClaimFile[];
-  claim_notes: ClaimNote[];  // Changed from 'notes' to 'claim_notes'
+  claim_notes: ClaimNote[];
   status_history: StatusHistory[];
   assignee: {
     id: string;

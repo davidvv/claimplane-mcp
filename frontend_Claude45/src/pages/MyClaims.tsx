@@ -81,7 +81,7 @@ export function MyClaims() {
         console.log('[MyClaims] Claims response:', response);
 
         // Backend returns plain array, not paginated response
-        const claimsArray = Array.isArray(response) ? response : (response.data || response.items || []);
+        const claimsArray = Array.isArray(response) ? response : (response.data || []);
         console.log('[MyClaims] Claims count:', claimsArray.length);
 
         setClaims(claimsArray);

@@ -2,7 +2,7 @@
  * Authentication service - integrates with Phase 3 JWT backend
  */
 import apiClient from './api';
-import { storeAuthTokens, storeAccessTokenOnly, clearAuthTokens } from '@/utils/tokenStorage';
+import { storeAuthTokens, clearAuthTokens } from '@/utils/tokenStorage';
 
 // Types matching Phase 3 backend
 export interface RegisterRequest {

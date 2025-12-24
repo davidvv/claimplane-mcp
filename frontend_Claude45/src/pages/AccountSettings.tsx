@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { User, Mail, Lock, Trash2, Calendar, Shield, MapPin, Phone } from 'lucide-react';
 import apiClient from '@/services/api';
-import { isAuthenticated, getCurrentUser, updateUserProfile, type UserProfile } from '@/services/auth';
+import { isAuthenticated, updateUserProfile, type UserProfile } from '@/services/auth';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 interface AccountInfo extends UserProfile {

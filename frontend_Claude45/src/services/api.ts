@@ -75,7 +75,7 @@ apiClient.interceptors.response.use(
       const data = error.response.data as any;
 
       // Helper function to extract error message from various formats
-      const getErrorMessage = (data: any): string => {
+      const getErrorMessage = (data: any): string | null => {
         // Handle nested error object with message property
         if (data?.error?.message) {
           if (typeof data.error.message === 'string') {

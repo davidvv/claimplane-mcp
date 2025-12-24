@@ -6,7 +6,6 @@ import apiClient from './api';
 import type {
   EligibilityRequest,
   EligibilityResponse,
-  ApiResponse,
 } from '@/types/api';
 
 /**

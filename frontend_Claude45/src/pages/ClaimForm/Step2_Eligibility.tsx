@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle, XCircle, Mail, MapPin, Euro } from 'lucide-react';
+import { CheckCircle, XCircle, Mail, Euro } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { eligibilityFormSchema, type EligibilityForm } from '@/schemas/validation';

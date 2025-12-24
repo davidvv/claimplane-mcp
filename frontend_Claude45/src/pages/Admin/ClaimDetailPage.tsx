@@ -68,7 +68,6 @@ export function ClaimDetailPage() {
     loadAdminUsers();
 
     // Get current user ID from localStorage (set during login)
-    const authToken = localStorage.getItem('auth_token');
     const userId = localStorage.getItem('user_id');
     if (userId) {
       setCurrentUserId(userId);

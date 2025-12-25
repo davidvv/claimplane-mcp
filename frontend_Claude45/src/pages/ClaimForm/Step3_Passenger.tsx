@@ -108,6 +108,7 @@ export function Step3_Passenger({
               <Label htmlFor="firstName">First Name *</Label>
               <Input
                 id="firstName"
+                autoComplete="given-name"
                 {...register('firstName')}
               />
               {errors.firstName && (
@@ -122,6 +123,7 @@ export function Step3_Passenger({
               <Label htmlFor="lastName">Last Name *</Label>
               <Input
                 id="lastName"
+                autoComplete="family-name"
                 {...register('lastName')}
               />
               {errors.lastName && (
@@ -142,6 +144,7 @@ export function Step3_Passenger({
                   id="email"
                   type="email"
                   className="pl-10"
+                  autoComplete="email"
                   {...register('email')}
                 />
               </div>
@@ -245,6 +248,7 @@ export function Step3_Passenger({
             <Label htmlFor="street">Street Address *</Label>
             <Input
               id="street"
+              autoComplete="street-address"
               {...register('street')}
             />
             {errors.street && (
@@ -255,7 +259,7 @@ export function Step3_Passenger({
           <div className="grid md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="city">City *</Label>
-              <Input id="city" {...register('city')} />
+              <Input id="city" autoComplete="address-level2" {...register('city')} />
               {errors.city && (
                 <p className="text-sm text-destructive">{errors.city.message}</p>
               )}
@@ -265,6 +269,7 @@ export function Step3_Passenger({
               <Label htmlFor="postalCode">Postal Code *</Label>
               <Input
                 id="postalCode"
+                autoComplete="postal-code"
                 {...register('postalCode')}
               />
               {errors.postalCode && (
@@ -278,6 +283,7 @@ export function Step3_Passenger({
               <Label htmlFor="country">Country *</Label>
               <select
                 id="country"
+                autoComplete="country-name"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 {...register('country')}
               >

@@ -324,7 +324,7 @@ export function Step4_Review({
                 from the airline.
               </p>
               <p className="text-muted-foreground">
-                We operate on a "no win, no fee" basis. Our commission is 25% (+ VAT)
+                We operate on a "no win, no fee" basis. Our commission is 20% (+ VAT)
                 of the compensation amount, deducted only upon successful claim.
               </p>
             </div>

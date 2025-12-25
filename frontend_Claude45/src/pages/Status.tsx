@@ -59,6 +59,13 @@ export function Status() {
     resolver: zodResolver(claimStatusLookupSchema),
   });
 
+  // Redirect authenticated users to My Claims page
+  useEffect(() => {
+    if (authenticated) {
+      navigate('/my-claims');
+    }
+  }, [authenticated, navigate]);
+
   // Debug: Track documents state changes
   useEffect(() => {
     console.log('[STATE] Documents state changed:', documents);

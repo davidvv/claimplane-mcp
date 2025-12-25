@@ -228,8 +228,8 @@ class CompensationService:
             if (distance_km > CompensationService.MEDIUM_HAUL_THRESHOLD and
                 CompensationService.MIN_DELAY_FOR_COMPENSATION <= delay_hours < CompensationService.PARTIAL_COMPENSATION_THRESHOLD):
                 result["eligible"] = True
-                result["amount"] = base_compensation * Decimal("0.5")
-                result["reason"] = f"Long haul flight with 3-4 hour delay - 50% compensation"
+                result["amount"] = base_compensation * Decimal("0.2")
+                result["reason"] = f"Long haul flight with 3-4 hour delay - 20% compensation"
                 return result
 
             # Full compensation for delays >= 3 hours (or >= 4 hours for long haul)

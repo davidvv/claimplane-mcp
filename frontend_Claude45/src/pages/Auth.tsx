@@ -115,6 +115,20 @@ export function Auth() {
                 A secure login link will be sent to your email
               </p>
             </form>
+
+            {/* Account Creation Notice */}
+            <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border">
+              <p className="text-sm text-center text-muted-foreground">
+                <strong className="text-foreground">No account yet?</strong> Your account is automatically created when you submit your first flight compensation claim. Simply{' '}
+                <button
+                  onClick={() => navigate('/claim/new')}
+                  className="text-primary hover:underline font-medium"
+                >
+                  file a claim
+                </button>{' '}
+                to get started.
+              </p>
+            </div>
           </CardContent>
         </Card>
 

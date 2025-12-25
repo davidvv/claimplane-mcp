@@ -276,10 +276,68 @@ export function Step3_Passenger({
 
             <div className="space-y-2">
               <Label htmlFor="country">Country *</Label>
-              <Input
+              <select
                 id="country"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 {...register('country')}
-              />
+              >
+                <option value="">Select a country</option>
+                <option value="United States">🇺🇸 United States</option>
+                <option value="United Kingdom">🇬🇧 United Kingdom</option>
+                <option value="Germany">🇩🇪 Germany</option>
+                <option value="France">🇫🇷 France</option>
+                <option value="Italy">🇮🇹 Italy</option>
+                <option value="Spain">🇪🇸 Spain</option>
+                <option value="Netherlands">🇳🇱 Netherlands</option>
+                <option value="Belgium">🇧🇪 Belgium</option>
+                <option value="Switzerland">🇨🇭 Switzerland</option>
+                <option value="Austria">🇦🇹 Austria</option>
+                <option value="Denmark">🇩🇰 Denmark</option>
+                <option value="Sweden">🇸🇪 Sweden</option>
+                <option value="Norway">🇳🇴 Norway</option>
+                <option value="Finland">🇫🇮 Finland</option>
+                <option value="Poland">🇵🇱 Poland</option>
+                <option value="Portugal">🇵🇹 Portugal</option>
+                <option value="Ireland">🇮🇪 Ireland</option>
+                <option value="Czech Republic">🇨🇿 Czech Republic</option>
+                <option value="Greece">🇬🇷 Greece</option>
+                <option value="Hungary">🇭🇺 Hungary</option>
+                <option value="Romania">🇷🇴 Romania</option>
+                <option value="Bulgaria">🇧🇬 Bulgaria</option>
+                <option value="Croatia">🇭🇷 Croatia</option>
+                <option value="Slovakia">🇸🇰 Slovakia</option>
+                <option value="Slovenia">🇸🇮 Slovenia</option>
+                <option value="Luxembourg">🇱🇺 Luxembourg</option>
+                <option value="Estonia">🇪🇪 Estonia</option>
+                <option value="Latvia">🇱🇻 Latvia</option>
+                <option value="Lithuania">🇱🇹 Lithuania</option>
+                <option value="Canada">🇨🇦 Canada</option>
+                <option value="Australia">🇦🇺 Australia</option>
+                <option value="New Zealand">🇳🇿 New Zealand</option>
+                <option value="Japan">🇯🇵 Japan</option>
+                <option value="China">🇨🇳 China</option>
+                <option value="South Korea">🇰🇷 South Korea</option>
+                <option value="India">🇮🇳 India</option>
+                <option value="Singapore">🇸🇬 Singapore</option>
+                <option value="Malaysia">🇲🇾 Malaysia</option>
+                <option value="Thailand">🇹🇭 Thailand</option>
+                <option value="Vietnam">🇻🇳 Vietnam</option>
+                <option value="Indonesia">🇮🇩 Indonesia</option>
+                <option value="Philippines">🇵🇭 Philippines</option>
+                <option value="Turkey">🇹🇷 Turkey</option>
+                <option value="United Arab Emirates">🇦🇪 United Arab Emirates</option>
+                <option value="Saudi Arabia">🇸🇦 Saudi Arabia</option>
+                <option value="Israel">🇮🇱 Israel</option>
+                <option value="South Africa">🇿🇦 South Africa</option>
+                <option value="Egypt">🇪🇬 Egypt</option>
+                <option value="Brazil">🇧🇷 Brazil</option>
+                <option value="Mexico">🇲🇽 Mexico</option>
+                <option value="Argentina">🇦🇷 Argentina</option>
+                <option value="Chile">🇨🇱 Chile</option>
+                <option value="Colombia">🇨🇴 Colombia</option>
+                <option value="Russia">🇷🇺 Russia</option>
+                <option value="Ukraine">🇺🇦 Ukraine</option>
+              </select>
               {errors.country && (
                 <p className="text-sm text-destructive">{errors.country.message}</p>
               )}

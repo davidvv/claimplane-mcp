@@ -1,8 +1,8 @@
 # Development Roadmap
 
-**Last Updated**: 2025-12-08
-**Current Version**: v0.3.0 (Phase 3 Complete, Phase 4 In Progress, Cloudflare Deployment Active)
-**Status**: MVP Phase - Production Testing via Cloudflare Tunnel 🌐
+**Last Updated**: 2025-12-28
+**Current Version**: v0.3.0 (Phase 3 Complete, Phase 4.5 In Progress - JWT Cookie Migration)
+**Status**: MVP Phase - Security Hardening for Public Launch 🔒
 **Strategy**: Business value first (#2 → #3 → #4 → GDPR)
 **Deployment URL**: https://eac.dvvcloud.work (Cloudflare Tunnel + OAuth)
 
@@ -17,13 +17,15 @@ This roadmap outlines the next development phases for the flight claim managemen
 - ✅ Async Task Processing & Email Notifications (Phase 2)
 - ✅ JWT Authentication & Authorization System (Phase 3) 🎉
 - ⏳ Customer Account Management & GDPR Compliance (Phase 4) - 80% Complete
-- ⏳ **Pre-Production Security Fixes (Phase 4.5)** - 56% Complete ⬅️ **IN PROGRESS**
+- ⏳ **Pre-Production Security Fixes (Phase 4.5)** - 93% Complete ⬅️ **IN PROGRESS**
   - ✅ SQL Injection fixed
   - ✅ CORS Wildcard fixed
   - ✅ Blacklist Bypass fixed
   - ✅ Rate Limiting fixed (with Cloudflare support)
   - ⚠️ SMTP Credentials (user action required)
-  - ⏳ HTTPS, Password Consistency, Security Headers (remaining)
+  - ⏳ JWT Token Storage (localStorage → HTTP-only cookies) **NEW PRIORITY**
+  - ⏸️ HTTPS (handled by Cloudflare during testing)
+  - ⏸️ Security Headers (handled by Cloudflare during testing)
 
 **Phase 3 Status**: ✅ **COMPLETED** (2025-11-03) 🔐
 - ✅ Complete JWT authentication infrastructure
@@ -63,7 +65,10 @@ This roadmap outlines the next development phases for the flight claim managemen
 - ✅ MFA Infrastructure ready (auth system extensible)
 - ✅ Account Lockout capability (token revocation)
 
-**Next Priority**: Complete Phase 4 (Customer Account Management), then Phase 5 (Multi-Passenger Claims)
+**Next Priority**:
+1. **IMMEDIATE**: Migrate JWT tokens to HTTP-only cookies (security patch → v0.3.1)
+2. Complete Phase 4 (Customer Account Management)
+3. Phase 5 (Multi-Passenger Claims)
 
 ---
 
@@ -1073,10 +1078,11 @@ class AccountDeletionRequest(Base):
 ## Phase 4.5: Pre-Production Security Fixes 🚨 **BLOCKING DEPLOYMENT**
 
 **Priority**: CRITICAL - MUST complete before production deployment
-**Status**: ✅ **COMPLETE FOR TESTING PHASE** - 100% (9/9 issues resolved or N/A)
+**Status**: ⏳ **IN PROGRESS** - 93% (13/14 issues resolved)
+**Remaining**: JWT Token Storage (localStorage → HTTP-only cookies) - HIGH PRIORITY
 **Testing Phase**: Ready for internal testing with Cloudflare tunnel + OAuth
 **Post-Testing**: Security headers and HTTPS may need review if removing Cloudflare
-**Last Updated**: 2025-12-07 (09:45 UTC)
+**Last Updated**: 2025-12-28
 
 ### Overview
 Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deploying to production Ubuntu server. These issues were discovered during pre-deployment review on 2025-12-06.
@@ -1263,6 +1269,55 @@ Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deplo
 - [ ] Add `ADMIN_EMAIL` to .env
 - [ ] Update account deletion notifications
 - [ ] Update error notifications
+
+#### 4.5.14 JWT Token Storage Security - CVSS 8.1 🔒 **NEW**
+**Risk**: XSS attacks can steal JWT tokens from localStorage
+**Status**: ⏳ **PENDING** - Migration to HTTP-only cookies required
+**Priority**: HIGH - Should complete before public launch
+**Last Updated**: 2025-12-28
+
+**Problem**: JWT tokens (access & refresh) currently stored in localStorage
+- **Current Implementation**: `frontend_Claude45/src/utils/tokenStorage.ts` uses localStorage
+- **Vulnerability**: JavaScript (including malicious XSS scripts) can access localStorage
+- **Impact**: If XSS vulnerability exists, attackers can steal tokens and impersonate users
+
+**Affected Files**:
+- `frontend_Claude45/src/utils/tokenStorage.ts` - Token storage utility
+- `frontend_Claude45/src/services/auth.ts` - Auth service (reads from localStorage)
+- `frontend_Claude45/src/services/api.ts` - API client (reads from localStorage)
+- `frontend_Claude45/src/pages/*.tsx` - Multiple pages access localStorage directly
+- `app/routers/auth.py` - Backend needs to set cookies instead of returning JSON tokens
+
+**Solution**: Migrate to HTTP-only cookies
+- **Backend Changes**: Set cookies in response instead of returning tokens in JSON body
+- **Frontend Changes**: Remove localStorage usage, rely on automatic cookie transmission
+- **Configuration**: Set `httpOnly=True`, `secure=True`, `samesite='lax'`
+
+**Tasks**:
+- [ ] **Backend**: Update `/auth/login` to set HTTP-only cookies instead of JSON response
+- [ ] **Backend**: Update `/auth/refresh` to set HTTP-only cookies
+- [ ] **Backend**: Update `/auth/logout` to clear cookies
+- [ ] **Backend**: Add cookie configuration (secure, httpOnly, samesite, domain, path)
+- [ ] **Frontend**: Remove `tokenStorage.ts` utility
+- [ ] **Frontend**: Update API client to use `credentials: 'include'` in all requests
+- [ ] **Frontend**: Remove all localStorage.getItem('auth_token') calls
+- [ ] **Frontend**: Update auth service to not store tokens locally
+- [ ] **Frontend**: Remove token from login/register response handling
+- [ ] **Config**: Update CORS to allow credentials from specific origins
+- [ ] **Config**: Set cookie domain for production (eac.dvvcloud.work)
+- [ ] **Testing**: Verify cookies are set on login
+- [ ] **Testing**: Verify cookies are sent automatically on API requests
+- [ ] **Testing**: Verify cookies cannot be accessed via JavaScript (document.cookie)
+- [ ] **Testing**: Verify logout clears cookies
+- [ ] **Testing**: Verify refresh token flow works with cookies
+- [ ] **Security**: Add CSP headers to further protect against XSS
+- [ ] **Documentation**: Update JWT_SECURITY_EXPLAINED.md with implementation status
+
+**Reference Documentation**:
+- See `docs/JWT_SECURITY_EXPLAINED.md` for detailed explanation and migration guide
+- Security checklist in JWT_SECURITY_EXPLAINED.md:464-472
+
+**Version**: This should trigger v0.3.1 release (security patch)
 
 ### Success Criteria
 

@@ -1,6 +1,6 @@
 # Versioning Strategy
 
-## Current Version: v0.2.0
+## Current Version: v0.3.0
 
 This project follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
 
@@ -12,7 +12,9 @@ During MVP development (v0.x.x), versions track major feature milestones:
 |---------|--------|-------------|
 | **v0.1.0** | ✅ Released (2025-10-29) | Phase 1: Admin Dashboard & Claim Workflow |
 | **v0.2.0** | ✅ Released (2025-10-30) | Phase 2: Notifications & Async Processing |
-| **v0.3.0** | 📋 Planned | Phase 3: Authentication & Authorization |
+| **v0.3.0** | ✅ Released (2025-11-03) | Phase 3: JWT Authentication & Authorization |
+| **v0.3.1** | 🚧 In Progress | Security Patch: HTTP-only Cookie Migration |
+| **v0.4.0** | 📋 Planned | Phase 4: Customer Account Management |
 | **v1.0.0** | 🎯 Target | Production-Ready MVP |
 
 ## Version Bump Guidelines
@@ -149,5 +151,6 @@ Update these when creating a new version.
 
 ---
 
-**Current Status**: MVP Phase - v0.2.0 Complete
-**Next Milestone**: v0.3.0 (Phase 3: Authentication & Authorization)
+**Current Status**: MVP Phase - v0.3.0 Complete (Phase 3: JWT Authentication)
+**Next Milestone**: v0.3.1 (Security Patch: HTTP-only Cookie Migration)
+**Last Updated**: 2025-12-28

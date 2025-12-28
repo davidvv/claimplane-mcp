@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Home, FileText, Search, LogIn, UserPlus, User, LogOut, Settings, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Home, FileText, Search, LogIn, User, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 import { Button } from './ui/Button';
 import { isAuthenticated, getStoredUserInfo, logout } from '@/services/auth';
 import { cn } from '@/lib/utils';
@@ -181,18 +181,10 @@ export function MobileNav({ userRole }: MobileNavProps) {
 
                     <button
                       onClick={() => handleNavClick('/auth')}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                     >
                       <LogIn className="w-5 h-5" />
                       Login
-                    </button>
-
-                    <button
-                      onClick={() => handleNavClick('/auth?mode=register')}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      <UserPlus className="w-5 h-5" />
-                      Sign Up
                     </button>
                   </>
                 )}

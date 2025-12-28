@@ -73,6 +73,11 @@ export function ClaimFormPage() {
     updateStep(currentStep);
   }, [currentStep]);
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
+
   const handleFlightComplete = (data: FlightStatus) => {
     setFlightData(data);
     updateFlightData(data);

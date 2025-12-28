@@ -34,7 +34,7 @@ const DropdownMenuContext = React.createContext<{
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   focusedIndex: number;
-  setFocusedIndex: (index: number) => void;
+  setFocusedIndex: React.Dispatch<React.SetStateAction<number>>;
   itemCount: number;
   setItemCount: (count: number) => void;
 }>({
@@ -124,7 +124,7 @@ export function DropdownMenuContent({
   className,
   children,
 }: DropdownMenuContentProps) {
-  const { isOpen, setIsOpen, focusedIndex, setFocusedIndex, setItemCount } = React.useContext(DropdownMenuContext);
+  const { isOpen, setIsOpen, setFocusedIndex, setItemCount } = React.useContext(DropdownMenuContext);
   const contentRef = React.useRef<HTMLDivElement>(null);
 
   // Count menu items

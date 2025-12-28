@@ -6,7 +6,6 @@ import apiClient, { createFormData } from './api';
 import type {
   Document,
   DocumentType,
-  ApiResponse,
 } from '@/types/api';
 
 /**

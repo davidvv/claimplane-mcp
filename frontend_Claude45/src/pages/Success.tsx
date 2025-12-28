@@ -149,7 +149,7 @@ export function Success() {
             <div className="flex items-start gap-2">
               <FileText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
               <p className="text-muted-foreground">
-                <strong>No hidden fees:</strong> We only charge our commission (25% +
+                <strong>No hidden fees:</strong> We only charge our commission (20% +
                 VAT) if your claim is successful. No win, no fee.
               </p>
             </div>

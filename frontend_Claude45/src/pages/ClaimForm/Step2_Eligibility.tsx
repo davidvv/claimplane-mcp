@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle, XCircle, Mail, MapPin, Euro } from 'lucide-react';
+import { CheckCircle, XCircle, Mail, Euro } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { eligibilityFormSchema, type EligibilityForm } from '@/schemas/validation';
@@ -182,7 +182,7 @@ export function Step2_Eligibility({
             {eligibilityResult.eligible ? (
               <>
                 {/* Compensation Amount */}
-                {eligibilityResult.compensationAmount && (
+                {eligibilityResult.compensationAmount != null && (
                   <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center">
                     <Euro className="w-12 h-12 mx-auto mb-2 text-green-600" />
                     <p className="text-sm text-muted-foreground mb-1">

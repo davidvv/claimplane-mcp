@@ -160,7 +160,7 @@ export function formatStatusLabel(status: string): string {
 /**
  * Validate file type and size
  */
-export function validateFile(file: File): { valid: boolean; error?: string } {
+export function validateFile(_file: File): { valid: boolean; error?: string } {
   // TODO: Implement actual file validation logic
   return { valid: true };
 }

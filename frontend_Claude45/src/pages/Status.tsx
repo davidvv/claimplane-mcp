@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Search,
@@ -13,13 +13,14 @@ import {
   Euro,
   Download,
   Upload,
-  X,
+  LogIn,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { claimStatusLookupSchema, type ClaimStatusLookupForm } from '@/schemas/validation';
 import { getClaim } from '@/services/claims';
 import { listClaimDocuments, downloadDocument, uploadDocument } from '@/services/documents';
+import { isAuthenticated } from '@/services/auth';
 import type { Claim, Document, DocumentType } from '@/types/api';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -40,6 +41,8 @@ import {
 
 export function Status() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const authenticated = isAuthenticated();
   const [isLoading, setIsLoading] = useState(false);
   const [claim, setClaim] = useState<Claim | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -55,6 +58,15 @@ export function Status() {
   } = useForm<ClaimStatusLookupForm>({
     resolver: zodResolver(claimStatusLookupSchema),
   });
+
+  // Redirect authenticated users to My Claims page ONLY if they don't have a claimId
+  // (Allow viewing specific claims when coming from My Claims page)
+  useEffect(() => {
+    const claimIdFromUrl = searchParams.get('claimId');
+    if (authenticated && !claimIdFromUrl) {
+      navigate('/my-claims');
+    }
+  }, [authenticated, navigate, searchParams]);
 
   // Debug: Track documents state changes
   useEffect(() => {
@@ -202,7 +214,7 @@ export function Status() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = doc.originalFilename || doc.filename;
+      a.download = doc.filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -268,6 +280,44 @@ export function Status() {
 
   const currentStepIndex = getCurrentStepIndex();
 
+  // If not authenticated, show login prompt instead of claim lookup
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-background py-12">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-2">
+              Track Your Claim
+            </h1>
+            <p className="text-muted-foreground">
+              Access your claim status and documents by logging into your account
+            </p>
+          </div>
+
+          <Card>
+            <CardContent className="py-12 text-center">
+              <LogIn className="w-16 h-16 text-primary mx-auto mb-6" />
+              <h2 className="text-2xl font-semibold mb-3">
+                Login Required
+              </h2>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Please sign in using the email address you provided when your claim was created.
+                We'll send you a secure magic link to access your claim details.
+              </p>
+              <Button
+                size="lg"
+                onClick={() => navigate('/auth')}
+              >
+                <LogIn className="w-5 h-5 mr-2" />
+                Sign In to View Claims
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto px-4 max-w-4xl">
@@ -279,7 +329,7 @@ export function Status() {
             Enter your Claim ID to check the status of your flight compensation claim.
           </p>
         </div>
-        
+
         {/* Auto-loading indicator for magic link redirects */}
         {isLoading && searchParams.get('claimId') && (
           <div className="text-center mb-6">
@@ -532,7 +582,7 @@ export function Status() {
                           <div className="flex items-center gap-3">
                             <FileText className="w-5 h-5 text-muted-foreground" />
                             <div>
-                              <p className="font-medium text-sm">{doc.originalFilename || doc.filename}</p>
+                              <p className="font-medium text-sm">{doc.filename}</p>
                               <p className="text-xs text-muted-foreground">
                                 {doc.documentType.replace('_', ' ')} •{' '}
                                 {doc.uploadedAt && formatDateTime(doc.uploadedAt)}

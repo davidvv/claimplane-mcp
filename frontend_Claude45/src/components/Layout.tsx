@@ -3,7 +3,7 @@
  */
 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Plane, LogIn, UserPlus, LogOut, User, FileText, Settings, ChevronDown, LayoutDashboard } from 'lucide-react';
+import { Plane, LogIn, LogOut, User, FileText, Settings, ChevronDown, LayoutDashboard } from 'lucide-react';
 import { DarkModeToggle } from './DarkModeToggle';
 import { MobileNav } from './MobileNav';
 import { Button } from './ui/Button';
@@ -164,17 +164,11 @@ export function Layout({ children }: LayoutProps) {
               </>
             ) : (
               <>
-                {/* Desktop Auth Buttons */}
+                {/* Desktop Auth Button */}
                 <Link to="/auth" className="hidden md:block">
-                  <Button variant="ghost" size="sm">
+                  <Button size="sm">
                     <LogIn className="w-4 h-4 mr-2" />
                     Login
-                  </Button>
-                </Link>
-                <Link to="/auth?mode=register" className="hidden md:block">
-                  <Button size="sm">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Sign Up
                   </Button>
                 </Link>
               </>

@@ -59,12 +59,14 @@ export function Status() {
     resolver: zodResolver(claimStatusLookupSchema),
   });
 
-  // Redirect authenticated users to My Claims page
+  // Redirect authenticated users to My Claims page ONLY if they don't have a claimId
+  // (Allow viewing specific claims when coming from My Claims page)
   useEffect(() => {
-    if (authenticated) {
+    const claimIdFromUrl = searchParams.get('claimId');
+    if (authenticated && !claimIdFromUrl) {
       navigate('/my-claims');
     }
-  }, [authenticated, navigate]);
+  }, [authenticated, navigate, searchParams]);
 
   // Debug: Track documents state changes
   useEffect(() => {

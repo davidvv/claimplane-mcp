@@ -168,10 +168,119 @@ flight_claim/
 
 ## 🚀 Quick Start
 
+## ⚡ Development vs Production Setup
+
+### **Two Modes of Operation**
+
+This project supports two different frontend serving modes. Choose based on your use case:
+
+#### 🔧 **Development Mode** (Recommended for Active Development)
+
+**Port:** `3000` (Vite Dev Server)
+
+**Use when:**
+- Making frequent frontend changes
+- Need hot module reload (instant updates)
+- Active development work
+
+**Setup:**
+```bash
+# Start Docker services (backend, database, Redis)
+docker-compose up -d
+
+# Start Vite dev server
+cd frontend_Claude45
+npm run dev
+```
+
+**Access:** http://localhost:3000 (or http://192.168.5.209:3000 for network access)
+
+**Cloudflare Tunnel:** Point to `http://192.168.5.209:3000`
+
+**Benefits:**
+- ⚡ **Instant feedback** - Changes reflect in < 1 second
+- 🔥 **Hot Module Reload** - No page refresh needed
+- 🐛 **Better debugging** - Source maps and dev tools
+- 🚀 **Fast iteration** - No build step required
+
+---
+
+#### 🚢 **Production Mode** (Testing Production Builds)
+
+**Port:** `80` (nginx serving built frontend)
+
+**Use when:**
+- Testing production builds before deployment
+- Verifying optimized bundle works correctly
+- Final testing before going live
+
+**Setup:**
+```bash
+# Build frontend
+cd frontend_Claude45
+npm run build
+
+# Restart nginx to serve new build
+cd ..
+docker-compose restart nginx
+```
+
+**Access:** http://localhost (or http://192.168.5.209 for network access)
+
+**Cloudflare Tunnel:** Point to `http://192.168.5.209:80`
+
+**Benefits:**
+- 📦 **Optimized bundle** - Minified and tree-shaken
+- 🎯 **Production-like** - Same setup as deployment
+- ✅ **Final verification** - Test exactly what users will see
+
+---
+
+### **Quick Reference Table**
+
+| Aspect | Development (Port 3000) | Production (Port 80) |
+|--------|------------------------|---------------------|
+| **Server** | Vite dev server | nginx |
+| **Start Command** | `npm run dev` | `npm run build` + restart nginx |
+| **Hot Reload** | ✅ Yes | ❌ No |
+| **Speed** | ⚡ Instant | 🐌 ~10s rebuild |
+| **Debugging** | ✅ Easy | ⚠️ Harder |
+| **Use For** | Daily development | Pre-deployment testing |
+| **Cloudflare Tunnel** | `:3000` | `:80` |
+
+---
+
+### **Switching Between Modes**
+
+**From Production → Development:**
+```bash
+# Start Vite dev server
+cd frontend_Claude45
+npm run dev
+
+# Update Cloudflare tunnel to port 3000
+```
+
+**From Development → Production:**
+```bash
+# Build frontend
+cd frontend_Claude45
+npm run build
+
+# Restart nginx
+cd ..
+docker-compose restart nginx
+
+# Update Cloudflare tunnel to port 80
+```
+
+---
+
 ### Prerequisites
 
 - **Docker and Docker Compose** (recommended for full stack)
 - **Python 3.11+** (for local development)
+- **Node.js 18+** (for frontend development)
 - **Nextcloud instance** (optional, for file storage)
 
 ### Complete Docker Stack (Recommended)

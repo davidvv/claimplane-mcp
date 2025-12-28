@@ -167,7 +167,7 @@ class ClaimDetailResponse(BaseModel):
     compensation_amount: Optional[Decimal]
     calculated_compensation: Optional[Decimal]
     currency: str
-    claim_description: Optional[str] = Field(None, alias="notes")  # Claim description field
+    incident_description: Optional[str] = Field(None, alias="notes")  # Maps DB 'notes' field to 'incident_description' for frontend
     submitted_at: datetime
     updated_at: datetime
 

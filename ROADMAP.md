@@ -176,11 +176,13 @@ Both accounts use magic link authentication (passwordless).
 
 ### Next Steps for Production
 
+- [ ] **IMMEDIATE**: Complete Phase 4.5.14 (JWT HTTP-only cookie migration) → v0.3.1
+- [ ] **IMMEDIATE**: Implement Phase 4.6 (Cookie Consent Banner) - GDPR requirement
 - [ ] Complete Phase 4 (GDPR compliance and customer account management)
 - [ ] Evaluate HTTPS requirements if removing Cloudflare tunnel
 - [ ] Consider security headers implementation (currently handled by Cloudflare)
 - [ ] Update to production frontend build (currently dev server)
-- [ ] Remove OAuth requirement for public access
+- [ ] Remove OAuth requirement for public access (blocked by cookie consent)
 - [ ] Configure production email templates
 - [ ] Set up monitoring and logging
 
@@ -910,8 +912,9 @@ PASSWORD_RESET_TOKEN_EXPIRATION_HOURS = int(os.getenv("PASSWORD_RESET_TOKEN_EXPI
 
 **Priority**: HIGH - Required for production launch
 **Status**: ⏳ **IN PROGRESS** - ~30% Complete
-**Estimated Effort**: 1 week
+**Estimated Effort**: 1-2 weeks (including cookie consent implementation)
 **Business Value**: Critical - enables customer self-service and GDPR compliance
+**Blocking**: Phase 4.6 (Cookie Consent) requires Phase 4.5.14 (HTTP-only cookies) to complete first
 
 ### Overview
 Implement customer account settings page and GDPR-compliant account deletion workflow. Customers should be able to manage their email, password, and request account deletion.
@@ -1039,6 +1042,162 @@ class AccountDeletionRequest(Base):
    - [ ] Update privacy policy with data deletion process
    - [ ] Document 30-day deletion window
    - [ ] Explain data retention for legal compliance
+
+#### 4.6 Cookie Consent & GDPR Compliance 🍪 **REQUIRED**
+
+**Priority**: CRITICAL - Required before public EU launch
+**Status**: ⏳ **PENDING** - Blocked by Phase 4.5.14 (HTTP-only cookie migration)
+**Regulation**: GDPR Article 7 (Consent), ePrivacy Directive
+**Last Updated**: 2025-12-28
+
+**Overview**:
+Once JWT tokens are migrated to HTTP-only cookies (Phase 4.5.14), we MUST implement cookie consent for EU customers before public launch. This is a legal requirement under GDPR and ePrivacy Directive.
+
+**Regulatory Requirements**:
+- **GDPR Article 7**: Explicit consent required for non-essential cookies
+- **ePrivacy Directive**: Consent required before storing cookies (except strictly necessary)
+- **GDPR Recital 32**: Pre-ticked boxes are NOT valid consent
+- **Penalties**: Up to €20M or 4% of global annual revenue
+
+**Cookie Classification**:
+1. **Strictly Necessary** (No consent required):
+   - Session cookies for authenticated users
+   - Load balancer cookies
+   - Security/fraud prevention cookies
+
+2. **Functionality Cookies** (Consent required):
+   - User preference storage (theme, language)
+   - Form data persistence
+
+3. **Analytics Cookies** (Consent required):
+   - Google Analytics or similar (if implemented)
+
+**JWT Authentication Cookies**:
+- **Classification**: Strictly necessary (authentication is core functionality)
+- **Consent**: NOT required for authentication cookies (they're essential)
+- **Transparency**: MUST still disclose in cookie banner and privacy policy
+- **Justification**: Article 6(1)(b) - necessary for contract performance
+
+**Tasks**:
+
+**Frontend Implementation**:
+- [ ] Choose cookie consent library
+  - **Option A**: Cookie Consent by Osano (free, GDPR-compliant)
+  - **Option B**: CookieYes (free tier available)
+  - **Option C**: Custom implementation (more work, full control)
+- [ ] Implement cookie consent banner UI
+  - [ ] Show banner on first visit (before setting any non-essential cookies)
+  - [ ] Must have "Accept All" and "Reject All" buttons
+  - [ ] Must have "Cookie Settings" for granular control
+  - [ ] Banner must be closable after choice
+  - [ ] Store consent choice in localStorage or cookie
+- [ ] Add cookie settings modal/page
+  - [ ] List all cookie categories with descriptions
+  - [ ] Toggle switches for each category (strictly necessary should be disabled/always on)
+  - [ ] Save preferences button
+  - [ ] Link to privacy policy
+- [ ] Implement consent enforcement
+  - [ ] Only load analytics scripts if user consented
+  - [ ] Only set non-essential cookies if user consented
+  - [ ] Authentication cookies can be set (strictly necessary)
+- [ ] Add "Cookie Settings" link in footer
+- [ ] Respect user preferences across sessions
+
+**Backend Configuration**:
+- [ ] Categorize all cookies in use
+  - [ ] `auth_token` - Strictly necessary (JWT access token)
+  - [ ] `refresh_token` - Strictly necessary (JWT refresh token)
+  - [ ] Any other application cookies
+- [ ] Add cookie policy endpoint `GET /legal/cookies`
+  - [ ] Return JSON with all cookie details (name, purpose, duration, type)
+  - [ ] Used to populate cookie consent UI
+
+**Legal Documentation**:
+- [ ] Create Cookie Policy page (`/legal/cookies`)
+  - [ ] List all cookies with: name, purpose, duration, type
+  - [ ] Explain strictly necessary vs optional cookies
+  - [ ] Link to privacy policy
+- [ ] Update Privacy Policy
+  - [ ] Add section on cookies and tracking
+  - [ ] Explain how to manage cookie preferences
+  - [ ] Link to cookie policy
+  - [ ] Explain data collected via cookies
+- [ ] Add "Cookies" section to terms of service
+
+**Geolocation**:
+- [ ] Detect EU visitors (optional but recommended)
+  - [ ] Use IP geolocation API (ipapi.co, ip-api.com)
+  - [ ] Only show banner to EU visitors
+  - [ ] Or show to all visitors (safer approach)
+- [ ] Consider showing simplified banner to non-EU visitors
+
+**Testing**:
+- [ ] Test banner shows on first visit
+- [ ] Test banner doesn't show after consent given
+- [ ] Test "Accept All" sets all cookies
+- [ ] Test "Reject All" only sets strictly necessary cookies
+- [ ] Test cookie settings modal works
+- [ ] Test preferences persist across sessions
+- [ ] Test authentication works with minimal cookies (reject all)
+- [ ] Test analytics don't load if rejected
+- [ ] Test "Change Cookie Settings" link in footer
+
+**Recommended Libraries**:
+
+**Option 1: Cookie Consent by Osano** (Recommended - Simple)
+```bash
+npm install vanilla-cookieconsent
+```
+- Free and open source
+- GDPR compliant out of the box
+- Customizable UI
+- No external dependencies
+- 10KB gzipped
+
+**Option 2: CookieYes** (Hosted Service)
+- Free tier available
+- Auto-blocking scripts
+- Hosted dashboard
+- May require account
+
+**Option 3: Custom Implementation**
+- Full control over UI/UX
+- More development work
+- Must ensure GDPR compliance
+
+**Cookie Banner Content** (Example):
+```
+🍪 We use cookies
+
+We use strictly necessary cookies to keep you signed in and make our
+site work. We'd also like to use optional cookies to improve your
+experience.
+
+[Cookie Settings] [Reject All] [Accept All]
+
+By clicking "Accept All", you agree to our use of cookies.
+See our Cookie Policy and Privacy Policy for more details.
+```
+
+**Success Criteria**:
+- ✅ Cookie consent banner appears on first visit
+- ✅ User can accept, reject, or customize cookie preferences
+- ✅ Preferences are saved and respected
+- ✅ Authentication works with minimal cookies (strictly necessary only)
+- ✅ Cookie policy page exists and is linked from banner
+- ✅ Privacy policy updated with cookie information
+- ✅ EU compliance verified (legal review recommended)
+
+**Timeline**:
+- Implement after Phase 4.5.14 (HTTP-only cookie migration) is complete
+- Required before removing OAuth from Cloudflare tunnel
+- Blocking requirement for public EU launch
+
+**References**:
+- GDPR Cookie Consent Guide: https://gdpr.eu/cookies/
+- ePrivacy Directive: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32002L0058
+- Cookie Consent Library: https://github.com/orestbida/cookieconsent
+- GDPR Article 7: https://gdpr-info.eu/art-7-gdpr/
 
 ### Testing Requirements
 
@@ -1316,6 +1475,11 @@ Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deplo
 **Reference Documentation**:
 - See `docs/JWT_SECURITY_EXPLAINED.md` for detailed explanation and migration guide
 - Security checklist in JWT_SECURITY_EXPLAINED.md:464-472
+
+**GDPR Consideration**:
+- ⚠️ After migrating to cookies, must implement cookie consent banner for EU compliance
+- See Phase 4.6 for cookie consent implementation details
+- Required before public launch in EU markets
 
 **Version**: This should trigger v0.3.1 release (security patch)
 

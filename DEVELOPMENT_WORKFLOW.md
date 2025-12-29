@@ -4,61 +4,96 @@
 
 ## Environment Management - MANDATORY
 
-### ⚠️ NEVER INSTALL TO BASE ENVIRONMENT ⚠️
+### ⚠️ NEVER INSTALL TO BASE/SYSTEM PYTHON ⚠️
 
-**CRITICAL RULE**: This project uses a dedicated conda environment called **EasyAirClaim**. You MUST activate this environment before running any commands, installing packages, or running tests.
+**CRITICAL RULE**: This project uses a dedicated Python virtual environment. You MUST create and activate a virtual environment before running any commands, installing packages, or running tests.
 
-### Conda Environment Setup
+### Initial Setup (One-Time)
 
-1. **Check available environments**:
-   ```bash
-   /Users/david/miniconda3/bin/conda env list
-   ```
+**Option 1: Using Conda (Recommended)**
+```bash
+# Create environment with Python 3.11
+conda create -n EasyAirClaim python=3.11
 
-2. **Activate EasyAirClaim environment**:
-   ```bash
-   source /Users/david/miniconda3/bin/activate EasyAirClaim
-   ```
+# Activate environment
+conda activate EasyAirClaim
 
-3. **Verify you're in the correct environment**:
-   ```bash
-   which python
-   # Should output: /Users/david/miniconda3/envs/EasyAirClaim/bin/python
+# Install all dependencies
+pip install -r requirements.txt
 
-   python --version
-   # Should output: Python 3.11.13
-   ```
+# Verify installation
+which python  # Should show conda environment path, NOT system Python
+python --version  # Should show Python 3.11.x
+```
 
-### Installing Dependencies
+**Option 2: Using venv**
+```bash
+# Create virtual environment
+python3.11 -m venv venv
 
-**ALWAYS activate the EasyAirClaim environment first**, then:
+# Activate environment
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install all dependencies
+pip install -r requirements.txt
+
+# Verify installation
+which python  # Should show venv path, NOT system Python
+python --version  # Should show Python 3.11.x
+```
+
+### Daily Usage
+
+**ALWAYS activate your environment first** before any development work:
 
 ```bash
-# For conda packages
-conda install package_name
+# For conda users
+conda activate EasyAirClaim
 
-# For pip packages
+# For venv users
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+**Verify you're in the correct environment:**
+```bash
+which python
+# Should NOT show /usr/bin/python or /usr/local/bin/python
+# Should show your virtual environment path
+
+python --version
+# Should show: Python 3.11.x
+```
+
+### Installing New Dependencies
+
+**ALWAYS activate your environment first**, then:
+
+```bash
+# Install a new package
 pip install package_name
+
+# Update requirements.txt after adding packages
+pip freeze > requirements.txt
 ```
 
 ### Running the Application
 
 ```bash
-# Activate environment first
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+# Make sure your virtual environment is activated first!
+# (conda activate EasyAirClaim OR source venv/bin/activate)
 
 # Run the application
 python app/main.py
 
-# Or with uvicorn
+# Or with uvicorn (with hot reload)
 uvicorn app.main:app --reload
 ```
 
 ### Running Tests
 
 ```bash
-# Activate environment first
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+# Make sure your virtual environment is activated first!
+# (conda activate EasyAirClaim OR source venv/bin/activate)
 
 # Run all tests
 pytest

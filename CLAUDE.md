@@ -8,12 +8,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **YOU MUST READ `DEVELOPMENT_WORKFLOW.md` BEFORE DOING ANYTHING ELSE.**
 
-This project uses a dedicated conda environment called **EasyAirClaim**.
+This project uses a dedicated Python virtual environment.
 
 **MANDATORY RULES**:
-- ✅ ALWAYS activate: `source /Users/david/miniconda3/bin/activate EasyAirClaim`
-- ✅ Verify: `which python` should show `/Users/david/miniconda3/envs/EasyAirClaim/bin/python`
-- ❌ NEVER install packages to base environment
+- ✅ ALWAYS use a virtual environment (conda, venv, or virtualenv)
+- ✅ Name your environment: `EasyAirClaim` (recommended for consistency)
+- ✅ Install dependencies from: `requirements.txt`
+- ✅ Verify environment: `which python` should NOT show system Python
+- ❌ NEVER install packages to base/system Python
+
+**Setup for new developers:**
+```bash
+# Option 1: Using conda (recommended)
+conda create -n EasyAirClaim python=3.11
+conda activate EasyAirClaim
+pip install -r requirements.txt
+
+# Option 2: Using venv
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
 
 ### Architecture Decisions - Owner Approval Required
 
@@ -187,8 +202,7 @@ ClaimFile 1→N FileAccessLog
 ### Running the Application
 
 ```bash
-# Activate environment first
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+# Activate environment first (conda activate EasyAirClaim OR source venv/bin/activate)
 
 # Local development
 python app/main.py
@@ -223,8 +237,7 @@ npm run build
 ### Testing
 
 ```bash
-# Activate environment first
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+# Activate environment first (conda activate EasyAirClaim OR source venv/bin/activate)
 
 # Run all tests
 pytest

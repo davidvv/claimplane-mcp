@@ -65,7 +65,13 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
   const response = await apiClient.post<AuthResponse>('/auth/register', data);
 
   // Tokens are automatically stored in HTTP-only cookies by the backend
-  // No need to manually store them in localStorage
+  // Store user info in localStorage for UI purposes only (not security-sensitive)
+  if (response.data.user) {
+    localStorage.setItem('user_email', response.data.user.email);
+    localStorage.setItem('user_id', response.data.user.id);
+    localStorage.setItem('user_name', `${response.data.user.first_name} ${response.data.user.last_name}`);
+    localStorage.setItem('user_role', response.data.user.role);
+  }
 
   return response.data;
 }
@@ -77,7 +83,13 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
   const response = await apiClient.post<AuthResponse>('/auth/login', data);
 
   // Tokens are automatically stored in HTTP-only cookies by the backend
-  // No need to manually store them in localStorage
+  // Store user info in localStorage for UI purposes only (not security-sensitive)
+  if (response.data.user) {
+    localStorage.setItem('user_email', response.data.user.email);
+    localStorage.setItem('user_id', response.data.user.id);
+    localStorage.setItem('user_name', `${response.data.user.first_name} ${response.data.user.last_name}`);
+    localStorage.setItem('user_role', response.data.user.role);
+  }
 
   return response.data;
 }
@@ -93,6 +105,12 @@ export async function logout(): Promise<void> {
     // Continue with logout even if API call fails
     console.error('Logout API call failed:', error);
   }
+
+  // Clear user info from localStorage (UI state only, tokens are in cookies)
+  localStorage.removeItem('user_email');
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('user_name');
+  localStorage.removeItem('user_role');
 
   // Cookies are cleared by the backend
   // Redirect will be handled by the caller
@@ -187,29 +205,29 @@ export async function confirmPasswordReset(token: string, newPassword: string): 
 /**
  * Check if user is authenticated
  *
- * Note: With HTTP-only cookies, we can't check authentication from JavaScript.
- * This function returns true optimistically. If the user is not authenticated,
- * API calls will return 401 and the interceptor will redirect to login.
+ * Note: With HTTP-only cookies, we can't check the actual tokens from JavaScript.
+ * This checks if we have user info in localStorage (set after successful login).
+ * The backend will ultimately verify authentication via HTTP-only cookies.
+ *
+ * This is for UI purposes only - the actual auth is verified by the backend.
  */
 export function isAuthenticated(): boolean {
-  // Always return true - let the backend verify authentication
-  // 401 errors will trigger redirect to login in the API interceptor
-  return true;
+  // Check if we have user info (set after successful login)
+  return !!localStorage.getItem('user_email');
 }
 
 /**
  * Get stored user info
  *
- * Note: User info is no longer stored in localStorage for security.
- * Use getCurrentUser() to fetch from the backend instead.
- * This function is deprecated and returns null values.
- *
- * @deprecated Use getCurrentUser() instead
+ * Note: This returns user info stored in localStorage for UI purposes.
+ * The actual authentication is verified by the backend via HTTP-only cookies.
+ * Tokens are NOT stored in localStorage - only user display info.
  */
 export function getStoredUserInfo() {
   return {
-    email: null,
-    id: null,
-    name: null,
+    email: localStorage.getItem('user_email'),
+    id: localStorage.getItem('user_id'),
+    name: localStorage.getItem('user_name'),
+    role: localStorage.getItem('user_role'),
   };
 }

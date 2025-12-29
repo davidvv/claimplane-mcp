@@ -30,6 +30,14 @@ export function MagicLinkPage() {
         console.log('Magic link verification successful:', response.data);
 
         // Tokens are automatically stored in HTTP-only cookies by the backend
+        // Store user info in localStorage for UI purposes only
+        if (response.data.user) {
+          localStorage.setItem('user_email', response.data.user.email);
+          localStorage.setItem('user_id', response.data.user.id);
+          localStorage.setItem('user_name', `${response.data.user.first_name} ${response.data.user.last_name}`);
+          localStorage.setItem('user_role', response.data.user.role);
+        }
+
         console.log('Authentication cookies set by backend');
         console.log('User:', response.data.user.email, 'ID:', response.data.user.id);
 

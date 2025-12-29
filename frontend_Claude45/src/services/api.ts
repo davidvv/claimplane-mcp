@@ -5,7 +5,6 @@
 
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
-import { clearAuthTokens } from '@/utils/tokenStorage';
 
 // API Configuration
 // Use environment variable or empty string to use relative URLs (Vite proxy)
@@ -19,6 +18,7 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Send cookies with every request
 });
 
 // Request interceptor
@@ -29,26 +29,14 @@ apiClient.interceptors.request.use(
       config.headers['X-API-Key'] = API_KEY;
     }
 
-    // Add JWT token if available (from localStorage)
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Note: JWT tokens are now sent via HTTP-only cookies automatically
+    // No need to manually add Authorization header
 
-    // Enhanced debugging for status page issues
+    // Enhanced debugging for development
     if (import.meta.env.DEV) {
       console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
       console.log('Headers:', config.headers);
-      console.log('Token present:', !!token);
-      if (token) {
-        // Decode JWT token for debugging (without verification)
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          console.log('Token payload:', payload);
-        } catch (e) {
-          console.log('Could not decode token');
-        }
-      }
+      console.log('Credentials:', config.withCredentials);
     }
 
     return config;
@@ -110,8 +98,7 @@ apiClient.interceptors.response.use(
           break;
         case 401:
           toast.error('Unauthorized. Please log in.');
-          // Clear all tokens safely and redirect to login
-          clearAuthTokens();
+          // Redirect to login (cookies will be cleared by logout endpoint)
           if (window.location.pathname !== '/auth') {
             window.location.href = '/auth';
           }

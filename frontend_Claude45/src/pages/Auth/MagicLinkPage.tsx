@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '@/services/api';
-import { storeAuthTokens, clearAuthTokens } from '@/utils/tokenStorage';
 
 export function MagicLinkPage() {
   const [searchParams] = useSearchParams();
@@ -25,62 +24,36 @@ export function MagicLinkPage() {
         console.log('Token:', token);
         console.log('Claim ID:', claimId);
 
-        // IMPORTANT: Clear any old tokens BEFORE making the magic link verification request
-        // This ensures the API request doesn't include an old/invalid token that could cause 401 errors
-        clearAuthTokens();
-        console.log('[MagicLinkPage] Old tokens cleared before verification request');
-
         // Verify magic link token
         const response = await apiClient.post(`/auth/magic-link/verify/${token}`);
 
         console.log('Magic link verification successful:', response.data);
 
-        // Store tokens and ensure they're available before redirecting
-        try {
-          // Use safe token storage to prevent token collision issues
-          storeAuthTokens(
-            response.data.tokens.access_token,
-            response.data.tokens.refresh_token,
-            response.data.user.email,
-            response.data.user.id,
-            `${response.data.user.first_name} ${response.data.user.last_name}`
-          );
-          
-          // Verify tokens are stored
-          const storedToken = localStorage.getItem('auth_token');
-          if (!storedToken) {
-            throw new Error('Failed to store authentication token');
+        // Tokens are automatically stored in HTTP-only cookies by the backend
+        console.log('Authentication cookies set by backend');
+        console.log('User:', response.data.user.email, 'ID:', response.data.user.id);
+
+        setStatus('success');
+
+        // Ensure cookies are set before redirecting
+        setTimeout(() => {
+          // Check user role and redirect accordingly
+          const userRole = response.data.user.role;
+
+          if (userRole === 'admin' || userRole === 'superadmin') {
+            // Admin users go to admin panel
+            console.log('Admin user detected, redirecting to panel dashboard');
+            navigate('/panel/dashboard');
+          } else if (claimId) {
+            // Customer with specific claim goes to status page
+            console.log('Redirecting to status page with claim ID:', claimId);
+            navigate(`/status?claimId=${claimId}`);
+          } else {
+            // Customer without claim goes to claims list
+            console.log('Redirecting to My Claims page (no specific claim ID)');
+            navigate('/my-claims');
           }
-
-          console.log('Authentication tokens stored successfully');
-          console.log('User:', response.data.user.email, 'ID:', response.data.user.id);
-
-          setStatus('success');
-
-          // Ensure authentication state is ready before redirecting
-          setTimeout(() => {
-            // Check user role and redirect accordingly
-            const userRole = response.data.user.role;
-
-            if (userRole === 'admin' || userRole === 'superadmin') {
-              // Admin users go to admin panel
-              console.log('Admin user detected, redirecting to panel dashboard');
-              navigate('/panel/dashboard');
-            } else if (claimId) {
-              // Customer with specific claim goes to status page
-              console.log('Redirecting to status page with claim ID:', claimId);
-              navigate(`/status?claimId=${claimId}`);
-            } else {
-              // Customer without claim goes to claims list
-              console.log('Redirecting to My Claims page (no specific claim ID)');
-              navigate('/my-claims');
-            }
-          }, 1000); // Wait for tokens to be fully stored
-        } catch (storageError) {
-          console.error('Failed to store authentication tokens:', storageError);
-          setStatus('error');
-          setErrorMessage('Failed to complete authentication. Please try again.');
-        }
+        }, 500); // Wait briefly for cookies to be set
 
       } catch (error: any) {
         console.error('Magic link verification failed:', error);

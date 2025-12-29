@@ -1,8 +1,8 @@
 /**
  * Authentication service - integrates with Phase 3 JWT backend
+ * Uses HTTP-only cookies for secure token storage
  */
 import apiClient from './api';
-import { storeAuthTokens, clearAuthTokens } from '@/utils/tokenStorage';
 
 // Types matching Phase 3 backend
 export interface RegisterRequest {
@@ -64,16 +64,8 @@ export interface UserProfile {
 export async function register(data: RegisterRequest): Promise<AuthResponse> {
   const response = await apiClient.post<AuthResponse>('/auth/register', data);
 
-  // Store tokens safely (clears old tokens first)
-  if (response.data.tokens) {
-    storeAuthTokens(
-      response.data.tokens.access_token,
-      response.data.tokens.refresh_token,
-      response.data.user.email,
-      response.data.user.id,
-      `${response.data.user.first_name} ${response.data.user.last_name}`
-    );
-  }
+  // Tokens are automatically stored in HTTP-only cookies by the backend
+  // No need to manually store them in localStorage
 
   return response.data;
 }
@@ -84,16 +76,8 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
 export async function login(data: LoginRequest): Promise<AuthResponse> {
   const response = await apiClient.post<AuthResponse>('/auth/login', data);
 
-  // Store tokens safely (clears old tokens first)
-  if (response.data.tokens) {
-    storeAuthTokens(
-      response.data.tokens.access_token,
-      response.data.tokens.refresh_token,
-      response.data.user.email,
-      response.data.user.id,
-      `${response.data.user.first_name} ${response.data.user.last_name}`
-    );
-  }
+  // Tokens are automatically stored in HTTP-only cookies by the backend
+  // No need to manually store them in localStorage
 
   return response.data;
 }
@@ -102,19 +86,16 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
  * Logout - revoke refresh token
  */
 export async function logout(): Promise<void> {
-  const refreshToken = localStorage.getItem('refresh_token');
-
-  if (refreshToken) {
-    try {
-      await apiClient.post('/auth/logout', { refresh_token: refreshToken });
-    } catch (error) {
-      // Continue with local logout even if API call fails
-      console.error('Logout API call failed:', error);
-    }
+  try {
+    // Backend will read refresh_token from HTTP-only cookie and clear it
+    await apiClient.post('/auth/logout');
+  } catch (error) {
+    // Continue with logout even if API call fails
+    console.error('Logout API call failed:', error);
   }
 
-  // Clear all auth data safely
-  clearAuthTokens();
+  // Cookies are cleared by the backend
+  // Redirect will be handled by the caller
 }
 
 /**
@@ -159,31 +140,16 @@ export async function updateUserProfile(data: Partial<{
  * Refresh access token using refresh token
  */
 export async function refreshAccessToken(): Promise<{ access_token: string; refresh_token: string }> {
-  const refreshToken = localStorage.getItem('refresh_token');
-
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
-
+  // Backend reads refresh_token from HTTP-only cookie
   const response = await apiClient.post<{
     access_token: string;
     refresh_token: string;
     token_type: string;
     expires_in: number;
-  }>('/auth/refresh', { refresh_token: refreshToken });
+  }>('/auth/refresh');
 
-  // Update stored tokens safely (clears old tokens first)
-  const userEmail = localStorage.getItem('user_email') || '';
-  const userId = localStorage.getItem('user_id') || '';
-  const userName = localStorage.getItem('user_name') || '';
-
-  storeAuthTokens(
-    response.data.access_token,
-    response.data.refresh_token,
-    userEmail,
-    userId,
-    userName
-  );
+  // Tokens are automatically updated in HTTP-only cookies by the backend
+  // No need to manually store them
 
   return {
     access_token: response.data.access_token,
@@ -220,18 +186,30 @@ export async function confirmPasswordReset(token: string, newPassword: string): 
 
 /**
  * Check if user is authenticated
+ *
+ * Note: With HTTP-only cookies, we can't check authentication from JavaScript.
+ * This function returns true optimistically. If the user is not authenticated,
+ * API calls will return 401 and the interceptor will redirect to login.
  */
 export function isAuthenticated(): boolean {
-  return !!localStorage.getItem('auth_token');
+  // Always return true - let the backend verify authentication
+  // 401 errors will trigger redirect to login in the API interceptor
+  return true;
 }
 
 /**
- * Get stored user info (from localStorage)
+ * Get stored user info
+ *
+ * Note: User info is no longer stored in localStorage for security.
+ * Use getCurrentUser() to fetch from the backend instead.
+ * This function is deprecated and returns null values.
+ *
+ * @deprecated Use getCurrentUser() instead
  */
 export function getStoredUserInfo() {
   return {
-    email: localStorage.getItem('user_email'),
-    id: localStorage.getItem('user_id'),
-    name: localStorage.getItem('user_name'),
+    email: null,
+    id: null,
+    name: null,
   };
 }

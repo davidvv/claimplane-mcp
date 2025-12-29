@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import config
@@ -80,6 +80,51 @@ def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
     return ip_address, user_agent
 
 
+def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
+    """
+    Set HTTP-only authentication cookies.
+
+    Security features:
+    - httponly=True: Prevents JavaScript access (XSS protection)
+    - secure=True: Only send over HTTPS (production)
+    - samesite="lax": CSRF protection while allowing normal navigation
+    - max_age: Cookie expiration in seconds
+    """
+    # Determine if we're in production (require HTTPS)
+    is_production = os.getenv("ENVIRONMENT", "development") == "production"
+
+    # Access token cookie (short-lived: 30 minutes)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,  # Cannot be accessed by JavaScript
+        secure=is_production,  # HTTPS only in production
+        samesite="lax",  # CSRF protection
+        max_age=config.JWT_EXPIRATION_MINUTES * 60,  # 30 minutes
+        path="/",  # Available for all routes
+    )
+
+    # Refresh token cookie (long-lived: 7 days)
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=is_production,
+        samesite="lax",
+        max_age=config.JWT_REFRESH_EXPIRATION_DAYS * 24 * 60 * 60,  # 7 days
+        path="/",
+    )
+
+    logger.info("Authentication cookies set successfully")
+
+
+def clear_auth_cookies(response: Response):
+    """Clear authentication cookies on logout."""
+    response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="refresh_token", path="/")
+    logger.info("Authentication cookies cleared")
+
+
 @router.post(
     "/register",
     response_model=AuthResponseSchema,
@@ -90,6 +135,7 @@ def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
 async def register(
     data: UserRegisterSchema,
     request: Request,
+    response: Response,
     session: AsyncSession = Depends(get_db)
 ):
     """
@@ -139,6 +185,9 @@ async def register(
         # Commit transaction
         await session.commit()
 
+        # Set HTTP-only cookies
+        set_auth_cookies(response, access_token, refresh_token_str)
+
         # Prepare response
         user_response = UserResponseSchema.model_validate(customer)
         token_response = TokenResponseSchema(
@@ -178,6 +227,7 @@ async def register(
 async def login(
     data: UserLoginSchema,
     request: Request,
+    response: Response,
     session: AsyncSession = Depends(get_db)
 ):
     """
@@ -227,6 +277,9 @@ async def login(
     # Commit transaction (to save last_login_at update)
     await session.commit()
 
+    # Set HTTP-only cookies
+    set_auth_cookies(response, access_token, refresh_token_str)
+
     # Prepare response
     user_response = UserResponseSchema.model_validate(customer)
     token_response = TokenResponseSchema(
@@ -246,21 +299,34 @@ async def login(
     description="Get a new access token using a valid refresh token."
 )
 async def refresh_token(
-    data: RefreshTokenSchema,
     request: Request,
-    session: AsyncSession = Depends(get_db)
+    response: Response,
+    session: AsyncSession = Depends(get_db),
+    data: Optional[RefreshTokenSchema] = None,
 ):
     """
     Refresh access token.
 
-    - **refresh_token**: Valid refresh token
+    Reads refresh token from HTTP-only cookie or request body (backwards compatibility).
 
     Returns new access and refresh tokens.
     """
+    # Try to get refresh token from cookie first, fallback to request body
+    refresh_token_value = request.cookies.get("refresh_token")
+    if not refresh_token_value and data:
+        refresh_token_value = data.refresh_token
+
+    if not refresh_token_value:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No refresh token provided",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     # Verify refresh token
     refresh_token_obj = await AuthService.verify_refresh_token(
         session=session,
-        token=data.refresh_token
+        token=refresh_token_value
     )
 
     if not refresh_token_obj:
@@ -304,12 +370,15 @@ async def refresh_token(
     # Revoke old refresh token (token rotation)
     await AuthService.revoke_refresh_token(
         session=session,
-        token=data.refresh_token,
+        token=refresh_token_value,
         replaced_by=new_refresh_token_str
     )
 
     # Commit transaction
     await session.commit()
+
+    # Set HTTP-only cookies
+    set_auth_cookies(response, access_token, new_refresh_token_str)
 
     return TokenResponseSchema(
         access_token=access_token,
@@ -326,25 +395,36 @@ async def refresh_token(
     description="Logout the current user and revoke their refresh token."
 )
 async def logout(
-    data: RefreshTokenSchema,
+    request: Request,
+    response: Response,
     current_user: Customer = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db)
+    session: AsyncSession = Depends(get_db),
+    data: Optional[RefreshTokenSchema] = None,
 ):
     """
     Logout and revoke refresh token.
 
-    - **refresh_token**: Refresh token to revoke
+    Reads refresh token from HTTP-only cookie or request body (backwards compatibility).
 
-    Requires authentication (Bearer token in Authorization header).
+    Requires authentication (Bearer token in Authorization header or cookie).
     """
-    # Revoke refresh token
-    await AuthService.revoke_refresh_token(
-        session=session,
-        token=data.refresh_token
-    )
+    # Try to get refresh token from cookie first, fallback to request body
+    refresh_token_value = request.cookies.get("refresh_token")
+    if not refresh_token_value and data:
+        refresh_token_value = data.refresh_token
+
+    # Revoke refresh token if provided
+    if refresh_token_value:
+        await AuthService.revoke_refresh_token(
+            session=session,
+            token=refresh_token_value
+        )
 
     # Commit transaction
     await session.commit()
+
+    # Clear authentication cookies
+    clear_auth_cookies(response)
 
     return None
 
@@ -424,6 +504,7 @@ async def request_magic_link(
 async def verify_magic_link(
     token: str,
     request: Request,
+    response: Response,
     session: AsyncSession = Depends(get_db)
 ):
     """
@@ -473,6 +554,9 @@ async def verify_magic_link(
     )
 
     await session.commit()
+
+    # Set HTTP-only cookies
+    set_auth_cookies(response, access_token, refresh_token_str)
 
     # Return auth response
     return AuthResponseSchema(

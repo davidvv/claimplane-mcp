@@ -156,9 +156,10 @@ class Config:
 # Development configuration with relaxed security
 class DevelopmentConfig(Config):
     """Development configuration with relaxed security for testing."""
-    
+
     # Allow more permissive settings in development
-    CORS_ORIGINS = ["*"]
+    # Note: Cannot use "*" wildcard when allow_credentials=True (required for HTTP-only cookies)
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8081,https://eac.dvvcloud.work").split(",")
     RATE_LIMIT_UPLOAD = "100/minute"
     RATE_LIMIT_DOWNLOAD = "1000/minute"
     SECURITY_HEADERS_ENABLED = False

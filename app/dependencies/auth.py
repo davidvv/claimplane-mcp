@@ -3,7 +3,7 @@ import logging
 from typing import Optional, Tuple
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,20 +14,24 @@ from app.services.auth_service import AuthService
 
 logger = logging.getLogger(__name__)
 
-# HTTP Bearer token security scheme
-security = HTTPBearer()
+# HTTP Bearer token security scheme (optional for backwards compatibility)
+security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    session: AsyncSession = Depends(get_db)
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> Customer:
     """
     Get the current authenticated user from JWT token.
 
+    Reads token from HTTP-only cookie (primary) or Authorization header (fallback).
+
     Args:
-        credentials: HTTP Authorization credentials (Bearer token)
+        request: FastAPI request (to access cookies)
         session: Database session
+        credentials: HTTP Authorization credentials (Bearer token) - optional
 
     Returns:
         Customer instance of authenticated user
@@ -35,8 +39,20 @@ async def get_current_user(
     Raises:
         HTTPException: 401 if token is invalid or user not found
     """
-    # Extract token
-    token = credentials.credentials
+    # Try to get token from HTTP-only cookie first (primary method)
+    token = request.cookies.get("access_token")
+
+    # Fallback to Authorization header for backwards compatibility
+    if not token and credentials:
+        token = credentials.credentials
+
+    # No token found in either location
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     # Verify and decode token
     payload = AuthService.verify_access_token(token)
@@ -194,26 +210,35 @@ async def get_current_superadmin(
 
 
 async def get_optional_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
-    session: AsyncSession = Depends(get_db)
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> Optional[Customer]:
     """
     Get current user if authenticated, None otherwise.
     Useful for endpoints that work differently for authenticated vs unauthenticated users.
 
+    Reads token from HTTP-only cookie (primary) or Authorization header (fallback).
+
     Args:
-        credentials: HTTP Authorization credentials (Bearer token) - optional
+        request: FastAPI request (to access cookies)
         session: Database session
+        credentials: HTTP Authorization credentials (Bearer token) - optional
 
     Returns:
         Customer instance if authenticated, None otherwise
     """
-    if not credentials:
-        return None
-
     try:
-        # Extract token
-        token = credentials.credentials
+        # Try to get token from HTTP-only cookie first
+        token = request.cookies.get("access_token")
+
+        # Fallback to Authorization header
+        if not token and credentials:
+            token = credentials.credentials
+
+        # No token found
+        if not token:
+            return None
 
         # Verify and decode token
         payload = AuthService.verify_access_token(token)
@@ -237,8 +262,9 @@ async def get_optional_current_user(
 
 
 async def get_current_user_with_claim_access(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    session: AsyncSession = Depends(get_db)
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> Tuple[Customer, Optional[UUID]]:
     """
     Get the current authenticated user and extract claim_id from JWT token (if present).
@@ -246,9 +272,12 @@ async def get_current_user_with_claim_access(
     This is useful for magic link authentication where the JWT token contains
     a claim_id that grants access to a specific claim.
 
+    Reads token from HTTP-only cookie (primary) or Authorization header (fallback).
+
     Args:
-        credentials: HTTP Authorization credentials (Bearer token)
+        request: FastAPI request (to access cookies)
         session: Database session
+        credentials: HTTP Authorization credentials (Bearer token) - optional
 
     Returns:
         Tuple of (Customer instance, Optional claim_id from token)
@@ -256,8 +285,20 @@ async def get_current_user_with_claim_access(
     Raises:
         HTTPException: 401 if token is invalid or user not found
     """
-    # Extract token
-    token = credentials.credentials
+    # Try to get token from HTTP-only cookie first
+    token = request.cookies.get("access_token")
+
+    # Fallback to Authorization header
+    if not token and credentials:
+        token = credentials.credentials
+
+    # No token found
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     # Verify and decode token
     payload = AuthService.verify_access_token(token)

@@ -1226,6 +1226,107 @@ See our Cookie Policy and Privacy Policy for more details.
 - Cookie Consent Library: https://github.com/orestbida/cookieconsent
 - GDPR Article 7: https://gdpr-info.eu/art-7-gdpr/
 
+#### 4.7 Missing Homepage Pages 📄 **REQUIRED FOR LAUNCH**
+
+**Priority**: HIGH - Required for legal compliance and professional presence
+**Status**: ⏳ **NOT STARTED**
+**Last Updated**: 2025-12-29
+
+**Overview**:
+Add essential legal and informational pages to the homepage that are required for GDPR compliance, professional credibility, and customer trust.
+
+**Missing Pages**:
+
+1. **Terms of Use / Terms of Service** ❌
+   - [ ] Create Terms of Service page (`/terms`)
+   - [ ] Include sections:
+     - [ ] Service description
+     - [ ] User responsibilities
+     - [ ] Intellectual property rights
+     - [ ] Limitation of liability
+     - [ ] Dispute resolution
+     - [ ] Governing law (EU/Germany)
+     - [ ] Contact information
+   - [ ] Link from footer (all pages)
+   - [ ] Require acceptance during claim submission
+   - [ ] Version control and effective date
+
+2. **Privacy Policy** ❌ **CRITICAL - GDPR REQUIRED**
+   - [ ] Create Privacy Policy page (`/privacy`)
+   - [ ] Include sections:
+     - [ ] Data controller information (company details)
+     - [ ] What data we collect (personal info, flight details, documents)
+     - [ ] Why we collect it (legal basis: contract performance, legal obligation)
+     - [ ] How we use it (claim processing, customer support, legal compliance)
+     - [ ] Who we share it with (third parties: email service, file storage)
+     - [ ] Data retention periods (claims: 7 years for legal compliance)
+     - [ ] User rights (access, rectification, erasure, portability, object)
+     - [ ] Cookie policy (integrated from 4.6)
+     - [ ] International data transfers (if any)
+     - [ ] Security measures (encryption, access controls)
+     - [ ] How to exercise rights (contact email)
+     - [ ] DPO contact information (if required)
+     - [ ] Last updated date
+   - [ ] Link from footer (all pages)
+   - [ ] Link from cookie consent banner
+   - [ ] Version control and effective date
+
+3. **Contact Page** ❌
+   - [ ] Create Contact page (`/contact`)
+   - [ ] Include:
+     - [ ] Contact form (name, email, subject, message)
+     - [ ] Email address: support@easyairclaim.com
+     - [ ] Response time expectations (24-48 hours)
+     - [ ] FAQ section link
+     - [ ] Company address (if applicable)
+   - [ ] Integrate with backend email service (Celery task)
+   - [ ] Rate limiting (prevent spam: 3 messages per hour per IP)
+   - [ ] Auto-reply confirmation email
+   - [ ] Link from footer and header navigation
+
+**Implementation Details**:
+
+**Frontend**:
+- Create pages in `frontend_Claude45/src/pages/Legal/`
+  - `TermsOfService.tsx`
+  - `PrivacyPolicy.tsx`
+  - `ContactPage.tsx`
+- Add routes to `App.tsx`
+- Update footer component with links
+- Add "By continuing, you agree to our Terms of Service and Privacy Policy" to claim form
+
+**Backend**:
+- [ ] Add endpoint: `POST /contact` (contact form submission)
+- [ ] Add Celery task: `send_contact_form_email`
+- [ ] Rate limiting on contact endpoint
+
+**Legal Review**:
+- [ ] **CRITICAL**: Have Terms and Privacy Policy reviewed by legal professional
+- [ ] Ensure GDPR compliance (especially Privacy Policy)
+- [ ] Verify German/EU law compliance
+- [ ] Update as needed based on legal feedback
+
+**Timeline**:
+- Privacy Policy: 1-2 days (research + writing + legal review)
+- Terms of Service: 1-2 days (research + writing + legal review)
+- Contact Page: 1 day (frontend + backend + email integration)
+- **Total**: 3-5 days
+
+**Success Criteria**:
+- ✅ All three pages exist and are accessible
+- ✅ Pages linked from footer on all pages
+- ✅ Privacy Policy meets GDPR requirements
+- ✅ Terms of Service covers liability and user responsibilities
+- ✅ Contact form works and sends emails
+- ✅ Legal review completed (recommended)
+
+**Why This Matters**:
+- **Legal Compliance**: Privacy Policy is MANDATORY under GDPR (Article 13 & 14)
+- **Customer Trust**: Professional companies have these pages
+- **Risk Mitigation**: Terms of Service protects company from liability
+- **Transparency**: Users have right to know how their data is used
+- **Support**: Contact page provides customer support channel
+
 ### Testing Requirements
 
 - [ ] Test email change workflow with verification
@@ -1736,15 +1837,608 @@ Allow a single account holder (e.g., a parent) to submit multiple related claims
 
 ---
 
+## Phase 6: AeroDataBox Flight Status API Integration
+
+**Priority**: MEDIUM-HIGH - Automation and efficiency improvement
+**Status**: 📋 **PLANNED** - Not yet implemented
+**Estimated Effort**: 2-3 weeks
+**Business Value**: HIGH - Reduces manual verification work, improves accuracy, enables real-time flight status
+**API Documentation**: https://aerodatabox.com/
+
+### Overview
+
+Integrate AeroDataBox Flight Status API to automate flight verification and provide real-time flight delay/cancellation information. This eliminates manual flight verification work for admins and improves claim accuracy.
+
+### Business Case
+
+**Current Problem**:
+- Admins manually verify flight delays using airline websites
+- Time-consuming and error-prone process
+- Cannot verify flight status in real-time
+- Customers must provide delay certificates (extra friction)
+- No automated eligibility pre-screening
+
+**Solution**: AeroDataBox API integration providing:
+- Automated flight delay/cancellation verification
+- Real-time flight status during claim submission
+- Historical flight data for past claims
+- Airport information and distances (for EU261 compensation calculation)
+- Reduced manual admin work
+
+**Expected Impact**:
+- **60-80% reduction** in flight verification time for admins
+- **Higher claim accuracy** - automated data from authoritative source
+- **Better customer experience** - instant eligibility check during submission
+- **Reduced support tickets** - customers know eligibility upfront
+- **Fraud prevention** - verify flight actually existed and was delayed
+
+### Key Features
+
+#### 6.1 Flight Verification Service
+
+**File**: `app/services/flight_data_service.py` (new)
+
+- [ ] **Flight Status Lookup**
+  - Get real-time flight status (scheduled, delayed, cancelled, diverted)
+  - Retrieve scheduled vs actual departure/arrival times
+  - Calculate delay duration automatically
+  - Support IATA and ICAO airport codes
+  - Handle multiple flights per day (morning/evening flights with same number)
+
+- [ ] **Historical Flight Data**
+  - Query flights up to 12 months in the past
+  - Retrieve delay/cancellation records for claims
+  - Store flight data snapshot with claim (audit trail)
+
+- [ ] **Airport Information**
+  - Get airport details (name, city, country, coordinates)
+  - Calculate great-circle distance between airports
+  - Use for EU261 compensation tier calculation (< 1500km, 1500-3500km, > 3500km)
+
+- [ ] **API Error Handling**
+  - Rate limiting compliance (AeroDataBox has quotas)
+  - Caching of flight data (reduce API calls)
+  - Fallback to manual verification if API unavailable
+  - Graceful degradation (don't block claims if API is down)
+
+#### 6.2 Enhanced Claim Submission Flow
+
+**Files**: `app/routers/claims.py`, `frontend_Claude45/src/pages/ClaimForm.tsx`
+
+- [ ] **Real-Time Flight Lookup** during claim submission
+  - Customer enters flight number and date
+  - System automatically fetches flight details from AeroDataBox
+  - Pre-populate flight times, airline, airports
+  - Display delay duration and eligibility status
+  - Show "Flight not found" or "Flight was on time" if ineligible
+
+- [ ] **Smart Eligibility Pre-Screening**
+  - Calculate delay duration from API data
+  - Apply EU261 rules automatically
+  - Show compensation estimate before submission
+  - Warn if flight doesn't qualify (< 3 hour delay)
+  - Reduce ineligible claim submissions by 40-50%
+
+- [ ] **Flight Data Snapshot**
+  - Store retrieved flight data with claim in database
+  - Include: scheduled times, actual times, delay duration, cancellation status
+  - Prevent data loss if API data changes later
+  - Audit trail for legal compliance
+
+#### 6.3 Admin Dashboard Enhancements
+
+**Files**: `app/routers/admin_claims.py`, `frontend_Claude45/src/pages/Admin/ClaimDetailPage.tsx`
+
+- [ ] **Automated Verification Badge**
+  - Show "API Verified" badge on claims with flight data from AeroDataBox
+  - Display flight details retrieved from API
+  - Compare customer-entered data vs API data (flag discrepancies)
+  - One-click re-verification for updated data
+
+- [ ] **Manual Verification Fallback**
+  - If API data unavailable, allow admin manual verification
+  - Upload delay certificate as before
+  - Mark verification method (API vs manual)
+
+- [ ] **Flight Status Dashboard**
+  - View all claims for a specific flight number
+  - See how many passengers from one flight filed claims
+  - Bulk processing for mass cancellations/delays
+
+#### 6.4 Database Schema Updates
+
+**File**: `app/models.py` (update)
+
+Add new `FlightData` model:
+
+```python
+class FlightData(Base):
+    __tablename__ = "flight_data"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False)
+
+    # Flight identification
+    flight_number = Column(String(10), nullable=False)
+    flight_date = Column(Date, nullable=False)
+    airline_iata = Column(String(3), nullable=True)
+    airline_name = Column(String(255), nullable=True)
+
+    # Airports
+    departure_airport_iata = Column(String(3), nullable=False)
+    departure_airport_name = Column(String(255), nullable=True)
+    arrival_airport_iata = Column(String(3), nullable=False)
+    arrival_airport_name = Column(String(255), nullable=True)
+    distance_km = Column(Numeric(10, 2), nullable=True)
+
+    # Scheduled times
+    scheduled_departure = Column(DateTime(timezone=True), nullable=True)
+    scheduled_arrival = Column(DateTime(timezone=True), nullable=True)
+
+    # Actual times
+    actual_departure = Column(DateTime(timezone=True), nullable=True)
+    actual_arrival = Column(DateTime(timezone=True), nullable=True)
+
+    # Status
+    flight_status = Column(String(50), nullable=True)  # scheduled, delayed, cancelled, diverted
+    delay_minutes = Column(Integer, nullable=True)
+    cancellation_reason = Column(Text, nullable=True)
+
+    # API metadata
+    api_source = Column(String(50), default="aerodatabox")  # aerodatabox, manual, other
+    api_retrieved_at = Column(DateTime(timezone=True), server_default=func.now())
+    api_response_raw = Column(JSON, nullable=True)  # Store full API response for audit
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+```
+
+#### 6.5 Configuration Updates
+
+**File**: `app/config.py` (update)
+
+```python
+# AeroDataBox API Configuration
+AERODATABOX_API_KEY = os.getenv("AERODATABOX_API_KEY", "")
+AERODATABOX_BASE_URL = "https://aerodatabox.p.rapidapi.com"
+AERODATABOX_ENABLED = os.getenv("AERODATABOX_ENABLED", "false").lower() == "true"
+
+# Flight data caching (reduce API calls)
+FLIGHT_DATA_CACHE_HOURS = int(os.getenv("FLIGHT_DATA_CACHE_HOURS", "24"))
+```
+
+#### 6.6 Caching Strategy
+
+**File**: `app/services/cache_service.py` (new or existing)
+
+- [ ] Cache flight data for 24 hours (configurable)
+- [ ] Key: `flight:{flight_number}:{flight_date}`
+- [ ] Use Redis for distributed caching
+- [ ] Automatic cache invalidation after expiry
+- [ ] Manual cache refresh endpoint for admins
+
+### API Pricing & Quotas
+
+**AeroDataBox Pricing** (via RapidAPI):
+- **Basic Plan**: $10/month - 500 requests/month (~16/day)
+- **Pro Plan**: $50/month - 10,000 requests/month (~333/day)
+- **Ultra Plan**: $200/month - 100,000 requests/month (~3,333/day)
+
+**Recommended Approach**:
+- Start with **Pro Plan** ($50/month)
+- Implement aggressive caching (reduce duplicate requests)
+- Monitor usage and upgrade if needed
+- Fallback to manual verification if quota exceeded
+
+**Expected Usage**:
+- Assume 100 claims/month initially
+- With caching: ~100-150 API calls/month
+- Pro plan provides plenty of headroom
+- Cost per claim: ~$0.50 (vs hours of manual work)
+
+### Testing Requirements
+
+- [ ] Test flight lookup with various airlines (Lufthansa, Ryanair, British Airways)
+- [ ] Test historical flight data retrieval (6 months ago, 1 year ago)
+- [ ] Test edge cases (cancelled flight, diverted flight, multiple flights per day)
+- [ ] Test API error handling (rate limit, timeout, invalid flight)
+- [ ] Test caching (verify no duplicate API calls)
+- [ ] Test manual fallback when API unavailable
+- [ ] Load testing (ensure caching reduces API calls)
+
+### Success Criteria
+
+- ✅ 90%+ of claims have automated flight verification
+- ✅ Average verification time reduced from 5 minutes to < 30 seconds
+- ✅ Flight distance automatically calculated for compensation tiers
+- ✅ Customers see eligibility before submitting claim
+- ✅ Ineligible claim submissions reduced by 40%+
+- ✅ API cost < $100/month for first 200 claims/month
+- ✅ Graceful fallback to manual verification when API unavailable
+
+### Dependencies
+
+- **API Account**: RapidAPI account with AeroDataBox subscription
+- **Redis**: For caching (already in use for Celery)
+- **Phase 1 Complete**: Admin dashboard must exist
+- **Phase 3 Complete**: Authentication for API key security
+
+### Open Questions
+
+1. **API Provider**: AeroDataBox vs alternatives (Aviation Edge, FlightAware)?
+   - Recommendation: AeroDataBox (good pricing, comprehensive data, reliable)
+
+2. **Historical Data Limit**: How far back should we support claims?
+   - Recommendation: 12 months (EU261 has 3-6 year statute depending on country, but most claims are within months)
+
+3. **Manual Override**: Should admins be able to override API data?
+   - Recommendation: Yes (API could be wrong, allow manual correction with audit log)
+
+4. **Multi-Leg Flights**: How to handle connecting flights?
+   - Future enhancement: Phase 5+ (requires complex eligibility logic)
+
+---
+
+## Phase 7: Payment System Integration
+
+**Priority**: CRITICAL - Required for revenue generation
+**Status**: 📋 **PLANNED** - Not yet implemented
+**Estimated Effort**: 4-6 weeks
+**Business Value**: CRITICAL - Enables actual revenue flow (getting paid by airlines, paying customers)
+**Last Updated**: 2025-12-29
+
+### Overview
+
+Implement end-to-end payment system to handle the two-way payment flow:
+1. **Incoming payments**: Collect compensation from airlines
+2. **Outgoing payments**: Distribute customer share of compensation
+
+This is the final critical piece that enables the business model to function.
+
+### Business Model Context
+
+**Revenue Model**:
+- Customer files claim through platform
+- We handle claim processing and negotiation with airline
+- Airline pays us compensation (e.g., €600)
+- We take commission (e.g., 25% = €150)
+- Customer receives their share (€450)
+
+**Current Gap**:
+- We can process claims and get airline approval
+- BUT we have no way to actually receive or distribute money
+- This phase closes that gap
+
+### Key Features
+
+#### 7.1 Incoming Payments (From Airlines)
+
+**Payment Methods for Airlines**:
+- [ ] **Bank Transfer** (primary method)
+  - European SEPA transfers (most common in EU)
+  - International SWIFT transfers
+  - Generate payment invoices with unique reference codes
+  - Track bank transfers via reference codes
+  - Manual reconciliation workflow for admins
+
+- [ ] **PayPal Business** (secondary method)
+  - PayPal Business account integration
+  - Invoice generation and sending
+  - Automatic payment confirmation via webhooks
+  - Refund handling
+
+- [ ] **Stripe Connect** (future - for large airlines)
+  - Direct bank transfers
+  - ACH transfers (US airlines)
+  - Automatic reconciliation
+
+**Features**:
+- [ ] Generate payment invoice when claim approved
+  - Include claim details, passenger info, flight info
+  - Unique invoice number and payment reference
+  - QR code for payment
+  - Send invoice to airline finance department (email)
+
+- [ ] Payment tracking dashboard for admins
+  - List all invoices (pending, paid, overdue)
+  - Track payment status per claim
+  - Aging report (30/60/90 days overdue)
+  - Send automated payment reminders
+
+- [ ] Payment reconciliation
+  - Match incoming bank transfers to invoices (by reference code)
+  - Manual matching interface for admins
+  - Flag unmatched payments
+  - Generate financial reports
+
+#### 7.2 Outgoing Payments (To Customers)
+
+**Payment Methods for Customers**:
+- [ ] **SEPA Bank Transfer** (primary for EU customers)
+  - Collect IBAN during claim submission or after approval
+  - Validate IBAN format
+  - Batch payment file generation (SEPA XML format)
+  - Upload to bank portal or API integration
+  - Track transfer status
+
+- [ ] **PayPal** (alternative)
+  - PayPal email address collection
+  - PayPal Mass Payment API (send to multiple recipients)
+  - Automatic confirmation
+  - Lower fees than bank transfers for small amounts
+
+- [ ] **Stripe** (future - instant payouts)
+  - Stripe Payouts API
+  - Instant bank transfers (24 hours)
+  - Credit card payouts (for non-EU customers)
+
+**Features**:
+- [ ] Customer payment preferences
+  - Select payment method during claim submission
+  - Provide IBAN or PayPal email
+  - Validate payment details
+  - Allow updates to payment info
+
+- [ ] Payment workflow
+  - Admin approves claim → compensation calculated
+  - System calculates customer share (compensation - commission)
+  - Admin reviews and approves payout
+  - System generates payment batch
+  - Admin executes payment (manual or API)
+  - Customer receives confirmation email
+  - Update claim status to "paid"
+
+- [ ] Payout dashboard
+  - List pending payouts
+  - Batch multiple payouts together (reduce fees)
+  - Track payout status (pending, processing, completed, failed)
+  - Retry failed payouts
+  - Generate payout receipts for customers
+
+#### 7.3 Financial Reporting
+
+**Reports for Business**:
+- [ ] **Revenue Dashboard**
+  - Total compensation collected from airlines (monthly, yearly)
+  - Total commission earned
+  - Total paid to customers
+  - Net revenue (commission - operational costs)
+  - Outstanding invoices (money owed by airlines)
+  - Outstanding payouts (money owed to customers)
+
+- [ ] **Cash Flow Report**
+  - Incoming payments timeline
+  - Outgoing payments timeline
+  - Cash balance projection
+  - Working capital requirements
+
+- [ ] **Accounting Export**
+  - Export transactions to CSV/Excel
+  - Format for accounting software (QuickBooks, Xero)
+  - Tax reporting data
+  - Invoice register
+  - Payment register
+
+#### 7.4 Database Schema Updates
+
+**File**: `app/models.py` (update)
+
+Add new models:
+
+```python
+class Invoice(Base):
+    """Invoice sent to airline for compensation payment"""
+    __tablename__ = "invoices"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False)
+
+    invoice_number = Column(String(50), unique=True, nullable=False)  # e.g., INV-2025-001234
+    payment_reference = Column(String(100), unique=True, nullable=False)  # For bank transfer matching
+
+    # Amounts
+    compensation_amount = Column(Numeric(10, 2), nullable=False)  # Total compensation from airline
+    currency = Column(String(3), default="EUR")
+
+    # Status
+    status = Column(String(50), default="pending")  # pending, sent, paid, overdue, cancelled
+    sent_at = Column(DateTime(timezone=True), nullable=True)
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+    due_date = Column(DateTime(timezone=True), nullable=False)  # Payment deadline (e.g., 30 days)
+
+    # Payment details
+    payment_method = Column(String(50), nullable=True)  # bank_transfer, paypal, stripe
+    payment_transaction_id = Column(String(255), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class Payout(Base):
+    """Payout to customer for their share of compensation"""
+    __tablename__ = "payouts"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False)
+    customer_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+
+    # Amounts
+    payout_amount = Column(Numeric(10, 2), nullable=False)  # Customer's share
+    commission_amount = Column(Numeric(10, 2), nullable=False)  # Our commission
+    total_compensation = Column(Numeric(10, 2), nullable=False)  # Total from airline
+    currency = Column(String(3), default="EUR")
+
+    # Payment details
+    payment_method = Column(String(50), nullable=False)  # sepa_transfer, paypal, stripe
+    payment_details = Column(JSON, nullable=True)  # IBAN, PayPal email, etc. (encrypted)
+
+    # Status
+    status = Column(String(50), default="pending")  # pending, approved, processing, completed, failed
+    approved_by = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    processed_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Transaction tracking
+    transaction_id = Column(String(255), nullable=True)  # Bank reference, PayPal ID, Stripe ID
+    failure_reason = Column(Text, nullable=True)
+    retry_count = Column(Integer, default=0)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class PaymentReconciliation(Base):
+    """Track manual payment reconciliation (matching bank transfers to invoices)"""
+    __tablename__ = "payment_reconciliations"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    invoice_id = Column(PGUUID(as_uuid=True), ForeignKey("invoices.id"), nullable=True)
+
+    # Bank statement details
+    transaction_date = Column(Date, nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False)
+    currency = Column(String(3), default="EUR")
+    sender_name = Column(String(255), nullable=True)
+    sender_iban = Column(String(34), nullable=True)
+    reference = Column(String(255), nullable=True)  # Payment reference from bank statement
+
+    # Matching
+    matched = Column(Boolean, default=False)
+    matched_by = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True)
+    matched_at = Column(DateTime(timezone=True), nullable=True)
+    notes = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+```
+
+Update `Claim` model:
+```python
+# Add to Claim model
+commission_rate = Column(Numeric(5, 2), default=25.00)  # Percentage (e.g., 25.00 = 25%)
+commission_amount = Column(Numeric(10, 2), nullable=True)  # Calculated commission
+customer_payout_amount = Column(Numeric(10, 2), nullable=True)  # Amount to pay customer
+```
+
+#### 7.5 Commission Configuration
+
+**File**: `app/config.py` (update)
+
+```python
+# Payment Configuration
+DEFAULT_COMMISSION_RATE = Decimal(os.getenv("DEFAULT_COMMISSION_RATE", "25.00"))  # 25%
+MIN_COMMISSION_RATE = Decimal(os.getenv("MIN_COMMISSION_RATE", "15.00"))  # 15%
+MAX_COMMISSION_RATE = Decimal(os.getenv("MAX_COMMISSION_RATE", "35.00"))  # 35%
+
+# Invoice settings
+INVOICE_PAYMENT_TERMS_DAYS = int(os.getenv("INVOICE_PAYMENT_TERMS_DAYS", "30"))  # 30 days
+INVOICE_OVERDUE_REMINDER_DAYS = int(os.getenv("INVOICE_OVERDUE_REMINDER_DAYS", "7"))  # Remind after 7 days
+
+# Payout settings
+MIN_PAYOUT_AMOUNT = Decimal(os.getenv("MIN_PAYOUT_AMOUNT", "50.00"))  # Don't pay out less than €50
+PAYOUT_BATCH_ENABLED = os.getenv("PAYOUT_BATCH_ENABLED", "true").lower() == "true"
+
+# Payment provider credentials
+PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "")
+PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET", "")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+
+# Bank details for receiving payments
+COMPANY_BANK_NAME = os.getenv("COMPANY_BANK_NAME", "")
+COMPANY_IBAN = os.getenv("COMPANY_IBAN", "")
+COMPANY_BIC = os.getenv("COMPANY_BIC", "")
+```
+
+#### 7.6 Security & Compliance
+
+**PCI DSS Compliance**:
+- ⚠️ **DO NOT store credit card details** (use Stripe for card payments)
+- Encrypt sensitive payment data (IBAN, PayPal email) at rest
+- Use HTTPS for all payment-related communications
+- Audit log all payment operations
+- Restrict payment operations to admin users only
+
+**GDPR Compliance**:
+- [ ] Inform customers how payment data is stored and used
+- [ ] Allow customers to update payment details
+- [ ] Delete payment details on account deletion (after retention period)
+- [ ] Export payment history in GDPR data export
+
+**Anti-Money Laundering (AML)**:
+- [ ] Verify customer identity before large payouts (> €1000)
+- [ ] Flag suspicious payment patterns for review
+- [ ] Keep payment records for 7 years (legal requirement)
+
+**Tax Compliance**:
+- [ ] Issue invoices with VAT if applicable
+- [ ] Generate annual tax reports (1099 forms for US customers)
+- [ ] Track revenue for tax filing
+
+### Testing Requirements
+
+- [ ] Test invoice generation and sending
+- [ ] Test payment reconciliation (match bank transfer to invoice)
+- [ ] Test SEPA payout batch generation
+- [ ] Test PayPal Mass Payment integration
+- [ ] Test commission calculation accuracy
+- [ ] Test minimum payout threshold
+- [ ] Test failed payment retry logic
+- [ ] Test overdue invoice reminders
+- [ ] Load test: 100 payouts in one batch
+
+### Success Criteria
+
+- ✅ Invoices automatically generated when claim approved
+- ✅ Bank transfers can be matched to invoices (reconciliation)
+- ✅ Customers can receive payouts via SEPA or PayPal
+- ✅ Commission calculated correctly for all claims
+- ✅ Financial reports show revenue, payouts, and profit
+- ✅ All payment operations logged in audit trail
+- ✅ Payment data encrypted and GDPR compliant
+- ✅ No manual spreadsheet tracking needed
+
+### Open Questions
+
+1. **Payment Provider**: Which provider for bank transfers?
+   - **Option A**: Manual SEPA batch files (cheapest, requires bank portal access)
+   - **Option B**: Stripe Payouts API (automated, €0.25/payout + 0.25%)
+   - **Option C**: Wise API (international transfers, competitive rates)
+   - **Recommendation**: Start with manual SEPA, migrate to Stripe as volume grows
+
+2. **Commission Variability**: Should commission rate vary by claim value or airline?
+   - **Recommendation**: Fixed 25% initially, add tiered pricing later (Phase 8)
+
+3. **Payout Threshold**: Minimum payout amount to reduce transaction costs?
+   - **Recommendation**: €50 minimum (batch small payouts monthly)
+
+4. **Currency Support**: Support USD, GBP, or EUR only?
+   - **Recommendation**: EUR only initially (most EU airlines), add others in Phase 8
+
+5. **Escrow Account**: Hold customer funds in escrow until payout?
+   - **Recommendation**: Yes (legal requirement in some EU countries, build trust)
+
+### Dependencies
+
+- **Phase 1 Complete**: Admin dashboard and claim workflow
+- **Phase 3 Complete**: Authentication and authorization
+- **Phase 4 Complete**: Account settings (payment details)
+- **Business Setup**: Company bank account, PayPal Business account
+- **Legal Setup**: Payment processing agreements, terms of service
+
+### Implementation Timeline
+
+**Week 1-2**: Database models, invoice generation, basic UI
+**Week 3**: Incoming payment tracking and reconciliation
+**Week 4**: Outgoing payment workflow (SEPA batch generation)
+**Week 5**: PayPal integration and testing
+**Week 6**: Financial reporting, security audit, production deployment
+
+---
+
 ## Future Enhancements (Post-MVP)
 
 These are not prioritized but documented for future reference:
-
-### Payment Integration
-- Integrate Stripe or PayPal for compensation disbursement
-- Support multiple payment methods (bank transfer, PayPal, check)
-- Track payment status and history
-- Generate payment receipts
 
 ### OCR & Data Extraction
 - Extract flight details from boarding passes automatically

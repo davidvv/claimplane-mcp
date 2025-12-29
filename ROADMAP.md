@@ -917,14 +917,14 @@ PASSWORD_RESET_TOKEN_EXPIRATION_HOURS = int(os.getenv("PASSWORD_RESET_TOKEN_EXPI
 ## Phase 4: Customer Account Management & GDPR Compliance ⬅️ **IN PROGRESS**
 
 **Priority**: HIGH - Required for production launch
-**Status**: ⏳ **IN PROGRESS** - ~60% Complete
+**Status**: ⏳ **IN PROGRESS** - ~70% Complete
 **Estimated Effort**: 1-2 weeks (including cookie consent implementation)
 **Business Value**: Critical - enables customer self-service and GDPR compliance
 **Blocking**: Phase 4.6 (Cookie Consent) requires Phase 4.5.14 (HTTP-only cookies) - ✅ COMPLETED
 
 **What's Completed**:
-- ✅ Frontend account settings UI (AccountSettings.tsx) - 100%
-- ✅ Account management endpoints - 75% (PUT /account/email, PUT /account/password, POST /account/delete-request)
+- ✅ Frontend account settings UI (AccountSettings.tsx) - 100% FULLY FUNCTIONAL
+- ✅ Account management endpoints - 100% (GET /account/info, PUT /account/email, PUT /account/password, POST /account/delete-request)
 - ✅ Database models (AccountDeletionRequest, Customer deletion fields) - 100%
 - ✅ Email notification tasks (email change, password change, deletion requests) - 100%
 
@@ -953,7 +953,12 @@ Implement customer account settings page and GDPR-compliant account deletion wor
 
 #### 4.2 Account Management Endpoints (Backend)
 
-**File**: `app/routers/account.py` ✅ **PARTIALLY COMPLETED**
+**File**: `app/routers/account.py` ✅ **COMPLETED**
+
+- [x] `GET /account/info` - Get account information
+  - Returns user profile data
+  - Includes total claims count
+  - Displays creation date and last login
 
 - [x] `PUT /account/email` - Change email address
   - Require current password for verification
@@ -973,6 +978,8 @@ Implement customer account settings page and GDPR-compliant account deletion wor
   - Notify admins via email about deletion request
   - Include user info and open claims count
   - Set deletion_requested_at timestamp
+
+#### 4.2.1 Admin Deletion Management (NOT IMPLEMENTED)
 
 - [ ] `GET /admin/deletion-requests` - List account deletion requests ❌ **NOT IMPLEMENTED**
   - Show pending deletion requests with user details

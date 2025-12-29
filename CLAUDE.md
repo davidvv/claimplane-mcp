@@ -15,6 +15,23 @@ This project uses a dedicated conda environment called **EasyAirClaim**.
 - ✅ Verify: `which python` should show `/Users/david/miniconda3/envs/EasyAirClaim/bin/python`
 - ❌ NEVER install packages to base environment
 
+### Architecture Decisions - Owner Approval Required
+
+**🚨 CRITICAL**: Before making ANY changes, check `.claude/ARCHITECTURE_DECISIONS.md`
+
+This file lists **architectural decisions that require David's explicit approval**:
+- Infrastructure changes (ports, servers, Docker configuration)
+- Database architecture changes
+- Authentication/security modifications
+- Framework or technology switches
+- Development workflow changes
+
+**IF YOUR TASK INVOLVES ANY OWNER-ONLY DECISION**:
+1. ⛔ STOP immediately
+2. 💬 Inform the user that this requires owner approval
+3. 📝 Offer to document the proposal for review
+4. ⏸️ WAIT for explicit approval before proceeding
+
 ### Claude Code Skills
 
 **IMPORTANT**: Before committing changes, ALWAYS read `.claude/skills/commit-workflow.md`
@@ -515,9 +532,10 @@ When working on this codebase:
 
 1. ✅ Read `DEVELOPMENT_WORKFLOW.md` (environment setup)
 2. ✅ Activate EasyAirClaim conda environment
-3. ✅ Read `ROADMAP.md` "NEXT STEPS" section (current priorities)
-4. ✅ Check `docs/SECURITY_AUDIT_v0.2.0.md` (security context)
-5. ✅ Before committing: Read `.claude/skills/commit-workflow.md`
+3. ✅ Check `.claude/ARCHITECTURE_DECISIONS.md` (owner-approval requirements)
+4. ✅ Read `ROADMAP.md` "NEXT STEPS" section (current priorities)
+5. ✅ Check `docs/SECURITY_AUDIT_v0.2.0.md` (security context)
+6. ✅ Before committing: Read `.claude/skills/commit-workflow.md`
 
 **Current Priority**: Phase 3 - Authentication & Authorization (v0.3.0)
 - See ROADMAP.md for complete Phase 3 requirements
@@ -528,4 +546,4 @@ When working on this codebase:
 
 **Project Status**: MVP Phase - v0.2.0 Complete (Email Notifications & Async Processing)
 **Next Milestone**: v0.3.0 (Phase 3: Authentication & Authorization)
-**Last Updated**: 2025-10-30
+**Last Updated**: 2025-12-29

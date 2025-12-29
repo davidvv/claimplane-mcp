@@ -1,0 +1,84 @@
+# CODEOWNERS - Architecture Protection
+#
+# These files represent critical architectural decisions.
+# Changes require explicit approval from David (@davidvv).
+#
+# If you're having deployment issues, the problem is likely your setup,
+# not the architecture. Check DEVELOPMENT_WORKFLOW.md and ask Claude to
+# help troubleshoot your environment rather than changing these files.
+
+# ============================================
+# INFRASTRUCTURE & DEPLOYMENT
+# ============================================
+
+# Docker configuration - ports, services, networking
+docker-compose*.yml @davidvv
+*/Dockerfile @davidvv
+.dockerignore @davidvv
+
+# Server configuration - NO changing ports or serving modes!
+**/nginx.conf @davidvv
+**/vite.config.* @davidvv
+**/uvicorn*.py @davidvv
+
+# ============================================
+# CRITICAL APPLICATION CONFIG
+# ============================================
+
+# Application configuration - database, Redis, Celery, security
+app/config.py @davidvv
+app/main.py @davidvv
+app/database.py @davidvv
+app/celery_app.py @davidvv
+
+# Environment templates
+.env.example @davidvv
+
+# ============================================
+# DATABASE & ARCHITECTURE
+# ============================================
+
+# Database models - schema changes affect everyone
+app/models.py @davidvv
+
+# Database migrations - must be reviewed
+alembic/ @davidvv
+alembic.ini @davidvv
+
+# ============================================
+# CLAUDE & DEVELOPMENT WORKFLOW
+# ============================================
+
+# All Claude configuration - architectural guardrails
+.claude/ @davidvv
+CLAUDE.md @davidvv
+
+# Development workflow - standardized setup process
+DEVELOPMENT_WORKFLOW.md @davidvv
+VERSIONING.md @davidvv
+ROADMAP.md @davidvv
+
+# ============================================
+# SECURITY & AUTHENTICATION
+# ============================================
+
+# Core security services
+app/services/encryption_service.py @davidvv
+
+# ============================================
+# FRONTEND BUILD CONFIGURATION
+# ============================================
+
+# Frontend build config - PREVENTS port changes and build mode changes
+frontend_Claude45/vite.config.ts @davidvv
+frontend_Claude45/package.json @davidvv
+frontend_Claude45/Dockerfile @davidvv
+frontend_Claude45/nginx.conf @davidvv
+
+# ============================================
+# CI/CD & DEPLOYMENT SCRIPTS
+# ============================================
+
+# Any deployment or CI/CD configuration
+.github/workflows/ @davidvv
+scripts/deploy* @davidvv

@@ -917,21 +917,22 @@ PASSWORD_RESET_TOKEN_EXPIRATION_HOURS = int(os.getenv("PASSWORD_RESET_TOKEN_EXPI
 ## Phase 4: Customer Account Management & GDPR Compliance ⬅️ **IN PROGRESS**
 
 **Priority**: HIGH - Required for production launch
-**Status**: ⏳ **IN PROGRESS** - ~45% Complete
+**Status**: ⏳ **IN PROGRESS** - ~60% Complete
 **Estimated Effort**: 1-2 weeks (including cookie consent implementation)
 **Business Value**: Critical - enables customer self-service and GDPR compliance
-**Blocking**: Phase 4.6 (Cookie Consent) requires Phase 4.5.14 (HTTP-only cookies) to complete first
+**Blocking**: Phase 4.6 (Cookie Consent) requires Phase 4.5.14 (HTTP-only cookies) - ✅ COMPLETED
 
 **What's Completed**:
-- ✅ Account management endpoints (email change, password change, delete request)
-- ✅ Database models (AccountDeletionRequest, Customer fields)
-- ✅ Email notification tasks (account changes, deletion requests)
-- ✅ Frontend account settings UI (non-functional - needs backend integration)
+- ✅ Frontend account settings UI (AccountSettings.tsx) - 100%
+- ✅ Account management endpoints - 75% (PUT /account/email, PUT /account/password, POST /account/delete-request)
+- ✅ Database models (AccountDeletionRequest, Customer deletion fields) - 100%
+- ✅ Email notification tasks (email change, password change, deletion requests) - 100%
 
 **What's Remaining**:
-- ❌ Admin interface for deletion requests (0% - critical)
-- ❌ GDPR data export endpoint (0%)
-- ❌ Cookie consent implementation (0% - blocked by Phase 4.5.14)
+- ❌ Admin endpoint for deletion requests (GET /admin/deletion-requests) - 0%
+- ❌ Admin frontend for managing deletion requests (DeletionRequests.tsx) - 0%
+- ❌ GDPR data export endpoint (GET /account/export-data) - 0%
+- ❌ Cookie consent implementation (0% - unblocked, Phase 4.5.14 completed)
 - ❌ Manual data deletion workflow documentation (0%)
 - ❌ Privacy policy updates (0%)
 
@@ -942,47 +943,47 @@ Implement customer account settings page and GDPR-compliant account deletion wor
 
 #### 4.1 Account Settings Page (Frontend)
 
-**File**: `frontend_Claude45/src/pages/AccountSettings.tsx` (new)
+**File**: `frontend_Claude45/src/pages/AccountSettings.tsx` ✅ **COMPLETED**
 
-- [ ] Account settings UI with sections:
-  - [ ] Email address change (with verification)
-  - [ ] Password change (require current password)
-  - [ ] Account deletion request
-  - [ ] Display account creation date and last login
+- [x] Account settings UI with sections:
+  - [x] Email address change (with verification)
+  - [x] Password change (require current password)
+  - [x] Account deletion request
+  - [x] Display account creation date and last login
 
 #### 4.2 Account Management Endpoints (Backend)
 
-**File**: `app/routers/account.py` (new)
+**File**: `app/routers/account.py` ✅ **PARTIALLY COMPLETED**
 
-- [ ] `PUT /account/email` - Change email address
+- [x] `PUT /account/email` - Change email address
   - Require current password for verification
   - Send verification email to new address
   - Update email only after verification
   - Invalidate all existing tokens on email change
 
-- [ ] `PUT /account/password` - Change password
+- [x] `PUT /account/password` - Change password
   - Require current password
   - Validate new password strength
   - Invalidate all refresh tokens (force re-login on all devices)
   - Send email notification about password change
 
-- [ ] `POST /account/delete-request` - Request account deletion
+- [x] `POST /account/delete-request` - Request account deletion
   - **DO NOT delete immediately** - create deletion request
   - Blacklist email to prevent login
   - Notify admins via email about deletion request
   - Include user info and open claims count
   - Set deletion_requested_at timestamp
 
-- [ ] `GET /admin/deletion-requests` - List account deletion requests
+- [ ] `GET /admin/deletion-requests` - List account deletion requests ❌ **NOT IMPLEMENTED**
   - Show pending deletion requests with user details
   - Display open claims count
   - Allow admin to approve/reject deletion
 
 #### 4.3 Database Schema Updates
 
-**File**: `app/models.py` (update)
+**File**: `app/models.py` ✅ **COMPLETED**
 
-Add fields to `Customer` model:
+- [x] Added fields to `Customer` model:
 ```python
 # Account deletion fields
 deletion_requested_at = Column(DateTime(timezone=True), nullable=True)
@@ -991,7 +992,7 @@ is_blacklisted = Column(Boolean, default=False)
 blacklisted_at = Column(DateTime(timezone=True), nullable=True)
 ```
 
-Add new `AccountDeletionRequest` model:
+- [x] Added new `AccountDeletionRequest` model:
 ```python
 class AccountDeletionRequest(Base):
     __tablename__ = "account_deletion_requests"
@@ -1013,12 +1014,12 @@ class AccountDeletionRequest(Base):
 
 #### 4.4 Email Notifications
 
-**File**: `app/tasks/account_tasks.py` (new)
+**File**: `app/tasks/account_tasks.py` ✅ **COMPLETED**
 
-- [ ] Email to customer: Account deletion requested (confirmation)
-- [ ] Email to admins: New account deletion request (with user details and claims count)
-- [ ] Email to customer: Email changed (security notification)
-- [ ] Email to customer: Password changed (security notification)
+- [x] Email to customer: Account deletion requested (confirmation)
+- [x] Email to admins: New account deletion request (with user details and claims count)
+- [x] Email to customer: Email changed (security notification)
+- [x] Email to customer: Password changed (security notification)
 
 #### 4.5 Admin Interface for Deletion Requests
 

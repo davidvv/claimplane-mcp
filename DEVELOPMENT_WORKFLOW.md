@@ -28,7 +28,7 @@ python --version  # Should show Python 3.11.x
 
 **Option 2: Using venv**
 ```bash
-# Create virtual environment
+# Create virtual environment (creates local venv/ directory)
 python3.11 -m venv venv
 
 # Activate environment
@@ -41,6 +41,12 @@ pip install -r requirements.txt
 which python  # Should show venv path, NOT system Python
 python --version  # Should show Python 3.11.x
 ```
+
+**Note about venv/:**
+- The `venv/` directory is **local to your machine** and **not committed to git**
+- Already in `.gitignore` - you should never see it in `git status`
+- Each developer creates their own `venv/` directory
+- Do NOT modify, commit, or push the `venv/` directory
 
 ### Daily Usage
 
@@ -129,17 +135,28 @@ pytest --cov=app --cov-report=html
 
 - **Base environment pollution**: Installing packages in base can cause conflicts across projects
 - **Dependency isolation**: Each project has its own dependencies
-- **Reproducibility**: Other developers can recreate the exact environment
+- **Reproducibility**: Other developers can recreate the exact environment from `requirements.txt`
 - **System stability**: Keeps the system Python clean
+- **Local environments**: Virtual environments (venv/, conda envs) are local and not shared via git
+- **No environment conflicts**: Each developer's machine can have different setups without conflicts
 
 ## For Future Claude Sessions
 
 When you start a new Claude Code session on this project:
 
 1. ✅ Read this file first
-2. ✅ Activate EasyAirClaim conda environment
-3. ✅ Verify you're in the right environment
-4. ✅ Proceed with development tasks
+2. ✅ Activate virtual environment (conda activate EasyAirClaim OR source venv/bin/activate)
+3. ✅ Verify you're in the right environment (`which python` should NOT show system Python)
+4. ✅ Check `.claude/ARCHITECTURE_DECISIONS.md` for protected files
+5. ✅ Proceed with development tasks
+
+## Common Mistakes to Avoid
+
+- ❌ Committing `venv/` directory (already in .gitignore)
+- ❌ Installing packages to system/base Python
+- ❌ Modifying architecture files without approval
+- ❌ Running commands without activating virtual environment first
+- ❌ Using wrong Python version (must be 3.11.x)
 
 **DO NOT**:
 - ❌ Install packages without activating the environment

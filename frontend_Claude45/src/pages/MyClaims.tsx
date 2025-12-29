@@ -27,19 +27,11 @@ import {
 } from '@/lib/utils';
 
 /**
- * Decode JWT token to get user role
+ * Get user role from localStorage (stored during login)
+ * Note: JWT tokens are in HTTP-only cookies, user info is in localStorage for UI
  */
-function getUserRoleFromToken(): string | null {
-  const token = localStorage.getItem('auth_token');
-  if (!token) return null;
-
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.role || null;
-  } catch (error) {
-    console.error('Failed to decode token:', error);
-    return null;
-  }
+function getUserRole(): string | null {
+  return localStorage.getItem('user_role');
 }
 
 export function MyClaims() {
@@ -51,12 +43,12 @@ export function MyClaims() {
   useEffect(() => {
     const fetchClaims = async () => {
       try {
-        // Check if user is authenticated
-        const token = localStorage.getItem('auth_token');
-        console.log('[MyClaims] Auth token present:', !!token);
+        // Check if user is authenticated (user_email is stored in localStorage after login)
+        const userEmail = localStorage.getItem('user_email');
+        console.log('[MyClaims] User authenticated:', !!userEmail);
 
-        if (!token) {
-          console.log('[MyClaims] No token found, redirecting to auth');
+        if (!userEmail) {
+          console.log('[MyClaims] No user info found, redirecting to auth');
           toast.error('Please log in to view your claims');
           navigate('/auth');
           return;
@@ -64,7 +56,7 @@ export function MyClaims() {
 
         // Redirect admins and superadmins to the admin dashboard
         // The "My Claims" page is designed for customers only
-        const userRole = getUserRoleFromToken();
+        const userRole = getUserRole();
         console.log('[MyClaims] User role:', userRole);
 
         if (userRole === 'admin' || userRole === 'superadmin') {

@@ -19,21 +19,11 @@ import { cn } from '@/lib/utils';
 import { isAuthenticated, getStoredUserInfo, logout } from '@/services/auth';
 
 /**
- * Decode JWT token to get user role
- * This is more reliable than localStorage as it reflects the actual token being used
+ * Get user role from localStorage (stored during login)
+ * Note: JWT tokens are in HTTP-only cookies, user info is in localStorage for UI
  */
-function getUserRoleFromToken(): string | null {
-  const token = localStorage.getItem('auth_token');
-  if (!token) return null;
-
-  try {
-    // Decode JWT token (without verification - just read the payload)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.role || null;
-  } catch (error) {
-    console.error('Failed to decode token:', error);
-    return null;
-  }
+function getUserRole(): string | null {
+  return localStorage.getItem('user_role');
 }
 
 interface LayoutProps {
@@ -45,7 +35,7 @@ export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const authenticated = isAuthenticated();
   const userInfo = getStoredUserInfo();
-  const userRole = getUserRoleFromToken();
+  const userRole = getUserRole();
   const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
   const isActive = (path: string) => location.pathname === path;

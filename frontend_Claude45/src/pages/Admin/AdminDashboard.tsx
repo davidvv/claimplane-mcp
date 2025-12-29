@@ -59,9 +59,9 @@ export function AdminDashboard() {
   };
 
   useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
+    // Check if user is authenticated (user_email stored in localStorage after login)
+    const userEmail = localStorage.getItem('user_email');
+    if (!userEmail) {
       navigate('/auth');
       return;
     }

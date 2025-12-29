@@ -84,15 +84,14 @@ export function Status() {
       console.log('=== STATUS PAGE DEBUGGING ===');
       console.log('Claim ID from URL:', claimIdFromUrl);
       console.log('Current URL:', window.location.href);
-      console.log('LocalStorage auth_token:', localStorage.getItem('auth_token'));
-      console.log('LocalStorage refresh_token:', localStorage.getItem('refresh_token'));
       console.log('LocalStorage user_email:', localStorage.getItem('user_email'));
       console.log('LocalStorage user_id:', localStorage.getItem('user_id'));
+      console.log('LocalStorage user_role:', localStorage.getItem('user_role'));
 
-      // Check if we have authentication tokens before auto-loading
-      const token = localStorage.getItem('auth_token');
-      if (token) {
-        console.log('Auth token found, proceeding with auto-load');
+      // Check if user is authenticated (user info stored in localStorage after login)
+      const userEmail = localStorage.getItem('user_email');
+      if (userEmail) {
+        console.log('User authenticated, proceeding with auto-load');
         setHasAutoLoaded(true);  // Mark as auto-loaded to prevent duplicate execution
         setIsLoading(true); // Show loading for auto-load
         
@@ -129,9 +128,11 @@ export function Status() {
             
             if (error.response?.status === 401) {
               toast.error('Authentication expired. Please log in again.');
-              // Clear invalid token
-              localStorage.removeItem('auth_token');
-              localStorage.removeItem('refresh_token');
+              // Clear user info (tokens are in HTTP-only cookies, cleared by backend)
+              localStorage.removeItem('user_email');
+              localStorage.removeItem('user_id');
+              localStorage.removeItem('user_name');
+              localStorage.removeItem('user_role');
             } else if (error.response?.status === 403) {
               toast.error('Access denied. This claim may belong to another user.');
             } else if (error.response?.status === 404) {
@@ -151,8 +152,8 @@ export function Status() {
           debugOnSubmit(claimIdFromUrl);
         }, 500); // Short delay to ensure localStorage is accessible
       } else {
-        console.log('No auth token found, manual submission required');
-        // Don't show error toast for missing token - let user manually enter claim ID
+        console.log('User not authenticated, manual submission required');
+        // Don't show error toast for missing auth - let user manually enter claim ID
       }
     }
   }, [searchParams]);
@@ -186,12 +187,11 @@ export function Status() {
       
       if (error.response?.status === 401) {
         toast.error('Authentication expired. Please log in again.');
-        // Clear invalid tokens
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('refresh_token');
+        // Clear user info (tokens are in HTTP-only cookies, cleared by backend)
         localStorage.removeItem('user_email');
         localStorage.removeItem('user_id');
         localStorage.removeItem('user_name');
+        localStorage.removeItem('user_role');
       } else if (error.response?.status === 403) {
         toast.error('Access denied. This claim may belong to another user.');
       } else if (error.response?.status === 404) {

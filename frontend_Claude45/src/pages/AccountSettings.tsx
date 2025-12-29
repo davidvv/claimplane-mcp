@@ -66,17 +66,19 @@ export function AccountSettings() {
 
   const loadAccountInfo = async () => {
     try {
-      // TEMPORARY: Backend /customers/me endpoint not deployed yet
-      // Show a message that this feature is coming soon
-      toast.info('Account Settings feature is coming soon!', {
-        description: 'The backend API needs to be updated first.'
+      const response = await apiClient.get<AccountInfo>('/account/info');
+      setAccountInfo(response.data);
+
+      // Pre-fill profile form
+      setProfileForm({
+        first_name: response.data.first_name || '',
+        last_name: response.data.last_name || '',
+        phone: response.data.phone || '',
+        street: response.data.address?.street || '',
+        city: response.data.address?.city || '',
+        postal_code: response.data.address?.postalCode || '',
+        country: response.data.address?.country || '',
       });
-
-      // For now, redirect to My Claims page
-      setTimeout(() => {
-        navigate('/claims', { replace: true });
-      }, 2000);
-
     } catch (error: any) {
       console.error('Failed to load account info:', error);
       toast.error(error.response?.data?.detail || 'Failed to load account information');

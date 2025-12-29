@@ -326,7 +326,7 @@ export function ClaimDetailPage() {
                     className="flex items-center justify-between p-3 border rounded-lg"
                   >
                     <div className="flex-1">
-                      <p className="font-medium">{file.original_filename}</p>
+                      <p className="font-medium">{file.original_filename || 'Unknown file'}</p>
                       <p className="text-sm text-muted-foreground">
                         {file.document_type.replace(/_/g, ' ')} ·{' '}
                         {(file.file_size / 1024).toFixed(1)} KB ·{' '}
@@ -585,9 +585,9 @@ export function ClaimDetailPage() {
                               {file.document_type.replace(/_/g, ' ')}
                             </span>
                             <span className="font-medium ml-2">
-                              {file.original_filename.length > 20
+                              {file.original_filename && file.original_filename.length > 20
                                 ? `${file.original_filename.substring(0, 20)}...`
-                                : file.original_filename}
+                                : file.original_filename || 'Unknown'}
                             </span>
                           </li>
                         ))}

@@ -143,6 +143,7 @@ class ClaimFileResponse(BaseModel):
     """File information in claim responses."""
     id: UUID
     filename: str
+    original_filename: str
     document_type: str
     file_size: int
     mime_type: str

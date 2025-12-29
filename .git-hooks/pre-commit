@@ -1,0 +1,59 @@
+#!/bin/bash
+# Pre-commit hook to warn about modifying protected files
+
+# Colors for output
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Protected files/directories
+PROTECTED_FILES=(
+    "CLAUDE.md"
+    ".claude/"
+    ".github/CODEOWNERS"
+    "DEVELOPMENT_WORKFLOW.md"
+)
+
+# Check if any protected files are being modified
+MODIFIED_PROTECTED=()
+for file in "${PROTECTED_FILES[@]}"; do
+    if git diff --cached --name-only | grep -q "^${file}"; then
+        MODIFIED_PROTECTED+=("$file")
+    fi
+done
+
+# If protected files are modified, warn the user
+if [ ${#MODIFIED_PROTECTED[@]} -gt 0 ]; then
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${RED}⚠️  WARNING: Attempting to modify PROTECTED files${NC}"
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo -e "${YELLOW}You are attempting to commit changes to:${NC}"
+    for file in "${MODIFIED_PROTECTED[@]}"; do
+        echo -e "  ${RED}✗${NC} $file"
+    done
+    echo ""
+    echo -e "${YELLOW}These files contain architectural decisions and should${NC}"
+    echo -e "${YELLOW}ONLY be modified by David (project owner).${NC}"
+    echo ""
+    echo -e "${YELLOW}If you're modifying these files to bypass architecture${NC}"
+    echo -e "${YELLOW}protection, STOP. Your branch will be rejected.${NC}"
+    echo ""
+    echo -e "${YELLOW}If David approved this change:${NC}"
+    echo -e "  You can proceed with: ${RED}git commit --no-verify${NC}"
+    echo ""
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    # Ask for confirmation
+    read -p "Do you have David's approval to modify these files? (yes/no): " response
+
+    if [[ "$response" != "yes" ]]; then
+        echo -e "${RED}Commit aborted.${NC}"
+        exit 1
+    fi
+
+    echo -e "${YELLOW}Proceeding with commit...${NC}"
+fi
+
+exit 0

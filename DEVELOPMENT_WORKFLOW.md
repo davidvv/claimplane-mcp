@@ -70,6 +70,26 @@ pytest app/tests/test_compensation_service.py -v
 pytest --cov=app --cov-report=html
 ```
 
+### Git Hooks Setup (ONE-TIME SETUP)
+
+**IMPORTANT**: After cloning the repository, install git hooks to protect architecture files.
+
+```bash
+# Run the setup script (one-time only)
+./scripts/setup-git-hooks.sh
+```
+
+**What this does:**
+- Installs pre-commit hook that warns when modifying protected files
+- Protected files: `CLAUDE.md`, `.claude/`, `.github/CODEOWNERS`
+- Prevents accidental changes to architectural decisions
+- Requires confirmation if you try to modify these files
+
+**If you see warnings about protected files:**
+- These files define architecture that should NOT be changed
+- If you have setup/deployment issues, fix YOUR environment, not the architecture
+- Only modify these files with explicit approval from David
+
 ## Why This Matters
 
 - **Base environment pollution**: Installing packages in base can cause conflicts across projects

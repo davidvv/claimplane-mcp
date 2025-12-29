@@ -40,6 +40,7 @@ class AccountInfoResponse(BaseModel):
     last_login_at: Optional[datetime]
     is_email_verified: bool
     total_claims: int
+    has_password: bool  # True if user has password (registered), False for magic link only users
 
     class Config:
         from_attributes = True

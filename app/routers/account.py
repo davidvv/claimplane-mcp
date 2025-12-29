@@ -64,7 +64,8 @@ async def get_account_info(
         created_at=current_user.created_at,
         last_login_at=current_user.last_login_at,
         is_email_verified=current_user.is_email_verified,
-        total_claims=total_claims
+        total_claims=total_claims,
+        has_password=current_user.password_hash is not None
     )
 
 

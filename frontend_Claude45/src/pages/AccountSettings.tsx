@@ -13,6 +13,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 interface AccountInfo extends UserProfile {
   total_claims: number;
+  has_password: boolean;
 }
 
 export function AccountSettings() {
@@ -490,76 +491,78 @@ export function AccountSettings() {
             </form>
           </div>
 
-          {/* Change Password */}
-          <div className="bg-card rounded-lg border p-6 mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <Lock className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold">Change Password</h2>
+          {/* Change Password - Only show if user has a password */}
+          {accountInfo?.has_password && (
+            <div className="bg-card rounded-lg border p-6 mb-6">
+              <div className="flex items-center gap-3 mb-6">
+                <Lock className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-semibold">Change Password</h2>
+              </div>
+
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div>
+                  <label htmlFor="currentPasswordPass" className="block text-sm font-medium mb-2">
+                    Current Password
+                  </label>
+                  <input
+                    id="currentPasswordPass"
+                    type="password"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Enter your current password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="newPassword" className="block text-sm font-medium mb-2">
+                    New Password
+                  </label>
+                  <input
+                    id="newPassword"
+                    type="password"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Enter new password (min 8 characters)"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    minLength={8}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+                    Confirm New Password
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Confirm new password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    minLength={8}
+                    required
+                  />
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-4">
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
+                    <strong>Note:</strong> Changing your password will log you out of all devices. You'll need to log in again with your new password.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={passwordChanging}
+                  className="w-full md:w-auto inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+                >
+                  {passwordChanging ? 'Changing Password...' : 'Change Password'}
+                </button>
+              </form>
             </div>
-
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
-                <label htmlFor="currentPasswordPass" className="block text-sm font-medium mb-2">
-                  Current Password
-                </label>
-                <input
-                  id="currentPasswordPass"
-                  type="password"
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Enter your current password"
-                  value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium mb-2">
-                  New Password
-                </label>
-                <input
-                  id="newPassword"
-                  type="password"
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Enter new password (min 8 characters)"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  minLength={8}
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
-                  Confirm New Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Confirm new password"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  minLength={8}
-                  required
-                />
-              </div>
-
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-4">
-                <p className="text-sm text-amber-800 dark:text-amber-200">
-                  <strong>Note:</strong> Changing your password will log you out of all devices. You'll need to log in again with your new password.
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={passwordChanging}
-                className="w-full md:w-auto inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-              >
-                {passwordChanging ? 'Changing Password...' : 'Change Password'}
-              </button>
-            </form>
-          </div>
+          )}
 
           {/* Account Deletion */}
           <div className="bg-card rounded-lg border border-red-200 dark:border-red-900 p-6">

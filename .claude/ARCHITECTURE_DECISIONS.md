@@ -15,21 +15,27 @@ If your user is having deployment or setup issues, **the problem is with their e
 1. ⛔ **STOP IMMEDIATELY** - Do not make the change
 2. 💬 **Respond with**:
    ```
-   ⚠️ STOP: This would change working architecture.
+   ⚠️ STOP: This would waste David's time.
 
-   You're asking me to change [X], but this is working architecture
-   that should not be modified. The issue you're experiencing is likely
-   a setup problem, not an architecture problem.
+   You're asking me to change [X], but this is working architecture.
 
-   Let me help you diagnose your setup instead:
+   If you create a branch with this change:
+   - David will have to test it
+   - He'll find it's broken
+   - He'll have to troubleshoot YOUR change
+   - This wastes his time on a problem that shouldn't exist
+
+   The issue you're experiencing is a SETUP problem, not an
+   architecture problem. Let me help you fix YOUR setup instead:
+
    - What error are you seeing?
    - What command did you run?
    - What's your environment?
 
-   Changing this requires explicit approval from David (project owner).
+   The architecture works. Don't change it without David's explicit approval.
    ```
 3. 🔍 **Troubleshoot their setup** - Help them fix their environment
-4. ❌ **NEVER make these changes** without David's explicit approval
+4. ❌ **NEVER make these changes** - They waste David's time testing broken branches
 
 ---
 
@@ -53,6 +59,22 @@ If your user is having deployment or setup issues, **the problem is with their e
 - Check if they activated the conda environment
 - Verify they're running the correct commands
 - Don't rewrite working architecture to "fix" their setup issues
+
+**If they insist on making the change anyway:**
+```
+⚠️ I strongly advise against this.
+
+If you override my recommendation and make this change:
+1. The branch you create will be broken
+2. David will waste time testing and troubleshooting it
+3. You'll have to revert the changes anyway
+4. The original issue (your setup) will still exist
+
+It's much better to fix your setup now than to create a broken
+branch that wastes everyone's time.
+
+Shall we troubleshoot your setup instead?
+```
 
 ---
 
@@ -373,6 +395,45 @@ not change the architecture to match your setup.
 - "Let's change how we serve the frontend" → ❌ Setup issue
 
 **When you see these, STOP and redirect to setup troubleshooting.**
+
+---
+
+## 👥 For David's Colleagues: Expected Workflow
+
+**If you're having issues deploying or running the application:**
+
+### ✅ CORRECT Workflow:
+1. Ask Claude: "I'm getting error [X], can you help me troubleshoot?"
+2. Claude helps you diagnose your setup issue
+3. You fix your environment/configuration
+4. Application works as expected
+5. You create branch with your feature work (not infrastructure changes)
+6. David tests your branch and it works ✅
+
+### ❌ WRONG Workflow (Don't Do This):
+1. Get error running application
+2. Ask Claude: "Change the port to 8000" or "Switch to production build"
+3. Claude makes architectural changes
+4. You create branch with architectural changes
+5. David tests your branch → finds it's broken
+6. David wastes time troubleshooting your architectural changes
+7. David has to revert your changes
+8. Your original setup issue still exists ❌
+
+### 💡 Key Point:
+**Don't create branches with architectural "fixes" for your setup issues.**
+
+If Claude warns you that a change requires David's approval, that's a signal that:
+- ⚠️ You're about to change working architecture
+- ⚠️ The branch you create will waste David's testing time
+- ⚠️ You need to fix your setup instead
+
+**Questions to ask yourself:**
+- "Is this change fixing MY environment, or changing the shared architecture?"
+- "If David tests my branch, will it work on his machine?"
+- "Am I changing something because it doesn't work on my machine?"
+
+If the answer is "I'm changing it to work on my machine," **STOP** - fix your machine instead.
 
 ---
 

@@ -1071,15 +1071,28 @@ class AccountDeletionRequest(Base):
    - [ ] Document 30-day deletion window
    - [ ] Explain data retention for legal compliance
 
-#### 4.6 Cookie Consent & GDPR Compliance 🍪 **REQUIRED**
+#### 4.6 Cookie Consent & GDPR Compliance 🍪 **CONDITIONAL**
 
-**Priority**: CRITICAL - Required before public EU launch
-**Status**: ✅ **READY TO START** - Unblocked (Phase 4.5.14 completed)
+**Priority**: MEDIUM - Only required if we implement client-side tracking
+**Status**: ⏸️ **DEFERRED** - Not needed until analytics with cookies are implemented
 **Regulation**: GDPR Article 7 (Consent), ePrivacy Directive
 **Last Updated**: 2025-12-29
 
+**Current Assessment**:
+We currently use ONLY strictly necessary cookies (JWT authentication: `access_token`, `refresh_token`). These do NOT require user consent under GDPR Article 6(1)(b) and ePrivacy Directive Recital 25.
+
+**When Cookie Consent IS Required**:
+- If we add Google Analytics (client-side tracking cookies)
+- If we add marketing/retargeting cookies
+- If we add any non-essential tracking
+
+**When Cookie Consent is NOT Required** ✅:
+- Strictly necessary authentication cookies (current setup)
+- Server-side analytics (no cookies)
+- Cookieless analytics (Plausible, Fathom, Simple Analytics)
+
 **Overview**:
-JWT tokens are now stored in HTTP-only cookies (Phase 4.5.14 completed). We MUST implement cookie consent for EU customers before public launch. This is a legal requirement under GDPR and ePrivacy Directive.
+A cookie consent banner is only legally required when we store non-essential cookies. Our JWT authentication cookies are strictly necessary for the service to function and are exempt from consent requirements. We must still DISCLOSE these cookies in our Privacy Policy (Phase 4.7), but we don't need an interactive consent banner unless we add optional tracking.
 
 **Regulatory Requirements**:
 - **GDPR Article 7**: Explicit consent required for non-essential cookies
@@ -1328,6 +1341,467 @@ Add essential legal and informational pages to the homepage that are required fo
 - **Risk Mitigation**: Terms of Service protects company from liability
 - **Transparency**: Users have right to know how their data is used
 - **Support**: Contact page provides customer support channel
+
+#### 4.8 Analytics & Tracking Strategy 📊 **DECISION NEEDED**
+
+**Priority**: MEDIUM - Valuable for growth but not blocking launch
+**Status**: 📋 **PLANNING** - Need to decide what to track and how
+**Estimated Effort**: 1-3 days (depending on approach chosen)
+**Last Updated**: 2025-12-29
+
+**Overview**:
+Determine what user behavior and business metrics we want to track, and choose a privacy-respecting implementation approach. The key question: What analytics provide business value without compromising user privacy or requiring cookie consent?
+
+---
+
+### What Could We Track? (Business Value Assessment)
+
+#### 1. Conversion Funnel 🎯 **HIGH VALUE**
+
+**Goal**: Identify where users abandon the claim submission process
+
+**Track**:
+- Homepage → Eligibility check: How many start?
+- Eligibility check → Claim form: How many qualify and continue?
+- Claim form → Document upload: Where do they drop off?
+- Document upload → Submit: Do file uploads cause abandonment?
+
+**Business Impact**:
+- If 50% drop off at document upload → simplify that step
+- If 80% abandon at eligibility check → improve messaging
+- **ROI**: Increasing conversion by 10% = 10% more revenue
+- **Implementation**: Easy - add event tracking in backend
+
+**Example**:
+```python
+await analytics.track_event("claim_flow_step", {
+    "step": "eligibility_check_started",
+    "user_type": "anonymous",
+    "flight_distance_km": 1500
+})
+```
+
+#### 2. Traffic Sources 📈 **HIGH VALUE**
+
+**Goal**: Know which marketing channels actually work
+
+**Track**:
+- Organic search vs paid ads vs referrals
+- Which keywords bring paying customers?
+- Social media effectiveness
+- Referral program performance (future)
+
+**Business Impact**:
+- Stop wasting money on ads that don't convert
+- Double down on channels that work
+- Measure marketing ROI accurately
+- **ROI**: Could cut marketing costs by 30-50%
+
+**Implementation**: Server-side referrer tracking or Plausible
+
+#### 3. User Behavior Patterns 🔍 **MEDIUM VALUE**
+
+**Goal**: Understand how people actually use the site
+
+**Track**:
+- Which pages get viewed most?
+- How long do users spend on the claim form?
+- Do they read the FAQ before submitting?
+- Mobile vs desktop usage
+- Browser compatibility
+
+**Business Impact**:
+- Optimize page layout based on actual behavior
+- Identify confusing UI elements
+- Prioritize mobile vs desktop development
+- **ROI**: Moderate - improves UX incrementally
+
+**Implementation**: Page view tracking (server-side or Plausible)
+
+#### 4. Technical Issues 🐛 **HIGH VALUE**
+
+**Goal**: Catch errors affecting conversions before users complain
+
+**Track**:
+- JavaScript errors in browser console
+- Failed API calls (4xx, 5xx errors)
+- Slow page load times
+- Browser/device compatibility issues
+- File upload failures
+
+**Business Impact**:
+- Fix bugs proactively
+- Identify performance bottlenecks
+- Reduce support tickets
+- **ROI**: High - every bug fix increases conversions
+
+**Implementation**: Error logging (Sentry) + performance monitoring
+
+#### 5. Business Metrics 💰 **CRITICAL VALUE**
+
+**Goal**: Understand revenue and claim success rates
+
+**Track**:
+- Claims submitted per day/week/month
+- Claim approval rate by airline
+- Average compensation amount
+- Time to process claims
+- Customer lifetime value
+
+**Business Impact**:
+- Investor reporting
+- Identify best/worst airlines to target
+- Forecast revenue
+- **ROI**: Critical for business operations
+
+**Implementation**: Backend database queries + dashboard (no external tracking needed)
+
+---
+
+### What We DON'T Need to Track (Low/No Value)
+
+❌ **Individual user browsing history** - Creepy, no business value, privacy violation
+❌ **Demographics beyond what they tell us** - Not useful for B2C flight claims
+❌ **Cross-site tracking** - Irrelevant for single-purpose platform
+❌ **Social media integration tracking** - Overkill for your use case
+❌ **Session recordings** - Invasive, limited value for transactional site
+❌ **Heatmaps** - Nice-to-have, not critical for claims platform
+
+---
+
+### Implementation Options (Privacy-Respecting)
+
+#### Option 1: Server-Side Event Tracking ✅ **RECOMMENDED - START HERE**
+
+**What it is**: Track events in your backend code as users perform actions
+
+**Advantages**:
+- ✅ NO cookie consent needed (no client-side cookies)
+- ✅ GDPR compliant by default (no PII unless you log it)
+- ✅ Ad-blocker proof (server-side)
+- ✅ Complete control over what's tracked
+- ✅ Free (just database storage)
+- ✅ Can implement TODAY
+
+**What you track**:
+```python
+# app/services/analytics_service.py
+async def track_event(event_name: str, properties: dict):
+    """Track business events server-side"""
+    event = AnalyticsEvent(
+        event_name=event_name,
+        properties=properties,
+        timestamp=datetime.now(timezone.utc),
+        # NO user identification unless authenticated
+        user_id=current_user.id if authenticated else None,
+        session_id=request.cookies.get("session_id"),  # Anonymous session
+        ip_country=get_country_from_ip(request.client.host),
+        user_agent=request.headers.get("user-agent")
+    )
+    await db.save(event)
+
+# Usage throughout application
+await track_event("claim_submitted", {
+    "airline": "Lufthansa",
+    "flight_distance_km": 1500,
+    "compensation_tier": "400_euro",
+    "incident_type": "delay"
+})
+
+await track_event("file_uploaded", {
+    "document_type": "boarding_pass",
+    "file_size_kb": 250,
+    "mime_type": "application/pdf"
+})
+
+await track_event("claim_form_abandoned", {
+    "last_step": "passenger_details",
+    "time_spent_seconds": 120
+})
+```
+
+**Cost**: Free (just database storage)
+**Effort**: 1-2 days to implement
+**Privacy**: Excellent - you control everything
+**GDPR**: No consent needed (just disclose in Privacy Policy)
+
+**Database Schema**:
+```python
+class AnalyticsEvent(Base):
+    __tablename__ = "analytics_events"
+
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
+    event_name = Column(String(100), nullable=False, index=True)
+    properties = Column(JSON, nullable=True)
+
+    # Context (anonymous unless authenticated)
+    user_id = Column(UUID, ForeignKey("customers.id"), nullable=True)
+    session_id = Column(String(100), nullable=True, index=True)
+    ip_country = Column(String(2), nullable=True)  # Just country code, not full IP
+    user_agent = Column(Text, nullable=True)
+
+    timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+```
+
+**Then build simple analytics dashboard**:
+```python
+# app/routers/admin_analytics.py
+@router.get("/admin/analytics/conversion-funnel")
+async def get_conversion_funnel(session: AsyncSession = Depends(get_db)):
+    """Show claim submission funnel"""
+
+    # Count events by step
+    steps = [
+        "eligibility_check_started",
+        "claim_form_started",
+        "documents_uploaded",
+        "claim_submitted"
+    ]
+
+    funnel = {}
+    for step in steps:
+        count = await session.execute(
+            select(func.count(AnalyticsEvent.id))
+            .where(AnalyticsEvent.event_name == step)
+            .where(AnalyticsEvent.timestamp >= datetime.now() - timedelta(days=30))
+        )
+        funnel[step] = count.scalar()
+
+    return funnel
+    # Returns: {
+    #   "eligibility_check_started": 1000,
+    #   "claim_form_started": 600,  # 40% drop-off
+    #   "documents_uploaded": 450,   # 25% drop-off
+    #   "claim_submitted": 400       # 11% drop-off
+    # }
+```
+
+---
+
+#### Option 2: Plausible Analytics ✅ **RECOMMENDED - ADD AFTER OPTION 1**
+
+**What it is**: Privacy-focused, cookieless analytics service (like Google Analytics but GDPR-friendly)
+
+**Advantages**:
+- ✅ NO cookie consent needed (cookieless tracking)
+- ✅ GDPR compliant by default (EU-based, no PII)
+- ✅ Ad-blocker resistant (respects DNT but not blocked like Google)
+- ✅ Beautiful dashboard (easy to share with investors/team)
+- ✅ 2-minute setup (one script tag)
+- ✅ Lightweight (< 1KB script)
+- ✅ Open source (can self-host)
+
+**What you get**:
+- Page views and unique visitors
+- Traffic sources (referrers, UTM campaigns)
+- Top pages and entry/exit pages
+- Countries and devices
+- Custom events (button clicks, form submissions)
+- Real-time dashboard
+
+**Cost**:
+- Hosted: $9/month (up to 10k monthly pageviews)
+- Self-hosted: Free (requires server setup)
+
+**Setup**:
+```html
+<!-- In frontend_Claude45/public/index.html -->
+<script defer
+        data-domain="eac.dvvcloud.work"
+        src="https://plausible.io/js/script.js">
+</script>
+```
+
+**Custom events** (track conversions):
+```typescript
+// In frontend
+plausible('Claim Submitted', {
+  props: {
+    airline: 'Lufthansa',
+    compensation: '400'
+  }
+});
+```
+
+**Effort**: 2 minutes (hosted) or 2 hours (self-hosted)
+**Privacy**: Excellent - no cookies, no PII, GDPR-compliant
+**GDPR**: No consent needed
+
+**Comparison to Google Analytics**:
+| Feature | Plausible | Google Analytics |
+|---------|-----------|------------------|
+| Cookie consent | ❌ Not needed | ✅ Required |
+| Ad-blocker proof | ⚠️ Partial | ❌ Blocked |
+| Privacy-friendly | ✅ Yes | ❌ No |
+| Setup complexity | ✅ 2 minutes | ⚠️ 30 minutes |
+| Cost | $9/month | Free |
+| Data ownership | ✅ Yours | ❌ Google's |
+
+**Website**: https://plausible.io
+
+---
+
+#### Option 3: Self-Hosted Umami ✅ **FREE ALTERNATIVE**
+
+**What it is**: Open-source, self-hosted analytics (like Plausible but free)
+
+**Advantages**:
+- ✅ NO cookie consent needed (cookieless)
+- ✅ GDPR compliant (you host it)
+- ✅ Free (open source)
+- ✅ Full data ownership
+- ✅ Similar features to Plausible
+
+**Disadvantages**:
+- ⚠️ Requires setup and maintenance
+- ⚠️ Uses server resources
+
+**Cost**: Free (requires Docker container on your server)
+**Effort**: 2-3 hours to set up
+**Privacy**: Excellent - you control everything
+**GDPR**: No consent needed
+
+**Website**: https://umami.is
+
+---
+
+#### Option 4: Google Analytics 4 (Privacy Mode) ⚠️ **NOT RECOMMENDED**
+
+**What it is**: Google's analytics platform with privacy settings enabled
+
+**Advantages**:
+- ✅ Free
+- ✅ Powerful features
+- ✅ Familiar to everyone
+- ⚠️ Can be configured for cookieless tracking
+
+**Disadvantages**:
+- ❌ STILL requires consent in EU (sends data to Google)
+- ❌ Ad-blockers block it (40-60% of traffic lost)
+- ❌ Privacy concerns (Google owns your data)
+- ❌ Overkill for your use case
+- ❌ Slower (large script)
+
+**Verdict**: **Not recommended** for EasyAirClaim - privacy concerns and ad-blocking make it less effective than alternatives
+
+---
+
+#### Option 5: Error Tracking (Sentry) 🐛 **HIGHLY RECOMMENDED**
+
+**What it is**: Real-time error tracking and performance monitoring
+
+**What you get**:
+- JavaScript errors in user browsers
+- Backend exceptions and crashes
+- API response times
+- Stack traces with context
+- User impact analysis
+- Alerting when errors spike
+
+**Advantages**:
+- ✅ NO cookie consent needed (just error monitoring)
+- ✅ Catches bugs before users report them
+- ✅ Shows exactly what went wrong
+- ✅ Free tier: 5k errors/month
+
+**Cost**:
+- Free tier: 5,000 errors/month
+- Paid: $26/month (50k errors/month)
+
+**Setup**:
+```python
+# Backend
+import sentry_sdk
+sentry_sdk.init(dsn="your-dsn", traces_sample_rate=0.1)
+```
+
+```typescript
+// Frontend
+import * as Sentry from "@sentry/react";
+Sentry.init({ dsn: "your-dsn" });
+```
+
+**Effort**: 1 hour
+**Privacy**: Good - only captures errors, not behavior
+**GDPR**: No consent needed (error monitoring is legitimate interest)
+
+**Website**: https://sentry.io
+
+---
+
+### Recommended Implementation Strategy
+
+**Phase 1: Immediate (Week 1)** - Free, No Consent Needed
+1. ✅ **Server-side event tracking** (Option 1)
+   - Track conversion funnel steps
+   - Track business metrics (claims submitted, approved, etc.)
+   - Track technical errors
+   - Build simple admin dashboard
+   - **Effort**: 1-2 days
+   - **Cost**: Free
+
+2. ✅ **Sentry error tracking** (Option 5)
+   - Catch frontend and backend errors
+   - Performance monitoring
+   - **Effort**: 1 hour
+   - **Cost**: Free tier
+
+**Phase 2: After 100+ Users (Month 2)** - Still No Consent Needed
+3. ✅ **Add Plausible Analytics** (Option 2)
+   - Beautiful traffic dashboard
+   - Traffic source analysis
+   - Professional reporting for investors
+   - **Effort**: 5 minutes
+   - **Cost**: $9/month
+
+**Phase 3: Future (Month 6+)** - If Needed
+4. ⚠️ **Consider cookie consent** (Phase 4.6) ONLY if you want:
+   - User-specific tracking across sessions
+   - Remarketing/advertising cookies
+   - Third-party marketing integrations
+
+---
+
+### What We Need to Decide
+
+**Decision Matrix**:
+
+| Question | Options | Recommendation |
+|----------|---------|----------------|
+| **Track conversion funnel?** | Yes / No | ✅ YES - High ROI, implement server-side |
+| **Track traffic sources?** | Plausible / Umami / Google / None | ✅ Plausible ($9/mo) or Umami (free) |
+| **Track errors?** | Sentry / Custom / None | ✅ Sentry (free tier) |
+| **Track business metrics?** | Yes / No | ✅ YES - Already in database, add dashboard |
+| **Need cookie consent?** | Yes / No | ❌ NO - If using recommended options |
+
+**Next Steps**:
+1. [ ] **Decide**: Which metrics are most valuable for the business?
+2. [ ] **Choose**: Plausible ($9/mo) or Umami (free, self-hosted)?
+3. [ ] **Implement**: Start with server-side tracking (1-2 days)
+4. [ ] **Add**: Error tracking with Sentry (1 hour)
+5. [ ] **Update**: Privacy Policy to disclose analytics (Phase 4.7)
+
+**Budget Impact**:
+- **Option A** (Free): Server-side + Umami + Sentry free tier = $0/month
+- **Option B** (Paid): Server-side + Plausible + Sentry free tier = $9/month
+- **Option C** (Full): Server-side + Plausible + Sentry paid = $35/month
+
+**Privacy Impact**:
+- All recommended options: NO cookie consent banner needed ✅
+- Just disclose in Privacy Policy: "We use cookieless analytics to improve our service"
+
+---
+
+### Success Criteria
+
+After implementing analytics, we should be able to answer:
+- ✅ How many people start vs complete claims? (conversion rate)
+- ✅ Where do users drop off in the funnel? (optimization targets)
+- ✅ Which marketing channels drive the most claims? (ROI)
+- ✅ What errors are users encountering? (bug priorities)
+- ✅ How many claims are approved vs rejected by airline? (business intelligence)
+- ✅ What's the average claim value? (revenue forecasting)
 
 ### Testing Requirements
 

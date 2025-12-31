@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Home, FileText, Search, LogIn, User, LogOut, Settings, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Home, FileText, Search, LogIn, User, LogOut, Settings, LayoutDashboard, Info } from 'lucide-react';
 import { Button } from './ui/Button';
 import { isAuthenticated, getStoredUserInfo, logout } from '@/services/auth';
 import { cn } from '@/lib/utils';
@@ -131,6 +131,20 @@ export function MobileNav({ userRole }: MobileNavProps) {
                 >
                   <Search className="w-5 h-5" />
                   Check Status
+                </Link>
+
+                <Link
+                  to="/about"
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors',
+                    isActive('/about')
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
+                  )}
+                >
+                  <Info className="w-5 h-5" />
+                  About Us
                 </Link>
 
                 {authenticated && (

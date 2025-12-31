@@ -93,6 +93,15 @@ export function Layout({ children }: LayoutProps) {
             >
               Check Status
             </Link>
+            <Link
+              to="/about"
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                isActive('/about') ? 'text-foreground' : 'text-muted-foreground'
+              )}
+            >
+              About Us
+            </Link>
           </nav>
 
           {/* Actions */}

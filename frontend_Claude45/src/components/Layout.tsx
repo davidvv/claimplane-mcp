@@ -189,7 +189,7 @@ export function Layout({ children }: LayoutProps) {
                 Privacy Policy
               </Link>
               <Link to="/terms" className="hover:text-foreground transition-colors">
-                Terms of Service
+                Terms and Conditions
               </Link>
               <Link to="/contact" className="hover:text-foreground transition-colors">
                 Contact

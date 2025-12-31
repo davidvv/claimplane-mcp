@@ -319,7 +319,7 @@ export function Step4_Review({
             <div className="bg-muted rounded-lg p-4 text-sm">
               <p className="font-semibold mb-2">Terms & Conditions</p>
               <p className="text-muted-foreground mb-2">
-                By submitting this claim, you agree to our terms of service and
+                By submitting this claim, you agree to our terms and conditions and
                 authorize EasyAirClaim to act on your behalf in pursuing compensation
                 from the airline.
               </p>

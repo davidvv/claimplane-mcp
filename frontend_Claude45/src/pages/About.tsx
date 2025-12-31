@@ -94,7 +94,7 @@ export function About() {
         </section>
 
         {/* Our Fees Section */}
-        <section className="mb-20">
+        <section id="fees" className="mb-20">
           <h2 className="text-3xl font-bold text-center mb-4">Our Fees</h2>
           <p className="text-xl text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
             Simple, transparent pricing. Just 20% commission (includes Taxes & VAT) on successful claims.

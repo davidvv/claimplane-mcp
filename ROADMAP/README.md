@@ -1,6 +1,6 @@
 # Development Roadmap
 
-**Last Updated**: 2025-12-29
+**Last Updated**: 2025-12-31
 **Current Version**: v0.3.0 (Phase 3 Complete, Phase 4.5 In Progress - JWT Cookie Migration)
 **Status**: MVP Phase - Security Hardening for Public Launch 🔒
 **Strategy**: Business value first (#2 → #3 → #4 → GDPR)
@@ -24,6 +24,7 @@ Phase 4: Customer Account Management & GDPR     ██████████�
 Phase 4.5: Pre-Production Security Fixes        ████████████████████ 100% ✅
 Phase 5: Multi-Passenger Claims                 ░░░░░░░░░░░░░░░░░░░░   0% 📋
 Phase 6: AeroDataBox API Integration            ░░░░░░░░░░░░░░░░░░░░   0% 📋
+Phase 6.5: Flight Search by Route               ░░░░░░░░░░░░░░░░░░░░   0% 📋
 Phase 7: Payment System Integration             ░░░░░░░░░░░░░░░░░░░░   0% 📋
 ```
 
@@ -59,6 +60,7 @@ Phase 7: Payment System Integration             ░░░░░░░░░░�
 2. **IMMEDIATE**: Implement Phase 4.6 (Cookie Consent Banner) - GDPR requirement for public launch
 3. Complete Phase 4 remaining tasks (Admin deletion UI, GDPR export, legal pages)
 4. Phase 5 (Multi-Passenger Claims) or Phase 6 (AeroDataBox API)
+5. Phase 6.5 (Flight Search by Route) - Can be implemented independently or after Phase 6
 
 ---
 
@@ -99,6 +101,10 @@ Phase 7: Payment System Integration             ░░░░░░░░░░�
 
 - **[Phase 6: AeroDataBox API Integration](PHASE_6_AERODATABOX_API.md)** 📋
   - Real-time flight data, automatic delay detection, flight verification
+
+- **[Phase 6.5: Flight Search by Route](PHASE_6.5_FLIGHT_SEARCH.md)** 📋
+  - Alternative flight lookup by route & time (for users without flight number)
+  - Modular design, can use different API provider than Phase 6
 
 - **[Phase 7: Payment System Integration](PHASE_7_PAYMENT_SYSTEM.md)** 📋
   - Stripe integration, bank transfers, payout tracking

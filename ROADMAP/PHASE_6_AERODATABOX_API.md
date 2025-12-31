@@ -9,15 +9,12 @@
 **Estimated Effort**: 2-3 weeks
 **Business Value**: Automates flight verification and improves accuracy
 **Target Version**: v0.6.0
-**API Provider**: AeroDataBox (RapidAPI)
+**API Provider**: AeroDataBox (https://aerodatabox.com/)
+**API Tier**: Tier 2 (Flight Status API)
+**Cost**: Free tier (300 calls/month) or $5/month (3,000 calls)
 
 ---
 
-
-**Priority**: MEDIUM-HIGH - Automation and efficiency improvement
-**Status**: 📋 **PLANNED** - Not yet implemented
-**Estimated Effort**: 2-3 weeks
-**Business Value**: HIGH - Reduces manual verification work, improves accuracy, enables real-time flight status
 **API Documentation**: https://aerodatabox.com/
 
 ### Overview
@@ -175,7 +172,7 @@ class FlightData(Base):
 ```python
 # AeroDataBox API Configuration
 AERODATABOX_API_KEY = os.getenv("AERODATABOX_API_KEY", "")
-AERODATABOX_BASE_URL = "https://aerodatabox.p.rapidapi.com"
+AERODATABOX_BASE_URL = os.getenv("AERODATABOX_BASE_URL", "https://api.aerodatabox.com/v1")
 AERODATABOX_ENABLED = os.getenv("AERODATABOX_ENABLED", "false").lower() == "true"
 
 # Flight data caching (reduce API calls)
@@ -194,13 +191,19 @@ FLIGHT_DATA_CACHE_HOURS = int(os.getenv("FLIGHT_DATA_CACHE_HOURS", "24"))
 
 ### API Pricing & Quotas
 
-**AeroDataBox Pricing** (via RapidAPI):
-- **Basic Plan**: $10/month - 500 requests/month (~16/day)
-- **Pro Plan**: $50/month - 10,000 requests/month (~333/day)
-- **Ultra Plan**: $200/month - 100,000 requests/month (~3,333/day)
+**AeroDataBox Pricing** (https://aerodatabox.com/pricing/):
+
+Flight Status API is **Tier 2** pricing:
+- **Free Tier**: 600 credits/month (300 API calls) - $0/month
+- **Pro Tier 1**: 6,000 credits/month (3,000 API calls) - $5/month
+- **Pro Tier 2**: 60,000 credits/month (30,000 API calls) - $50/month
+- **Enterprise**: Custom pricing for higher volumes
+
+**Note**: Each Tier 2 API call costs 2 credits = 1 API call
 
 **Recommended Approach**:
-- Start with **Pro Plan** ($50/month)
+- Start with **Free Tier** (300 calls/month) for MVP testing
+- Upgrade to **Pro Tier 1** ($5/month, 3,000 calls) when launching
 - Implement aggressive caching (reduce duplicate requests)
 - Monitor usage and upgrade if needed
 - Fallback to manual verification if quota exceeded
@@ -208,8 +211,9 @@ FLIGHT_DATA_CACHE_HOURS = int(os.getenv("FLIGHT_DATA_CACHE_HOURS", "24"))
 **Expected Usage**:
 - Assume 100 claims/month initially
 - With caching: ~100-150 API calls/month
-- Pro plan provides plenty of headroom
-- Cost per claim: ~$0.50 (vs hours of manual work)
+- Free tier sufficient for initial testing
+- Pro Tier 1 ($5/month) provides 20x headroom for growth
+- Cost per claim: ~$0.05 (vs hours of manual work)
 
 ### Testing Requirements
 
@@ -228,12 +232,12 @@ FLIGHT_DATA_CACHE_HOURS = int(os.getenv("FLIGHT_DATA_CACHE_HOURS", "24"))
 - ✅ Flight distance automatically calculated for compensation tiers
 - ✅ Customers see eligibility before submitting claim
 - ✅ Ineligible claim submissions reduced by 40%+
-- ✅ API cost < $100/month for first 200 claims/month
+- ✅ API cost < $5/month for first 200 claims/month (Pro Tier 1 sufficient)
 - ✅ Graceful fallback to manual verification when API unavailable
 
 ### Dependencies
 
-- **API Account**: RapidAPI account with AeroDataBox subscription
+- **API Account**: AeroDataBox account (https://aerodatabox.com/)
 - **Redis**: For caching (already in use for Celery)
 - **Phase 1 Complete**: Admin dashboard must exist
 - **Phase 3 Complete**: Authentication for API key security

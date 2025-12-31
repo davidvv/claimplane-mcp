@@ -54,7 +54,7 @@ export function About() {
               </div>
               <h3 className="text-xl font-semibold mb-2">Cost Effective</h3>
               <p className="text-muted-foreground">
-                Only 20% commission. No upfront costs. No hidden fees. You only pay if we win your claim.
+                Only 20% commission (includes Taxes & VAT). No upfront costs. No hidden fees. You only pay if we win your claim.
               </p>
             </div>
 
@@ -97,7 +97,7 @@ export function About() {
         <section className="mb-20">
           <h2 className="text-3xl font-bold text-center mb-4">Our Fees</h2>
           <p className="text-xl text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-            Simple, transparent pricing. Just 20% commission on successful claims.
+            Simple, transparent pricing. Just 20% commission (includes Taxes & VAT) on successful claims.
           </p>
 
           <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto items-center">
@@ -154,7 +154,7 @@ export function About() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: '#f97316' }}></div>
-                  <span className="text-sm">Our commission: <strong>€120 (20%)</strong></span>
+                  <span className="text-sm">Our commission: <strong>€120 (20%, includes Taxes & VAT)</strong></span>
                 </div>
               </div>
 

@@ -195,3 +195,6 @@ dmypy.json
 cython_debug/
 .env
 .env
+docker-compose.nextcloud.prod.yml
+docker-compose.prod.yml
+SESSION_SUMMARY_2025-12-26.md

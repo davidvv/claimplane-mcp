@@ -159,6 +159,10 @@ class Claim(Base):
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # Terms acceptance tracking (legal compliance)
+    terms_accepted_at = Column(DateTime(timezone=True), nullable=True)
+    terms_acceptance_ip = Column(String(45), nullable=True)  # IPv6 compatible
+
     # Admin workflow fields (Phase 1)
     assigned_to = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True)
     assigned_at = Column(DateTime(timezone=True), nullable=True)

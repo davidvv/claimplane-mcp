@@ -75,6 +75,7 @@ export type DocumentType = 'boarding_pass' | 'id_document' | 'receipt' | 'bank_s
 export interface Document {
   id?: string; // UUID (readonly)
   filename: string;
+  originalFilename: string; // Original filename uploaded by user
   contentType: string;
   size: number; // bytes
   documentType: DocumentType;
@@ -105,6 +106,7 @@ export interface ClaimRequest {
   flightInfo: FlightInfo;
   incidentType: IncidentType;
   notes?: string | null;
+  termsAccepted: boolean;
 }
 
 // ==================== API Response Types ====================

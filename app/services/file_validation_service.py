@@ -20,24 +20,24 @@ class FileValidationService:
         self.default_rules = {
             "boarding_pass": {
                 "max_file_size": 10 * 1024 * 1024,  # 10MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png"],
-                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
                 "max_pages": 5,
                 "requires_scan": True,
                 "requires_encryption": True
             },
             "id_document": {
                 "max_file_size": 5 * 1024 * 1024,  # 5MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png"],
-                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
                 "max_pages": 2,
                 "requires_scan": True,
                 "requires_encryption": True
             },
             "receipt": {
                 "max_file_size": 2 * 1024 * 1024,  # 2MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png"],
-                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
                 "max_pages": 3,
                 "requires_scan": True,
                 "requires_encryption": True
@@ -52,32 +52,32 @@ class FileValidationService:
             },
             "flight_ticket": {
                 "max_file_size": 5 * 1024 * 1024,  # 5MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png"],
-                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
                 "max_pages": 3,
                 "requires_scan": True,
                 "requires_encryption": True
             },
             "delay_certificate": {
                 "max_file_size": 2 * 1024 * 1024,  # 2MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png"],
-                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
                 "max_pages": 2,
                 "requires_scan": True,
                 "requires_encryption": True
             },
             "cancellation_notice": {
                 "max_file_size": 2 * 1024 * 1024,  # 2MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png"],
-                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
                 "max_pages": 2,
                 "requires_scan": True,
                 "requires_encryption": True
             },
             "other": {
                 "max_file_size": 10 * 1024 * 1024,  # 10MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "text/plain"],
-                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".txt"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp", "text/plain"],
+                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".txt"],
                 "max_pages": 20,
                 "requires_scan": True,
                 "requires_encryption": True

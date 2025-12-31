@@ -262,12 +262,13 @@ class ClaimSubmitResponseSchema(BaseModel):
 
 class ClaimRequestSchema(BaseModel):
     """Schema for claim request with customer info."""
-    
+
     customer_info: CustomerCreateSchema = Field(..., alias="customerInfo")
     flight_info: FlightInfoSchema = Field(..., alias="flightInfo")
     incident_type: str = Field(..., alias="incidentType")
     notes: Optional[str] = None
-    
+    terms_accepted: bool = Field(..., alias="termsAccepted", description="User must accept terms and conditions")
+
     @validator('incident_type')
     def validate_incident_type(cls, v):
         """Validate incident type."""
@@ -275,7 +276,14 @@ class ClaimRequestSchema(BaseModel):
         if v not in valid_types:
             raise ValueError(f"Incident type must be one of: {', '.join(valid_types)}")
         return v
-    
+
+    @validator('terms_accepted')
+    def validate_terms_accepted(cls, v):
+        """Validate that terms have been accepted."""
+        if not v:
+            raise ValueError("You must accept the terms and conditions to submit a claim")
+        return v
+
     class Config:
         populate_by_name = True
 

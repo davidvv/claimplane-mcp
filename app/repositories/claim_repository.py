@@ -64,7 +64,9 @@ class ClaimRepository(BaseRepository[Claim]):
     
     async def create_claim(self, customer_id: UUID, flight_number: str, airline: str,
                           departure_date: date, departure_airport: str, arrival_airport: str,
-                          incident_type: str, notes: Optional[str] = None) -> Claim:
+                          incident_type: str, notes: Optional[str] = None,
+                          terms_accepted_at: Optional[str] = None,
+                          terms_acceptance_ip: Optional[str] = None) -> Claim:
         """Create a new claim with all required fields."""
         return await self.create(
             customer_id=customer_id,
@@ -74,7 +76,9 @@ class ClaimRepository(BaseRepository[Claim]):
             departure_airport=departure_airport.upper(),
             arrival_airport=arrival_airport.upper(),
             incident_type=incident_type,
-            notes=notes
+            notes=notes,
+            terms_accepted_at=terms_accepted_at,
+            terms_acceptance_ip=terms_acceptance_ip
         )
     
     async def update_claim(self, claim_id: UUID, allow_null_values: bool = False, **kwargs) -> Optional[Claim]:

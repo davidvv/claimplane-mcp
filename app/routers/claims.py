@@ -111,6 +111,10 @@ async def create_claim(
     # Create claim
     flight_data = claim_data.flight_info
 
+    # Get client IP for terms acceptance tracking (if applicable)
+    from datetime import datetime, timezone
+    ip_address, _ = get_client_info(request)
+
     claim = await claim_repo.create_claim(
         customer_id=customer_id,
         flight_number=flight_data.flight_number,
@@ -119,7 +123,9 @@ async def create_claim(
         departure_airport=flight_data.departure_airport,
         arrival_airport=flight_data.arrival_airport,
         incident_type=claim_data.incident_type,
-        notes=claim_data.notes
+        notes=claim_data.notes,
+        terms_accepted_at=datetime.now(timezone.utc),
+        terms_acceptance_ip=ip_address
     )
 
     # Send claim submitted email notification (Phase 2)
@@ -204,6 +210,10 @@ async def submit_claim_with_customer(
         logger.info(f"Flight data: {flight_data.dict()}")
         logger.info(f"Incident type: {claim_request.incident_type}")
 
+        # Get client IP for terms acceptance tracking
+        from datetime import datetime, timezone
+        ip_address, _ = get_client_info(request)
+
         claim = await claim_repo.create_claim(
             customer_id=customer.id,
             flight_number=flight_data.flight_number,
@@ -212,7 +222,9 @@ async def submit_claim_with_customer(
             departure_airport=flight_data.departure_airport,
             arrival_airport=flight_data.arrival_airport,
             incident_type=claim_request.incident_type,
-            notes=claim_request.notes
+            notes=claim_request.notes,
+            terms_accepted_at=datetime.now(timezone.utc),
+            terms_acceptance_ip=ip_address
         )
         logger.info(f"Claim created: {claim.id}")
 

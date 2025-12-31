@@ -214,7 +214,7 @@ export function Status() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = doc.filename;
+      a.download = doc.originalFilename || doc.filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -582,7 +582,7 @@ export function Status() {
                           <div className="flex items-center gap-3">
                             <FileText className="w-5 h-5 text-muted-foreground" />
                             <div>
-                              <p className="font-medium text-sm">{doc.filename}</p>
+                              <p className="font-medium text-sm">{doc.originalFilename || doc.filename}</p>
                               <p className="text-xs text-muted-foreground">
                                 {doc.documentType.replace('_', ' ')} •{' '}
                                 {doc.uploadedAt && formatDateTime(doc.uploadedAt)}

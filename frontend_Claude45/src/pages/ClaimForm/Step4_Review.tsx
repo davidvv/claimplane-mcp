@@ -35,8 +35,15 @@ export function Step4_Review({
 }: Step4Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleSubmit = async () => {
+    // Validate terms acceptance
+    if (!termsAccepted) {
+      toast.error('Please accept the terms and conditions to continue');
+      return;
+    }
+
     setIsSubmitting(true);
     setUploadProgress(0);
 
@@ -70,6 +77,7 @@ export function Step4_Review({
         },
         incidentType: passengerData.incidentType,
         notes: passengerData.notes || null,
+        termsAccepted: true,
       };
 
       const claim = await submitClaim(claimRequest);
@@ -319,14 +327,53 @@ export function Step4_Review({
             <div className="bg-muted rounded-lg p-4 text-sm">
               <p className="font-semibold mb-2">Terms & Conditions</p>
               <p className="text-muted-foreground mb-2">
-                By submitting this claim, you agree to our terms and conditions and
-                authorize EasyAirClaim to act on your behalf in pursuing compensation
+                By submitting this claim, you agree to our{' '}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline hover:no-underline"
+                >
+                  terms and conditions
+                </a>{' '}
+                and authorize EasyAirClaim to act on your behalf in pursuing compensation
                 from the airline.
               </p>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mb-4">
                 We operate on a "no win, no fee" basis. Our commission is 20% (+ VAT)
                 of the compensation amount, deducted only upon successful claim.
               </p>
+
+              <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
+                <input
+                  type="checkbox"
+                  id="terms-checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  disabled={isSubmitting}
+                />
+                <label
+                  htmlFor="terms-checkbox"
+                  className="text-sm cursor-pointer select-none"
+                >
+                  <span className="font-medium">I accept the terms and conditions</span>
+                  <span className="text-muted-foreground">
+                    {' '}
+                    and authorize EasyAirClaim to process my claim and personal data in
+                    accordance with the{' '}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline hover:no-underline"
+                    >
+                      terms and conditions
+                    </a>
+                    .
+                  </span>
+                </label>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -343,7 +390,7 @@ export function Step4_Review({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !termsAccepted}
             className="flex-1"
           >
             {isSubmitting ? 'Submitting...' : 'Submit Claim'}

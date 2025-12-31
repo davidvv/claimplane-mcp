@@ -118,6 +118,28 @@ services:
     networks:
       - nextcloud_network
 
+  webhook:
+    build:
+      context: .
+      dockerfile: Dockerfile.webhook
+    container_name: flight_claim_webhook
+    environment:
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-rgnS_FLumV_OULKyoR4NJIYzmCzdH4NJuMW1yvb81GU}
+      WEBHOOK_PORT: 9000
+    ports:
+      - "9000:9000"
+    volumes:
+      # Mount project directory for git operations
+      - .:/home/david/easyAirClaim/easyAirClaim
+      # Mount Docker socket to run docker-compose commands
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Mount webhook scripts
+      - ./webhook_deploy.py:/app/webhook_deploy.py:ro
+      - ./deploy.sh:/app/deploy.sh:ro
+    restart: always
+    networks:
+      - nextcloud_network
+
 networks:
   nextcloud_network:
     external: true

@@ -1,0 +1,34 @@
+FROM python:3.11-slim
+
+# Install git and docker CLI for deployment tasks
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    && curl -fsSL https://get.docker.com -o get-docker.sh \
+    && sh get-docker.sh \
+    && rm get-docker.sh \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install docker-compose
+RUN curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
+    && chmod +x /usr/local/bin/docker-compose
+
+# Install Python dependencies
+RUN pip install --no-cache-dir flask==3.0.0
+
+# Create app directory
+WORKDIR /app
+
+# Copy webhook receiver script
+COPY webhook_deploy.py /app/
+COPY deploy.sh /app/
+
+# Make deploy script executable
+RUN chmod +x /app/deploy.sh
+
+# Expose webhook port
+EXPOSE 9000
+
+# Run webhook receiver
+CMD ["python", "webhook_deploy.py"]

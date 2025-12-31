@@ -1,17 +1,20 @@
 # Deployment Guide - For Development Partner
 
-This guide explains how automatic deployments work for the EasyAirClaim project using GitHub Actions.
+This guide explains how automatic deployments work for the EasyAirClaim project using GitHub Webhooks.
 
 ## Overview
 
-When you push code to the `MVP` branch, GitHub Actions automatically:
-1. Connects to the production server via SSH
-2. Pulls the latest code
-3. Rebuilds Docker containers
-4. Deploys the frontend
-5. Verifies services are running
+When you push code to the `MVP` branch, deployment happens automatically:
+1. GitHub sends a webhook notification to the server
+2. Server receives the webhook and verifies it's authentic
+3. Server pulls the latest code from GitHub
+4. Rebuilds Docker containers
+5. Deploys the frontend
+6. Verifies services are running
 
 **You don't need SSH access to the server** - just push your code and it deploys automatically!
+
+**Perfect for homelab:** Works through Cloudflare Tunnel, no router port forwarding needed!
 
 ---
 
@@ -47,17 +50,15 @@ git push origin MVP
 
 ### Watching the Deployment
 
-1. Go to the GitHub repository
-2. Click the **Actions** tab
-3. You'll see your deployment running
-4. Click on it to see live logs
-5. Wait ~2-3 minutes for completion
+**Unlike GitHub Actions, there's no web UI to watch webhooks.** Instead:
 
-### Deployment Status
-
-- ✅ **Green checkmark**: Deployment succeeded, your changes are live!
-- ❌ **Red X**: Deployment failed, check the logs to see what went wrong
-- 🟡 **Yellow circle**: Deployment in progress
+1. **Immediate feedback**: Push completes = webhook sent
+2. **Check server logs** (ask David for access):
+   ```bash
+   sudo journalctl -u webhook-deploy -f
+   ```
+3. **Wait ~2-3 minutes** then check if your changes are live
+4. **Test the application** to verify deployment
 
 ---
 
@@ -77,31 +78,27 @@ git push origin MVP
 
 ## Troubleshooting
 
-### "Deployment failed" - What to do?
-
-1. **Check the GitHub Actions logs:**
-   - Go to Actions tab → Click on failed workflow
-   - Read the error message
-
-2. **Common issues:**
-   - **Syntax error in code**: Fix locally, push again
-   - **Docker build failed**: Check `docker-compose.yml` or Dockerfile
-   - **Tests failed**: Run tests locally first (`pytest`)
-   - **Port conflicts**: Services might already be running
-
-3. **Ask David:** If the error mentions server configuration, SSH access, or deployment scripts, David needs to fix it on the server side.
-
 ### "My changes aren't showing up"
 
-1. **Check deployment status:** Green checkmark in Actions tab?
-2. **Clear browser cache:** Hard refresh (Ctrl+Shift+R or Cmd+Shift+R)
-3. **Check correct branch:** Did you push to `MVP`?
-4. **Wait a bit longer:** Frontend build can take 2-3 minutes
+1. **Did you push to the right branch?** Must be `MVP` branch
+2. **Wait a bit longer:** Frontend build can take 2-3 minutes
+3. **Clear browser cache:** Hard refresh (Ctrl+Shift+R or Cmd+Shift+R)
+4. **Check with David:** He can view webhook logs to see if deployment succeeded
 
-### "I pushed but deployment didn't trigger"
+### "I pushed but nothing happened"
 
-- Check you pushed to the `MVP` branch (not `main` or another branch)
-- Look in Actions tab - might be queued behind another deployment
+Possible causes:
+- **Wrong branch**: Only `MVP` branch triggers deployment
+- **Webhook not configured**: Ask David to check GitHub webhook settings
+- **Server down**: Ask David to check if webhook service is running
+- **Network issue**: Cloudflare Tunnel might be down
+
+### "Deployment failed mid-way"
+
+Ask David to:
+- Check webhook logs: `sudo journalctl -u webhook-deploy -n 50`
+- Check deployment script: `bash deploy.sh` manually
+- Review Docker logs: `docker-compose logs`
 
 ---
 
@@ -118,8 +115,8 @@ git push origin MVP
 
 ❌ **DON'T:**
 - Push directly to MVP without testing
-- Push multiple times rapidly (wastes CI minutes)
-- Push broken code (it will fail deployment)
+- Push broken code (it will deploy broken)
+- Push multiple times rapidly (each push triggers a deploy)
 
 ### Commit Message Format
 
@@ -132,16 +129,6 @@ refactor: optimize database queries
 docs: update API documentation
 test: add tests for compensation calculation
 ```
-
----
-
-## GitHub Actions Free Tier Limits
-
-- **2,000 minutes/month** for private repos
-- Each deployment takes ~2-3 minutes
-- That's ~1,000 deployments/month (plenty!)
-
-If we run out (unlikely), deployments will queue until next month or we can upgrade.
 
 ---
 
@@ -175,9 +162,9 @@ git push origin MVP --force
 
 ## Questions?
 
-- **GitHub Actions not working?** → Ask David to check server configuration
-- **Deployment script failing?** → Ask David to check `deploy.sh`
-- **Need different deployment behavior?** → Ask David to modify `.github/workflows/deploy.yml`
+- **Webhook not triggering?** → Ask David to check webhook service and GitHub settings
+- **Deployment script failing?** → Ask David to check `deploy.sh` and server logs
+- **Need to see deployment logs?** → Ask David for access to server logs
 - **General code questions?** → Feel free to ask!
 
 ---
@@ -186,35 +173,69 @@ git push origin MVP --force
 
 ### Files Involved
 
-- `.github/workflows/deploy.yml` - GitHub Actions workflow definition
+- `webhook_deploy.py` - Flask app that receives GitHub webhooks
 - `deploy.sh` - Deployment script that runs on the server
-- Server has a dedicated SSH key that GitHub uses to connect
+- `webhook-deploy.service` - Systemd service that keeps webhook receiver running
 
 ### Security
 
-- GitHub connects using a dedicated SSH key (not your personal key)
-- The SSH key is stored as a GitHub Secret (encrypted)
-- Only authorized collaborators can trigger deployments
-- Deployment logs are visible in GitHub Actions
+- Webhook requests are verified using HMAC-SHA256 signatures
+- Only authenticated webhooks from GitHub are accepted
+- Secret token is stored securely on the server (not in code)
+- Only pushes to `MVP` branch trigger deployment
 
-### Deployment Process
+### Architecture
 
 ```
-Your Push → GitHub → SSH to Server → Pull Code → Build Docker → Build Frontend → Verify → Done
+Your Push → GitHub → Webhook Notification → Cloudflare Tunnel →
+  → Webhook Receiver (port 9000) → Verify Signature →
+  → Run deploy.sh → Pull Code → Build Docker → Build Frontend →
+  → Verify Services → Done ✅
 ```
 
-Full deployment timeline:
-- 0:00 - GitHub receives push
-- 0:05 - Workflow starts
-- 0:10 - SSH connection established
-- 0:15 - Git pull completed
+**Why this works in homelab:**
+- All connections are **outbound** from your server
+- No router port forwarding needed
+- Uses existing Cloudflare Tunnel infrastructure
+- GitHub doesn't need direct access to your network
+
+### Deployment Process Timeline
+
+- 0:00 - You push to GitHub
+- 0:01 - GitHub sends webhook notification
+- 0:02 - Webhook receiver verifies and starts deployment
+- 0:05 - Git pull completed
 - 1:00 - Docker rebuild started
 - 2:00 - Frontend build started
 - 2:30 - Services verified
 - 2:45 - Deployment complete ✅
 
+### Webhook Service Status
+
+To check if the webhook service is running (ask David):
+```bash
+# Check service status
+sudo systemctl status webhook-deploy
+
+# View recent logs
+sudo journalctl -u webhook-deploy -n 50
+
+# Restart service if needed
+sudo systemctl restart webhook-deploy
+```
+
+---
+
+## Advantages Over SSH/GitHub Actions
+
+✅ **Security:** No SSH port exposed to internet
+✅ **Homelab-friendly:** Works through existing Cloudflare Tunnel
+✅ **Cost:** 100% free forever, no CI/CD minutes
+✅ **Simple:** Fewer moving parts than GitHub Actions
+✅ **Fast:** Near-instant trigger when you push
+
 ---
 
 **Happy deploying! 🚀**
 
-Last updated: 2025-12-29
+Last updated: 2025-12-31

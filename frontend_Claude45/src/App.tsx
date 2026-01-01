@@ -20,6 +20,7 @@ import { AccountSettings } from './pages/AccountSettings';
 import { TermsAndConditions } from './pages/TermsAndConditions';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { About } from './pages/About';
+import { Contact } from './pages/Contact';
 
 // Admin Pages
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
@@ -43,6 +44,7 @@ function App() {
             <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
 
             {/* Admin Panel Routes (non-obvious path for security) */}
             <Route path="/panel/dashboard" element={<AdminDashboard />} />

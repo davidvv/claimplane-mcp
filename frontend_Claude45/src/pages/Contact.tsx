@@ -2,7 +2,7 @@
  * Contact page
  */
 
-import { Mail, MapPin } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function Contact() {
@@ -19,39 +19,21 @@ export function Contact() {
 
         {/* Contact Information */}
         <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            {/* Email Support */}
-            <div className="bg-card p-8 rounded-lg border shadow-sm">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Mail className="w-6 h-6 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">Email Support</h2>
-              <p className="text-muted-foreground mb-4">
-                Send us an email and we'll respond within 24 hours
-              </p>
-              <a
-                href="mailto:support@easyairclaim.com"
-                className="text-primary font-semibold text-lg hover:underline"
-              >
-                support@easyairclaim.com
-              </a>
+          {/* Email Support */}
+          <div className="bg-card p-8 rounded-lg border shadow-sm mb-12 max-w-2xl mx-auto">
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+              <Mail className="w-6 h-6 text-primary" />
             </div>
-
-            {/* Business Address */}
-            <div className="bg-card p-8 rounded-lg border shadow-sm">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <MapPin className="w-6 h-6 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">Business Address</h2>
-              <p className="text-muted-foreground mb-4">
-                EasyAirClaim LLC
-              </p>
-              <p className="text-foreground">
-                3436 SW 8th Pl<br />
-                Cape Coral, FL 33914<br />
-                United States
-              </p>
-            </div>
+            <h2 className="text-2xl font-bold mb-2">Email Support</h2>
+            <p className="text-muted-foreground mb-4">
+              Send us an email and we'll respond within 24 hours
+            </p>
+            <a
+              href="mailto:support@easyairclaim.com"
+              className="text-primary font-semibold text-lg hover:underline"
+            >
+              support@easyairclaim.com
+            </a>
           </div>
 
           {/* Additional Information */}

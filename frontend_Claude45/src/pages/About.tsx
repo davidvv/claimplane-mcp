@@ -2,7 +2,26 @@
  * About Us page
  */
 
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+
 export function About() {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Handle scrolling to anchor when hash is present in URL
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        // Small delay to ensure page has rendered
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+  }, [location]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto px-4 py-16">

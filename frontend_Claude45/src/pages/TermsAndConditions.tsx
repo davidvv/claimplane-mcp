@@ -167,7 +167,7 @@ export function TermsAndConditions() {
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
               <li>Termination requests will be processed within 5 business days of receipt</li>
-              <li>If we have already received compensation from the airline before termination, our commission (20% + VAT) will still apply to the amount recovered</li>
+              <li>If we have already received compensation from the airline before termination, our commission (20%, including all taxes and VAT) will still apply to the amount recovered</li>
               <li>After termination, you are free to pursue the claim independently or through another service provider</li>
               <li>Any third-party costs already incurred on your behalf may be charged to you upon termination</li>
               <li>We will provide confirmation of termination via email within 5 business days</li>
@@ -187,7 +187,7 @@ export function TermsAndConditions() {
             <h3 className="text-xl font-semibold mb-3">4.2 Commission Structure</h3>
             <p className="mb-4">
               Our standard commission is <strong>20% (twenty percent) of the gross compensation amount
-              recovered</strong>, plus applicable taxes (VAT/sales tax). This commission covers all our
+              recovered, including all applicable taxes and VAT</strong>. This commission covers all our
               services, including:
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
@@ -465,7 +465,7 @@ export function TermsAndConditions() {
               <p className="font-semibold">EasyAirClaim LLC</p>
               <p>Legal Department</p>
               <p>Email: legal@easyairclaim.com</p>
-              <p>Address: [Florida Business Address]</p>
+              <p>Address: 3436 SW 8th Pl, Cape Coral 33914</p>
             </div>
 
             <h3 className="text-xl font-semibold mb-3">12.6 Survival</h3>
@@ -492,9 +492,7 @@ export function TermsAndConditions() {
               <p className="font-semibold text-lg mb-2">EasyAirClaim LLC</p>
               <p className="mb-1">Email: support@easyairclaim.com</p>
               <p className="mb-1">Legal: legal@easyairclaim.com</p>
-              <p className="mb-1">Phone: [Phone Number]</p>
-              <p className="mb-1">Business Address: [Florida Address]</p>
-              <p className="mb-1">Hours: Monday-Friday, 9:00 AM - 5:00 PM EST</p>
+              <p className="mb-1">Business Address: 3436 SW 8th Pl, Cape Coral 33914</p>
             </div>
           </section>
 

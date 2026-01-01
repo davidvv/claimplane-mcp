@@ -494,3 +494,314 @@ async def get_admin_users(
     logger.info(f"Admin {admin.id} requested list of {len(admin_users)} admin users")
 
     return admin_users
+
+
+# Phase 6: AeroDataBox API Management Endpoints
+
+@router.get("/api-usage/stats")
+async def get_api_usage_stats(
+    days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
+    session: AsyncSession = Depends(get_db),
+    admin: Customer = Depends(get_current_admin)
+):
+    """
+    Get AeroDataBox API usage statistics for the last N days.
+
+    Returns:
+    - Total API calls and credits used
+    - Average and max response times
+    - Daily usage breakdown
+    - Top endpoints by usage
+
+    Admin authentication required.
+    """
+    from app.services.quota_tracking_service import QuotaTrackingService
+
+    try:
+        stats = await QuotaTrackingService.get_usage_statistics(session, days=days)
+
+        logger.info(f"Admin {admin.id} requested API usage stats for {days} days")
+
+        return stats
+
+    except Exception as e:
+        logger.error(f"Failed to get API usage stats: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve API usage statistics: {str(e)}"
+        )
+
+
+@router.get("/api-usage/quota")
+async def get_quota_status(
+    session: AsyncSession = Depends(get_db),
+    admin: Customer = Depends(get_current_admin)
+):
+    """
+    Get current AeroDataBox API quota status.
+
+    Returns:
+    - Current billing period (start/end dates)
+    - Total credits allowed and used
+    - Credits remaining
+    - Usage percentage
+    - Alert status (80%, 90%, 95% thresholds)
+    - Whether quota is exceeded (>95%)
+
+    Admin authentication required.
+    """
+    from app.services.quota_tracking_service import QuotaTrackingService
+
+    try:
+        quota_status = await QuotaTrackingService.get_quota_status(session)
+
+        logger.info(
+            f"Admin {admin.id} checked quota status: "
+            f"{quota_status['credits_used']}/{quota_status['total_credits_allowed']} "
+            f"({quota_status['usage_percentage']}%)"
+        )
+
+        return quota_status
+
+    except Exception as e:
+        logger.error(f"Failed to get quota status: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve quota status: {str(e)}"
+        )
+
+
+@router.post("/{claim_id}/refresh-flight-data", response_model=ClaimDetailResponse)
+async def refresh_flight_data(
+    claim_id: UUID,
+    force: bool = Query(False, description="Force API call even if cached"),
+    session: AsyncSession = Depends(get_db),
+    admin: Customer = Depends(get_current_admin)
+):
+    """
+    Force refresh flight data for a specific claim using AeroDataBox API.
+
+    This endpoint:
+    - Bypasses cache if force=True
+    - Calls AeroDataBox API to get latest flight status
+    - Updates claim with verified flight data (distance, delay, compensation)
+    - Stores new FlightData snapshot in database
+    - Returns updated claim details
+
+    Use this when:
+    - Flight data has changed (delay increased, status updated)
+    - Initial verification failed and you want to retry
+    - Cache is stale and you need fresh data
+
+    **WARNING**: This consumes API credits (2 credits per call for TIER 2 endpoint).
+    Use sparingly to avoid exceeding quota.
+
+    Admin authentication required.
+    """
+    from app.services.flight_data_service import FlightDataService
+    from app.repositories.admin_claim_repository import AdminClaimRepository
+
+    repository = AdminClaimRepository(session)
+
+    # Verify claim exists
+    claim = await repository.get_by_id(claim_id)
+    if not claim:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Claim {claim_id} not found"
+        )
+
+    try:
+        logger.info(
+            f"Admin {admin.id} requesting flight data refresh for claim {claim_id} "
+            f"(force={force})"
+        )
+
+        # Call FlightDataService to verify and enrich claim
+        enriched_data = await FlightDataService.verify_and_enrich_claim(
+            session=session,
+            claim=claim,
+            user_id=admin.id,
+            force_refresh=force
+        )
+
+        # Update claim with verified data
+        if enriched_data.get("verified"):
+            logger.info(
+                f"Flight verified for claim {claim_id}: "
+                f"compensation={enriched_data.get('compensation_amount')} EUR, "
+                f"cached={enriched_data.get('cached')}"
+            )
+
+            # Update claim fields
+            if enriched_data.get("compensation_amount") is not None:
+                claim.calculated_compensation = enriched_data["compensation_amount"]
+
+            if enriched_data.get("distance_km") is not None:
+                claim.flight_distance_km = enriched_data["distance_km"]
+
+            if enriched_data.get("delay_hours") is not None:
+                claim.delay_hours = enriched_data["delay_hours"]
+
+            await session.commit()
+
+            logger.info(
+                f"Updated claim {claim_id} with verified flight data "
+                f"(API credits used: {enriched_data.get('api_credits_used', 0)})"
+            )
+
+        else:
+            logger.warning(
+                f"Flight not verified for claim {claim_id}: "
+                f"source={enriched_data.get('verification_source')}"
+            )
+
+        # Reload claim with full details
+        claim_detail = await repository.get_claim_with_full_details(claim_id)
+
+        return claim_detail
+
+    except Exception as e:
+        logger.error(
+            f"Failed to refresh flight data for claim {claim_id}: {str(e)}",
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to refresh flight data: {str(e)}"
+        )
+
+
+@router.post("/backfill-flight-data")
+async def backfill_flight_data(
+    batch_size: int = Query(50, ge=1, le=500, description="Number of claims to process"),
+    admin: Customer = Depends(get_current_admin)
+):
+    """
+    Trigger backfill of flight data for existing claims without verification.
+
+    This endpoint queues a Celery task to process claims in the background.
+    The task will:
+    - Find claims without flight data
+    - Call AeroDataBox API to verify flight details
+    - Update claims with distance, delay, and compensation
+    - Stop if API quota is exceeded (>95%)
+
+    **Cost Warning**: Each claim consumes 2 API credits (TIER 2 endpoint).
+    - Free tier: 600 credits/month = 300 claims/month
+    - Recommended batch size: 50 claims at a time
+
+    **Returns immediately** with task ID. Use GET /admin/claims/backfill-status/{task_id}
+    to check progress.
+
+    Admin authentication required.
+
+    Args:
+        batch_size: Number of claims to process (1-500, default: 50)
+        admin: Current admin user
+
+    Returns:
+        Task information:
+        - task_id: Celery task ID for status tracking
+        - status: Task status (PENDING, STARTED, SUCCESS, FAILURE)
+        - message: Human-readable message
+    """
+    from app.tasks.claim_tasks import backfill_flight_data as backfill_task
+
+    try:
+        logger.info(
+            f"Admin {admin.id} triggered backfill for {batch_size} claims"
+        )
+
+        # Queue the backfill task (runs in background via Celery)
+        task = backfill_task.delay(
+            batch_size=batch_size,
+            admin_user_id=str(admin.id)
+        )
+
+        logger.info(f"Backfill task queued: {task.id}")
+
+        return {
+            "success": True,
+            "task_id": task.id,
+            "status": task.status,
+            "message": f"Backfill task queued for {batch_size} claims. Use task_id to check status.",
+            "batch_size": batch_size,
+            "check_status_url": f"/admin/claims/backfill-status/{task.id}"
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to queue backfill task: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to queue backfill task: {str(e)}"
+        )
+
+
+@router.get("/backfill-status/{task_id}")
+async def get_backfill_status(
+    task_id: str,
+    admin: Customer = Depends(get_current_admin)
+):
+    """
+    Get status of a backfill task.
+
+    Returns real-time status and statistics for a running or completed backfill task.
+
+    Admin authentication required.
+
+    Args:
+        task_id: Celery task ID from backfill-flight-data endpoint
+        admin: Current admin user
+
+    Returns:
+        Task status information:
+        - task_id: Task ID
+        - status: PENDING | STARTED | SUCCESS | FAILURE | RETRY
+        - result: Task result (if completed) with statistics
+        - error: Error message (if failed)
+    """
+    from celery.result import AsyncResult
+
+    try:
+        task = AsyncResult(task_id)
+
+        response = {
+            "task_id": task_id,
+            "status": task.status,
+        }
+
+        if task.status == "SUCCESS":
+            # Task completed successfully - return statistics
+            result = task.result
+            response["result"] = result
+            response["message"] = (
+                f"Backfill complete: {result.get('verified_count', 0)} claims verified, "
+                f"{result.get('failed_count', 0)} failed, "
+                f"{result.get('api_credits_used', 0)} API credits used"
+            )
+
+        elif task.status == "FAILURE":
+            # Task failed - return error
+            response["error"] = str(task.result)
+            response["message"] = "Backfill task failed"
+
+        elif task.status == "PENDING":
+            response["message"] = "Backfill task queued, waiting to start"
+
+        elif task.status == "STARTED":
+            response["message"] = "Backfill task in progress"
+
+        else:
+            response["message"] = f"Task status: {task.status}"
+
+        logger.info(f"Admin {admin.id} checked backfill task {task_id}: {task.status}")
+
+        return response
+
+    except Exception as e:
+        logger.error(f"Failed to get task status: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve task status: {str(e)}"
+        )

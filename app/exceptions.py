@@ -370,6 +370,219 @@ class NextcloudInvalidRequestError(NextcloudClientError):
         self.suggestion = "Check your request data and ensure all required fields are provided correctly"
 
 
+# ============================================================================
+# PHASE 6: AeroDataBox API Error Classes
+# ============================================================================
+
+
+class AeroDataBoxError(FlightClaimException):
+    """Base class for AeroDataBox API errors with enhanced error information."""
+
+    def __init__(self, message: str, error_code: str, status_code: int = 400,
+                 original_error: Exception = None, context: str = None,
+                 suggestion: str = None, retryable: bool = False, details: dict = None):
+        self.error_code = error_code
+        self.original_error = original_error
+        self.context = context
+        self.suggestion = suggestion
+        self.retryable = retryable
+        self.details = details or {}
+        super().__init__(message, status_code=status_code)
+
+    def to_dict(self) -> dict:
+        """Convert error to structured response format."""
+        return {
+            "error_code": self.error_code,
+            "message": self.message,
+            "suggestion": self.suggestion,
+            "retryable": self.retryable,
+            "context": self.context,
+            "details": self.details
+        }
+
+
+class AeroDataBoxRetryableError(AeroDataBoxError):
+    """Exception raised for AeroDataBox errors that should trigger retries."""
+
+    def __init__(self, message: str, error_code: str = "AERO_RETRYABLE_ERROR",
+                 original_error: Exception = None, retry_after: int = None,
+                 context: str = None, suggestion: str = None, details: dict = None):
+        super().__init__(
+            message=message,
+            error_code=error_code,
+            status_code=503,
+            original_error=original_error,
+            context=context,
+            suggestion=suggestion,
+            retryable=True,
+            details=details or {}
+        )
+        self.retry_after = retry_after
+        if retry_after:
+            self.details["retry_after"] = retry_after
+
+
+class AeroDataBoxPermanentError(AeroDataBoxError):
+    """Exception raised for AeroDataBox errors that should not be retried."""
+
+    def __init__(self, message: str, error_code: str = "AERO_PERMANENT_ERROR",
+                 status_code: int = 400, original_error: Exception = None,
+                 context: str = None, suggestion: str = None, details: dict = None):
+        super().__init__(
+            message=message,
+            error_code=error_code,
+            status_code=status_code,
+            original_error=original_error,
+            context=context,
+            suggestion=suggestion,
+            retryable=False,
+            details=details or {}
+        )
+
+
+# Network Error Classes
+class AeroDataBoxNetworkError(AeroDataBoxRetryableError):
+    """Network-related errors (timeouts, connection failures, DNS errors)."""
+
+    def __init__(self, message: str, original_error: Exception = None,
+                 context: str = None, details: dict = None):
+        super().__init__(
+            message=message,
+            error_code="AERO_NETWORK_ERROR",
+            original_error=original_error,
+            context=context,
+            suggestion="Check your internet connection and AeroDataBox API availability",
+            details=details or {}
+        )
+
+
+class AeroDataBoxTimeoutError(AeroDataBoxNetworkError):
+    """Timeout errors for AeroDataBox operations."""
+
+    def __init__(self, message: str, timeout_seconds: int = None,
+                 context: str = None, details: dict = None):
+        super().__init__(
+            message=message,
+            context=context,
+            details=details or {}
+        )
+        self.error_code = "AERO_TIMEOUT_ERROR"
+        if timeout_seconds:
+            self.details["timeout_seconds"] = timeout_seconds
+        self.suggestion = f"Operation timed out after {timeout_seconds or 'unknown'} seconds. Try again or contact support if the issue persists"
+
+
+# Authentication Error Classes
+class AeroDataBoxAuthenticationError(AeroDataBoxPermanentError):
+    """Authentication errors (invalid API key, expired tokens)."""
+
+    def __init__(self, message: str, original_error: Exception = None,
+                 context: str = None, details: dict = None):
+        super().__init__(
+            message=message,
+            error_code="AERO_AUTH_ERROR",
+            status_code=401,
+            original_error=original_error,
+            context=context,
+            suggestion="Check your AeroDataBox API key and ensure it has not expired",
+            details=details or {}
+        )
+
+
+# Flight Data Error Classes
+class AeroDataBoxFlightNotFoundError(AeroDataBoxPermanentError):
+    """Flight not found errors."""
+
+    def __init__(self, message: str, flight_number: str = None, flight_date: str = None,
+                 context: str = None, details: dict = None):
+        super().__init__(
+            message=message,
+            error_code="AERO_FLIGHT_NOT_FOUND",
+            status_code=404,
+            context=context,
+            suggestion="Verify the flight number and date. The flight may not be in the AeroDataBox database",
+            details=details or {}
+        )
+        if flight_number:
+            self.details["flight_number"] = flight_number
+        if flight_date:
+            self.details["flight_date"] = flight_date
+
+
+# Quota Error Classes
+class AeroDataBoxQuotaExceededError(AeroDataBoxPermanentError):
+    """Quota exceeded errors."""
+
+    def __init__(self, message: str, quota_used: int = None, quota_limit: int = None,
+                 context: str = None, details: dict = None):
+        super().__init__(
+            message=message,
+            error_code="AERO_QUOTA_EXCEEDED",
+            status_code=429,
+            context=context,
+            suggestion="API quota exceeded. Upgrade to Pro tier or wait for quota reset",
+            details=details or {}
+        )
+        if quota_used and quota_limit:
+            self.details.update({
+                "quota_used": quota_used,
+                "quota_limit": quota_limit,
+                "usage_percentage": round((quota_used / quota_limit) * 100, 2)
+            })
+
+
+class AeroDataBoxRateLimitError(AeroDataBoxRetryableError):
+    """Rate limit errors (429 with Retry-After header)."""
+
+    def __init__(self, message: str, retry_after: int = None,
+                 original_error: Exception = None, context: str = None, details: dict = None):
+        super().__init__(
+            message=message,
+            error_code="AERO_RATE_LIMIT",
+            original_error=original_error,
+            retry_after=retry_after,
+            context=context,
+            suggestion="API rate limit reached. Request will be retried automatically",
+            details=details or {}
+        )
+
+
+# Server Error Classes
+class AeroDataBoxServerError(AeroDataBoxRetryableError):
+    """Server errors (5xx range)."""
+
+    def __init__(self, message: str, status_code: int = 500,
+                 original_error: Exception = None, context: str = None, details: dict = None):
+        super().__init__(
+            message=message,
+            error_code=f"AERO_SERVER_ERROR_{status_code}",
+            original_error=original_error,
+            context=context,
+            suggestion="AeroDataBox API is experiencing issues. Request will be retried automatically",
+            details=details or {}
+        )
+        self.status_code = status_code
+        self.details["server_status_code"] = status_code
+
+
+# Client Error Classes
+class AeroDataBoxClientError(AeroDataBoxPermanentError):
+    """Client errors (4xx range, excluding auth and rate limit)."""
+
+    def __init__(self, message: str, status_code: int = 400,
+                 original_error: Exception = None, context: str = None, details: dict = None):
+        super().__init__(
+            message=message,
+            error_code=f"AERO_CLIENT_ERROR_{status_code}",
+            status_code=status_code,
+            original_error=original_error,
+            context=context,
+            suggestion="Check your request parameters and try again",
+            details=details or {}
+        )
+        self.details["client_status_code"] = status_code
+
+
 def setup_exception_handlers(app: FastAPI):
     """Setup global exception handlers for the FastAPI app."""
     

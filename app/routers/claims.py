@@ -228,9 +228,54 @@ async def submit_claim_with_customer(
         )
         logger.info(f"Claim created: {claim.id}")
 
-        # Commit the claim to database before sending email
+        # Commit the claim to database before flight verification
         await db.commit()
         logger.info(f"Claim {claim.id} committed to database")
+
+        # Phase 6: Flight verification and enrichment (after commit, before email)
+        try:
+            from app.services.flight_data_service import FlightDataService
+
+            logger.info(f"Starting flight verification for claim {claim.id}")
+            enriched_data = await FlightDataService.verify_and_enrich_claim(
+                session=db,
+                claim=claim,
+                user_id=customer.id,
+                force_refresh=False
+            )
+
+            # Update claim with verified flight data
+            if enriched_data.get("verified"):
+                logger.info(f"Flight verified for claim {claim.id}: compensation={enriched_data.get('compensation_amount')} EUR")
+
+                # Update claim with calculated fields
+                if enriched_data.get("compensation_amount") is not None:
+                    claim.calculated_compensation = enriched_data["compensation_amount"]
+
+                if enriched_data.get("distance_km") is not None:
+                    claim.flight_distance_km = enriched_data["distance_km"]
+
+                if enriched_data.get("delay_hours") is not None:
+                    claim.delay_hours = enriched_data["delay_hours"]
+
+                # Commit updated claim
+                await db.commit()
+                logger.info(f"Updated claim {claim.id} with verified flight data")
+            else:
+                logger.warning(
+                    f"Flight not verified for claim {claim.id}: "
+                    f"source={enriched_data.get('verification_source')}"
+                )
+
+        except Exception as e:
+            # CRITICAL: Never fail claim submission due to flight verification errors
+            # Graceful degradation - claim will use manual verification
+            logger.error(
+                f"Flight verification failed for claim {claim.id}: {str(e)}",
+                exc_info=True
+            )
+            # Continue with claim submission - admin will verify manually
+
     except ValueError as e:
         logger.error(f"Validation error in claim submission: {str(e)}", exc_info=True)
         await db.rollback()

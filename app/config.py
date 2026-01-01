@@ -142,6 +142,21 @@ class Config:
     NEXTCLOUD_TIMEOUT = int(os.getenv("NEXTCLOUD_TIMEOUT", "30"))
     NEXTCLOUD_MAX_RETRIES = int(os.getenv("NEXTCLOUD_MAX_RETRIES", "3"))
 
+    # AeroDataBox API Configuration (Phase 6)
+    AERODATABOX_API_KEY = os.getenv("AERODATABOX_API_KEY", "")
+    AERODATABOX_BASE_URL = os.getenv("AERODATABOX_BASE_URL", "https://api.aerodatabox.com/v1")
+    AERODATABOX_TIMEOUT = int(os.getenv("AERODATABOX_TIMEOUT", "30"))
+    AERODATABOX_MAX_RETRIES = int(os.getenv("AERODATABOX_MAX_RETRIES", "3"))
+    AERODATABOX_ENABLED = os.getenv("AERODATABOX_ENABLED", "false").lower() == "true"
+
+    # AeroDataBox Quota Management
+    AERODATABOX_MONTHLY_QUOTA = int(os.getenv("AERODATABOX_MONTHLY_QUOTA", "600"))  # Free tier: 600 credits/month
+    AERODATABOX_ALERT_THRESHOLD = int(os.getenv("AERODATABOX_ALERT_THRESHOLD", "80"))  # Alert at 80% usage
+
+    # Flight Data Caching
+    FLIGHT_DATA_CACHE_HOURS = int(os.getenv("FLIGHT_DATA_CACHE_HOURS", "24"))
+    FLIGHT_CACHE_TTL_SECONDS = FLIGHT_DATA_CACHE_HOURS * 3600  # Convert to seconds for Redis
+
     # Post-Upload Verification Configuration
     UPLOAD_VERIFICATION_ENABLED = os.getenv("UPLOAD_VERIFICATION_ENABLED", "true").lower() == "true"
     VERIFICATION_TIMEOUT = int(os.getenv("VERIFICATION_TIMEOUT", "300"))  # 5 minutes

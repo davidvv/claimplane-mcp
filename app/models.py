@@ -4,7 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import Column, String, Numeric, Date, Text, ForeignKey, DateTime, func, Boolean, Integer
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSON
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -689,3 +689,200 @@ class AccountDeletionRequest(Base):
         if status not in self.STATUS_TYPES:
             raise ValueError(f"Invalid status. Must be one of: {', '.join(self.STATUS_TYPES)}")
         return status
+
+
+# ============================================================================
+# PHASE 6: AeroDataBox Flight Data Models
+# ============================================================================
+
+
+class FlightData(Base):
+    """Flight data snapshot from AeroDataBox API for audit trail and verification."""
+
+    __tablename__ = "flight_data"
+
+    # Flight status types
+    STATUS_SCHEDULED = "scheduled"
+    STATUS_DELAYED = "delayed"
+    STATUS_CANCELLED = "cancelled"
+    STATUS_DIVERTED = "diverted"
+    STATUS_LANDED = "landed"
+
+    STATUS_TYPES = [
+        STATUS_SCHEDULED,
+        STATUS_DELAYED,
+        STATUS_CANCELLED,
+        STATUS_DIVERTED,
+        STATUS_LANDED
+    ]
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False, index=True)
+
+    # Flight identification
+    flight_number = Column(String(10), nullable=False, index=True)
+    flight_date = Column(Date, nullable=False, index=True)
+    airline_iata = Column(String(3), nullable=True)
+    airline_name = Column(String(255), nullable=True)
+
+    # Airports
+    departure_airport_iata = Column(String(3), nullable=False)
+    departure_airport_name = Column(String(255), nullable=True)
+    arrival_airport_iata = Column(String(3), nullable=False)
+    arrival_airport_name = Column(String(255), nullable=True)
+    distance_km = Column(Numeric(10, 2), nullable=True)
+
+    # Scheduled times
+    scheduled_departure = Column(DateTime(timezone=True), nullable=True)
+    scheduled_arrival = Column(DateTime(timezone=True), nullable=True)
+
+    # Actual times
+    actual_departure = Column(DateTime(timezone=True), nullable=True)
+    actual_arrival = Column(DateTime(timezone=True), nullable=True)
+
+    # Status
+    flight_status = Column(String(50), nullable=True, default=STATUS_SCHEDULED)
+    delay_minutes = Column(Integer, nullable=True)
+    cancellation_reason = Column(Text, nullable=True)
+
+    # API metadata
+    api_source = Column(String(50), default="aerodatabox", nullable=False)
+    api_retrieved_at = Column(DateTime(timezone=True), server_default=func.now())
+    api_response_raw = Column(JSON, nullable=True)  # Full API response for audit
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    claim = relationship("Claim", back_populates="flight_data")
+
+    def __repr__(self):
+        return f"<FlightData(id={self.id}, flight={self.flight_number}, date={self.flight_date}, status={self.flight_status})>"
+
+    @validates('flight_status')
+    def validate_status(self, key, status):
+        """Validate flight status."""
+        if status and status not in self.STATUS_TYPES:
+            raise ValueError(f"Invalid flight status. Must be one of: {', '.join(self.STATUS_TYPES)}")
+        return status
+
+    @property
+    def delay_hours(self):
+        """Calculate delay in hours from delay_minutes."""
+        if self.delay_minutes is not None:
+            return round(self.delay_minutes / 60.0, 2)
+        return None
+
+
+class APIUsageTracking(Base):
+    """Track every API call for quota monitoring and cost analysis."""
+
+    __tablename__ = "api_usage_tracking"
+
+    # API tier levels
+    TIER_FREE = "TIER_FREE"
+    TIER_1 = "TIER_1"
+    TIER_2 = "TIER_2"
+    TIER_3 = "TIER_3"
+    TIER_4 = "TIER_4"
+
+    TIER_LEVELS = [TIER_FREE, TIER_1, TIER_2, TIER_3, TIER_4]
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    # API details
+    api_provider = Column(String(50), nullable=False, default="aerodatabox", index=True)
+    endpoint = Column(String(255), nullable=False)  # e.g., "/flights/number/BA123/2024-01-15"
+    tier_level = Column(String(10), nullable=False, default=TIER_2)
+    credits_used = Column(Integer, nullable=False, default=2)  # 2 credits for TIER_2
+
+    # Response details
+    http_status = Column(Integer, nullable=True)  # 200, 404, 503, etc.
+    response_time_ms = Column(Integer, nullable=True)
+    error_message = Column(Text, nullable=True)
+
+    # Context tracking
+    triggered_by_user_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True, index=True)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=True, index=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    triggered_by_user = relationship("Customer", foreign_keys=[triggered_by_user_id])
+    claim = relationship("Claim", foreign_keys=[claim_id])
+
+    def __repr__(self):
+        return f"<APIUsageTracking(id={self.id}, provider={self.api_provider}, endpoint={self.endpoint}, credits={self.credits_used})>"
+
+    @validates('tier_level')
+    def validate_tier_level(self, key, tier_level):
+        """Validate API tier level."""
+        if tier_level not in self.TIER_LEVELS:
+            raise ValueError(f"Invalid tier level. Must be one of: {', '.join(self.TIER_LEVELS)}")
+        return tier_level
+
+
+class APIQuotaStatus(Base):
+    """Track current quota status for API providers with alert management."""
+
+    __tablename__ = "api_quota_status"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    api_provider = Column(String(50), nullable=False, unique=True, index=True)
+
+    # Billing period
+    period_start = Column(DateTime(timezone=True), nullable=False)
+    period_end = Column(DateTime(timezone=True), nullable=False)
+
+    # Quota tracking
+    total_credits_allowed = Column(Integer, nullable=False, default=600)  # Free tier: 600 credits/month
+    credits_used = Column(Integer, nullable=False, default=0)
+
+    # Alert tracking (multi-tier alerts at 80%, 90%, 95%)
+    alert_80_sent = Column(Boolean, nullable=False, default=False)
+    alert_80_sent_at = Column(DateTime(timezone=True), nullable=True)
+    alert_90_sent = Column(Boolean, nullable=False, default=False)
+    alert_90_sent_at = Column(DateTime(timezone=True), nullable=True)
+    alert_95_sent = Column(Boolean, nullable=False, default=False)
+    alert_95_sent_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Emergency brake (block API calls when quota > 95%)
+    is_quota_exceeded = Column(Boolean, nullable=False, default=False)
+
+    last_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    def __repr__(self):
+        return f"<APIQuotaStatus(id={self.id}, provider={self.api_provider}, used={self.credits_used}/{self.total_credits_allowed})>"
+
+    @property
+    def credits_remaining(self):
+        """Calculate remaining credits."""
+        return max(0, self.total_credits_allowed - self.credits_used)
+
+    @property
+    def usage_percentage(self):
+        """Calculate usage percentage."""
+        if self.total_credits_allowed == 0:
+            return 100.0
+        return round((self.credits_used / self.total_credits_allowed) * 100, 2)
+
+    @property
+    def should_send_alert_80(self):
+        """Check if 80% alert should be sent."""
+        return self.usage_percentage >= 80 and not self.alert_80_sent
+
+    @property
+    def should_send_alert_90(self):
+        """Check if 90% alert should be sent."""
+        return self.usage_percentage >= 90 and not self.alert_90_sent
+
+    @property
+    def should_send_alert_95(self):
+        """Check if 95% alert should be sent."""
+        return self.usage_percentage >= 95 and not self.alert_95_sent
+
+
+# Add flight_data relationship to Claim model
+Claim.flight_data = relationship("FlightData", back_populates="claim", uselist=False, cascade="all, delete-orphan")

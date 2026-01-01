@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ScrollToTop } from './components/ScrollToTop';
 
 // Pages
 import { Home } from './pages/Home';
@@ -27,6 +28,7 @@ import { ClaimDetailPage } from './pages/Admin/ClaimDetailPage';
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ErrorBoundary>
         <Layout>
           <Routes>

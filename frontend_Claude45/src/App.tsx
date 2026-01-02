@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { useAuthSync } from './hooks/useAuthSync';
 
 // Pages
 import { Home } from './pages/Home';
@@ -24,6 +25,20 @@ import { AdminDashboard } from './pages/Admin/AdminDashboard';
 import { ClaimDetailPage } from './pages/Admin/ClaimDetailPage';
 
 function App() {
+  // Validate authentication state on app load
+  // This prevents stale localStorage from showing user as logged in when cookies expired
+  const { isValidating } = useAuthSync();
+
+  // Show minimal loading state while validating session
+  // This prevents flash of wrong UI state on page load
+  if (isValidating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <ErrorBoundary>

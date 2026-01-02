@@ -107,10 +107,7 @@ export async function logout(): Promise<void> {
   }
 
   // Clear user info from localStorage (UI state only, tokens are in cookies)
-  localStorage.removeItem('user_email');
-  localStorage.removeItem('user_id');
-  localStorage.removeItem('user_name');
-  localStorage.removeItem('user_role');
+  clearLocalAuthState();
 
   // Cookies are cleared by the backend
   // Redirect will be handled by the caller
@@ -230,4 +227,74 @@ export function getStoredUserInfo() {
     name: localStorage.getItem('user_name'),
     role: localStorage.getItem('user_role'),
   };
+}
+
+/**
+ * Clear local authentication state
+ *
+ * Removes user info from localStorage.
+ * Note: This does NOT clear HTTP-only cookies - call logout() for that.
+ */
+export function clearLocalAuthState(): void {
+  localStorage.removeItem('user_email');
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('user_name');
+  localStorage.removeItem('user_role');
+}
+
+/**
+ * Validate current session with backend
+ *
+ * Checks if the HTTP-only cookies are still valid by calling /auth/me
+ * If session is invalid, automatically clears localStorage to sync UI state
+ *
+ * @returns Promise<boolean> - true if session is valid, false otherwise
+ */
+export async function validateSession(): Promise<boolean> {
+  try {
+    // If no localStorage data, no need to validate
+    if (!isAuthenticated()) {
+      return false;
+    }
+
+    // Call /auth/me to validate cookies
+    const response = await apiClient.get('/auth/me');
+
+    // If successful, session is valid
+    // Optionally update localStorage with latest user data
+    if (response.data) {
+      const userData = response.data;
+      localStorage.setItem('user_email', userData.email);
+      localStorage.setItem('user_id', userData.id);
+      localStorage.setItem('user_name', `${userData.first_name} ${userData.last_name}`);
+      localStorage.setItem('user_role', userData.role);
+      return true;
+    }
+
+    return false;
+  } catch (error: any) {
+    // If 401, cookies are invalid - clear localStorage
+    if (error.response?.status === 401) {
+      console.log('Session expired - clearing local auth state');
+      clearLocalAuthState();
+      return false;
+    }
+
+    // For other errors (network, 500, etc.), assume session might still be valid
+    // Don't clear localStorage on network errors
+    console.error('Session validation error (network issue, keeping local state):', error);
+    return isAuthenticated(); // Return current localStorage state
+  }
+}
+
+/**
+ * Synchronize authentication state
+ *
+ * Ensures localStorage is in sync with actual session state.
+ * Call this on app initialization and periodically during use.
+ *
+ * @returns Promise<boolean> - true if user is authenticated
+ */
+export async function syncAuthState(): Promise<boolean> {
+  return await validateSession();
 }

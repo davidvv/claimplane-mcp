@@ -108,6 +108,10 @@ export function AccountSettings() {
         });
       }
 
+      // Update localStorage with new name to sync UI
+      const fullName = `${updatedProfile.first_name} ${updatedProfile.last_name}`;
+      localStorage.setItem('user_name', fullName);
+
       toast.success('Profile updated successfully');
     } catch (error: any) {
       console.error('Profile update failed:', error);

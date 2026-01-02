@@ -75,11 +75,28 @@ class AeroDataBoxService:
         Returns:
             Headers dictionary with API key
         """
-        return {
-            "X-API-Key": self.api_key,
-            "Accept": "application/json",
-            "User-Agent": f"EasyAirClaim/{config.API_VERSION}"
-        }
+        # Check if using RapidAPI (base URL contains rapidapi.com)
+        if "rapidapi.com" in self.base_url.lower():
+            return {
+                "X-RapidAPI-Key": self.api_key,
+                "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com",
+                "Accept": "application/json",
+                "User-Agent": f"EasyAirClaim/{config.API_VERSION}"
+            }
+        # Check if using API.Market (base URL contains api.market)
+        elif "api.market" in self.base_url.lower():
+            return {
+                "x-api-market-key": self.api_key,
+                "accept": "application/json",
+                "User-Agent": f"EasyAirClaim/{config.API_VERSION}"
+            }
+        else:
+            # Direct AeroDataBox API
+            return {
+                "X-API-Key": self.api_key,
+                "Accept": "application/json",
+                "User-Agent": f"EasyAirClaim/{config.API_VERSION}"
+            }
 
     def _calculate_backoff_delay(self, attempt: int) -> float:
         """

@@ -368,3 +368,116 @@ export async function bulkAssignClaims(
   });
   return response.data;
 }
+
+// ============================================================================
+// Deletion Request Types
+// ============================================================================
+
+export interface DeletionRequestListItem {
+  id: string;
+  customer_id: string;
+  email: string;
+  reason: string | null;
+  requested_at: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  notes: string | null;
+  open_claims_count: number;
+  total_claims_count: number;
+  customer: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    created_at: string;
+  } | null;
+  reviewer: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null;
+}
+
+export interface PaginatedDeletionRequestsResponse {
+  requests: DeletionRequestListItem[];
+  total: number;
+  skip: number;
+  limit: number;
+  has_more: boolean;
+}
+
+export interface DeletionRequestFilters {
+  skip?: number;
+  limit?: number;
+  status?: string;
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+}
+
+// ============================================================================
+// Deletion Request API Functions
+// ============================================================================
+
+/**
+ * List deletion requests with filtering
+ */
+export async function listDeletionRequests(
+  filters: DeletionRequestFilters = {}
+): Promise<PaginatedDeletionRequestsResponse> {
+  const params = new URLSearchParams();
+
+  if (filters.skip !== undefined) params.append('skip', filters.skip.toString());
+  if (filters.limit !== undefined) params.append('limit', filters.limit.toString());
+  if (filters.status) params.append('status', filters.status);
+  if (filters.date_from) params.append('date_from', filters.date_from);
+  if (filters.date_to) params.append('date_to', filters.date_to);
+  if (filters.search) params.append('search', filters.search);
+  if (filters.sort_by) params.append('sort_by', filters.sort_by);
+  if (filters.sort_order) params.append('sort_order', filters.sort_order);
+
+  const response = await apiClient.get<PaginatedDeletionRequestsResponse>(
+    `/admin/deletion-requests?${params.toString()}`
+  );
+  return response.data;
+}
+
+/**
+ * Get single deletion request details
+ */
+export async function getDeletionRequest(requestId: string): Promise<DeletionRequestListItem> {
+  const response = await apiClient.get<DeletionRequestListItem>(
+    `/admin/deletion-requests/${requestId}`
+  );
+  return response.data;
+}
+
+/**
+ * Review deletion request (approve or reject)
+ */
+export async function reviewDeletionRequest(
+  requestId: string,
+  action: 'approve' | 'reject',
+  notes?: string
+): Promise<DeletionRequestListItem> {
+  const response = await apiClient.put<DeletionRequestListItem>(
+    `/admin/deletion-requests/${requestId}/review`,
+    { action, notes }
+  );
+  return response.data;
+}
+
+/**
+ * Process approved deletion request (irreversible)
+ */
+export async function processDeletion(requestId: string): Promise<{
+  message: string;
+  summary: any;
+}> {
+  const response = await apiClient.post(
+    `/admin/deletion-requests/${requestId}/process`
+  );
+  return response.data;
+}

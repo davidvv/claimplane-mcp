@@ -296,3 +296,27 @@ async def request_account_deletion(
                 "deactivated and you can no longer log in. Our team will review your request "
                 "and contact you if any open claims need to be resolved first."
     )
+
+
+@router.get(
+    "/export-data",
+    response_model=dict,
+    summary="Export account data",
+    description="Export all customer data for GDPR Article 20 (Right to Data Portability). "
+                "Returns JSON with profile, claims, files metadata, and account history."
+)
+async def export_account_data(
+    current_user: Customer = Depends(get_current_active_user),
+    session: AsyncSession = Depends(get_db)
+):
+    """Export all customer data as structured JSON."""
+    from app.services.gdpr_service import GDPRService
+
+    export_data = await GDPRService.export_customer_data(
+        session=session,
+        customer_id=current_user.id
+    )
+
+    logger.info(f"User {current_user.id} exported their account data")
+
+    return export_data

@@ -282,3 +282,177 @@ def send_account_deletion_admin_notification(
     except Exception as exc:
         logger.error(f"Failed to send account deletion admin notification: {exc}")
         raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+
+
+@celery_app.task(
+    name="send_account_deletion_approval_notification",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60
+)
+def send_account_deletion_approval_notification(
+    self,
+    email: str,
+    customer_name: str,
+    notes: str
+):
+    """
+    Celery task: Send notification when deletion request is approved.
+
+    Args:
+        email: Customer's email address
+        customer_name: Customer's full name
+        notes: Admin notes about the approval
+    """
+    try:
+        logger.info(f"Sending deletion approval notification to {email}")
+
+        run_async(
+            EmailService.send_email(
+                to_email=email,
+                subject="Account Deletion Approved - EasyAirClaim",
+                html_content=f"""
+                <h2>Account Deletion Request Approved</h2>
+                <p>Hello {customer_name},</p>
+                <p>Your account deletion request has been reviewed and approved.</p>
+                <p><strong>What happens next:</strong></p>
+                <ul>
+                    <li>Your personal data will be permanently deleted within 30 days</li>
+                    <li>Your account is currently deactivated and you cannot log in</li>
+                    <li>Claim records will be anonymized but retained for legal compliance (7 years)</li>
+                    <li>Uploaded files will be permanently deleted</li>
+                    <li>This action is irreversible once completed</li>
+                </ul>
+                <p><strong>Admin Notes:</strong></p>
+                <blockquote style="border-left: 4px solid #3b82f6; padding-left: 1em; margin: 1em 0;">
+                    {notes}
+                </blockquote>
+                <p>If you have any questions, please contact our support team at support@easyairclaim.com.</p>
+                <br>
+                <p>Best regards,<br>The EasyAirClaim Team</p>
+                """
+            )
+        )
+
+        logger.info("Deletion approval notification sent successfully")
+
+    except Exception as exc:
+        logger.error(f"Failed to send deletion approval notification: {exc}")
+        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+
+
+@celery_app.task(
+    name="send_account_deletion_rejection_notification",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60
+)
+def send_account_deletion_rejection_notification(
+    self,
+    email: str,
+    customer_name: str,
+    rejection_reason: str
+):
+    """
+    Celery task: Send notification when deletion request is rejected.
+
+    Args:
+        email: Customer's email address
+        customer_name: Customer's full name
+        rejection_reason: Reason for rejection
+    """
+    try:
+        logger.info(f"Sending deletion rejection notification to {email}")
+
+        run_async(
+            EmailService.send_email(
+                to_email=email,
+                subject="Account Deletion Request Update - EasyAirClaim",
+                html_content=f"""
+                <h2>Account Deletion Request Update</h2>
+                <p>Hello {customer_name},</p>
+                <p>We have reviewed your account deletion request. Unfortunately, we cannot process your
+                deletion at this time for the following reason:</p>
+                <blockquote style="border-left: 4px solid #e74c3c; padding-left: 1em; margin: 1em 0; color: #e74c3c;">
+                    {rejection_reason}
+                </blockquote>
+                <p><strong>Your account has been reactivated</strong> and you can now log in again using
+                your email and password.</p>
+                <p>If you still wish to delete your account after resolving the above issue, you can
+                submit a new deletion request from your account settings.</p>
+                <p>If you have any questions or need assistance, please contact our support team at
+                support@easyairclaim.com.</p>
+                <br>
+                <p>Best regards,<br>The EasyAirClaim Team</p>
+                """
+            )
+        )
+
+        logger.info("Deletion rejection notification sent successfully")
+
+    except Exception as exc:
+        logger.error(f"Failed to send deletion rejection notification: {exc}")
+        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+
+
+@celery_app.task(
+    name="send_account_deletion_completed_admin_notification",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60
+)
+def send_account_deletion_completed_admin_notification(
+    self,
+    admin_email: str,
+    customer_email: str,
+    deletion_summary: dict
+):
+    """
+    Celery task: Notify admin when deletion is completed.
+
+    Args:
+        admin_email: Admin's email address
+        customer_email: Customer's email address
+        deletion_summary: Summary of deletion operation
+    """
+    try:
+        logger.info(f"Sending deletion completion notification to admin {admin_email}")
+
+        from app.config import config
+        admin_email_target = config.ADMIN_EMAIL or admin_email
+
+        run_async(
+            EmailService.send_email(
+                to_email=admin_email_target,
+                subject=f"Account Deletion Completed - {customer_email}",
+                html_content=f"""
+                <h2>Account Deletion Completed</h2>
+                <p>A customer account deletion has been processed:</p>
+                <h3>Deletion Summary</h3>
+                <ul>
+                    <li><strong>Customer Email:</strong> {customer_email}</li>
+                    <li><strong>Files Deleted:</strong> {deletion_summary.get('files_deleted', 0)}</li>
+                    <li><strong>Files Failed:</strong> {deletion_summary.get('files_failed', 0)}</li>
+                    <li><strong>Claims Anonymized:</strong> {deletion_summary.get('claims_anonymized', 0)}</li>
+                    <li><strong>Started:</strong> {deletion_summary.get('deletion_started_at', 'N/A')}</li>
+                    <li><strong>Completed:</strong> {deletion_summary.get('deletion_completed_at', 'N/A')}</li>
+                </ul>
+                {f'''
+                <h3>Errors</h3>
+                <ul>
+                    {"".join(f"<li>{error}</li>" for error in deletion_summary.get('errors', []))}
+                </ul>
+                ''' if deletion_summary.get('errors') else ''}
+                <p>The customer account has been permanently anonymized and can no longer be used.</p>
+                <p>Claims have been retained for legal compliance (7 years) but all personal data has been removed.</p>
+                <br>
+                <p>EasyAirClaim Admin System</p>
+                """
+            )
+        )
+
+        logger.info("Deletion completion admin notification sent successfully")
+
+    except Exception as exc:
+        logger.error(f"Failed to send deletion completion admin notification: {exc}")
+        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))

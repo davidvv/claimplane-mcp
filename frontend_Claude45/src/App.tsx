@@ -23,6 +23,7 @@ import { About } from './pages/About';
 // Admin Pages
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
 import { ClaimDetailPage } from './pages/Admin/ClaimDetailPage';
+import { DeletionRequests } from './pages/Admin/DeletionRequests';
 
 function App() {
   // Validate authentication state on app load
@@ -58,6 +59,7 @@ function App() {
             {/* Admin Panel Routes (non-obvious path for security) */}
             <Route path="/panel/dashboard" element={<AdminDashboard />} />
             <Route path="/panel/claims/:claimId" element={<ClaimDetailPage />} />
+            <Route path="/panel/deletion-requests" element={<DeletionRequests />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

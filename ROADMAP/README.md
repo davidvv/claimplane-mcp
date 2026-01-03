@@ -1,8 +1,8 @@
 # Development Roadmap
 
-**Last Updated**: 2026-01-01
-**Current Version**: v0.4.0 (Phase 6 Complete - AeroDataBox API Integration)
-**Status**: MVP Phase - Automated Flight Verification Live 🚀
+**Last Updated**: 2026-01-03
+**Current Version**: v0.4.1 (Phase 4 Complete - Account Management & GDPR)
+**Status**: MVP Phase - GDPR Compliant Account Management Live 🚀
 **Strategy**: Business value first (#2 → #3 → #4 → GDPR)
 **Deployment URL**: https://eac.dvvcloud.work (Cloudflare Tunnel + OAuth)
 
@@ -12,7 +12,7 @@ This roadmap outlines the development phases for the flight claim management pla
 
 ## 🎯 Current Status
 
-**Current State**: Phase 6 Complete - AeroDataBox API Integration Live 🚀 (v0.4.0)
+**Current State**: Phase 4 Complete - Account Management & GDPR 🚀 (v0.4.1)
 
 ### Phase Completion Overview
 
@@ -20,7 +20,7 @@ This roadmap outlines the development phases for the flight claim management pla
 Phase 1: Admin Dashboard & Claim Workflow       ████████████████████ 100% ✅
 Phase 2: Async Task Processing & Notifications  ████████████████████ 100% ✅
 Phase 3: JWT Authentication & Authorization     ████████████████████ 100% ✅
-Phase 4: Customer Account Management & GDPR     ██████████████░░░░░░  70% ⏳
+Phase 4: Customer Account Management & GDPR     ████████████████████ 100% ✅
 Phase 4.5: Pre-Production Security Fixes        ████████████████████ 100% ✅
 Phase 5: Multi-Passenger Claims                 ░░░░░░░░░░░░░░░░░░░░   0% 📋
 Phase 6: AeroDataBox API Integration            ████████████████████ 100% ✅
@@ -46,6 +46,10 @@ Phase 7: Payment System Integration             ░░░░░░░░░░�
 14. ✅ **Automatic compensation calculation** based on flight distance and delay
 15. ✅ **Admin API monitoring dashboard** (usage stats, quota status)
 16. ✅ **Background backfill task** for existing claims
+17. ✅ **Admin deletion request management** (approve, reject, process)
+18. ✅ **GDPR data export endpoint** for customers (Article 20)
+19. ✅ **GDPR-compliant data deletion** with anonymization (Article 17)
+20. ✅ **Account deletion workflow** with email notifications
 
 ### Security Improvements
 
@@ -64,9 +68,9 @@ Phase 7: Payment System Integration             ░░░░░░░░░░�
 
 1. ✅ JWT tokens migrated to HTTP-only cookies (security patch → v0.3.1) **COMPLETED**
 2. ✅ Phase 6 (AeroDataBox API Integration) **COMPLETED** → v0.4.0
-3. **CURRENT**: Complete Phase 4 remaining tasks (Admin deletion UI, GDPR export, legal pages)
-4. **IMMEDIATE**: Implement Phase 4.6 (Cookie Consent Banner) - GDPR requirement for public launch
-5. Phase 5 (Multi-Passenger Claims) or Phase 6.5 (Flight Search by Route)
+3. ✅ Phase 4 (Admin deletion UI, GDPR export) **COMPLETED** → v0.4.1
+4. **CURRENT**: Implement Phase 4.6 & 4.7 (Cookie Consent Banner & Legal Pages) - GDPR requirement for public launch
+5. **NEXT**: Phase 5 (Multi-Passenger Claims) or Phase 6.5 (Flight Search by Route)
 6. Phase 7 (Payment System Integration)
 
 ---
@@ -95,6 +99,14 @@ Phase 7: Payment System Integration             ░░░░░░░░░░�
   - SQL injection, CORS, rate limiting, JWT cookie migration
   - Critical security hardening for public launch
 
+- **[Phase 4: Customer Account Management & GDPR Compliance](PHASE_4_ACCOUNT_MANAGEMENT.md)** ✅
+  - Status: COMPLETED (2026-01-03)
+  - Admin deletion request management (approve, reject, process)
+  - GDPR data export endpoint (Article 20)
+  - GDPR-compliant data deletion with anonymization (Article 17)
+  - Account deletion workflow with email notifications
+  - **Remaining**: Phase 4.6 & 4.7 (Cookie Consent + Legal Pages)
+
 - **[Phase 6: AeroDataBox Flight Status API Integration](PHASE_6_AERODATABOX_API.md)** ✅
   - Status: COMPLETED (2026-01-01)
   - Automated flight verification with AeroDataBox API
@@ -105,9 +117,7 @@ Phase 7: Payment System Integration             ░░░░░░░░░░�
 
 ### In Progress
 
-- **[Phase 4: Customer Account Management & GDPR Compliance](PHASE_4_ACCOUNT_MANAGEMENT.md)** ⏳ **70% Complete**
-  - Profile management, GDPR compliance, data export, account deletion
-  - **Next**: Phase 4.6 (Cookie Consent Banner)
+- None - Ready for next phase!
 
 ### Planned Phases
 

@@ -58,15 +58,27 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
     logger.info("Starting Flight Claim System API...")
-    
+
     # Create database tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     logger.info("Database tables created successfully")
-    
+
+    # Load airport taxi times for accurate EU261 delay calculations
+    from app.services.airport_taxi_time_service import AirportTaxiTimeService
+    try:
+        AirportTaxiTimeService.load_taxi_times(config.AIRPORT_TAXI_TIMES_CSV_PATH)
+        airport_count = AirportTaxiTimeService.get_airport_count()
+        logger.info(f"Airport taxi times loaded successfully ({airport_count} airports)")
+    except Exception as e:
+        logger.warning(
+            f"Failed to load airport taxi times: {e}. "
+            f"Will use default {config.FLIGHT_TAXI_TIME_DEFAULT_MINUTES} min fallback."
+        )
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down Flight Claim System API...")
 

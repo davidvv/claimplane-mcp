@@ -1,0 +1,184 @@
+Region,IATA,City,Airport Name,Taxi-Out (min),Taxi-In (min)
+Africa,ACC,Accra,Accra Kotoka,13.5,3.2
+Africa,CAI,Cairo,Cairo,15.7,4.8
+Africa,CPT,Cape Town,Cape Town,13.6,3.3
+Africa,DAR,Dar es Salaam,Dar es Salaam,14.1,3.7
+Africa,JNB,Johannesburg,Johannesburg O.R. Tambo,18.4,5.7
+Africa,NBO,Nairobi,Nairobi Jomo Kenyatta,16.3,4.2
+Asia-Pacific,BKK,Bangkok,Bangkok Suvarnabhumi,17.3,4.3
+Asia-Pacific,CAN,Guangzhou,Guangzhou Baiyun,25.8,6.5
+Asia-Pacific,CGK,Jakarta,Jakarta Soekarno-Hatta,18.6,4.3
+Asia-Pacific,HKG,Hong Kong,Hong Kong International,20.5,5.3
+Asia-Pacific,HND,Tokyo,Tokyo Haneda,22.8,6.4
+Asia-Pacific,ICN,Seoul,Seoul Incheon,19.5,5.0
+Asia-Pacific,KIX,Osaka,Osaka Kansai,15.6,4.8
+Asia-Pacific,KUL,Kuala Lumpur,Kuala Lumpur,15.7,4.1
+Asia-Pacific,MLE,Male,Male Hulule,14.0,4.2
+Asia-Pacific,MNL,Manila,Manila Ninoy Aquino,24.9,7.9
+Asia-Pacific,NRT,Tokyo,Tokyo Narita,18.1,4.7
+Asia-Pacific,PEK,Beijing,Beijing Capital International,22.3,8.0
+Asia-Pacific,PVG,Shanghai,Shanghai Pudong International,28.0,9.5
+Asia-Pacific,SGN,Ho Chi Minh,Ho Chi Minh City Tan Son Nhat,19.2,7.6
+Asia-Pacific,SIN,Singapore,Singapore Changi,23.5,6.4
+Canada,YEG,Edmonton,Edmonton International,14.0,3.8
+Canada,YUL,Montreal,Montreal Trudeau,21.7,7.3
+Canada,YVR,Vancouver,Vancouver International,18.9,4.6
+Canada,YYC,Calgary,Calgary International,16.7,5.6
+Canada,YYZ,Toronto,Toronto Pearson International,21.9,7.5
+Caribbean,MBJ,Montego Bay,Montego Bay Sangster,13.1,3.2
+Caribbean,PUJ,Punta Cana,Punta Cana,14.5,3.3
+Caribbean,SDQ,Santo Domingo,Santo Domingo Las Américas,13.7,2.7
+Caribbean,SXM,St. Maarten,St. Maarten Princess Juliana,17.4,5.1
+Central America,CUN,Cancún,Cancún,16.0,5.6
+Central America,MEX,Mexico City,Mexico City Benito Juárez,27.1,10.9
+Central America,PTY,Panama City,Panama,19.0,6.6
+Central America,SJO,San José,San José Juan Santamaría,19.9,7.8
+Europe,ADB,Izmir,Izmir Adnan Menderes,13.0,3.1
+Europe,AGP,Málaga,Málaga,13.3,5.2
+Europe,ALC,Alicante,Alicante,12.3,5.1
+Europe,AMS,Amsterdam,Amsterdam Schiphol,13.4,5.2
+Europe,ARN,Stockholm,Stockholm Arlanda,11.6,4.3
+Europe,ATH,Athens,Athens,13.7,5.1
+Europe,AYT,Antalya,Antalya,17.0,5.9
+Europe,BCN,Barcelona,Barcelona El Prat,17.3,6.3
+Europe,BEG,Belgrade,Belgrade Nikola Tesla,11.4,3.9
+Europe,BER,Berlin,Berlin Brandenburg,11.5,5.2
+Europe,BGO,Bergen,Bergen Flesland,8.7,4.6
+Europe,BGY,Bergamo,Bergamo Orio al Serio,11.4,3.8
+Europe,BHX,Birmingham,Birmingham,12.0,4.0
+Europe,BLQ,Bologna,Bologna,12.6,4.1
+Europe,BMA,Stockholm,Stockholm Bromma,8.3,2.4
+Europe,BOD,Bordeaux,Bordeaux Mérignac,11.3,3.3
+Europe,BRU,Brussels,Brussels,12.2,4.0
+Europe,BSL,Basel,Basel Mulhouse,14.0,8.9
+Europe,BTS,Bratislava,Bratislava M.R. Štefánika,9.3,2.8
+Europe,BUD,Budapest,Budapest Ferenc Liszt,11.2,3.6
+Europe,BUD,Budapest,Budapest,11.2,3.6
+Europe,BVA,Beauvais,Beauvais-Tillé,11.5,3.5
+Europe,CDG,Paris,Paris Charles de Gaulle,16.6,5.5
+Europe,CGN,Cologne,Cologne/Bonn,11.7,4.0
+Europe,CIA,Rome,Rome Ciampino,11.7,3.7
+Europe,CPH,Copenhagen,Copenhagen Kastrup,13.1,5.7
+Europe,CRL,Brussels,Brussels South Charleroi,11.3,3.3
+Europe,CTA,Catania,Catania Fontanarossa,12.6,4.4
+Europe,DBV,Dubrovnik,Dubrovnik,8.7,4.4
+Europe,DRS,Dresden,Dresden,9.1,2.4
+Europe,DTM,Dortmund,Dortmund-Wickede,9.4,3.6
+Europe,DUB,Dublin,Dublin,17.5,6.6
+Europe,DUS,Düsseldorf,Düsseldorf,11.7,3.8
+Europe,EDI,Edinburgh,Edinburgh,12.8,6.4
+Europe,EIN,Eindhoven,Eindhoven,10.6,3.2
+Europe,FAO,Faro,Faro,11.2,4.7
+Europe,FCO,Rome,Rome Fiumicino,16.5,6.6
+Europe,FKB,Karlsruhe,Karlsruhe Baden-Baden,8.1,3.1
+Europe,FNC,Funchal,Funchal,9.7,3.5
+Europe,FRA,Frankfurt,Frankfurt,13.2,5.3
+Europe,GDN,Gdańsk,Gdańsk Rębiechowo,10.4,3.7
+Europe,GLA,Glasgow,Glasgow,11.2,4.8
+Europe,GOT,Gothenburg,Gothenburg Landvetter,9.8,3.1
+Europe,GRZ,Graz,Graz,5.1,1.9
+Europe,GVA,Geneva,Geneva,11.3,4.2
+Europe,HAM,Hamburg,Hamburg,10.1,4.0
+Europe,HEL,Helsinki,Helsinki Vantaa,9.6,3.8
+Europe,IBZ,Ibiza,Ibiza,10.0,4.6
+Europe,INN,Innsbruck,Innsbruck,5.7,2.0
+Europe,IST,Istanbul,Istanbul Airport,17.6,7.2
+Europe,KEF,Keflavík,Keflavík International,13.2,4.2
+Europe,KLU,Klagenfurt,Klagenfurt,4.7,2.5
+Europe,KRK,Kraków,Kraków Balice,11.1,4.2
+Europe,KUN,Kaunas,Kaunas,6.7,3.2
+Europe,LCA,Larnaca,Larnaca,14.1,4.0
+Europe,LCY,London,London City,7.7,3.1
+Europe,LGG,Liège,Liège,10.5,2.8
+Europe,LGW,London,London Gatwick,20.3,9.2
+Europe,LHR,London,London Heathrow,20.9,8.0
+Europe,LIN,Milan,Milan Linate,12.8,5.1
+Europe,LIS,Lisbon,Lisbon,14.3,4.5
+Europe,LJU,Ljubljana,Ljubljana,10.6,6.7
+Europe,LPA,Gran Canaria,Las Palmas,10.6,4.4
+Europe,LTN,London,London Luton,16.8,9.7
+Europe,LUX,Luxembourg,Luxembourg,11.1,3.6
+Europe,LYS,Lyon,Lyon Saint-Exupéry,11.5,4.7
+Europe,MAD,Madrid,Madrid Barajas,18.1,6.1
+Europe,MAN,Manchester,Manchester,15.4,6.5
+Europe,MPL,Montpellier,Montpellier Méditerranée,11.3,5.8
+Europe,MUC,Munich,Munich,12.7,4.2
+Europe,MXP,Milan,Milan Malpensa,14.9,5.8
+Europe,NAP,Naples,Naples Capodichino,12.8,4.8
+Europe,NCE,Nice,Nice,12.6,4.7
+Europe,NTE,Nantes,Nantes Atlantique,10.9,3.7
+Europe,OPO,Porto,Porto,11.4,3.7
+Europe,ORK,Cork,Cork,9.6,3.1
+Europe,ORY,Paris,Paris Orly,12.1,4.7
+Europe,OSL,Oslo,Oslo Gardermoen,11.3,5.7
+Europe,PFO,Paphos,Paphos,12.4,7.9
+Europe,PMI,Palma de Mallorca,Palma de Mallorca,13.3,4.7
+Europe,PMO,Palermo,Palermo Punta Raisi,10.4,4.3
+Europe,PRG,Prague,Prague Václav Havel,10.8,4.0
+Europe,PSA,Pisa,Pisa San Giusto,12.1,4.5
+Europe,RIX,Riga,Riga International,10.7,3.8
+Europe,RTM,Rotterdam,Rotterdam,6.3,2.1
+Europe,SAW,Istanbul,Istanbul Sabiha Gökçen,21.3,7.6
+Europe,SJJ,Sarajevo,Sarajevo,10.9,3.4
+Europe,SKG,Thessaloniki,Thessaloniki Makedonia,10.9,3.1
+Europe,SNN,Shannon,Shannon,11.4,3.4
+Europe,SPU,Split,Split,8.2,3.9
+Europe,STN,London,London Stansted,14.0,5.5
+Europe,STR,Stuttgart,Stuttgart,9.9,4.3
+Europe,SVQ,Seville,Seville,11.8,5.0
+Europe,SZG,Salzburg,Salzburg,5.2,1.5
+Europe,TBS,Tbilisi,Tbilisi,12.0,3.7
+Europe,TFN,Tenerife North,Tenerife Norte,8.9,4.3
+Europe,TFS,Tenerife South,Tenerife Sur Reina Sofía,11.0,5.8
+Europe,TLL,Tallinn,Tallinn Lennart Meri,9.7,3.4
+Europe,TLS,Toulouse,Toulouse Blagnac,10.9,4.4
+Europe,TRD,Trondheim,Trondheim Værnes,7.2,4.4
+Europe,TRF,Sandefjord,Sandefjord Torp,9.0,4.0
+Europe,UBB,Baku,Baku,13.9,3.5
+Europe,VCE,Venice,Venice Tessera,12.6,4.2
+Europe,VIE,Vienna,Vienna,9.8,3.8
+Europe,VIE,Vienna,Vienna,9.8,3.8
+Europe,VNO,Vilnius,Vilnius,9.8,3.7
+Europe,WAW,Warsaw,Warsaw Okęcie,13.2,4.7
+Europe,WRO,Wrocław,Wrocław Strachowice,9.6,2.9
+Europe,ZAD,Zadar,Zadar,6.3,2.6
+Europe,ZAG,Zagreb,Zagreb,11.3,3.6
+Europe,ZRH,Zurich,Zurich,12.9,4.7
+Middle East,AMM,Amman,Amman Queen Alia,15.5,4.4
+Middle East,AUH,Abu Dhabi,Abu Dhabi International,16.2,4.4
+Middle East,BEY,Beirut,Beirut,12.7,3.3
+Middle East,DOH,Doha,Doha Hamad International,16.2,4.8
+Middle East,DXB,Dubai,Dubai International,20.1,5.1
+Middle East,JED,Jeddah,Jeddah King Abdulaziz,18.0,4.9
+Middle East,MCT,Muscat,Muscat,16.1,4.2
+Middle East,RUH,Riyadh,Riyadh King Khalid,17.2,4.8
+Middle East,TLV,Tel Aviv,Tel Aviv Ben Gurion,17.3,5.4
+South America,BOG,Bogota,Bogota El Dorado,23.3,8.3
+South America,EZE,Buenos Aires,Buenos Aires Ezeiza,15.3,4.5
+South America,GIG,Rio de Janeiro,Rio de Janeiro,19.5,4.7
+South America,GRU,São Paulo,São Paulo Guarulhos,17.4,5.1
+South America,LIM,Lima,Lima International,21.0,7.2
+South America,SCL,Santiago,Santiago Arturo Merino Benítez,23.1,5.3
+United States,ATL,Atlanta,Atlanta Hartsfield-Jackson,17.9,6.6
+United States,BOS,Boston,Boston Logan,18.7,6.6
+United States,CLT,Charlotte,Charlotte Douglas,21.3,8.0
+United States,DEN,Denver,Denver International,20.2,8.9
+United States,DFW,Dallas-Fort Worth,Dallas/Fort Worth,21.9,9.5
+United States,DTW,Detroit,Detroit Metropolitan,17.3,7.0
+United States,EWR,Newark,Newark Liberty International,22.9,11.4
+United States,IAD,Washington,Washington Dulles,21.5,10.7
+United States,IAH,Houston,Houston Bush International,19.9,5.9
+United States,JFK,New York,John F. Kennedy,32.0,13.3
+United States,LAS,Las Vegas,Las Vegas McCarran International,22.8,10.3
+United States,LAX,Los Angeles,Los Angeles International,19.2,5.7
+United States,LGA,New York,LaGuardia,23.0,9.5
+United States,MCO,Orlando,Orlando International,23.1,11.0
+United States,MIA,Miami,Miami International,25.5,13.2
+United States,MSP,Minneapolis,Minneapolis St. Paul,14.6,4.1
+United States,ORD,Chicago,Chicago O'Hare International,21.5,8.0
+United States,PHL,Philadelphia,Philadelphia International,23.2,12.9
+United States,PHX,Phoenix,Phoenix International,16.8,6.4
+United States,SAN,San Diego,San Diego International,19.6,4.8
+United States,SEA,Seattle,Seattle-Tacoma International,17.6,5.5
+United States,SFO,San Francisco,San Francisco,23.5,6.2
+United States,TPA,Tampa,Tampa International,18.2,6.0

@@ -543,6 +543,14 @@ Before production deployment:
 - `app/services/claim_workflow_service.py`: Status transitions
 - `app/services/file_service.py`: File orchestration
 - `app/services/email_service.py`: Email sending (Phase 2)
+- `app/services/airport_taxi_time_service.py`: Airport-specific taxi time lookups
+
+### Data Files
+- `docs/comprehensive_airport_taxiing_times.csv`: Airport taxi times (184 airports)
+  - Format: Region, IATA, City, Airport Name, Taxi-Out (min), Taxi-In (min)
+  - Used for accurate EU261 delay calculations (runway → gate arrival)
+  - Loaded on application startup into in-memory cache
+  - See `docs/FLIGHT_API_LIMITATIONS.md` for details
 
 ---
 

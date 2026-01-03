@@ -368,13 +368,24 @@ def _parse_aerodatabox_response(api_response: dict, flight_number: str, date: st
             actual = datetime.fromisoformat(actual_arrival.replace('Z', '+00:00'))
             delay_minutes = int((actual - scheduled).total_seconds() / 60)
 
-            # Add taxi time adjustment if using runway touchdown (not gate arrival)
-            # TEMPORARY SOLUTION: This compensates for missing gate arrival data
-            # TODO: Switch to API that provides actual gate arrival times
+            # Add airport-specific taxi time adjustment if using runway touchdown
+            # EU261 measures delay to gate arrival (door opening), not runway touchdown
+            # AeroDataBox only provides runway times, so we add taxi-in time
             if uses_runway_time and delay_minutes is not None:
-                delay_minutes += config.FLIGHT_TAXI_TIME_MINUTES
+                from app.services.airport_taxi_time_service import AirportTaxiTimeService
+
+                # Get airport-specific taxi-in time (fallback to configured default)
+                taxi_in_minutes = AirportTaxiTimeService.get_taxi_in_time(
+                    arr_airport,
+                    default=config.FLIGHT_TAXI_TIME_DEFAULT_MINUTES
+                )
+
+                # Convert float to int and add to delay
+                taxi_in_adjustment = int(round(taxi_in_minutes))
+                delay_minutes += taxi_in_adjustment
+
                 logger.info(
-                    f"Added {config.FLIGHT_TAXI_TIME_MINUTES} min taxi time to {flight_number} "
+                    f"Added {taxi_in_adjustment} min taxi-in time for {arr_airport} to {flight_number} "
                     f"(runway-only data, EU261 requires gate arrival)"
                 )
         except Exception:

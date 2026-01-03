@@ -11,7 +11,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.database import engine, Base
-from app.routers import health, customers, claims, files, admin_claims, admin_files, eligibility, auth, flights, account
+from app.routers import health, customers, claims, files, admin_claims, admin_files, admin_deletion_requests, eligibility, auth, flights, account
 from app.exceptions import setup_exception_handlers
 from app.config import get_config
 
@@ -131,6 +131,7 @@ app.include_router(files.router)
 # Admin routers (Phase 1)
 app.include_router(admin_claims.router)
 app.include_router(admin_files.router)
+app.include_router(admin_deletion_requests.router)  # Phase 4: Deletion Request Management
 
 
 @app.get("/")

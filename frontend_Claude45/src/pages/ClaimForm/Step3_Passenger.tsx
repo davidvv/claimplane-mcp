@@ -53,6 +53,8 @@ export function Step3_Passenger({
     city: userProfile?.address?.city || '',
     postalCode: userProfile?.address?.postalCode || '',
     country: userProfile?.address?.country || '',
+    bookingReference: '',
+    ticketNumber: '',
     notes: '',
   };
 
@@ -225,6 +227,59 @@ export function Step3_Passenger({
               )}
               <p className="text-xs text-muted-foreground">
                 Select your country code and enter your phone number
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Booking Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Booking Information
+          </CardTitle>
+          <CardDescription>
+            Provide your booking reference or ticket number (at least one is recommended)
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Booking Reference */}
+            <div className="space-y-2">
+              <Label htmlFor="bookingReference">Booking Reference (PNR)</Label>
+              <Input
+                id="bookingReference"
+                placeholder="e.g., ABC123"
+                {...register('bookingReference')}
+              />
+              {errors.bookingReference && (
+                <p className="text-sm text-destructive">
+                  {errors.bookingReference.message}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                6-character code from your booking confirmation
+              </p>
+            </div>
+
+            {/* Ticket Number */}
+            <div className="space-y-2">
+              <Label htmlFor="ticketNumber">Ticket Number</Label>
+              <Input
+                id="ticketNumber"
+                placeholder="e.g., 2201234567890"
+                {...register('ticketNumber')}
+              />
+              {errors.ticketNumber && (
+                <p className="text-sm text-destructive">
+                  {errors.ticketNumber.message}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                13-digit number from your ticket
               </p>
             </div>
           </div>

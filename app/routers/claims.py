@@ -124,6 +124,8 @@ async def create_claim(
         arrival_airport=flight_data.arrival_airport,
         incident_type=claim_data.incident_type,
         notes=claim_data.notes,
+        booking_reference=getattr(claim_data, 'booking_reference', None),
+        ticket_number=getattr(claim_data, 'ticket_number', None),
         terms_accepted_at=datetime.now(timezone.utc),
         terms_acceptance_ip=ip_address
     )
@@ -223,6 +225,8 @@ async def submit_claim_with_customer(
             arrival_airport=flight_data.arrival_airport,
             incident_type=claim_request.incident_type,
             notes=claim_request.notes,
+            booking_reference=claim_request.booking_reference,
+            ticket_number=claim_request.ticket_number,
             terms_accepted_at=datetime.now(timezone.utc),
             terms_acceptance_ip=ip_address
         )

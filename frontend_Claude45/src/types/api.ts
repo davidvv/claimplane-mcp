@@ -14,8 +14,10 @@ export interface FlightInfo {
   scheduledArrival?: string; // ISO datetime
   actualDeparture?: string | null; // ISO datetime
   actualArrival?: string | null; // ISO datetime
-  status?: 'scheduled' | 'delayed' | 'cancelled' | 'diverted' | 'boarding' | 'departed' | 'arrived';
-  delayMinutes?: number | null;
+  status?: 'scheduled' | 'delayed' | 'cancelled' | 'diverted' | 'boarding' | 'departed' | 'arrived' | 'Arrived';
+  delay?: number | null; // Delay in minutes (negative = early)
+  delayMinutes?: number | null; // Legacy field, use delay instead
+  distanceKm?: number | null; // Great circle distance in kilometers
 }
 
 export interface FlightStatus extends FlightInfo {
@@ -106,6 +108,8 @@ export interface ClaimRequest {
   flightInfo: FlightInfo;
   incidentType: IncidentType;
   notes?: string | null;
+  bookingReference?: string | null;
+  ticketNumber?: string | null;
   termsAccepted: boolean;
 }
 

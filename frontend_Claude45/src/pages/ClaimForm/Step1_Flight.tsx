@@ -181,37 +181,91 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
               </Badge>
             </div>
 
-            {/* Delay Info */}
-            {flightResult.delayMinutes && flightResult.delayMinutes > 0 && (
-              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                <p className="font-semibold text-amber-900 dark:text-amber-200">
-                  Delay: {flightResult.delayMinutes} minutes
+            {/* Delay Info - Don't show for cancelled flights */}
+            {flightResult.delay !== null &&
+             flightResult.delay !== undefined &&
+             flightResult.status?.toLowerCase() !== 'canceled' &&
+             flightResult.status?.toLowerCase() !== 'cancelled' && (
+              <div className={`rounded-lg p-4 ${
+                flightResult.delay > 180
+                  ? 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800'
+                  : flightResult.delay > 0
+                  ? 'bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800'
+                  : 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800'
+              }`}>
+                <p className={`font-semibold ${
+                  flightResult.delay > 180
+                    ? 'text-red-900 dark:text-red-200'
+                    : flightResult.delay > 0
+                    ? 'text-amber-900 dark:text-amber-200'
+                    : 'text-green-900 dark:text-green-200'
+                }`}>
+                  {flightResult.delay > 0
+                    ? `Delayed: ${flightResult.delay} minutes (${(flightResult.delay / 60).toFixed(1)} hours)`
+                    : flightResult.delay < 0
+                    ? `Arrived Early: ${Math.abs(flightResult.delay)} minutes`
+                    : 'On Time'
+                  }
                 </p>
-                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                  You may be eligible for compensation!
+                {flightResult.delay >= 180 && (
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    You may be eligible for EU261 compensation!
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Cancellation Notice */}
+            {(flightResult.status?.toLowerCase() === 'canceled' ||
+              flightResult.status?.toLowerCase() === 'cancelled') && (
+              <div className="rounded-lg p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
+                <p className="font-semibold text-red-900 dark:text-red-200">
+                  Flight Cancelled
+                </p>
+                <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                  You may be eligible for EU261 compensation and/or refund!
                 </p>
               </div>
             )}
 
             {/* Times */}
-            {flightResult.scheduledDeparture && (
-              <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+            <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+              {/* Departure Times */}
+              {flightResult.scheduledDeparture && (
                 <div>
                   <p className="text-sm text-muted-foreground">Scheduled Departure</p>
                   <p className="font-medium">
                     {formatDateTime(flightResult.scheduledDeparture)}
                   </p>
+                  {flightResult.actualDeparture && (
+                    <>
+                      <p className="text-sm text-muted-foreground mt-2">Actual Departure</p>
+                      <p className="font-medium">
+                        {formatDateTime(flightResult.actualDeparture)}
+                      </p>
+                    </>
+                  )}
                 </div>
-                {flightResult.actualDeparture && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Actual Departure</p>
-                    <p className="font-medium">
-                      {formatDateTime(flightResult.actualDeparture)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+
+              {/* Arrival Times */}
+              {flightResult.scheduledArrival && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Scheduled Arrival</p>
+                  <p className="font-medium">
+                    {formatDateTime(flightResult.scheduledArrival)}
+                  </p>
+                  {flightResult.actualArrival && (
+                    <>
+                      <p className="text-sm text-muted-foreground mt-2">Actual Arrival</p>
+                      <p className="font-medium">
+                        {formatDateTime(flightResult.actualArrival)}
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             <Button onClick={handleContinue} className="w-full mt-4">
               Continue to Eligibility Check

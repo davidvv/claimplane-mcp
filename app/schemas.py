@@ -218,6 +218,8 @@ class ClaimResponseSchema(BaseModel):
     compensation_amount: Optional[Decimal] = Field(None, alias="compensationAmount")
     currency: str = "EUR"
     notes: Optional[str]
+    booking_reference: Optional[str] = Field(None, alias="bookingReference")
+    ticket_number: Optional[str] = Field(None, alias="ticketNumber")
     submitted_at: datetime = Field(..., alias="submittedAt")
     updated_at: datetime = Field(..., alias="updatedAt")
 
@@ -239,6 +241,8 @@ class ClaimResponseSchema(BaseModel):
             compensationAmount=claim.compensation_amount,
             currency=claim.currency,
             notes=claim.notes,
+            bookingReference=claim.booking_reference,
+            ticketNumber=claim.ticket_number,
             submittedAt=claim.submitted_at,
             updatedAt=claim.updated_at
         )
@@ -267,6 +271,8 @@ class ClaimRequestSchema(BaseModel):
     flight_info: FlightInfoSchema = Field(..., alias="flightInfo")
     incident_type: str = Field(..., alias="incidentType")
     notes: Optional[str] = None
+    booking_reference: Optional[str] = Field(None, alias="bookingReference", max_length=20, description="Airline booking/PNR code")
+    ticket_number: Optional[str] = Field(None, alias="ticketNumber", max_length=20, description="13-digit ticket number")
     terms_accepted: bool = Field(..., alias="termsAccepted", description="User must accept terms and conditions")
 
     @validator('incident_type')

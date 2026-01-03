@@ -77,6 +77,8 @@ export function Step4_Review({
         },
         incidentType: passengerData.incidentType,
         notes: passengerData.notes || null,
+        bookingReference: passengerData.bookingReference || null,
+        ticketNumber: passengerData.ticketNumber || null,
         termsAccepted: true,
       };
 

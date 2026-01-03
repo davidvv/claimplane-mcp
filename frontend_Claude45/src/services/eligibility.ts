@@ -16,11 +16,18 @@ export const checkEligibility = async (
   request: EligibilityRequest
 ): Promise<EligibilityResponse> => {
   // Transform frontend format to backend format
+  const delayMinutes = request.flightInfo.delay ?? request.flightInfo.delayMinutes ?? null;
+
+  // Check for cancellation (handle both American and British spelling)
+  const status = request.flightInfo.status?.toLowerCase() || '';
+  const isCancelled = status === 'cancelled' || status === 'canceled';
+
   const backendRequest = {
     departure_airport: request.flightInfo.departureAirport,
     arrival_airport: request.flightInfo.arrivalAirport,
-    delay_hours: request.flightInfo.delayMinutes ? request.flightInfo.delayMinutes / 60 : null,
-    incident_type: request.flightInfo.status === 'cancelled' ? 'cancellation' : 'delay',
+    delay_hours: delayMinutes !== null && delayMinutes > 0 ? delayMinutes / 60 : null,
+    incident_type: isCancelled ? 'cancellation' : 'delay',
+    distance_km: request.flightInfo.distanceKm ?? null,  // Pass distance from API
   };
 
   const response = await apiClient.post<any>(

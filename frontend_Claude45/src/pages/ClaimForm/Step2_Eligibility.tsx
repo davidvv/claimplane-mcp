@@ -64,8 +64,20 @@ export function Step2_Eligibility({
       setEligibilityResult(result);
       setSubmittedEmail(data.email);
 
+      // Determine if we're using fallback data
+      const isFallback = flightData.dataSource === 'mock';
+
       if (result.eligible) {
-        toast.success('Great news! You are eligible for compensation.');
+        if (isFallback || result.requirements?.includes('Manual review required')) {
+          // Fallback scenario - manual review
+          toast.success('Claim accepted! Our experts will review your case.');
+        } else if (result.compensationAmount && result.compensationAmount > 0) {
+          // API success with compensation
+          toast.success('Great news! You are eligible for compensation.');
+        } else {
+          // Edge case: eligible but no amount
+          toast.success('Your claim has been accepted for review.');
+        }
       } else {
         toast.error('Unfortunately, this flight is not eligible for compensation.');
       }
@@ -160,116 +172,143 @@ export function Step2_Eligibility({
       </Card>
 
       {/* Eligibility Result */}
-      {eligibilityResult && (
-        <Card className="fade-in">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+      {eligibilityResult && (() => {
+        const isFallback = flightData.dataSource === 'mock';
+        const requiresManualReview = eligibilityResult.requirements?.includes('Manual review required');
+        const hasCompensation = eligibilityResult.compensationAmount && eligibilityResult.compensationAmount > 0;
+
+        return (
+          <Card className="fade-in">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {eligibilityResult.eligible ? (
+                  <>
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    {hasCompensation && !isFallback && !requiresManualReview
+                      ? 'Eligible for Compensation'
+                      : 'Claim Accepted for Review'}
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-5 h-5 text-red-600" />
+                    Not Eligible
+                  </>
+                )}
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
               {eligibilityResult.eligible ? (
                 <>
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  Eligible for Compensation
-                </>
-              ) : (
-                <>
-                  <XCircle className="w-5 h-5 text-red-600" />
-                  Not Eligible
-                </>
-              )}
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            {eligibilityResult.eligible ? (
-              <>
-                {/* Compensation Amount */}
-                {eligibilityResult.compensationAmount != null && (
-                  <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center">
-                    <Euro className="w-12 h-12 mx-auto mb-2 text-green-600" />
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Estimated Compensation
-                    </p>
-                    <p className="text-4xl font-bold text-green-600">
-                      {formatCurrency(
-                        eligibilityResult.compensationAmount,
-                        eligibilityResult.currency
-                      )}
-                    </p>
-                    {eligibilityResult.regulation && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Under {eligibilityResult.regulation} regulation
+                  {/* Scenario 1: API Success with Compensation > 0 */}
+                  {hasCompensation && !isFallback && !requiresManualReview && (
+                    <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center">
+                      <Euro className="w-12 h-12 mx-auto mb-2 text-green-600" />
+                      <p className="text-sm text-muted-foreground mb-1">
+                        Expected Compensation
                       </p>
-                    )}
-                  </div>
-                )}
+                      <p className="text-4xl font-bold text-green-600">
+                        {formatCurrency(
+                          eligibilityResult.compensationAmount,
+                          eligibilityResult.currency
+                        )}
+                      </p>
+                      {eligibilityResult.regulation && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Under {eligibilityResult.regulation} regulation
+                        </p>
+                      )}
+                      <p className="text-sm text-muted-foreground mt-3">
+                        This is the amount you can expect to receive based on your flight's distance and delay.
+                      </p>
+                    </div>
+                  )}
 
-                {/* Reasons */}
-                {eligibilityResult.reasons && eligibilityResult.reasons.length > 0 && (
-                  <div>
-                    <p className="font-semibold mb-2">Eligibility Reasons:</p>
-                    <ul className="space-y-1">
-                      {eligibilityResult.reasons.map((reason, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
-                          <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
-                          <span>{reason}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  {/* Scenario 2: Compensation = 0 (not eligible but still accepted) */}
+                  {!hasCompensation && eligibilityResult.compensationAmount === 0 && (
+                    <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
+                      <p className="text-sm font-semibold mb-2">No Compensation Available</p>
+                      <p className="text-sm text-muted-foreground">
+                        Based on your flight details, this claim does not qualify for compensation.
+                        This is typically due to the delay being less than 3 hours, or the incident
+                        type not being covered under EU261/2004 regulations.
+                      </p>
+                    </div>
+                  )}
 
-                {/* Requirements */}
-                {eligibilityResult.requirements &&
-                  eligibilityResult.requirements.length > 0 && (
-                    <div className="border-t pt-4">
-                      <p className="font-semibold mb-2">Required Documents:</p>
+                  {/* Scenario 3: Fallback / Manual Review Required */}
+                  {(isFallback || requiresManualReview) && (
+                    <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                      <p className="text-sm font-semibold mb-2">Expert Review Required</p>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        We couldn't automatically calculate your compensation amount. Our expert team
+                        will review your flight details and assess your eligibility based on EU261/2004
+                        regulations.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        You'll receive a notification within 2-4 business days with the final assessment
+                        and expected compensation amount.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Reasons */}
+                  {eligibilityResult.reasons && eligibilityResult.reasons.length > 0 && (
+                    <div>
+                      <p className="font-semibold mb-2">Details:</p>
                       <ul className="space-y-1">
-                        {eligibilityResult.requirements.map((req, index) => (
+                        {eligibilityResult.reasons.map((reason, index) => (
                           <li key={index} className="flex items-start gap-2 text-sm">
-                            <span className="text-muted-foreground">•</span>
-                            <span>{req}</span>
+                            <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                            <span>{reason}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
 
-                <Button onClick={handleContinue} className="w-full">
-                  Continue to Passenger Information
-                </Button>
-              </>
-            ) : (
-              <>
-                {/* Not eligible reasons */}
-                {eligibilityResult.reasons && eligibilityResult.reasons.length > 0 && (
-                  <div>
-                    <p className="font-semibold mb-2">Reasons:</p>
-                    <ul className="space-y-1">
-                      {eligibilityResult.reasons.map((reason, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
-                          <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                          <span>{reason}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  {/* Continue Button */}
+                  <Button onClick={handleContinue} className="w-full">
+                    Continue to Passenger Information
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* Not Eligible - Show Thank You Message */}
+                  {eligibilityResult.reasons && eligibilityResult.reasons.length > 0 && (
+                    <div>
+                      <p className="font-semibold mb-2">Reasons:</p>
+                      <ul className="space-y-1">
+                        {eligibilityResult.reasons.map((reason, index) => (
+                          <li key={index} className="flex items-start gap-2 text-sm">
+                            <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                            <span>{reason}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="bg-muted rounded-lg p-4">
+                    <p className="text-sm font-semibold mb-2">
+                      Thank you for considering EasyAirClaim
+                    </p>
+                    <p className="text-sm">
+                      Unfortunately, this flight does not qualify for compensation under
+                      EU261/2004 regulations. We appreciate your interest and hope we can
+                      assist you with future claims.
+                    </p>
                   </div>
-                )}
 
-                <div className="bg-muted rounded-lg p-4">
-                  <p className="text-sm">
-                    Unfortunately, this flight does not qualify for compensation under
-                    current regulations. This could be due to extraordinary
-                    circumstances, flight distance, or delay duration.
-                  </p>
-                </div>
-
-                <Button variant="outline" onClick={onBack} className="w-full">
-                  Try Another Flight
-                </Button>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                  <Button variant="outline" onClick={onBack} className="w-full">
+                    Try Another Flight
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
     </div>
   );
 }

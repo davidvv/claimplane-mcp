@@ -212,6 +212,15 @@ export const passengerInfoSchema = z.object({
   city: z.string().min(1, 'City is required'),
   postalCode: z.string().min(1, 'Postal code is required'),
   country: z.string().min(1, 'Country is required'),
+  bookingReference: z.string()
+    .max(20, 'Booking reference must be less than 20 characters')
+    .optional()
+    .or(z.literal('')),
+  ticketNumber: z.string()
+    .max(20, 'Ticket number must be less than 20 characters')
+    .regex(/^(\d{13})?$/, 'Ticket number must be 13 digits')
+    .optional()
+    .or(z.literal('')),
   incidentType: incidentTypeSchema,
   notes: z.string().max(1000, 'Notes must be less than 1000 characters').optional(),
 });

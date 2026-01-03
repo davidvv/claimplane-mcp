@@ -4,6 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## ⚠️ CRITICAL - READ FIRST ⚠️
 
+### MANDATORY Testing Protocol
+
+**BEFORE implementing ANY code changes:**
+
+1. **TEST APIs FIRST**: Always test external APIs to verify what data they actually provide before writing code
+   - Use `docker exec` to run test scripts inside the container
+   - Never assume API field availability based on documentation alone
+   - Example: `docker exec flight_claim_api python -c "test script here"`
+
+2. **DOCKER-FIRST DEVELOPMENT**: This project runs on Docker in production
+   - ALL changes must be tested in Docker containers
+   - After code changes: `docker compose build api && docker compose restart api`
+   - Never implement local-only solutions
+   - The owner uses Docker exclusively, not local Python environments
+
+3. **NO ASSUMPTIONS**: Verify actual behavior before implementing solutions
+   - Test the full request/response cycle
+   - Check actual data structures returned by APIs
+   - Validate assumptions with real API calls
+
 ### Environment Management
 
 **YOU MUST READ `DEVELOPMENT_WORKFLOW.md` BEFORE DOING ANYTHING ELSE.**

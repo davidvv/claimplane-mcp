@@ -149,6 +149,11 @@ class Config:
     AERODATABOX_MAX_RETRIES = int(os.getenv("AERODATABOX_MAX_RETRIES", "3"))
     AERODATABOX_ENABLED = os.getenv("AERODATABOX_ENABLED", "false").lower() == "true"
 
+    # TEMPORARY: AeroDataBox only provides runway touchdown time, not gate arrival (door opening)
+    # EU261 delay is measured to gate arrival, so we add estimated taxi time
+    # TODO: Find API that provides actual gate arrival times for accurate EU261 calculations
+    FLIGHT_TAXI_TIME_MINUTES = int(os.getenv("FLIGHT_TAXI_TIME_MINUTES", "15"))
+
     # AeroDataBox Quota Management
     AERODATABOX_MONTHLY_QUOTA = int(os.getenv("AERODATABOX_MONTHLY_QUOTA", "600"))  # Free tier: 600 credits/month
     AERODATABOX_ALERT_THRESHOLD = int(os.getenv("AERODATABOX_ALERT_THRESHOLD", "80"))  # Alert at 80% usage

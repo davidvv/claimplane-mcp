@@ -340,15 +340,43 @@ def _parse_aerodatabox_response(api_response: dict, flight_number: str, date: st
     arrival = flight.get("arrival", {})
     arr_airport = arrival.get("airport", {}).get("iata") if arrival else ""
     scheduled_arrival = arrival.get("scheduledTime", {}).get("utc") if arrival else None
-    actual_arrival = arrival.get("actualTime", {}).get("utc") if arrival else None
 
-    # Calculate delay
+    # IMPORTANT: EU261 delay is measured to gate arrival (door opening), not runway touchdown
+    # AeroDataBox does NOT provide gate arrival times, only runway touchdown
+    # We must add estimated taxi time to get accurate EU261 delay calculations
+    actual_arrival = None
+    uses_runway_time = False
+    if arrival:
+        # Check for actual gate time (preferred but not provided by AeroDataBox)
+        actual_arrival = arrival.get("actualTime", {}).get("utc") if isinstance(arrival.get("actualTime"), dict) else None
+
+        if not actual_arrival:
+            # Use runway touchdown time (AeroDataBox only provides this)
+            actual_arrival = arrival.get("runwayTime", {}).get("utc") if isinstance(arrival.get("runwayTime"), dict) else None
+            if actual_arrival:
+                uses_runway_time = True
+
+        if not actual_arrival:
+            # Final fallback to revised/estimated time
+            actual_arrival = arrival.get("revisedTime", {}).get("utc") if isinstance(arrival.get("revisedTime"), dict) else None
+
+    # Calculate delay based on arrival times
     delay_minutes = None
     if scheduled_arrival and actual_arrival:
         try:
             scheduled = datetime.fromisoformat(scheduled_arrival.replace('Z', '+00:00'))
             actual = datetime.fromisoformat(actual_arrival.replace('Z', '+00:00'))
             delay_minutes = int((actual - scheduled).total_seconds() / 60)
+
+            # Add taxi time adjustment if using runway touchdown (not gate arrival)
+            # TEMPORARY SOLUTION: This compensates for missing gate arrival data
+            # TODO: Switch to API that provides actual gate arrival times
+            if uses_runway_time and delay_minutes is not None:
+                delay_minutes += config.FLIGHT_TAXI_TIME_MINUTES
+                logger.info(
+                    f"Added {config.FLIGHT_TAXI_TIME_MINUTES} min taxi time to {flight_number} "
+                    f"(runway-only data, EU261 requires gate arrival)"
+                )
         except Exception:
             pass
 

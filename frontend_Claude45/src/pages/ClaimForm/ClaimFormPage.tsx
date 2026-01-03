@@ -34,19 +34,38 @@ export function ClaimFormPage() {
     clearFormData,
   } = useClaimFormPersistence();
 
-  const [currentStep, setCurrentStep] = useState(formData.currentStep || 1);
-  const [flightData, setFlightData] = useState<FlightStatus | null>(
-    formData.flightData || null
-  );
-  const [eligibilityData, setEligibilityData] = useState<EligibilityResponse | null>(
-    formData.eligibilityData || null
-  );
+  const [currentStep, setCurrentStep] = useState(1);
+  const [flightData, setFlightData] = useState<FlightStatus | null>(null);
+  const [eligibilityData, setEligibilityData] = useState<EligibilityResponse | null>(null);
   const [customerEmail, setCustomerEmail] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [passengerData, setPassengerData] = useState<any>(
-    formData.passengerData || null
-  );
-  const [documents, setDocuments] = useState<any[]>(formData.documents || []);
+  const [passengerData, setPassengerData] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+
+  // Check for saved form data on mount (runs only once)
+  useEffect(() => {
+    // Check if there's saved form data from a previous session
+    const hasSavedData = formData.currentStep && formData.currentStep > 1;
+
+    if (hasSavedData) {
+      const shouldResume = window.confirm(
+        `You have a claim in progress at step ${formData.currentStep}. Would you like to resume where you left off?\n\nClick OK to resume, or Cancel to start a new claim.`
+      );
+
+      if (shouldResume) {
+        // Restore saved data
+        setCurrentStep(formData.currentStep || 1);
+        setFlightData(formData.flightData || null);
+        setEligibilityData(formData.eligibilityData || null);
+        setPassengerData(formData.passengerData || null);
+        setDocuments(formData.documents || []);
+      } else {
+        // Clear saved data and start fresh
+        clearFormData();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array = runs only once on mount
 
   // Fetch user profile if authenticated
   useEffect(() => {

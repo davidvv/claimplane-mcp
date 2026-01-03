@@ -15,6 +15,7 @@ class EligibilityRequestSchema(BaseModel):
     arrival_airport: str = Field(..., min_length=3, max_length=3, description="IATA code")
     delay_hours: Optional[float] = Field(None, ge=0, le=72, description="Delay in hours")
     incident_type: str = Field(..., description="delay, cancellation, denied_boarding, baggage_delay")
+    distance_km: Optional[float] = Field(None, ge=0, description="Great circle distance in km (if known from API)")
 
     class Config:
         json_schema_extra = {
@@ -22,7 +23,8 @@ class EligibilityRequestSchema(BaseModel):
                 "departure_airport": "MAD",
                 "arrival_airport": "JFK",
                 "delay_hours": 5.0,
-                "incident_type": "delay"
+                "incident_type": "delay",
+                "distance_km": 5780.42
             }
         }
 
@@ -52,38 +54,39 @@ async def check_eligibility(request: EligibilityRequestSchema) -> EligibilityRes
     """
     Check eligibility for flight compensation (PUBLIC ENDPOINT).
 
-    Currently accepts all claims for manual review by admin team.
-    Automatic eligibility calculation will be implemented later.
+    Calculates compensation based on flight distance, delay duration, and incident type.
+    Uses EU261/2004 regulations for compensation calculation.
 
     Args:
         request: Flight details for eligibility check
 
     Returns:
-        Eligibility result indicating manual review is required
+        Eligibility result with calculated compensation amount
     """
-    # For now, accept all claims for manual review
-    # TODO: Implement automatic eligibility calculation when we have:
-    # - Real-time flight data API integration
-    # - Complete airport database
-    # - EU261 rule engine
-
-    # Try to estimate distance for display purposes only
+    # Calculate compensation using the compensation service
     try:
         result = CompensationService.calculate_compensation(
             departure_airport=request.departure_airport.upper(),
             arrival_airport=request.arrival_airport.upper(),
             delay_hours=request.delay_hours,
-            incident_type=request.incident_type
+            incident_type=request.incident_type,
+            distance_km=request.distance_km  # Use API-provided distance if available
         )
-        distance = result.get("distance_km", 0)
-    except Exception:
-        distance = 0
 
-    # Return positive response that requires manual review
-    return EligibilityResponseSchema(
-        eligible=True,
-        amount=Decimal("0"),  # Amount to be determined by admin
-        distance_km=distance,
-        reason="Your claim will be reviewed by our team. We'll assess your eligibility based on EU261/2004 regulations and notify you of the outcome.",
-        requires_manual_review=True
-    )
+        # Return the calculated result
+        return EligibilityResponseSchema(
+            eligible=result["eligible"],
+            amount=result["amount"],
+            distance_km=result["distance_km"],
+            reason=result["reason"],
+            requires_manual_review=result["requires_manual_review"]
+        )
+    except Exception as e:
+        # If calculation fails (e.g., airport not found), return for manual review
+        return EligibilityResponseSchema(
+            eligible=True,
+            amount=Decimal("0"),
+            distance_km=request.distance_km or 0,
+            reason="Unable to automatically calculate compensation. Your claim will be reviewed by our team to assess eligibility based on EU261/2004 regulations.",
+            requires_manual_review=True
+        )

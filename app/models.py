@@ -156,6 +156,11 @@ class Claim(Base):
     compensation_amount = Column(Numeric(10, 2), nullable=True)
     currency = Column(String(3), default="EUR")
     notes = Column(Text, nullable=True)
+
+    # Booking identifiers (passenger-specific)
+    booking_reference = Column(String(20), nullable=True)  # Airline booking/PNR code
+    ticket_number = Column(String(20), nullable=True)  # 13-digit ticket number
+
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

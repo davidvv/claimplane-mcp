@@ -484,6 +484,281 @@ class AeroDataBoxService:
         logger.info(f"Calculated distance {departure_airport}-{arrival_airport}: {distance} km")
         return distance
 
+    async def get_airport_departures(
+        self,
+        origin_icao: str,
+        from_local: str,
+        to_local: str
+    ) -> Dict[str, Any]:
+        """
+        Get all departures from an airport using FIDS (Flight Information Display System) endpoint.
+
+        This endpoint returns all flights departing from an airport within a specified time window.
+        The withLeg=true parameter ensures destination information is included.
+
+        Endpoint: GET /flights/airports/icao/{icao}/{fromLocal}/{toLocal}?withLeg=true&direction=Departure
+        Tier: TIER 2 (2 credits per call)
+
+        Args:
+            origin_icao: Origin airport ICAO code (e.g., "EDDM" for Munich)
+            from_local: Start of time window in ISO format (e.g., "2025-01-15T00:00")
+            to_local: End of time window in ISO format (e.g., "2025-01-15T23:59")
+
+        Returns:
+            API response containing list of departing flights with leg information
+
+        Raises:
+            AeroDataBoxError: On API failure
+
+        Example:
+            >>> service = AeroDataBoxService()
+            >>> result = await service.get_airport_departures("EDDM", "2025-01-15T00:00", "2025-01-15T23:59")
+        """
+        # Normalize ICAO code
+        origin_icao = origin_icao.upper()
+
+        if len(origin_icao) != 4:
+            raise AeroDataBoxClientError(
+                message=f"Invalid ICAO code: {origin_icao}. Must be 4 characters",
+                status_code=400,
+                context="get_airport_departures"
+            )
+
+        async def _get_departures():
+            url = f"{self.base_url}/flights/airports/icao/{origin_icao}/{from_local}/{to_local}"
+            params = {
+                "withLeg": "true",
+                "direction": "Departure"
+            }
+
+            logger.info(f"Fetching departures from {origin_icao} ({from_local} to {to_local})")
+
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(url, headers=self._get_headers(), params=params)
+                response.raise_for_status()
+                return response.json()
+
+        return await self._retry_with_backoff(_get_departures)
+
+    async def find_flights_by_route(
+        self,
+        origin_icao: str,
+        destination_icao: str,
+        departure_date: str,
+        airline_iata: Optional[str] = None
+    ) -> list[Dict[str, Any]]:
+        """
+        Find flights by route using FIDS endpoint with local filtering.
+
+        Since AeroDataBox doesn't have a direct origin-to-destination search,
+        this method:
+        1. Fetches all departures from the origin airport for a 24-hour window
+        2. Filters locally by destination ICAO
+        3. Optionally filters by airline IATA code
+        4. Returns matching flights with full details
+
+        Args:
+            origin_icao: Origin airport ICAO code (e.g., "EDDM" for Munich)
+            destination_icao: Destination airport ICAO code (e.g., "KJFK" for JFK)
+            departure_date: Departure date in ISO format (YYYY-MM-DD)
+            airline_iata: Optional airline IATA code for filtering (e.g., "LH", "DL")
+
+        Returns:
+            List of matching flight dictionaries with standardized fields:
+            - flightNumber: Flight number
+            - airline: Airline name
+            - airlineIata: Airline IATA code
+            - departureAirport: Origin airport ICAO
+            - arrivalAirport: Destination airport ICAO
+            - scheduledDeparture: Scheduled departure time (ISO 8601)
+            - scheduledArrival: Scheduled arrival time (ISO 8601)
+            - actualDeparture: Actual departure time if available
+            - actualArrival: Actual arrival time if available
+            - status: Flight status
+            - delayMinutes: Delay in minutes if applicable
+
+        Raises:
+            AeroDataBoxError: On API failure
+
+        Example:
+            >>> service = AeroDataBoxService()
+            >>> flights = await service.find_flights_by_route("EDDM", "KJFK", "2025-01-15", "LH")
+            >>> for flight in flights:
+            ...     print(f"{flight['flightNumber']}: {flight['scheduledDeparture']}")
+        """
+        # Validate date format
+        try:
+            parsed_date = datetime.strptime(departure_date, "%Y-%m-%d")
+        except ValueError:
+            raise AeroDataBoxClientError(
+                message=f"Invalid date format: {departure_date}. Expected YYYY-MM-DD",
+                status_code=400,
+                context="find_flights_by_route"
+            )
+
+        # Calculate 24-hour window in local time
+        # Note: Using UTC time for simplicity. In production, you might want to use airport's local timezone
+        from_local = f"{departure_date}T00:00"
+        to_local = f"{departure_date}T23:59"
+
+        # Normalize inputs
+        origin_icao = origin_icao.upper()
+        destination_icao = destination_icao.upper()
+        if airline_iata:
+            airline_iata = airline_iata.upper()
+
+        logger.info(
+            f"Searching route {origin_icao} → {destination_icao} on {departure_date}"
+            f"{f' (airline: {airline_iata})' if airline_iata else ''}"
+        )
+
+        # Fetch all departures from origin airport
+        try:
+            response = await self.get_airport_departures(origin_icao, from_local, to_local)
+        except AeroDataBoxFlightNotFoundError:
+            # No departures found - return empty list
+            logger.info(f"No departures found from {origin_icao} on {departure_date}")
+            return []
+
+        # Parse response - handle both list and dict with "departures" key
+        if isinstance(response, dict) and "departures" in response:
+            all_flights = response["departures"]
+        elif isinstance(response, list):
+            all_flights = response
+        else:
+            logger.warning(f"Unexpected response format: {type(response)}")
+            return []
+
+        # Filter by destination ICAO and optionally by airline IATA
+        matching_flights = []
+
+        for flight_data in all_flights:
+            try:
+                # Extract arrival airport
+                arrival = flight_data.get("arrival", {})
+                if not arrival:
+                    continue
+
+                arr_airport = arrival.get("airport", {})
+                arr_icao = arr_airport.get("icao")
+
+                # Check destination match
+                if arr_icao != destination_icao:
+                    continue
+
+                # Check airline match if specified
+                if airline_iata:
+                    airline = flight_data.get("airline", {})
+                    flight_airline_iata = airline.get("iata") if airline else None
+
+                    if flight_airline_iata != airline_iata:
+                        continue
+
+                # Extract flight information
+                flight_number = flight_data.get("number", "")
+
+                # Airline info
+                airline = flight_data.get("airline", {})
+                airline_name = airline.get("name") if airline else None
+                flight_airline_iata = airline.get("iata") if airline else None
+
+                # Departure info
+                departure = flight_data.get("departure", {})
+                dep_airport = departure.get("airport", {}) if departure else {}
+                dep_icao = dep_airport.get("icao") if dep_airport else None
+
+                # Scheduled times
+                scheduled_departure = departure.get("scheduledTime", {}).get("utc") if departure else None
+                scheduled_arrival = arrival.get("scheduledTime", {}).get("utc") if arrival else None
+
+                # Actual times
+                actual_departure = departure.get("actualTime", {}).get("utc") if departure else None
+                actual_arrival = arrival.get("actualTime", {}).get("utc") if arrival else None
+
+                # Status
+                status = flight_data.get("status", "scheduled")
+
+                # Calculate delay
+                delay_minutes = None
+                if scheduled_arrival and actual_arrival:
+                    try:
+                        scheduled_dt = datetime.fromisoformat(scheduled_arrival.replace('Z', '+00:00'))
+                        actual_dt = datetime.fromisoformat(actual_arrival.replace('Z', '+00:00'))
+                        delay_minutes = int((actual_dt - scheduled_dt).total_seconds() / 60)
+                    except (ValueError, AttributeError):
+                        pass
+
+                # Build standardized flight object
+                standardized_flight = {
+                    "flightNumber": flight_number,
+                    "airline": airline_name,
+                    "airlineIata": flight_airline_iata,
+                    "departureAirport": dep_icao or origin_icao,
+                    "arrivalAirport": arr_icao,
+                    "scheduledDeparture": scheduled_departure,
+                    "scheduledArrival": scheduled_arrival,
+                    "actualDeparture": actual_departure,
+                    "actualArrival": actual_arrival,
+                    "status": status,
+                    "delayMinutes": delay_minutes,
+                }
+
+                matching_flights.append(standardized_flight)
+
+            except Exception as e:
+                logger.warning(f"Error parsing flight data: {str(e)}")
+                continue
+
+        logger.info(
+            f"Found {len(matching_flights)} flights from {origin_icao} to {destination_icao}"
+            f"{f' on {airline_iata}' if airline_iata else ''}"
+        )
+
+        return matching_flights
+
+
+# Convenience function with exact signature requested
+async def findFlightsByRoute(
+    originIcao: str,
+    destinationIcao: str,
+    departureDate: str,
+    airlineIata: str
+) -> list[Dict[str, Any]]:
+    """
+    Find flights by route using the FIDS endpoint (convenience function).
+
+    This is a standalone convenience function that wraps the AeroDataBoxService.find_flights_by_route
+    method with the exact signature requested.
+
+    Args:
+        originIcao: Origin airport ICAO code (e.g., "EDDM")
+        destinationIcao: Destination airport ICAO code (e.g., "KJFK")
+        departureDate: Departure date in YYYY-MM-DD format
+        airlineIata: Airline IATA code (e.g., "LH", "DL", "UAL")
+
+    Returns:
+        List of matching flight objects with:
+        - flightNumber: Flight number
+        - airline: Airline name
+        - airlineIata: Airline IATA code
+        - scheduledDeparture: Scheduled departure time (ISO 8601)
+        - scheduledArrival: Scheduled arrival time (ISO 8601)
+        - status: Flight status
+        - delayMinutes: Delay in minutes (if available)
+
+    Example:
+        >>> flights = await findFlightsByRoute("EDDM", "KJFK", "2025-01-15", "LH")
+        >>> for flight in flights:
+        ...     print(f"{flight['flightNumber']}: {flight['scheduledDeparture']}")
+    """
+    service = aerodatabox_service
+    return await service.find_flights_by_route(
+        origin_icao=originIcao,
+        destination_icao=destinationIcao,
+        departure_date=departureDate,
+        airline_iata=airlineIata
+    )
+
 
 # Global singleton instance
 aerodatabox_service = AeroDataBoxService(

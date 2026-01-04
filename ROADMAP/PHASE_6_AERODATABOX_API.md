@@ -381,7 +381,7 @@ Flight Status API is **Tier 2** pricing:
 **Status**: ✅ **COMPLETED** (2026-01-04)
 **Actual Effort**: 2 days
 **Business Value**: Reduces claim abandonment by eliminating need to know flight number
-**Completed Version**: v0.4.1 (patch release)
+**Completed Version**: v0.4.2 (patch release)
 
 ### Overview
 

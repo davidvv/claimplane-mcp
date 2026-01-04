@@ -385,3 +385,219 @@ class CacheService:
         except Exception as e:
             logger.error(f"Unexpected error clearing flight cache: {str(e)}", exc_info=True)
             return 0
+
+    # ========================================================================
+    # Phase 6.5: Route Search Caching
+    # ========================================================================
+
+    @classmethod
+    async def get_cached_route_search(
+        cls,
+        departure_iata: str,
+        arrival_iata: str,
+        flight_date: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get cached route search results.
+
+        Args:
+            departure_iata: Departure airport IATA code
+            arrival_iata: Arrival airport IATA code
+            flight_date: Flight date in YYYY-MM-DD format
+
+        Returns:
+            Cached route search data dict or None if cache miss
+        """
+        try:
+            client = await cls.get_redis_client()
+            if not client:
+                logger.warning("Redis client unavailable, skipping route search cache lookup")
+                return None
+
+            # Normalize inputs
+            departure_iata = departure_iata.upper()
+            arrival_iata = arrival_iata.upper()
+
+            # Generate cache key (omit time to maximize cache hits)
+            cache_key = cls._generate_cache_key(
+                "flight_search",
+                f"{departure_iata}:{arrival_iata}:{flight_date}"
+            )
+
+            # Get from cache
+            cached_data = await client.get(cache_key)
+
+            if cached_data:
+                logger.info(f"Cache HIT for route search {departure_iata} → {arrival_iata} on {flight_date}")
+                return json.loads(cached_data)
+            else:
+                logger.info(f"Cache MISS for route search {departure_iata} → {arrival_iata} on {flight_date}")
+                return None
+
+        except RedisError as e:
+            logger.error(f"Redis error during route search cache lookup: {str(e)}")
+            return None
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in route search cache: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error during route search cache lookup: {str(e)}", exc_info=True)
+            return None
+
+    @classmethod
+    async def cache_route_search(
+        cls,
+        departure_iata: str,
+        arrival_iata: str,
+        flight_date: str,
+        flights: list,
+        ttl: int = None
+    ) -> bool:
+        """
+        Cache route search results with TTL.
+
+        Args:
+            departure_iata: Departure airport IATA code
+            arrival_iata: Arrival airport IATA code
+            flight_date: Flight date in YYYY-MM-DD format
+            flights: List of flight dictionaries
+            ttl: Time-to-live in seconds (default: FLIGHT_SEARCH_CACHE_TTL_SECONDS from config)
+
+        Returns:
+            True if cached successfully, False otherwise
+        """
+        try:
+            client = await cls.get_redis_client()
+            if not client:
+                logger.warning("Redis client unavailable, skipping route search cache write")
+                return False
+
+            # Normalize inputs
+            departure_iata = departure_iata.upper()
+            arrival_iata = arrival_iata.upper()
+
+            # Use default TTL from config if not specified
+            if ttl is None:
+                ttl = config.FLIGHT_SEARCH_CACHE_TTL_SECONDS
+
+            # Generate cache key
+            cache_key = cls._generate_cache_key(
+                "flight_search",
+                f"{departure_iata}:{arrival_iata}:{flight_date}"
+            )
+
+            # Add cache metadata
+            cache_entry = {
+                "data": flights,
+                "cached_at": datetime.now(timezone.utc).isoformat(),
+                "ttl": ttl,
+                "route": f"{departure_iata}->{arrival_iata}",
+                "flight_date": flight_date
+            }
+
+            # Write to cache with TTL
+            await client.setex(cache_key, ttl, json.dumps(cache_entry))
+
+            logger.info(
+                f"Cached route search {departure_iata} → {arrival_iata} on {flight_date} "
+                f"with {len(flights)} flights, TTL {ttl}s"
+            )
+            return True
+
+        except RedisError as e:
+            logger.error(f"Redis error during route search cache write: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error during route search cache write: {str(e)}", exc_info=True)
+            return False
+
+    @classmethod
+    async def get_cached_airport_search(cls, query: str) -> Optional[list]:
+        """
+        Get cached airport search results.
+
+        Args:
+            query: Search query (normalized)
+
+        Returns:
+            Cached airport list or None if cache miss
+        """
+        try:
+            client = await cls.get_redis_client()
+            if not client:
+                logger.warning("Redis client unavailable, skipping airport search cache lookup")
+                return None
+
+            # Normalize query (uppercase, no spaces)
+            query_normalized = query.upper().replace(" ", "")
+
+            # Generate cache key
+            cache_key = cls._generate_cache_key("airports:search", query_normalized)
+
+            # Get from cache
+            cached_data = await client.get(cache_key)
+
+            if cached_data:
+                logger.info(f"Cache HIT for airport search '{query}'")
+                return json.loads(cached_data)
+            else:
+                logger.info(f"Cache MISS for airport search '{query}'")
+                return None
+
+        except RedisError as e:
+            logger.error(f"Redis error during airport search cache lookup: {str(e)}")
+            return None
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in airport search cache: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error during airport search cache lookup: {str(e)}", exc_info=True)
+            return None
+
+    @classmethod
+    async def cache_airport_search(cls, query: str, airports: list) -> bool:
+        """
+        Cache airport search results with 7-day TTL.
+
+        Args:
+            query: Search query
+            airports: List of airport dictionaries
+
+        Returns:
+            True if cached successfully, False otherwise
+        """
+        try:
+            client = await cls.get_redis_client()
+            if not client:
+                logger.warning("Redis client unavailable, skipping airport search cache write")
+                return False
+
+            # Normalize query
+            query_normalized = query.upper().replace(" ", "")
+
+            # Use 7-day TTL for airport search results
+            ttl = config.AIRPORT_AUTOCOMPLETE_CACHE_TTL_SECONDS
+
+            # Generate cache key
+            cache_key = cls._generate_cache_key("airports:search", query_normalized)
+
+            # Add cache metadata
+            cache_entry = {
+                "data": airports,
+                "cached_at": datetime.now(timezone.utc).isoformat(),
+                "ttl": ttl,
+                "query": query
+            }
+
+            # Write to cache with TTL
+            await client.setex(cache_key, ttl, json.dumps(cache_entry))
+
+            logger.info(f"Cached airport search '{query}' with {len(airports)} results, TTL {ttl}s")
+            return True
+
+        except RedisError as e:
+            logger.error(f"Redis error during airport search cache write: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error during airport search cache write: {str(e)}", exc_info=True)
+            return False

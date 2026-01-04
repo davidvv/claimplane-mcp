@@ -1,13 +1,20 @@
 """Flight lookup endpoints with AeroDataBox API integration."""
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query, Depends
+from uuid import UUID
+from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 import logging
 
 from app.database import get_db
 from app.config import config
+from app.schemas.flight_schemas import (
+    AirportSearchRequestSchema,
+    AirportSearchResponseSchema,
+    RouteSearchRequestSchema,
+    RouteSearchResponseSchema
+)
 
 logger = logging.getLogger(__name__)
 
@@ -407,3 +414,233 @@ def _parse_aerodatabox_response(api_response: dict, flight_number: str, date: st
         status=status,
         delay=delay_minutes
     )
+
+
+# ============================================================================
+# Phase 6.5: Flight Search by Route Endpoints
+# ============================================================================
+
+
+@router.get("/airports/search", response_model=AirportSearchResponseSchema)
+async def search_airports(
+    query: str = Query(..., min_length=2, max_length=50, description="Search query (IATA code, city, or airport name)"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of results to return")
+) -> AirportSearchResponseSchema:
+    """
+    Search airports by IATA code, name, or city.
+
+    **Phase 6.5**: Airport autocomplete for route search feature.
+
+    **Feature Flag**: Requires FLIGHT_SEARCH_ENABLED=true.
+
+    Args:
+        query: Search query (e.g., "munich", "MUC", "New York")
+        limit: Maximum number of results (default: 10, max: 50)
+
+    Returns:
+        List of matching airports with IATA codes, names, cities, and countries
+
+    Example Response:
+        {
+            "airports": [
+                {
+                    "iata": "MUC",
+                    "icao": "EDDM",
+                    "name": "Munich Airport",
+                    "city": "Munich",
+                    "country": "Germany"
+                }
+            ],
+            "total": 1
+        }
+
+    Note:
+        - Results are cached for 7 days
+        - Searches by IATA code, airport name, or city name
+        - Case-insensitive fuzzy matching
+    """
+    # Check feature flag
+    if not config.FLIGHT_SEARCH_ENABLED:
+        raise HTTPException(
+            status_code=503,
+            detail="Flight search is currently disabled. Please try again later or enter your flight number manually."
+        )
+
+    try:
+        from app.services.flight_search_service import FlightSearchService
+
+        # Validate input
+        try:
+            request_data = AirportSearchRequestSchema(query=query, limit=limit)
+        except ValidationError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        logger.info(f"Airport search: query='{query}', limit={limit}")
+
+        # Call service
+        airports = await FlightSearchService.search_airports(
+            query=request_data.query,
+            limit=request_data.limit
+        )
+
+        # Format response
+        response = AirportSearchResponseSchema(
+            airports=airports,
+            total=len(airports)
+        )
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Airport search error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Airport search temporarily unavailable. Please try again later."
+        )
+
+
+@router.get("/search", response_model=RouteSearchResponseSchema)
+async def search_flights_by_route(
+    from_: str = Query(..., alias="from", min_length=3, max_length=3, description="Departure airport IATA code"),
+    to: str = Query(..., min_length=3, max_length=3, description="Arrival airport IATA code"),
+    date: str = Query(..., description="Flight date in YYYY-MM-DD format"),
+    time: Optional[str] = Query(None, description="Approximate time (morning/afternoon/evening or HH:MM)"),
+    force_refresh: bool = Query(False, description="Force API call (bypasses cache)"),
+    request: Request = None,
+    db: AsyncSession = Depends(get_db)
+) -> RouteSearchResponseSchema:
+    """
+    Search for flights on a specific route and date.
+
+    **Phase 6.5**: Route-based flight search for customers who don't know their flight number.
+
+    **Feature Flag**: Requires FLIGHT_SEARCH_ENABLED=true.
+
+    **8-Step Orchestration**:
+    1. Validate inputs (IATA codes, date range)
+    2. Check cache (24h TTL)
+    3. Check quota availability (emergency brake at 95%)
+    4. Call provider adapter (AeroDataBox)
+    5. Track API usage
+    6. Cache result
+    7. Filter by time (if specified)
+    8. Sort (delayed/cancelled first, then by departure time) and return
+
+    Args:
+        from_: Departure airport IATA code (e.g., "MUC")
+        to: Arrival airport IATA code (e.g., "JFK")
+        date: Flight date in YYYY-MM-DD format
+        time: Optional time filter ("morning", "afternoon", "evening", or "HH:MM")
+        force_refresh: Bypass cache and force API call (consumes 2 API credits)
+        db: Database session for quota tracking and analytics
+
+    Returns:
+        List of matching flights with estimated EU261 compensation
+
+    Example Response:
+        {
+            "flights": [
+                {
+                    "flightNumber": "LH8960",
+                    "airline": "Lufthansa",
+                    "airlineIata": "LH",
+                    "departureAirport": "MUC",
+                    "departureAirportName": "Munich Airport",
+                    "arrivalAirport": "JFK",
+                    "arrivalAirportName": "John F. Kennedy Intl",
+                    "scheduledDeparture": "2025-01-15T13:45:00+01:00",
+                    "scheduledArrival": "2025-01-15T17:20:00-05:00",
+                    "actualDeparture": "2025-01-15T16:45:00+01:00",
+                    "actualArrival": "2025-01-15T20:20:00-05:00",
+                    "status": "delayed",
+                    "delayMinutes": 180,
+                    "distanceKm": 6200.0,
+                    "estimatedCompensation": 600
+                }
+            ],
+            "total": 1,
+            "cached": false,
+            "apiCreditsUsed": 2
+        }
+
+    Notes:
+        - Results are cached for 24 hours (configurable)
+        - Delayed/cancelled flights are prioritized in results
+        - Estimated compensation is calculated based on EU261/2004 rules
+        - Time filter is optional for better flexibility
+        - Quota tracking shares Phase 6 quota (95% emergency brake)
+    """
+    # Check feature flag
+    if not config.FLIGHT_SEARCH_ENABLED:
+        raise HTTPException(
+            status_code=503,
+            detail="Flight search is currently disabled. Please try again later or enter your flight number manually."
+        )
+
+    try:
+        from app.services.flight_search_service import FlightSearchService
+
+        # Validate input
+        try:
+            request_data = RouteSearchRequestSchema(
+                departure_iata=from_,
+                arrival_iata=to,
+                flight_date=date,
+                approximate_time=time
+            )
+        except ValidationError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        # Extract user ID from headers (Phase 3 will use JWT)
+        user_id_header = request.headers.get("X-Customer-ID") if request else None
+        user_id = None
+        if user_id_header:
+            try:
+                user_id = UUID(user_id_header)
+            except ValueError:
+                pass  # Invalid UUID, continue without user tracking
+
+        logger.info(
+            f"Route search: {request_data.departure_iata} → {request_data.arrival_iata} "
+            f"on {request_data.flight_date} (time: {request_data.approximate_time or 'any'}, "
+            f"user: {user_id}, force_refresh: {force_refresh})"
+        )
+
+        # Call service
+        result = await FlightSearchService.search_flights_by_route(
+            session=db,
+            departure_iata=request_data.departure_iata,
+            arrival_iata=request_data.arrival_iata,
+            flight_date=request_data.flight_date,
+            approximate_time=request_data.approximate_time,
+            user_id=user_id,
+            force_refresh=force_refresh
+        )
+
+        # Format response
+        response = RouteSearchResponseSchema(
+            flights=result.get("flights", []),
+            total=result.get("total", 0),
+            cached=result.get("cached", False),
+            apiCreditsUsed=result.get("apiCreditsUsed", 0)
+        )
+
+        await db.commit()  # Commit quota tracking and analytics
+
+        return response
+
+    except HTTPException:
+        raise
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Route search error: {str(e)}", exc_info=True)
+        # Return empty result with error message (graceful degradation)
+        return RouteSearchResponseSchema(
+            flights=[],
+            total=0,
+            cached=False,
+            apiCreditsUsed=0
+        )

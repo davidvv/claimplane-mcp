@@ -1,5 +1,5 @@
 """Pydantic schemas for flight data API responses."""
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Optional, Dict, Any
 from decimal import Decimal
 from uuid import UUID
@@ -212,5 +212,249 @@ class FlightVerificationRequestSchema(BaseModel):
                 "flight_number": "BA123",
                 "flight_date": "2024-01-15",
                 "force_refresh": False
+            }
+        }
+
+
+# ============================================================================
+# Phase 6.5: Flight Search by Route Schemas
+# ============================================================================
+
+
+class AirportSearchResultSchema(BaseModel):
+    """Airport autocomplete result schema."""
+
+    iata: str = Field(..., min_length=3, max_length=3, description="IATA airport code")
+    icao: Optional[str] = Field(None, min_length=4, max_length=4, description="ICAO airport code")
+    name: str = Field(..., description="Airport name")
+    city: str = Field(..., description="City name")
+    country: str = Field(..., description="Country name or code")
+
+    @field_validator('iata')
+    @classmethod
+    def validate_iata(cls, v: str) -> str:
+        """Validate and normalize IATA code."""
+        return v.upper()
+
+    @field_validator('icao')
+    @classmethod
+    def validate_icao(cls, v: Optional[str]) -> Optional[str]:
+        """Validate and normalize ICAO code."""
+        return v.upper() if v else None
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "iata": "MUC",
+                "icao": "EDDM",
+                "name": "Munich Airport",
+                "city": "Munich",
+                "country": "Germany"
+            }
+        }
+
+
+class FlightSearchResultSchema(BaseModel):
+    """Flight search result schema (route search)."""
+
+    flightNumber: str = Field(..., description="Flight number")
+    airline: Optional[str] = Field(None, description="Airline name")
+    airlineIata: Optional[str] = Field(None, description="Airline IATA code")
+
+    departureAirport: str = Field(..., description="Departure airport IATA code")
+    departureAirportName: Optional[str] = Field(None, description="Departure airport name")
+    arrivalAirport: str = Field(..., description="Arrival airport IATA code")
+    arrivalAirportName: Optional[str] = Field(None, description="Arrival airport name")
+
+    scheduledDeparture: Optional[str] = Field(None, description="Scheduled departure time (ISO 8601)")
+    scheduledArrival: Optional[str] = Field(None, description="Scheduled arrival time (ISO 8601)")
+    actualDeparture: Optional[str] = Field(None, description="Actual departure time (ISO 8601)")
+    actualArrival: Optional[str] = Field(None, description="Actual arrival time (ISO 8601)")
+
+    status: str = Field(..., description="Flight status (scheduled, delayed, cancelled, etc.)")
+    delayMinutes: Optional[int] = Field(None, description="Delay in minutes")
+    distanceKm: Optional[float] = Field(None, description="Flight distance in kilometers")
+
+    estimatedCompensation: Optional[int] = Field(None, description="Estimated EU261 compensation in EUR")
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "flightNumber": "LH8960",
+                "airline": "Lufthansa",
+                "airlineIata": "LH",
+                "departureAirport": "MUC",
+                "departureAirportName": "Munich Airport",
+                "arrivalAirport": "JFK",
+                "arrivalAirportName": "John F. Kennedy International",
+                "scheduledDeparture": "2025-01-15T13:45:00+01:00",
+                "scheduledArrival": "2025-01-15T17:20:00-05:00",
+                "actualDeparture": "2025-01-15T16:45:00+01:00",
+                "actualArrival": "2025-01-15T20:20:00-05:00",
+                "status": "delayed",
+                "delayMinutes": 180,
+                "distanceKm": 6200.0,
+                "estimatedCompensation": 600
+            }
+        }
+
+
+class RouteSearchRequestSchema(BaseModel):
+    """Request schema for route search."""
+
+    departure_iata: str = Field(..., min_length=3, max_length=3, description="Departure airport IATA code")
+    arrival_iata: str = Field(..., min_length=3, max_length=3, description="Arrival airport IATA code")
+    flight_date: str = Field(..., description="Flight date in YYYY-MM-DD format")
+    approximate_time: Optional[str] = Field(None, description="Approximate time (morning/afternoon/evening or HH:MM)")
+
+    @field_validator('departure_iata', 'arrival_iata')
+    @classmethod
+    def validate_iata_codes(cls, v: str) -> str:
+        """Validate and normalize IATA codes."""
+        v = v.upper().strip()
+        if len(v) != 3 or not v.isalpha():
+            raise ValueError("IATA code must be exactly 3 letters")
+        return v
+
+    @field_validator('flight_date')
+    @classmethod
+    def validate_flight_date(cls, v: str) -> str:
+        """Validate flight date format and range."""
+        try:
+            flight_date = datetime.strptime(v, "%Y-%m-%d").date()
+        except ValueError:
+            raise ValueError("Flight date must be in YYYY-MM-DD format")
+
+        # Check date is not in the future
+        today = datetime.now().date()
+        if flight_date > today:
+            raise ValueError("Flight date cannot be in the future")
+
+        # Check date is not more than 6 years ago (EU261 claim window varies by jurisdiction)
+        # UK: 6 years, Germany: 3 years, most EU countries: 2-3 years
+        # We use 6 years to be inclusive
+        six_years_ago = today - timedelta(days=365 * 6)
+        if flight_date < six_years_ago:
+            raise ValueError("Flight date must be within the last 6 years")
+
+        return v
+
+    @field_validator('approximate_time')
+    @classmethod
+    def validate_approximate_time(cls, v: Optional[str]) -> Optional[str]:
+        """Validate approximate time format."""
+        if v is None or v == "":
+            return None
+
+        v = v.lower().strip()
+
+        # Check if it's one of the predefined options
+        valid_options = ['morning', 'afternoon', 'evening']
+        if v in valid_options:
+            return v
+
+        # Check if it's HH:MM format
+        if ':' in v:
+            try:
+                time_parts = v.split(':')
+                if len(time_parts) != 2:
+                    raise ValueError()
+                hours = int(time_parts[0])
+                minutes = int(time_parts[1])
+                if not (0 <= hours <= 23 and 0 <= minutes <= 59):
+                    raise ValueError()
+                return v
+            except (ValueError, IndexError):
+                raise ValueError("Time must be in HH:MM format (e.g., '14:30')")
+
+        raise ValueError("Approximate time must be 'morning', 'afternoon', 'evening', or 'HH:MM' format")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "departure_iata": "MUC",
+                "arrival_iata": "JFK",
+                "flight_date": "2025-01-15",
+                "approximate_time": "afternoon"
+            }
+        }
+
+
+class AirportSearchRequestSchema(BaseModel):
+    """Request schema for airport search."""
+
+    query: str = Field(..., min_length=2, max_length=50, description="Search query (IATA code, city, or airport name)")
+    limit: int = Field(10, ge=1, le=50, description="Maximum number of results to return")
+
+    @field_validator('query')
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Validate and normalize search query."""
+        return v.strip()
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "query": "munich",
+                "limit": 10
+            }
+        }
+
+
+class RouteSearchResponseSchema(BaseModel):
+    """Response schema for route search."""
+
+    flights: list[FlightSearchResultSchema] = Field(..., description="List of matching flights")
+    total: int = Field(..., description="Total number of flights found")
+    cached: bool = Field(False, description="Whether results were served from cache")
+    apiCreditsUsed: int = Field(0, description="Number of API credits consumed")
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "flights": [
+                    {
+                        "flightNumber": "LH8960",
+                        "airline": "Lufthansa",
+                        "airlineIata": "LH",
+                        "departureAirport": "MUC",
+                        "arrivalAirport": "JFK",
+                        "scheduledDeparture": "2025-01-15T13:45:00+01:00",
+                        "scheduledArrival": "2025-01-15T17:20:00-05:00",
+                        "status": "delayed",
+                        "delayMinutes": 180,
+                        "estimatedCompensation": 600
+                    }
+                ],
+                "total": 1,
+                "cached": False,
+                "apiCreditsUsed": 2
+            }
+        }
+
+
+class AirportSearchResponseSchema(BaseModel):
+    """Response schema for airport search."""
+
+    airports: list[AirportSearchResultSchema] = Field(..., description="List of matching airports")
+    total: int = Field(..., description="Total number of airports found")
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "airports": [
+                    {
+                        "iata": "MUC",
+                        "icao": "EDDM",
+                        "name": "Munich Airport",
+                        "city": "Munich",
+                        "country": "Germany"
+                    }
+                ],
+                "total": 1
             }
         }

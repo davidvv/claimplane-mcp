@@ -150,6 +150,58 @@ export interface FlightStatusParams {
   refresh?: boolean;
 }
 
+// ==================== Phase 6.5: Flight Search by Route Types ====================
+export interface Airport {
+  iata: string; // 3-letter IATA code
+  icao?: string; // 4-letter ICAO code
+  name: string; // Airport name
+  city: string; // City name
+  country: string; // Country name or code
+}
+
+export interface AirportSearchParams {
+  query: string; // Search query (IATA code, city, or airport name)
+  limit?: number; // Max results (default: 10, max: 50)
+}
+
+export interface AirportSearchResponse {
+  airports: Airport[];
+  total: number;
+}
+
+export interface FlightSearchResult {
+  flightNumber: string;
+  airline?: string;
+  airlineIata?: string;
+  departureAirport: string;
+  departureAirportName?: string;
+  arrivalAirport: string;
+  arrivalAirportName?: string;
+  scheduledDeparture?: string; // ISO 8601
+  scheduledArrival?: string; // ISO 8601
+  actualDeparture?: string; // ISO 8601
+  actualArrival?: string; // ISO 8601
+  status: string;
+  delayMinutes?: number;
+  distanceKm?: number;
+  estimatedCompensation?: number; // EUR
+}
+
+export interface RouteSearchParams {
+  from: string; // Departure airport IATA code
+  to: string; // Arrival airport IATA code
+  date: string; // Flight date (YYYY-MM-DD)
+  time?: string; // Optional time filter (morning/afternoon/evening or HH:MM)
+  force_refresh?: boolean; // Force API call (bypass cache)
+}
+
+export interface RouteSearchResponse {
+  flights: FlightSearchResult[];
+  total: number;
+  cached: boolean;
+  apiCreditsUsed: number;
+}
+
 export interface PaginationParams {
   page?: number;
   limit?: number;

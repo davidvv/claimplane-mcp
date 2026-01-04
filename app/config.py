@@ -167,6 +167,26 @@ class Config:
     FLIGHT_DATA_CACHE_HOURS = int(os.getenv("FLIGHT_DATA_CACHE_HOURS", "24"))
     FLIGHT_CACHE_TTL_SECONDS = FLIGHT_DATA_CACHE_HOURS * 3600  # Convert to seconds for Redis
 
+    # Phase 6.5: Flight Search by Route Configuration
+    FLIGHT_SEARCH_ENABLED = os.getenv("FLIGHT_SEARCH_ENABLED", "false").lower() == "true"
+    FLIGHT_SEARCH_PROVIDER = os.getenv("FLIGHT_SEARCH_PROVIDER", "aerodatabox")  # aerodatabox, aviationstack
+
+    # Provider-specific configs (defaults to Phase 6 values for consistency)
+    FLIGHT_SEARCH_API_KEY = os.getenv("FLIGHT_SEARCH_API_KEY", AERODATABOX_API_KEY)
+    FLIGHT_SEARCH_BASE_URL = os.getenv("FLIGHT_SEARCH_BASE_URL", AERODATABOX_BASE_URL)
+
+    # Search configuration
+    FLIGHT_SEARCH_MAX_RESULTS = int(os.getenv("FLIGHT_SEARCH_MAX_RESULTS", "50"))
+    FLIGHT_SEARCH_CACHE_HOURS = int(os.getenv("FLIGHT_SEARCH_CACHE_HOURS", "24"))
+    FLIGHT_SEARCH_CACHE_TTL_SECONDS = FLIGHT_SEARCH_CACHE_HOURS * 3600
+
+    # Airport autocomplete
+    AIRPORT_AUTOCOMPLETE_CACHE_DAYS = int(os.getenv("AIRPORT_AUTOCOMPLETE_CACHE_DAYS", "7"))
+    AIRPORT_AUTOCOMPLETE_CACHE_TTL_SECONDS = AIRPORT_AUTOCOMPLETE_CACHE_DAYS * 86400
+
+    # Analytics
+    FLIGHT_SEARCH_ANALYTICS_ENABLED = os.getenv("FLIGHT_SEARCH_ANALYTICS_ENABLED", "true").lower() == "true"
+
     # Post-Upload Verification Configuration
     UPLOAD_VERIFICATION_ENABLED = os.getenv("UPLOAD_VERIFICATION_ENABLED", "true").lower() == "true"
     VERIFICATION_TIMEOUT = int(os.getenv("VERIFICATION_TIMEOUT", "300"))  # 5 minutes

@@ -891,3 +891,73 @@ class APIQuotaStatus(Base):
 
 # Add flight_data relationship to Claim model
 Claim.flight_data = relationship("FlightData", back_populates="claim", uselist=False, cascade="all, delete-orphan")
+
+
+# ============================================================================
+# PHASE 6.5: Flight Search Analytics Models
+# ============================================================================
+
+
+class FlightSearchLog(Base):
+    """Track route searches for business intelligence and analytics.
+
+    Purpose:
+    - Identify popular routes for targeted marketing campaigns
+    - Understand user search patterns and behavior
+    - A/B testing for search UX improvements
+    - Monitor route search adoption rate
+    """
+
+    __tablename__ = "flight_search_logs"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # Search parameters
+    departure_airport = Column(String(3), nullable=False, index=True)  # IATA code
+    arrival_airport = Column(String(3), nullable=False, index=True)  # IATA code
+    search_date = Column(Date, nullable=False)
+    search_time = Column(String(10), nullable=True)  # "morning", "afternoon", "evening", or "HH:MM"
+
+    # Results
+    results_count = Column(Integer, nullable=False, default=0)
+    selected_flight_number = Column(String(10), nullable=True)  # Which flight user selected (if any)
+
+    # Metadata
+    user_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True, index=True)
+    session_id = Column(String(255), nullable=True)  # Anonymous session tracking
+    ip_address = Column(String(45), nullable=True)  # IPv6 compatible (optional, for fraud detection)
+    user_agent = Column(Text, nullable=True)  # Browser/device info (optional)
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    # Relationships
+    user = relationship("Customer", foreign_keys=[user_id])
+
+    def __repr__(self):
+        return f"<FlightSearchLog(id={self.id}, route={self.departure_airport}->{self.arrival_airport}, results={self.results_count})>"
+
+    @validates('departure_airport', 'arrival_airport')
+    def validate_airport_code(self, key, code):
+        """Validate IATA airport codes (must be 3 characters)."""
+        if code and len(code) != 3:
+            raise ValueError("Airport code must be 3 characters")
+        return code.upper()
+
+    @validates('search_time')
+    def validate_search_time(self, key, search_time):
+        """Validate search time format."""
+        if search_time:
+            valid_options = ['morning', 'afternoon', 'evening']
+            # Check if it's one of the predefined options or HH:MM format
+            if search_time not in valid_options:
+                # Validate HH:MM format
+                if ':' not in search_time or len(search_time.split(':')) != 2:
+                    raise ValueError("Search time must be 'morning', 'afternoon', 'evening', or 'HH:MM' format")
+                try:
+                    hours, minutes = search_time.split(':')
+                    if not (0 <= int(hours) <= 23 and 0 <= int(minutes) <= 59):
+                        raise ValueError("Invalid time range")
+                except ValueError:
+                    raise ValueError("Search time must be valid HH:MM format")
+        return search_time

@@ -146,9 +146,9 @@ async def get_flight_status(
 
                 if not quota_available:
                     logger.warning(
-                        f"API quota exceeded (>95%). Falling back to mock data for {flight_number}"
+                        f"API quota exceeded (>95%). Cannot retrieve data for {flight_number}"
                     )
-                    return _get_mock_flight_status(flight_number, date, source="quota_exceeded")
+                    return _get_no_data_response(flight_number, date, reason="quota_exceeded")
 
                 # Call AeroDataBox API
                 start_time = datetime.now()
@@ -203,8 +203,8 @@ async def get_flight_status(
                     )
 
                     logger.error(f"AeroDataBox API error: {str(e)}")
-                    # Fall back to mock data
-                    return _get_mock_flight_status(flight_number, date, source="api_error")
+                    # Return no data available response
+                    return _get_no_data_response(flight_number, date, reason="api_error")
 
             # Step 3: Parse API response
             flight_parsed = _parse_aerodatabox_response(flight_data_dict, flight_number, date)
@@ -227,79 +227,55 @@ async def get_flight_status(
                 f"Unexpected error in flight status lookup: {str(e)}",
                 exc_info=True
             )
-            # Fall back to mock data on any error
-            return _get_mock_flight_status(flight_number, date, source="error")
+            # Return no data available response
+            return _get_no_data_response(flight_number, date, reason="error")
 
     else:
-        # API disabled - return mock data
-        logger.info(f"AeroDataBox API disabled. Returning mock data for {flight_number}")
-        return _get_mock_flight_status(flight_number, date, source="mock")
+        # API disabled - return no data available
+        logger.info(f"AeroDataBox API disabled. Cannot provide data for {flight_number}")
+        return _get_no_data_response(flight_number, date, reason="api_disabled")
 
 
 # Helper functions
 
-def _get_mock_flight_status(flight_number: str, date: str, source: str = "mock") -> dict:
+def _get_no_data_response(flight_number: str, date: str, reason: str = "unavailable") -> dict:
     """
-    Generate mock flight status data for testing or fallback.
+    Return a 'no data available' response when flight information cannot be retrieved.
+
+    Instead of returning mock data, we acknowledge that real-time data is unavailable
+    and inform the user that our team will manually process their claim.
 
     Args:
         flight_number: Flight number
         date: Flight date in YYYY-MM-DD format
-        source: Source indicator (mock, api_error, quota_exceeded, etc.)
+        reason: Reason for unavailability (api_error, quota_exceeded, api_disabled, etc.)
 
     Returns:
-        Mock flight status response
+        No data available response
     """
-    import re
+    reason_messages = {
+        "api_error": "We're currently unable to retrieve real-time flight data due to a temporary API issue.",
+        "quota_exceeded": "We've reached our daily limit for flight data requests.",
+        "api_disabled": "Real-time flight data lookup is currently unavailable.",
+        "unavailable": "We don't have real-time data available for this flight yet.",
+        "error": "We encountered an issue retrieving flight data."
+    }
 
-    # Parse flight number to extract airline code
-    match = re.match(r'([A-Z]{2,3})(\d+)', flight_number.upper())
-
-    if match:
-        airline_code = match.group(1)
-
-        # Mock airline mapping
-        airlines = {
-            "BA": "British Airways",
-            "AA": "American Airlines",
-            "DL": "Delta Air Lines",
-            "UA": "United Airlines",
-            "LH": "Lufthansa",
-            "AF": "Air France",
-            "KL": "KLM",
-            "IB": "Iberia",
-            "VY": "Vueling",
-            "FR": "Ryanair",
-            "U2": "easyJet",
-            "EZY": "easyJet",
-            "W6": "Wizz Air",
-        }
-
-        airline_name = airlines.get(airline_code, f"{airline_code} Airlines")
-    else:
-        airline_name = "Mock Airlines"
-
-    # Mock flight data - always returns a delayed flight for testing compensation
-    flight_data = FlightStatusResponse(
-        flightNumber=flight_number.upper(),
-        airline=airline_name,
-        departureAirport="MAD",  # Madrid
-        arrivalAirport="JFK",    # New York JFK
-        departureDate=date,
-        scheduledDeparture=f"{date}T10:00:00Z",
-        actualDeparture=f"{date}T14:30:00Z",  # 4.5 hours delayed
-        scheduledArrival=f"{date}T18:00:00Z",
-        actualArrival=f"{date}T22:30:00Z",
-        status="delayed",
-        delay=270  # 4.5 hours = 270 minutes
-    )
+    message = reason_messages.get(reason, reason_messages["unavailable"])
 
     return {
-        "success": True,
-        "data": flight_data.dict(),
-        "source": source,
-        "cached": False,
-        "apiCreditsUsed": 0
+        "success": False,
+        "error": "FLIGHT_DATA_UNAVAILABLE",
+        "message": message,
+        "userMessage": (
+            f"We don't have real-time data for flight {flight_number.upper()} on {date} yet. "
+            "Don't worry - you can still submit your claim and our team will verify the flight details manually."
+        ),
+        "flightNumber": flight_number.upper(),
+        "date": date,
+        "source": reason,
+        "canProceedWithClaim": True,
+        "manualReview": True
     }
 
 

@@ -83,9 +83,9 @@ class AeroDataBoxRouteAdapter(FlightSearchAdapter):
             logger.info(f"No flights found on route {departure_iata} → {arrival_iata} on {flight_date}")
             return []
         except AeroDataBoxError as e:
-            # Log error and fall back to mock data for development
-            logger.warning(f"AeroDataBox route search failed ({str(e)}). Using mock data for development.")
-            return self._get_mock_route_data(departure_iata, arrival_iata, flight_date)
+            # Log error and return empty list - no mock data
+            logger.error(f"AeroDataBox route search failed ({str(e)}). Returning empty results.")
+            return []
 
     async def search_airports(
         self,
@@ -278,103 +278,3 @@ class AeroDataBoxRouteAdapter(FlightSearchAdapter):
             return None
 
         return None
-
-    def _get_mock_route_data(
-        self,
-        departure_iata: str,
-        arrival_iata: str,
-        flight_date: str
-    ) -> List[Dict[str, Any]]:
-        """
-        Generate mock flight data for development when API is unavailable.
-
-        Returns realistic mock flights for common routes with various statuses
-        (delayed, cancelled, on-time) to test the UI functionality.
-        """
-        from datetime import datetime, timedelta
-        import random
-
-        # Parse flight date
-        try:
-            date_obj = datetime.strptime(flight_date, "%Y-%m-%d")
-        except ValueError:
-            return []
-
-        # Mock airlines and flight numbers based on route
-        route_key = f"{departure_iata}-{arrival_iata}"
-
-        mock_flights = []
-
-        # Generate 3-5 mock flights for the route
-        num_flights = random.randint(3, 5)
-
-        for i in range(num_flights):
-            # Vary departure times throughout the day
-            hour = 6 + (i * 4) + random.randint(0, 2)
-            minute = random.choice([0, 15, 30, 45])
-
-            scheduled_dep = date_obj.replace(hour=hour, minute=minute)
-
-            # Mock flight duration (varies by route)
-            duration_hours = random.randint(8, 12)  # Long-haul
-            scheduled_arr = scheduled_dep + timedelta(hours=duration_hours, minutes=random.randint(0, 45))
-
-            # Random delay status
-            status_roll = random.random()
-            if status_roll < 0.3:  # 30% delayed
-                delay_min = random.choice([30, 60, 120, 180, 240, 300])  # Various delays
-                actual_dep = scheduled_dep + timedelta(minutes=delay_min)
-                actual_arr = scheduled_arr + timedelta(minutes=delay_min)
-                status = "delayed"
-            elif status_roll < 0.4:  # 10% cancelled
-                actual_dep = None
-                actual_arr = None
-                delay_min = None
-                status = "cancelled"
-            else:  # 60% on time
-                actual_dep = scheduled_dep
-                actual_arr = scheduled_arr
-                delay_min = 0
-                status = "arrived"
-
-            # Mock airlines based on route
-            airlines = {
-                "MUC-JFK": [("LH", "Lufthansa"), ("UA", "United"), ("AA", "American")],
-                "LHR-JFK": [("BA", "British Airways"), ("AA", "American"), ("DL", "Delta")],
-                "CDG-JFK": [("AF", "Air France"), ("DL", "Delta")],
-            }
-
-            route_airlines = airlines.get(route_key, [("XX", "Mock Airlines")])
-            airline_code, airline_name = random.choice(route_airlines)
-
-            flight_num = f"{airline_code}{1000 + i * 100 + random.randint(0, 99)}"
-
-            # Mock distance (approximate)
-            distances = {
-                "MUC-JFK": 6200,
-                "LHR-JFK": 5500,
-                "CDG-JFK": 5850,
-            }
-            distance = distances.get(route_key, 6000)
-
-            mock_flight = {
-                "flightNumber": flight_num,
-                "airline": airline_name,
-                "airlineIata": airline_code,
-                "departureAirport": departure_iata,
-                "departureAirportName": None,
-                "arrivalAirport": arrival_iata,
-                "arrivalAirportName": None,
-                "scheduledDeparture": scheduled_dep.isoformat() + "Z",
-                "scheduledArrival": scheduled_arr.isoformat() + "Z",
-                "actualDeparture": actual_dep.isoformat() + "Z" if actual_dep else None,
-                "actualArrival": actual_arr.isoformat() + "Z" if actual_arr else None,
-                "status": status,
-                "delayMinutes": delay_min,
-                "distanceKm": distance,
-            }
-
-            mock_flights.append(mock_flight)
-
-        logger.info(f"Generated {len(mock_flights)} mock flights for {route_key} on {flight_date}")
-        return mock_flights

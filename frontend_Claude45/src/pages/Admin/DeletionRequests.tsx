@@ -15,6 +15,7 @@ import {
   type DeletionRequestListItem,
   type DeletionRequestFilters
 } from '../../services/admin';
+import { buildDisplayName } from '../../services/auth';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -129,7 +130,7 @@ export function DeletionRequests() {
     }
 
     const customerName = request.customer
-      ? `${request.customer.first_name} ${request.customer.last_name}`
+      ? buildDisplayName(request.customer.first_name, request.customer.last_name, request.email)
       : request.email;
 
     // Confirmation dialog
@@ -291,7 +292,7 @@ export function DeletionRequests() {
                       <div>
                         <div className="font-medium">
                           {request.customer
-                            ? `${request.customer.first_name} ${request.customer.last_name}`
+                            ? buildDisplayName(request.customer.first_name, request.customer.last_name, request.email)
                             : 'Unknown'}
                         </div>
                         <div className="text-sm text-muted-foreground">
@@ -397,7 +398,7 @@ export function DeletionRequests() {
                 <p className="text-sm text-muted-foreground">Customer:</p>
                 <p className="font-medium">
                   {selectedRequest.customer
-                    ? `${selectedRequest.customer.first_name} ${selectedRequest.customer.last_name}`
+                    ? buildDisplayName(selectedRequest.customer.first_name, selectedRequest.customer.last_name, selectedRequest.email)
                     : 'Unknown'}
                 </p>
                 <p className="text-sm">{selectedRequest.email}</p>

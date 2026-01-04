@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '@/services/api';
+import { buildDisplayName } from '@/services/auth';
 
 export function MagicLinkPage() {
   const [searchParams] = useSearchParams();
@@ -32,9 +33,22 @@ export function MagicLinkPage() {
         // Tokens are automatically stored in HTTP-only cookies by the backend
         // Store user info in localStorage for UI purposes only
         if (response.data.user) {
+          // Validate that we have all required fields
+          if (!response.data.user.email || !response.data.user.first_name || !response.data.user.last_name) {
+            console.error('Backend returned incomplete user data during magic link verification');
+            setStatus('error');
+            setErrorMessage('Login failed: Incomplete user data received. Please contact support.');
+            return;
+          }
+
+          const displayName = buildDisplayName(
+            response.data.user.first_name,
+            response.data.user.last_name,
+            response.data.user.email
+          );
           localStorage.setItem('user_email', response.data.user.email);
           localStorage.setItem('user_id', response.data.user.id);
-          localStorage.setItem('user_name', `${response.data.user.first_name} ${response.data.user.last_name}`);
+          localStorage.setItem('user_name', displayName);
           localStorage.setItem('user_role', response.data.user.role);
         }
 

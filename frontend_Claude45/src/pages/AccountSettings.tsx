@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { User, Mail, Lock, Trash2, Calendar, Shield, MapPin, Phone } from 'lucide-react';
 import apiClient from '@/services/api';
-import { isAuthenticated, updateUserProfile, type UserProfile } from '@/services/auth';
+import { isAuthenticated, updateUserProfile, buildDisplayName, type UserProfile } from '@/services/auth';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 interface AccountInfo extends UserProfile {
@@ -100,6 +100,12 @@ export function AccountSettings() {
     try {
       const updatedProfile = await updateUserProfile(profileForm);
 
+      // Validate the updated profile has required fields
+      if (!updatedProfile.first_name || !updatedProfile.last_name || !updatedProfile.email) {
+        toast.error('Profile update failed: Incomplete data received from server');
+        return;
+      }
+
       // Update account info with new data
       if (accountInfo) {
         setAccountInfo({
@@ -109,8 +115,12 @@ export function AccountSettings() {
       }
 
       // Update localStorage with new name to sync UI
-      const fullName = `${updatedProfile.first_name} ${updatedProfile.last_name}`;
-      localStorage.setItem('user_name', fullName);
+      const displayName = buildDisplayName(
+        updatedProfile.first_name,
+        updatedProfile.last_name,
+        updatedProfile.email
+      );
+      localStorage.setItem('user_name', displayName);
 
       toast.success('Profile updated successfully');
     } catch (error: any) {

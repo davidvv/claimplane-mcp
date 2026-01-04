@@ -4,6 +4,37 @@
  */
 import apiClient from './api';
 
+/**
+ * Helper function to safely build display name from user data
+ * Prevents "undefined undefined" issue when name fields are null/undefined
+ *
+ * @param firstName - User's first name (may be null/undefined)
+ * @param lastName - User's last name (may be null/undefined)
+ * @param email - User's email as fallback (optional)
+ * @returns A safe display name string
+ */
+export function buildDisplayName(
+  firstName: string | null | undefined,
+  lastName: string | null | undefined,
+  email?: string | null
+): string {
+  // Trim and filter out null/undefined/empty values
+  const first = firstName?.trim();
+  const last = lastName?.trim();
+
+  // If we have both parts, concatenate them
+  if (first && last) {
+    return `${first} ${last}`;
+  }
+
+  // If we have only one part, use it
+  if (first) return first;
+  if (last) return last;
+
+  // Fallback to email or generic "User"
+  return email?.trim() || 'User';
+}
+
 // Types matching Phase 3 backend
 export interface RegisterRequest {
   email: string;
@@ -67,9 +98,20 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
   // Tokens are automatically stored in HTTP-only cookies by the backend
   // Store user info in localStorage for UI purposes only (not security-sensitive)
   if (response.data.user) {
+    // Validate that we have all required fields
+    if (!response.data.user.email || !response.data.user.first_name || !response.data.user.last_name) {
+      console.error('Backend returned incomplete user data during registration');
+      throw new Error('Registration failed: Incomplete user data received');
+    }
+
+    const displayName = buildDisplayName(
+      response.data.user.first_name,
+      response.data.user.last_name,
+      response.data.user.email
+    );
     localStorage.setItem('user_email', response.data.user.email);
     localStorage.setItem('user_id', response.data.user.id);
-    localStorage.setItem('user_name', `${response.data.user.first_name} ${response.data.user.last_name}`);
+    localStorage.setItem('user_name', displayName);
     localStorage.setItem('user_role', response.data.user.role);
   }
 
@@ -85,9 +127,20 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
   // Tokens are automatically stored in HTTP-only cookies by the backend
   // Store user info in localStorage for UI purposes only (not security-sensitive)
   if (response.data.user) {
+    // Validate that we have all required fields
+    if (!response.data.user.email || !response.data.user.first_name || !response.data.user.last_name) {
+      console.error('Backend returned incomplete user data during login');
+      throw new Error('Login failed: Incomplete user data received');
+    }
+
+    const displayName = buildDisplayName(
+      response.data.user.first_name,
+      response.data.user.last_name,
+      response.data.user.email
+    );
     localStorage.setItem('user_email', response.data.user.email);
     localStorage.setItem('user_id', response.data.user.id);
-    localStorage.setItem('user_name', `${response.data.user.first_name} ${response.data.user.last_name}`);
+    localStorage.setItem('user_name', displayName);
     localStorage.setItem('user_role', response.data.user.role);
   }
 
@@ -203,14 +256,17 @@ export async function confirmPasswordReset(token: string, newPassword: string): 
  * Check if user is authenticated
  *
  * Note: With HTTP-only cookies, we can't check the actual tokens from JavaScript.
- * This checks if we have user info in localStorage (set after successful login).
+ * This checks if we have VALID user info in localStorage (set after successful login).
  * The backend will ultimately verify authentication via HTTP-only cookies.
  *
  * This is for UI purposes only - the actual auth is verified by the backend.
  */
 export function isAuthenticated(): boolean {
-  // Check if we have user info (set after successful login)
-  return !!localStorage.getItem('user_email');
+  // Get user info and let getStoredUserInfo() validate and clean up if needed
+  const userInfo = getStoredUserInfo();
+
+  // Must have both email and name to be considered authenticated
+  return !!(userInfo.email && userInfo.name);
 }
 
 /**
@@ -219,13 +275,41 @@ export function isAuthenticated(): boolean {
  * Note: This returns user info stored in localStorage for UI purposes.
  * The actual authentication is verified by the backend via HTTP-only cookies.
  * Tokens are NOT stored in localStorage - only user display info.
+ *
+ * This function detects and CLEARS broken/invalid user data to force re-login.
  */
 export function getStoredUserInfo() {
+  const email = localStorage.getItem('user_email');
+  const id = localStorage.getItem('user_id');
+  const name = localStorage.getItem('user_name');
+  const role = localStorage.getItem('user_role');
+
+  // Detect broken names (e.g., "undefined undefined", "null null", "null undefined", etc.)
+  const isBrokenName = name && (
+    name.includes('undefined') ||
+    name.includes('null') ||
+    name.trim() === '' ||
+    name === '[object Object]' // Just in case
+  );
+
+  // If we have broken/invalid data, clear everything and force logout
+  if (isBrokenName || !email || !name) {
+    console.warn('Detected invalid user data in localStorage, clearing auth state');
+    console.warn('Broken data:', { email, id, name, role });
+    clearLocalAuthState();
+    return {
+      email: null,
+      id: null,
+      name: null,
+      role: null,
+    };
+  }
+
   return {
-    email: localStorage.getItem('user_email'),
-    id: localStorage.getItem('user_id'),
-    name: localStorage.getItem('user_name'),
-    role: localStorage.getItem('user_role'),
+    email,
+    id,
+    name,
+    role,
   };
 }
 
@@ -264,9 +348,27 @@ export async function validateSession(): Promise<boolean> {
     // Optionally update localStorage with latest user data
     if (response.data) {
       const userData = response.data;
+      const displayName = buildDisplayName(
+        userData.first_name,
+        userData.last_name,
+        userData.email
+      );
+
+      // If the backend gave us invalid data (no email or broken names), clear session
+      if (!userData.email || !userData.first_name || !userData.last_name) {
+        console.warn('Backend returned invalid user data, clearing session');
+        console.warn('Invalid data:', {
+          email: userData.email,
+          first_name: userData.first_name,
+          last_name: userData.last_name
+        });
+        clearLocalAuthState();
+        return false;
+      }
+
       localStorage.setItem('user_email', userData.email);
       localStorage.setItem('user_id', userData.id);
-      localStorage.setItem('user_name', `${userData.first_name} ${userData.last_name}`);
+      localStorage.setItem('user_name', displayName);
       localStorage.setItem('user_role', userData.role);
       return true;
     }

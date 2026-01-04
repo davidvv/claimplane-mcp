@@ -146,6 +146,33 @@ class AirportDatabaseService:
 
         return []
 
+    @classmethod
+    def get_icao_from_iata(cls, iata_code: str) -> Optional[str]:
+        """
+        Convert IATA code to ICAO code.
+
+        Args:
+            iata_code: 3-letter IATA code (e.g., "MUC", "JFK")
+
+        Returns:
+            4-letter ICAO code (e.g., "EDDM", "KJFK") or None if not found
+        """
+        # Ensure database is loaded
+        if not cls._loaded:
+            cls.load_database()
+
+        if not iata_code or len(iata_code) != 3:
+            return None
+
+        iata_upper = iata_code.upper().strip()
+
+        # Search for exact IATA match
+        for airport in cls._airports:
+            if airport["iata"].upper() == iata_upper:
+                return airport.get("icao")
+
+        return None
+
 
 # Auto-load on module import
 AirportDatabaseService.load_database()

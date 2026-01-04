@@ -17,73 +17,73 @@ export default defineConfig({
     allowedHosts: ['eac.dvvcloud.work', 'localhost', '192.168.5.209'],
     proxy: {
       '/api': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
       // Only proxy API auth endpoints, not the frontend auth pages
       '/auth/magic-link/request': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/auth/magic-link/verify': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/auth/register': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/auth/login': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/auth/refresh': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/auth/logout': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/auth/password': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/auth/me': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/claims': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/files': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/customers': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/health': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/flights': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/eligibility': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/account': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/admin': {
-        target: 'http://localhost:80',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },

@@ -596,11 +596,6 @@ class AeroDataBoxService:
                 context="find_flights_by_route"
             )
 
-        # Calculate 24-hour window in local time
-        # Note: Using UTC time for simplicity. In production, you might want to use airport's local timezone
-        from_local = f"{departure_date}T00:00"
-        to_local = f"{departure_date}T23:59"
-
         # Normalize inputs
         origin_icao = origin_icao.upper()
         destination_icao = destination_icao.upper()
@@ -612,21 +607,48 @@ class AeroDataBoxService:
             f"{f' (airline: {airline_iata})' if airline_iata else ''}"
         )
 
-        # Fetch all departures from origin airport
-        try:
-            response = await self.get_airport_departures(origin_icao, from_local, to_local)
-        except AeroDataBoxFlightNotFoundError:
-            # No departures found - return empty list
-            logger.info(f"No departures found from {origin_icao} on {departure_date}")
-            return []
+        # FIDS endpoint has a 12-hour maximum window restriction
+        # We need to make two API calls to cover the full day:
+        # 1. Morning/midday: 00:00-11:59
+        # 2. Afternoon/evening: 12:00-23:59
+        all_flights = []
 
-        # Parse response - handle both list and dict with "departures" key
-        if isinstance(response, dict) and "departures" in response:
-            all_flights = response["departures"]
-        elif isinstance(response, list):
-            all_flights = response
-        else:
-            logger.warning(f"Unexpected response format: {type(response)}")
+        # First window: 00:00-11:59
+        try:
+            from_local_1 = f"{departure_date}T00:00"
+            to_local_1 = f"{departure_date}T11:59"
+            logger.info(f"Fetching morning flights ({from_local_1} to {to_local_1})")
+            response_1 = await self.get_airport_departures(origin_icao, from_local_1, to_local_1)
+
+            # Parse response
+            if isinstance(response_1, dict) and "departures" in response_1:
+                all_flights.extend(response_1["departures"])
+            elif isinstance(response_1, list):
+                all_flights.extend(response_1)
+        except AeroDataBoxFlightNotFoundError:
+            logger.info(f"No morning departures from {origin_icao}")
+        except Exception as e:
+            logger.warning(f"Error fetching morning flights: {str(e)}")
+
+        # Second window: 12:00-23:59
+        try:
+            from_local_2 = f"{departure_date}T12:00"
+            to_local_2 = f"{departure_date}T23:59"
+            logger.info(f"Fetching afternoon/evening flights ({from_local_2} to {to_local_2})")
+            response_2 = await self.get_airport_departures(origin_icao, from_local_2, to_local_2)
+
+            # Parse response
+            if isinstance(response_2, dict) and "departures" in response_2:
+                all_flights.extend(response_2["departures"])
+            elif isinstance(response_2, list):
+                all_flights.extend(response_2)
+        except AeroDataBoxFlightNotFoundError:
+            logger.info(f"No afternoon/evening departures from {origin_icao}")
+        except Exception as e:
+            logger.warning(f"Error fetching afternoon/evening flights: {str(e)}")
+
+        if not all_flights:
+            logger.info(f"No departures found from {origin_icao} on {departure_date}")
             return []
 
         # Filter by destination ICAO and optionally by airline IATA

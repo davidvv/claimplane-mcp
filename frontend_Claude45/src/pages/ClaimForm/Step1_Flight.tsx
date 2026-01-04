@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plane, Calendar, Search, MapPin } from 'lucide-react';
+import { Plane, Calendar, Search, MapPin, ArrowUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { flightLookupSchema, type FlightLookupForm } from '@/schemas/validation';
@@ -43,6 +43,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
   const [flightDate, setFlightDate] = useState<string>('');
   const [timeFilter, setTimeFilter] = useState<string>('');
   const [searchResults, setSearchResults] = useState<FlightSearchResult[]>([]);
+  const [swapKey, setSwapKey] = useState<number>(0); // Key to force re-render on swap
 
   const {
     register,
@@ -102,28 +103,47 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
 
     setIsLoading(true);
 
+    console.log('Route Search Request:', {
+      from: departureAirport.iata,
+      to: arrivalAirport.iata,
+      date: flightDate,
+      time: timeFilter || undefined,
+    });
+
     try {
       const response = await searchFlightsByRoute({
         from: departureAirport.iata,
         to: arrivalAirport.iata,
         date: flightDate,
         time: timeFilter || undefined,
+        force_refresh: true, // Always bypass cache to avoid stale results
       });
 
-      setSearchResults(response.flights);
+      console.log('Route Search Response:', response);
+      console.log('Flights array:', response.flights);
+      console.log('Flight count:', response.flights?.length || 0);
+
+      if (response.flights && response.flights.length > 0) {
+        console.log('First flight:', response.flights[0]);
+      }
+
+      setSearchResults(response.flights || []);
       setFlightResult(null); // Clear selected flight
 
-      if (response.flights.length === 0) {
+      if (!response.flights || response.flights.length === 0) {
+        console.warn('No flights in response');
         toast.error('No flights found for this route. Try adjusting your search criteria.');
       } else {
+        console.log(`Setting ${response.flights.length} flights to search results`);
         toast.success(`Found ${response.flights.length} flight${response.flights.length > 1 ? 's' : ''}!`);
       }
     } catch (error: any) {
       // Clear previous results when search fails
       setSearchResults([]);
       setFlightResult(null);
-      toast.error(error.response?.data?.detail || 'Route search failed. Please try again.');
       console.error('Route search error:', error);
+      console.error('Error response:', error.response);
+      toast.error(error.response?.data?.detail || 'Route search failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -185,6 +205,28 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
     setInputMode(mode);
     setFlightResult(null);
     setSearchResults([]);
+  };
+
+  // Swap airports handler
+  const handleSwapAirports = () => {
+    console.log('Swapping airports:', {
+      before: {
+        departure: departureAirport?.iata,
+        arrival: arrivalAirport?.iata
+      }
+    });
+
+    const temp = departureAirport;
+    setDepartureAirport(arrivalAirport);
+    setArrivalAirport(temp);
+    setSwapKey(prev => prev + 1); // Force re-render
+
+    console.log('After swap:', {
+      after: {
+        departure: arrivalAirport?.iata,
+        arrival: temp?.iata
+      }
+    });
   };
 
   return (
@@ -250,7 +292,10 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
                 <div className="space-y-2">
                   <Label htmlFor="departureDate">Departure Date *</Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                    <Calendar
+                      className="absolute left-3 top-3 w-4 h-4 text-muted-foreground cursor-pointer z-10"
+                      onClick={() => document.getElementById('departureDate')?.showPicker?.()}
+                    />
                     <Input
                       id="departureDate"
                       type="date"
@@ -291,14 +336,28 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
             <form onSubmit={onSubmitRouteSearch} className="space-y-4">
               {/* Departure Airport */}
               <AirportAutocomplete
+                key={`departure-${swapKey}`}
                 value={departureAirport}
                 onChange={setDepartureAirport}
                 label="Departure Airport *"
                 placeholder="Search by city or airport code (e.g., Munich, MUC)"
               />
 
+              {/* Swap Button */}
+              <div className="flex justify-center -my-2 z-10">
+                <button
+                  type="button"
+                  onClick={handleSwapAirports}
+                  className="rounded-full w-10 h-10 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-500 transition-all shadow-sm"
+                  title="Swap departure and arrival airports"
+                >
+                  <ArrowUpDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                </button>
+              </div>
+
               {/* Arrival Airport */}
               <AirportAutocomplete
+                key={`arrival-${swapKey}`}
                 value={arrivalAirport}
                 onChange={setArrivalAirport}
                 label="Arrival Airport *"
@@ -309,7 +368,10 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
               <div className="space-y-2">
                 <Label htmlFor="routeFlightDate">Flight Date *</Label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                  <Calendar
+                    className="absolute left-3 top-3 w-4 h-4 text-muted-foreground cursor-pointer z-10"
+                    onClick={() => document.getElementById('routeFlightDate')?.showPicker?.()}
+                  />
                   <Input
                     id="routeFlightDate"
                     type="date"

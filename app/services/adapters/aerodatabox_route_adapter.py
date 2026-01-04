@@ -44,6 +44,9 @@ class AeroDataBoxRouteAdapter(FlightSearchAdapter):
     ) -> List[Dict[str, Any]]:
         """Search for all flights on a specific route and date.
 
+        Uses FIDS-based approach: fetches all departures from origin airport
+        and filters locally by destination.
+
         Args:
             departure_iata: Departure airport IATA code (e.g., "MUC")
             arrival_iata: Arrival airport IATA code (e.g., "JFK")
@@ -59,24 +62,44 @@ class AeroDataBoxRouteAdapter(FlightSearchAdapter):
         departure_iata = departure_iata.upper()
         arrival_iata = arrival_iata.upper()
 
-        # Construct API endpoint
-        # AeroDataBox route endpoint: /flights/{from}/{to}/{date}
-        endpoint = f"/flights/{departure_iata}/{arrival_iata}/{flight_date}"
-
-        logger.info(f"Searching route {departure_iata} → {arrival_iata} on {flight_date}")
+        logger.info(f"Searching route {departure_iata} → {arrival_iata} on {flight_date} (FIDS)")
 
         try:
-            # Call API using aerodatabox_service's retry logic
-            response = await self.service._retry_with_backoff(
-                self._make_api_call,
-                endpoint
+            # Convert IATA codes to ICAO codes (required by FIDS endpoint)
+            from app.services.airport_database_service import AirportDatabaseService
+
+            departure_icao = AirportDatabaseService.get_icao_from_iata(departure_iata)
+            arrival_icao = AirportDatabaseService.get_icao_from_iata(arrival_iata)
+
+            if not departure_icao:
+                logger.error(f"Could not find ICAO code for departure airport {departure_iata}")
+                raise AeroDataBoxFlightNotFoundError(
+                    message=f"Unknown departure airport: {departure_iata}",
+                    details={"airport": departure_iata}
+                )
+
+            if not arrival_icao:
+                logger.error(f"Could not find ICAO code for arrival airport {arrival_iata}")
+                raise AeroDataBoxFlightNotFoundError(
+                    message=f"Unknown arrival airport: {arrival_iata}",
+                    details={"airport": arrival_iata}
+                )
+
+            logger.info(f"Converted {departure_iata} → {departure_icao}, {arrival_iata} → {arrival_icao}")
+
+            # Use FIDS-based search from AeroDataBoxService
+            flights = await self.service.find_flights_by_route(
+                origin_icao=departure_icao,
+                destination_icao=arrival_icao,
+                departure_date=flight_date,
+                airline_iata=None  # No airline filter
             )
 
-            # Parse and standardize response
-            flights = self._parse_route_response(response)
+            # Convert to standardized format (FIDS response uses different field names)
+            standardized_flights = self._standardize_fids_response(flights, departure_iata, arrival_iata)
 
-            logger.info(f"Found {len(flights)} flights on route {departure_iata} → {arrival_iata}")
-            return flights
+            logger.info(f"Found {len(standardized_flights)} flights on route {departure_iata} → {arrival_iata}")
+            return standardized_flights
 
         except AeroDataBoxFlightNotFoundError:
             # No flights found on this route - return empty list (not an error)
@@ -159,6 +182,75 @@ class AeroDataBoxRouteAdapter(FlightSearchAdapter):
                         status_code=e.response.status_code,
                         retryable=e.response.status_code >= 500
                     )
+
+    def _standardize_fids_response(
+        self,
+        flights: List[Dict[str, Any]],
+        departure_iata: str,
+        arrival_iata: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Standardize FIDS response to match expected flight search format.
+
+        FIDS response uses ICAO codes, but the rest of the system expects IATA codes.
+        This method converts ICAO → IATA and adds missing fields.
+
+        Args:
+            flights: List of flights from find_flights_by_route (with ICAO codes)
+            departure_iata: Departure airport IATA code
+            arrival_iata: Arrival airport IATA code
+
+        Returns:
+            List of standardized flight dictionaries with IATA codes
+        """
+        from app.services.airport_database_service import AirportDatabaseService
+
+        standardized_flights = []
+
+        for flight in flights:
+            try:
+                # FIDS response already has most fields, just need to convert ICAO → IATA
+                # and add missing fields (departureAirportName, arrivalAirportName, distanceKm)
+
+                # Get airport details for additional info
+                dep_iata = departure_iata  # We already know this
+                arr_iata = arrival_iata    # We already know this
+
+                # Get airport names from database
+                dep_airports = AirportDatabaseService.search(dep_iata, limit=1)
+                arr_airports = AirportDatabaseService.search(arr_iata, limit=1)
+
+                dep_airport_name = dep_airports[0].get("name") if dep_airports else None
+                arr_airport_name = arr_airports[0].get("name") if arr_airports else None
+
+                # Calculate distance if we have coordinates (optional - not critical)
+                distance_km = None  # TODO: Calculate distance if needed
+
+                # Build standardized flight
+                standardized_flight = {
+                    "flightNumber": flight.get("flightNumber", ""),
+                    "airline": flight.get("airline"),
+                    "airlineIata": flight.get("airlineIata"),
+                    "departureAirport": dep_iata,  # Convert ICAO → IATA
+                    "departureAirportName": dep_airport_name,
+                    "arrivalAirport": arr_iata,    # Convert ICAO → IATA
+                    "arrivalAirportName": arr_airport_name,
+                    "scheduledDeparture": flight.get("scheduledDeparture"),
+                    "scheduledArrival": flight.get("scheduledArrival"),
+                    "actualDeparture": flight.get("actualDeparture"),
+                    "actualArrival": flight.get("actualArrival"),
+                    "status": flight.get("status", "scheduled"),
+                    "delayMinutes": flight.get("delayMinutes"),
+                    "distanceKm": distance_km,
+                }
+
+                standardized_flights.append(standardized_flight)
+
+            except Exception as e:
+                logger.warning(f"Error standardizing FIDS flight data: {str(e)}")
+                continue
+
+        return standardized_flights
 
     def _parse_route_response(self, response: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Parse AeroDataBox route search response to standardized format.

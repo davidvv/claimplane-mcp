@@ -377,6 +377,31 @@ def _parse_aerodatabox_response(api_response: dict, flight_number: str, date: st
     # Flight status
     status = flight.get("status", "scheduled")
 
+    # CRITICAL: Check if flight is in the future
+    # If scheduled departure hasn't happened yet, flight cannot have actual times or delay
+    is_future_flight = False
+    if scheduled_departure:
+        try:
+            scheduled_dep_dt = datetime.fromisoformat(scheduled_departure.replace('Z', '+00:00'))
+            current_time = datetime.now(scheduled_dep_dt.tzinfo)
+
+            if scheduled_dep_dt > current_time:
+                is_future_flight = True
+                # Override status for future flights
+                status = "scheduled"
+                # Clear actual times for future flights (they can't have landed yet)
+                actual_departure = None
+                actual_arrival = None
+                # Clear delay for future flights
+                delay_minutes = None
+
+                logger.info(
+                    f"Flight {flight_number} on {date} is scheduled for future departure at {scheduled_departure}. "
+                    f"Cleared actual times and delay."
+                )
+        except Exception as e:
+            logger.warning(f"Could not parse scheduled departure time: {e}")
+
     return FlightStatusResponse(
         flightNumber=flight_number,
         airline=airline_name,

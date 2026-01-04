@@ -217,6 +217,22 @@ class AeroDataBoxRouteAdapter(FlightSearchAdapter):
                     except (ValueError, AttributeError):
                         pass
 
+                # CRITICAL: Check if flight is in the future
+                # Future flights cannot have actual times or delays
+                if scheduled_departure:
+                    try:
+                        scheduled_dep_dt = datetime.fromisoformat(scheduled_departure.replace('Z', '+00:00'))
+                        current_time = datetime.now(scheduled_dep_dt.tzinfo)
+
+                        if scheduled_dep_dt > current_time:
+                            # Override for future flights
+                            status = "scheduled"
+                            actual_departure = None
+                            actual_arrival = None
+                            delay_minutes = None
+                    except (ValueError, AttributeError):
+                        pass
+
                 # Distance (if available)
                 distance_km = flight_data.get("greatCircleDistance", {}).get("km")
 

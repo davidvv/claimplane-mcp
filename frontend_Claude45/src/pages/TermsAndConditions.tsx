@@ -67,6 +67,44 @@ export function TermsAndConditions() {
               <li>Retain our commission from any recovered compensation before transferring the balance to you</li>
             </ul>
 
+            <h4 className="text-lg font-semibold mb-3 mt-6">Power of Attorney Requirement</h4>
+            <p className="mb-4">
+              Upon submission of your claim, you agree to execute a Power of Attorney (PoA) in the form
+              provided by us, which is incorporated herein by reference. This digital PoA document will be
+              provided to you via email or through our secure customer portal and must be signed electronically
+              to proceed with your claim.
+            </p>
+            <p className="mb-4">
+              The Power of Attorney grants EasyAirClaim LLC the following specific powers:
+            </p>
+            <ul className="list-disc pl-6 mb-4 space-y-2">
+              <li><strong>Legal Representation:</strong> Authority to represent you before airlines, aviation authorities,
+              dispute resolution bodies, and other third parties in connection with your claim</li>
+              <li><strong>Claim Submission:</strong> Power to submit, file, and prosecute claims for flight compensation
+              on your behalf under EU Regulation 261/2004 and other applicable regulations</li>
+              <li><strong>Payment Receipt:</strong> Authorization to receive compensation payments from airlines directly
+              in your name and on your behalf</li>
+              <li><strong>Document Execution:</strong> Authority to sign documents, submit forms, and execute agreements
+              necessary for the pursuit of your claim</li>
+              <li><strong>Settlement Negotiation:</strong> Power to negotiate settlement terms with airlines, subject to
+              your final approval for settlements below the statutory compensation amount</li>
+              <li><strong>Information Access:</strong> Right to access and obtain all information from airlines and
+              authorities related to your flight and claim</li>
+            </ul>
+            <p className="mb-4">
+              <strong>Important Notes:</strong>
+            </p>
+            <ul className="list-disc pl-6 mb-4 space-y-2">
+              <li>The Power of Attorney is limited in scope to the specific claim(s) you submit through our Service</li>
+              <li>The PoA remains valid for the duration of your claim processing, including any appeals or dispute
+              resolution proceedings</li>
+              <li>You may revoke the Power of Attorney at any time by following the termination procedure outlined
+              in Section 3.5</li>
+              <li>A copy of the signed PoA will be stored securely in your account and is available for download at
+              any time through the customer portal</li>
+              <li>The Power of Attorney does not grant us authority over matters unrelated to your flight compensation claim</li>
+            </ul>
+
             <h3 className="text-xl font-semibold mb-3">3.2 Client Obligations</h3>
             <p className="mb-4">
               You agree to:
@@ -80,12 +118,60 @@ export function TermsAndConditions() {
               <li>Not accept any settlement offer from the airline without our prior written consent</li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-3">3.3 Exclusivity Period</h3>
+            <h3 className="text-xl font-semibold mb-3">3.3 Our Obligations</h3>
+            <p className="mb-4">
+              EasyAirClaim LLC commits to:
+            </p>
+            <ul className="list-disc pl-6 mb-4 space-y-2">
+              <li>Provide you with regular updates on the progress of your claim</li>
+              <li>Send you a status update at least once every 8 weeks regarding your claim's progress</li>
+              <li>Act in good faith and with reasonable care in pursuing your claim</li>
+              <li>Keep you informed of any significant developments, airline responses, or required actions</li>
+              <li>Maintain the confidentiality and security of your personal information</li>
+              <li>Process and transfer your compensation payment within 5-7 business days of receiving it from the airline</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold mb-3">3.4 Exclusivity Period</h3>
             <p className="mb-4">
               Once you submit a claim through our Service, you grant us exclusive rights to pursue that
-              specific claim for a period of 365 days from submission. You may not withdraw the claim or
+              specific claim for a period of 90 days from submission. You may not withdraw the claim or
               pursue it through other channels during this period without our written consent.
             </p>
+
+            <h3 className="text-xl font-semibold mb-3">3.5 Termination of Claim or Agreement</h3>
+            <p className="mb-4">
+              You have the right to terminate this agreement and withdraw your claim at any time by sending
+              a written notice to support@easyairclaim.com. To ensure proper processing, please use the
+              following template:
+            </p>
+            <div className="bg-muted p-6 rounded-lg mb-4 font-mono text-sm">
+              <p className="mb-2">Subject: Claim Termination Request - [Your Claim ID]</p>
+              <p className="mb-4">Dear EasyAirClaim Support Team,</p>
+              <p className="mb-2">I hereby formally request the termination of my claim agreement and withdrawal of my claim with the following details:</p>
+              <p className="mb-1 ml-4">- Full Name: [Your Full Name]</p>
+              <p className="mb-1 ml-4">- Email Address: [Your Email]</p>
+              <p className="mb-1 ml-4">- Claim ID: [Your Claim ID]</p>
+              <p className="mb-1 ml-4">- Flight Number: [Flight Number]</p>
+              <p className="mb-1 ml-4">- Flight Date: [Flight Date]</p>
+              <p className="mb-4 ml-4">- Reason for Termination: [Optional - Brief Explanation]</p>
+              <p className="mb-2">I understand that:</p>
+              <p className="mb-1 ml-4">1. This termination will take effect within 5 business days of receipt</p>
+              <p className="mb-1 ml-4">2. If compensation has already been received, applicable fees will still apply</p>
+              <p className="mb-1 ml-4">3. I may pursue this claim independently or through other services after termination</p>
+              <p className="mb-4">Sincerely,</p>
+              <p>[Your Full Name]</p>
+              <p>[Date]</p>
+            </div>
+            <p className="mb-4">
+              <strong>Important Notes:</strong>
+            </p>
+            <ul className="list-disc pl-6 mb-4 space-y-2">
+              <li>Termination requests will be processed within 5 business days of receipt</li>
+              <li>If we have already received compensation from the airline before termination, our commission (20%, including all taxes and VAT) will still apply to the amount recovered</li>
+              <li>After termination, you are free to pursue the claim independently or through another service provider</li>
+              <li>Any third-party costs already incurred on your behalf may be charged to you upon termination</li>
+              <li>We will provide confirmation of termination via email within 5 business days</li>
+            </ul>
           </section>
 
           {/* Fees and Payment */}
@@ -101,7 +187,7 @@ export function TermsAndConditions() {
             <h3 className="text-xl font-semibold mb-3">4.2 Commission Structure</h3>
             <p className="mb-4">
               Our standard commission is <strong>20% (twenty percent) of the gross compensation amount
-              recovered</strong>, plus applicable taxes (VAT/sales tax). This commission covers all our
+              recovered, including all applicable taxes and VAT</strong>. This commission covers all our
               services, including:
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
@@ -292,6 +378,11 @@ export function TermsAndConditions() {
               These Terms shall be governed by and construed in accordance with the laws of the State of
               Florida, United States of America, without regard to its conflict of law provisions.
             </p>
+            <p className="mb-4">
+              Alternatively, both parties may agree to resolve disputes through a neutral arbitration body
+              such as the American Arbitration Association (AAA) under its Consumer Arbitration Rules. Either
+              party may propose arbitration by providing written notice to the other party.
+            </p>
 
             <h3 className="text-xl font-semibold mb-3">10.2 Jurisdiction and Venue</h3>
             <p className="mb-4">
@@ -374,7 +465,7 @@ export function TermsAndConditions() {
               <p className="font-semibold">EasyAirClaim LLC</p>
               <p>Legal Department</p>
               <p>Email: legal@easyairclaim.com</p>
-              <p>Address: [Florida Business Address]</p>
+              <p>Address: 3436 SW 8th Pl, Cape Coral 33914</p>
             </div>
 
             <h3 className="text-xl font-semibold mb-3">12.6 Survival</h3>
@@ -401,9 +492,7 @@ export function TermsAndConditions() {
               <p className="font-semibold text-lg mb-2">EasyAirClaim LLC</p>
               <p className="mb-1">Email: support@easyairclaim.com</p>
               <p className="mb-1">Legal: legal@easyairclaim.com</p>
-              <p className="mb-1">Phone: [Phone Number]</p>
-              <p className="mb-1">Business Address: [Florida Address]</p>
-              <p className="mb-1">Hours: Monday-Friday, 9:00 AM - 5:00 PM EST</p>
+              <p className="mb-1">Business Address: 3436 SW 8th Pl, Cape Coral 33914</p>
             </div>
           </section>
 

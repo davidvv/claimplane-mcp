@@ -7,6 +7,7 @@ import { Toaster } from 'sonner';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuthSync } from './hooks/useAuthSync';
+import { ScrollToTop } from './components/ScrollToTop';
 
 // Pages
 import { Home } from './pages/Home';
@@ -18,7 +19,9 @@ import { MagicLinkPage } from './pages/Auth/MagicLinkPage';
 import { MyClaims } from './pages/MyClaims';
 import { AccountSettings } from './pages/AccountSettings';
 import { TermsAndConditions } from './pages/TermsAndConditions';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { About } from './pages/About';
+import { Contact } from './pages/Contact';
 
 // Admin Pages
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
@@ -42,6 +45,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ErrorBoundary>
         <Layout>
           <Routes>
@@ -54,7 +58,9 @@ function App() {
             <Route path="/auth/magic-link" element={<MagicLinkPage />} />
             <Route path="/account/settings" element={<AccountSettings />} />
             <Route path="/terms" element={<TermsAndConditions />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
 
             {/* Admin Panel Routes (non-obvious path for security) */}
             <Route path="/panel/dashboard" element={<AdminDashboard />} />

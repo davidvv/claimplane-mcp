@@ -21,8 +21,13 @@ This skill ensures proper commit practices, version tagging, and roadmap mainten
    - Did I make significant progress on current phase features?
    - Did I change project priorities or strategy?
 
-2. ❓ **If YES to any above**: **STOP and update ROADMAP.md NOW** (see Step 1 below)
-3. ❓ **If NO**: Proceed to commit workflow (Step 2 below)
+2. ❓ **Did I complete any significant work that needs time tracking?**
+   - Did I implement a new feature or bug fix?
+   - Did I spend notable time (>30 min) on this change?
+   - Should this work be recorded in time tracking files?
+
+3. ❓ **If YES to any above**: **STOP and update ROADMAP.md AND time tracking files NOW**
+4. ❓ **If NO**: Proceed to commit workflow (Step 2 below)
 
 ---
 
@@ -108,7 +113,65 @@ Did I complete an ENTIRE PHASE from ROADMAP.md?
 
 **When**: Bug fixes, small UI tweaks, refactoring
 
-**What to Do**: ✅ No roadmap update needed - proceed to Step 2
+**What to Do**: ✅ No roadmap update needed - proceed to Step 1.5
+
+---
+
+### Step 1.5: Update Time Tracking (MANDATORY FOR SIGNIFICANT WORK)
+
+**🚨 ALWAYS DO THIS AFTER Step 1 if you completed notable work**
+
+#### When to Update Time Tracking
+
+Update time tracking when:
+- You implemented a new feature or significant enhancement
+- You fixed a bug that took notable time (>15-30 min)
+- You completed work that should be recorded for project metrics
+- You want accurate time estimates for future planning
+
+#### What to Update
+
+1. **time_tracking_david.md** - Add entry with:
+   - Date and work description
+   - Key tasks and commits
+   - Estimated time spent
+
+2. **time_tracking_summary.md** - Update totals:
+   - Total commits
+   - Estimated total hours
+   - Date range
+
+#### Example Time Tracking Update
+
+```markdown
+## Latest Work (2026-01-07) - Feature Name
+
+### Feature Implementation
+**Estimated Time**: X-Y hours
+
+#### Key Tasks:
+1. **Task Description** (commit-hash)
+   - Details of what was done
+   - Estimated: A-B hours
+
+2. **Another Task** (commit-hash)
+   - More details
+   - Estimated: C-D hours
+
+### Updated Summary Statistics
+- **Total Commits**: N (added M new commits)
+- **Date Range**: Updated to YYYY-MM-DD
+- **Estimated Total Time**: ~X-Z hours (added A-B hours)
+```
+
+#### Time Estimation Guidelines
+
+| Work Type | Estimated Time |
+|-----------|----------------|
+| Complex feature | 2-5 hours |
+| Medium task | 1-2 hours |
+| Bug fix | 0.5-1.5 hours |
+| Documentation | 0.5-1 hour |
 
 ---
 
@@ -140,6 +203,9 @@ git add <file1> <file2> ...
 # If you updated ROADMAP.md, include it
 git add ROADMAP.md
 
+# If you updated time tracking, include those files
+git add time_tracking_david.md time_tracking_summary.md
+
 # OR stage all except pycache
 git add .
 git restore --staged **/__pycache__/*.pyc
@@ -147,6 +213,7 @@ git restore --staged **/__pycache__/*.pyc
 
 **Critical Files to Check**:
 - ✅ Include ROADMAP.md if you updated it in Step 1
+- ✅ Include time_tracking files if you updated them in Step 1.5
 - ❌ Never commit `.env` files with secrets
 - ❌ Never commit `__pycache__` or `.pyc` files
 - ❌ Never commit `node_modules/`
@@ -211,13 +278,14 @@ request/response schemas and security considerations.
 - ❌ Do NOT mention "Generated with Claude Code"
 - ❌ Do NOT mention AI assistance in commit messages
 
-**If you updated ROADMAP.md**: Mention it in commit message
+**If you updated ROADMAP.md or time tracking**: Mention it in commit message
 ```
 feat(frontend): complete customer portal implementation
 
 Implemented React customer portal with all core features.
 
 Updated ROADMAP.md to mark Phase 4 as complete and update next steps.
+Updated time_tracking_david.md with estimated time for implementation.
 ```
 
 ---
@@ -233,6 +301,7 @@ git commit -m "$(cat <<'EOF'
 <list of changes>
 
 Updated ROADMAP.md to reflect completion of [Phase X / feature Y].
+Updated time_tracking_david.md with X-Y hours for this work.
 EOF
 )"
 ```
@@ -318,10 +387,22 @@ Use this checklist for **EVERY** commit:
 - [ ] Updated "NEXT STEPS" section if applicable
 - [ ] Updated version number in ROADMAP header if phase complete
 
+### ✅ Step 1.5: Time Tracking Update (MANDATORY FOR NOTABLE WORK)
+- [ ] Reviewed if work requires time tracking entry
+- [ ] **IF SIGNIFICANT WORK**: Updated time_tracking_david.md with:
+  - [ ] Date and work description
+  - [ ] Key tasks and commits
+  - [ ] Estimated time spent
+- [ ] **IF SIGNIFICANT WORK**: Updated time_tracking_summary.md with:
+  - [ ] Updated total commits
+  - [ ] Updated estimated total hours
+  - [ ] Updated date range
+
 ### ✅ Step 2-3: Review & Stage
 - [ ] Reviewed all changes with `git status` and `git diff`
 - [ ] Excluded `__pycache__`, `.env`, and generated files
 - [ ] Staged ROADMAP.md if it was updated
+- [ ] Staged time_tracking files if they were updated
 - [ ] Tested changes locally (if applicable)
 
 ### ✅ Step 4-5: Commit
@@ -329,6 +410,7 @@ Use this checklist for **EVERY** commit:
 - [ ] NO Claude/Anthropic attribution
 - [ ] Included detailed description
 - [ ] Mentioned ROADMAP.md update in commit message (if updated)
+- [ ] Mentioned time_tracking update in commit message (if updated)
 
 ### ✅ Step 6-7: Versioning (if phase complete)
 - [ ] Determined correct version number from VERSIONING.md
@@ -435,15 +517,17 @@ git push origin MVP
 ## Common Mistakes to Avoid
 
 1. ❌ **Forgetting to check roadmap FIRST** - Always start with Step 1
-2. ❌ Committing `__pycache__` files
-3. ❌ Adding Claude/Anthropic attribution
-4. ❌ Forgetting to update ROADMAP.md after phase completion
-5. ❌ Updating ROADMAP.md but forgetting to include it in commit
-6. ❌ Creating version tags for minor changes
-7. ❌ Using wrong version bump (patch vs minor)
-8. ❌ Forgetting to push tags separately
-9. ❌ Not using conventional commit format
-10. ❌ Not mentioning ROADMAP update in commit message
+2. ❌ **Forgetting to update time tracking** - Always check Step 1.5 for notable work
+3. ❌ Committing `__pycache__` files
+4. ❌ Adding Claude/Anthropic attribution
+5. ❌ Forgetting to update ROADMAP.md after phase completion
+6. ❌ Updating ROADMAP.md but forgetting to include it in commit
+7. ❌ Updating time tracking but forgetting to include it in commit
+8. ❌ Creating version tags for minor changes
+9. ❌ Using wrong version bump (patch vs minor)
+10. ❌ Forgetting to push tags separately
+11. ❌ Not using conventional commit format
+12. ❌ Not mentioning ROADMAP update in commit message
 
 ---
 
@@ -491,6 +575,7 @@ git push origin MVP
 
 This skill should be followed for **ALL** commits to ensure:
 - ✅ Roadmap stays up-to-date (checked FIRST)
+- ✅ Time tracking stays current (Step 1.5 for notable work)
 - ✅ Consistent commit history
 - ✅ Proper version tracking
 - ✅ Clean repository (no generated files)
@@ -498,4 +583,6 @@ This skill should be followed for **ALL** commits to ensure:
 
 **When in doubt, refer to this skill before committing!**
 
-**Remember**: ROADMAP check is Step 1, not an afterthought!
+**Remember**: ROADMAP check is Step 1, time tracking is Step 1.5 - not afterthoughts!
+
+**Version**: v3.0 (2026-01-07) - Added time tracking update requirement

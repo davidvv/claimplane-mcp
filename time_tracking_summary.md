@@ -2,17 +2,17 @@
 
 ## Project Overview
 - **Project Duration**: 2025-09-04 to 2026-01-07 (4 months)
-- **Total Commits**: 157 (137 by David, 20 by Florian)
-- **Estimated Total Time**: ~499-580 hours
+- **Total Commits**: 159 (139 by David, 20 by Florian)
+- **Estimated Total Time**: ~503-583 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 137 (87.3%)
-- **Estimated Time**: 439-500 hours
+- **Commits**: 139 (87.4%)
+- **Estimated Time**: 442-503 hours
 - **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration
-- **Key Phases**: All phases from setup to advanced features including Phase 6.5 compensation service enhancement
+- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes
 
 ### Florian's Contributions (12-15% of total time)
 - **Commits**: 20 (13.5%)
@@ -112,14 +112,15 @@
 6. **Flight Data Enhancement**: Major upgrade with FIDS integration in Phase 6.5
 
 ## Files Created
-- `time_tracking_david.md`: Detailed breakdown of David's 439-500 hours (including Phase 6.5 compensation enhancement)
+- `time_tracking_david.md`: Detailed breakdown of David's 442-503 hours (including EU261 compensation bug fixes)
 - `time_tracking_florian.md`: Detailed breakdown of Florian's 60-80 hours
 - `time_tracking_summary.md`: This combined overview (updated with latest commits)
 
 ## Latest Update (2026-01-07)
-- **Compensation Service Enhancement**: Added 4-5 hours for async refactoring with AeroDataBox API integration
-- **Phase 6.5 Progress**: Marked at 40% complete in ROADMAP
-- **New Commits**: 1 commit by David (compensation enhancement with async methods)
+- **EU261 Compensation Bug Fixes**: Fixed delay calculation bug (€120 → €600 for 3h+ long haul delays)
+- **Cancellation Logic Enhancement**: Added EU261-compliant cancellation handling with notice periods and alternative flight rules
+- **New Commits**: 2 commits by David (c8f81d5, 1a40a60)
+- **Time Added**: 2-3 hours
 
 ## Recommendations for Time Tracking Tool
 1. **Use Detailed Files**: Import `time_tracking_david.md` and `time_tracking_florian.md` for individual tracking
@@ -127,4 +128,4 @@
 3. **Task Categorization**: Use the breakdown by feature types (backend, frontend, docs, etc.)
 4. **Weekly Distribution**: Align with the weekly patterns shown for accurate time allocation
 
-This comprehensive time tracking analysis provides everything needed to populate your time tracking tool with accurate historical data for the entire EasyAirClaim project, including the latest Phase 6.5 compensation service enhancement work completed on 2026-01-07.
+This comprehensive time tracking analysis provides everything needed to populate your time tracking tool with accurate historical data for the entire EasyAirClaim project, including the latest EU261 compensation bug fixes completed on 2026-01-07.

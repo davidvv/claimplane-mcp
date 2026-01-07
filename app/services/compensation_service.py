@@ -58,7 +58,6 @@ class CompensationService:
 
     # Delay thresholds (in hours)
     MIN_DELAY_FOR_COMPENSATION = 3.0
-    PARTIAL_COMPENSATION_THRESHOLD = 4.0  # For long haul flights
 
     # Extraordinary circumstances keywords
     EXTRAORDINARY_CIRCUMSTANCES_KEYWORDS = [
@@ -294,15 +293,7 @@ class CompensationService:
                 result["reason"] = f"Delay ({delay_hours:.1f}h) is less than minimum required (3h)"
                 return result
 
-            # Check for partial compensation (long haul flights with 3-4 hour delay)
-            if (distance_km > CompensationService.MEDIUM_HAUL_THRESHOLD and
-                CompensationService.MIN_DELAY_FOR_COMPENSATION <= delay_hours < CompensationService.PARTIAL_COMPENSATION_THRESHOLD):
-                result["eligible"] = True
-                result["amount"] = base_compensation * Decimal("0.2")
-                result["reason"] = f"Long haul flight with 3-4 hour delay - 20% compensation"
-                return result
-
-            # Full compensation for delays >= 3 hours (or >= 4 hours for long haul)
+            # Full compensation for delays >= 3 hours (all flight distances)
             result["eligible"] = True
             result["amount"] = base_compensation
             result["reason"] = f"Delay of {delay_hours:.1f} hours qualifies for full compensation"

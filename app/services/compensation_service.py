@@ -59,6 +59,15 @@ class CompensationService:
     # Delay thresholds (in hours)
     MIN_DELAY_FOR_COMPENSATION = 3.0
 
+    # Cancellation notice thresholds (in days)
+    NOTICE_14_DAYS = 14
+    NOTICE_7_DAYS = 7
+
+    # Alternative flight time savings thresholds (in hours)
+    # If alternative flight saves this much time, 50% compensation applies
+    ALT_FLIGHT_SAVINGS_SHORT_HAUL = 2.0
+    ALT_FLIGHT_SAVINGS_LONG_HAUL = 3.0
+
     # Extraordinary circumstances keywords
     EXTRAORDINARY_CIRCUMSTANCES_KEYWORDS = [
         "weather", "storm", "snow", "ice", "fog", "hurricane",
@@ -220,6 +229,8 @@ class CompensationService:
         incident_type: str = "delay",
         distance_km: Optional[float] = None,
         alternative_flight_offered: bool = False,
+        alternative_flight_arrival_hours: Optional[float] = None,
+        cancellation_notice_days: Optional[int] = None,
         extraordinary_circumstances: Optional[str] = None,
         use_api: bool = True
     ) -> Dict:
@@ -233,6 +244,8 @@ class CompensationService:
             incident_type: Type of incident (delay, cancellation, denied_boarding, baggage_delay)
             distance_km: Pre-calculated distance (optional)
             alternative_flight_offered: Whether alternative flight was offered
+            alternative_flight_arrival_hours: Hours saved by alternative flight (if offered)
+            cancellation_notice_days: Days notice before scheduled departure
             extraordinary_circumstances: Known extraordinary circumstances
             use_api: Whether to use AeroDataBox API for distance calculation (default: True)
 
@@ -299,15 +312,45 @@ class CompensationService:
             result["reason"] = f"Delay of {delay_hours:.1f} hours qualifies for full compensation"
 
         elif incident_type == "cancellation":
-            # Cancellations generally qualify for full compensation
-            # unless less than 14 days notice with alternative flight
+            # EU261 cancellation compensation rules
+            # Check if notice period applies
+            if cancellation_notice_days and cancellation_notice_days >= CompensationService.NOTICE_14_DAYS:
+                # 14+ days notice - no compensation required
+                result["eligible"] = False
+                result["amount"] = Decimal("0")
+                result["reason"] = f"Cancellation with {cancellation_notice_days}+ days notice - no compensation due"
+                return result
+
+            # Determine if alternative flight qualifies for 50% reduction
+            if alternative_flight_offered and alternative_flight_arrival_hours is not None:
+                # Check time savings threshold based on distance
+                if distance_km > CompensationService.MEDIUM_HAUL_THRESHOLD:
+                    # Long haul: 50% if alternative arrives within 3 hours of original
+                    savings_threshold = CompensationService.ALT_FLIGHT_SAVINGS_LONG_HAUL
+                else:
+                    # Short/medium haul: 50% if alternative arrives within 2 hours of original
+                    savings_threshold = CompensationService.ALT_FLIGHT_SAVINGS_SHORT_HAUL
+
+                if alternative_flight_arrival_hours <= savings_threshold:
+                    # Alternative flight arrives within threshold - 50% compensation
+                    result["eligible"] = True
+                    result["amount"] = base_compensation * Decimal("0.5")
+                    result["reason"] = (
+                        f"Cancellation with alternative flight arriving within "
+                        f"{savings_threshold}h - 50% compensation"
+                    )
+                    return result
+
+            # Full compensation for cancellations (no notice or insufficient notice)
             result["eligible"] = True
             result["amount"] = base_compensation
-            result["reason"] = "Flight cancellation qualifies for compensation"
-
-            if alternative_flight_offered:
-                result["requires_manual_review"] = True
-                result["reason"] += " - alternative flight offered, manual review required"
+            if cancellation_notice_days:
+                result["reason"] = (
+                    f"Cancellation with {cancellation_notice_days} days notice "
+                    f"(less than {CompensationService.NOTICE_14_DAYS}) - full compensation"
+                )
+            else:
+                result["reason"] = "Flight cancellation qualifies for full compensation"
 
         elif incident_type == "denied_boarding":
             # Denied boarding almost always qualifies for full compensation

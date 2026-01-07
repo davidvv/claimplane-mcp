@@ -2,17 +2,17 @@
 
 ## Project Overview
 - **Project Duration**: 2025-09-04 to 2026-01-04 (4 months)
-- **Total Commits**: 148 (128 by David, 20 by Florian)
-- **Estimated Total Time**: ~480-560 hours
+- **Total Commits**: 156 (136 by David, 20 by Florian)
+- **Estimated Total Time**: ~495-575 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
-### David's Contributions (80% of total time)
-- **Commits**: 128 (86.5%)
-- **Estimated Time**: 420-480 hours
-- **Focus Areas**: Backend, API, Architecture, Security, Deployment
-- **Key Phases**: All phases from setup to advanced features
+### David's Contributions (82-85% of total time)
+- **Commits**: 136 (87.2%)
+- **Estimated Time**: 435-495 hours
+- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration
+- **Key Phases**: All phases from setup to advanced features including Phase 6.5 FIDS integration
 
 ### Florian's Contributions (12-15% of total time)
 - **Commits**: 20 (13.5%)
@@ -53,9 +53,9 @@
 
 ### Phase 5-7: Advanced Features
 - **Duration**: 2025-12-06 to 2026-01-04
-- **David's Time**: 140-160 hours
+- **David's Time**: 155-175 hours
 - **Florian's Time**: 30-40 hours
-- **Key Achievements**: Flight data integration, frontend overhaul, deployment systems
+- **Key Achievements**: Flight data integration with FIDS, frontend overhaul, deployment systems
 
 ## Weekly Work Distribution
 
@@ -71,10 +71,10 @@
 
 ## Major Milestones & Time Investment
 
-### Backend & API Development (David - 120-140 hours)
+### Backend & API Development (David - 135-155 hours)
 - JWT Authentication System: 25-30 hours
 - Admin Dashboard: 45-55 hours
-- AeroDataBox Integration: 40-50 hours
+- AeroDataBox Integration & FIDS: 55-65 hours
 - Security Systems: 30-40 hours
 
 ### Frontend Development (Florian - 40-50 hours)
@@ -104,16 +104,17 @@
 
 ## Key Insights
 
-1. **David's Dominant Role**: 80-85% of total development time
+1. **David's Dominant Role**: 82-85% of total development time
 2. **Florian's Specialization**: Focused frontend expertise (12-15% of time)
-3. **Phase 4 Peak**: Most intensive development period (Dec 2025)
+3. **Phase 4 & 6.5 Peak**: Most intensive development periods (Dec 2025 & Jan 2026)
 4. **Continuous Improvement**: Regular small commits show iterative development
 5. **Documentation Focus**: Significant time invested in project documentation
+6. **Flight Data Enhancement**: Major upgrade with FIDS integration in Phase 6.5
 
 ## Files Created
-- `time_tracking_david.md`: Detailed breakdown of David's 420-480 hours
+- `time_tracking_david.md`: Detailed breakdown of David's 435-495 hours (including Phase 6.5 FIDS work)
 - `time_tracking_florian.md`: Detailed breakdown of Florian's 60-80 hours
-- `time_tracking_summary.md`: This combined overview
+- `time_tracking_summary.md`: This combined overview (updated with latest commits)
 
 ## Recommendations for Time Tracking Tool
 1. **Use Detailed Files**: Import `time_tracking_david.md` and `time_tracking_florian.md` for individual tracking
@@ -121,4 +122,4 @@
 3. **Task Categorization**: Use the breakdown by feature types (backend, frontend, docs, etc.)
 4. **Weekly Distribution**: Align with the weekly patterns shown for accurate time allocation
 
-This comprehensive time tracking analysis provides everything needed to populate your time tracking tool with accurate historical data for the entire EasyAirClaim project.
+This comprehensive time tracking analysis provides everything needed to populate your time tracking tool with accurate historical data for the entire EasyAirClaim project, including the latest Phase 6.5 FIDS integration work completed on 2026-01-04.

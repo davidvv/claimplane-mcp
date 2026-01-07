@@ -5,6 +5,9 @@ from decimal import Decimal
 from typing import Optional, Dict, Tuple
 from datetime import datetime, timedelta
 
+from app.services.aerodatabox_service import AeroDataBoxService
+from app.exceptions import AeroDataBoxError
+
 logger = logging.getLogger(__name__)
 
 
@@ -65,41 +68,84 @@ class CompensationService:
     ]
 
     @staticmethod
-    def calculate_distance(departure_airport: str, arrival_airport: str) -> Optional[float]:
+    async def calculate_distance(
+        departure_airport: str,
+        arrival_airport: str,
+        use_api: bool = True
+    ) -> Optional[float]:
         """
         Calculate great circle distance between two airports in kilometers.
+
+        Attempts multiple methods in order:
+        1. AeroDataBox API (if use_api=True) - supports all airports
+        2. Hardcoded AIRPORT_COORDINATES - fallback for common airports
+        3. Returns None if airport coordinates cannot be found
 
         Args:
             departure_airport: IATA code of departure airport
             arrival_airport: IATA code of arrival airport
+            use_api: Whether to try AeroDataBox API first (default: True)
 
         Returns:
             Distance in kilometers, or None if airport coordinates not found
         """
-        departure_coords = AIRPORT_COORDINATES.get(departure_airport.upper())
-        arrival_coords = AIRPORT_COORDINATES.get(arrival_airport.upper())
+        departure_airport = departure_airport.upper()
+        arrival_airport = arrival_airport.upper()
 
-        if not departure_coords or not arrival_coords:
-            logger.warning(f"Airport coordinates not found for {departure_airport} or {arrival_airport}")
-            return None
+        # Method 1: Try AeroDataBox API first (if enabled)
+        if use_api:
+            try:
+                aerodatabox_service = AeroDataBoxService()
+                distance = await aerodatabox_service.calculate_flight_distance(
+                    departure_airport,
+                    arrival_airport
+                )
+                logger.info(
+                    f"Distance from {departure_airport} to {arrival_airport}: {distance:.2f} km (via AeroDataBox API)"
+                )
+                return distance
+            except AeroDataBoxError as e:
+                logger.warning(
+                    f"AeroDataBox API failed for {departure_airport}-{arrival_airport}: {str(e)}. "
+                    "Falling back to hardcoded coordinates."
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Unexpected error calling AeroDataBox API: {str(e)}. "
+                    "Falling back to hardcoded coordinates."
+                )
 
-        # Haversine formula for great circle distance
-        lat1, lon1 = map(math.radians, departure_coords)
-        lat2, lon2 = map(math.radians, arrival_coords)
+        # Method 2: Fallback to hardcoded coordinates
+        departure_coords = AIRPORT_COORDINATES.get(departure_airport)
+        arrival_coords = AIRPORT_COORDINATES.get(arrival_airport)
 
-        dlat = lat2 - lat1
-        dlon = lon2 - lon1
+        if departure_coords and arrival_coords:
+            # Haversine formula for great circle distance
+            lat1, lon1 = map(math.radians, departure_coords)
+            lat2, lon2 = map(math.radians, arrival_coords)
 
-        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-        c = 2 * math.asin(math.sqrt(a))
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
 
-        # Earth's radius in kilometers
-        earth_radius_km = 6371
+            a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+            c = 2 * math.asin(math.sqrt(a))
 
-        distance = earth_radius_km * c
+            # Earth's radius in kilometers
+            earth_radius_km = 6371
 
-        logger.info(f"Distance from {departure_airport} to {arrival_airport}: {distance:.2f} km")
-        return distance
+            distance = earth_radius_km * c
+
+            logger.info(
+                f"Distance from {departure_airport} to {arrival_airport}: {distance:.2f} km (via hardcoded coordinates)"
+            )
+            return distance
+
+        # Method 3: No coordinates found
+        logger.warning(
+            f"Airport coordinates not found for {departure_airport} or {arrival_airport} "
+            "(neither via API nor hardcoded database)"
+        )
+        return None
 
     @staticmethod
     def get_base_compensation(distance_km: float) -> Decimal:
@@ -118,6 +164,24 @@ class CompensationService:
             return Decimal(str(CompensationService.TIER_MEDIUM_HAUL))
         else:
             return Decimal(str(CompensationService.TIER_LONG_HAUL))
+
+    @staticmethod
+    def _get_distance_tier(distance_km: float) -> str:
+        """
+        Get the distance tier category for a flight.
+
+        Args:
+            distance_km: Flight distance in kilometers
+
+        Returns:
+            Tier category: "short_haul", "medium_haul", or "long_haul"
+        """
+        if distance_km < CompensationService.SHORT_HAUL_THRESHOLD:
+            return "short_haul"
+        elif distance_km < CompensationService.MEDIUM_HAUL_THRESHOLD:
+            return "medium_haul"
+        else:
+            return "long_haul"
 
     @staticmethod
     def check_extraordinary_circumstances(
@@ -150,14 +214,15 @@ class CompensationService:
         return False, None
 
     @staticmethod
-    def calculate_compensation(
+    async def calculate_compensation(
         departure_airport: str,
         arrival_airport: str,
         delay_hours: Optional[float] = None,
         incident_type: str = "delay",
         distance_km: Optional[float] = None,
         alternative_flight_offered: bool = False,
-        extraordinary_circumstances: Optional[str] = None
+        extraordinary_circumstances: Optional[str] = None,
+        use_api: bool = True
     ) -> Dict:
         """
         Calculate compensation for a flight claim.
@@ -170,6 +235,7 @@ class CompensationService:
             distance_km: Pre-calculated distance (optional)
             alternative_flight_offered: Whether alternative flight was offered
             extraordinary_circumstances: Known extraordinary circumstances
+            use_api: Whether to use AeroDataBox API for distance calculation (default: True)
 
         Returns:
             Dictionary with compensation details:
@@ -191,7 +257,11 @@ class CompensationService:
 
         # Calculate distance if not provided
         if distance_km is None:
-            distance_km = CompensationService.calculate_distance(departure_airport, arrival_airport)
+            distance_km = await CompensationService.calculate_distance(
+                departure_airport,
+                arrival_airport,
+                use_api=use_api
+            )
             if distance_km is None:
                 result["reason"] = "Unable to calculate distance - airport coordinates not found"
                 result["requires_manual_review"] = True
@@ -269,10 +339,11 @@ class CompensationService:
         return result
 
     @staticmethod
-    def estimate_compensation_simple(
+    async def estimate_compensation_simple(
         departure_airport: str,
         arrival_airport: str,
-        incident_type: str = "delay"
+        incident_type: str = "delay",
+        use_api: bool = True
     ) -> Decimal:
         """
         Get a simple compensation estimate based on distance only.
@@ -282,11 +353,16 @@ class CompensationService:
             departure_airport: IATA code of departure airport
             arrival_airport: IATA code of arrival airport
             incident_type: Type of incident
+            use_api: Whether to use AeroDataBox API for distance calculation (default: True)
 
         Returns:
             Estimated compensation amount in EUR
         """
-        distance_km = CompensationService.calculate_distance(departure_airport, arrival_airport)
+        distance_km = await CompensationService.calculate_distance(
+            departure_airport,
+            arrival_airport,
+            use_api=use_api
+        )
 
         if distance_km is None:
             return Decimal("0")

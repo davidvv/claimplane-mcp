@@ -431,12 +431,13 @@ async def calculate_compensation(
 
     This is a standalone calculation endpoint for reference.
     """
-    result = CompensationService.calculate_compensation(
+    result = await CompensationService.calculate_compensation(
         departure_airport=calculation_request.departure_airport,
         arrival_airport=calculation_request.arrival_airport,
         delay_hours=calculation_request.delay_hours,
         incident_type=calculation_request.incident_type,
-        extraordinary_circumstances=calculation_request.extraordinary_circumstances
+        extraordinary_circumstances=calculation_request.extraordinary_circumstances,
+        use_api=True  # Enable AeroDataBox API for any airport
     )
 
     return result

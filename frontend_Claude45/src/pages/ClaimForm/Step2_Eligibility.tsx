@@ -209,7 +209,7 @@ export function Step2_Eligibility({
                       </p>
                       <p className="text-4xl font-bold text-green-600">
                         {formatCurrency(
-                          eligibilityResult.compensationAmount,
+                          eligibilityResult.compensationAmount ?? 0,
                           eligibilityResult.currency
                         )}
                       </p>

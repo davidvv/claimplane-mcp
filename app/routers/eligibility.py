@@ -65,12 +65,13 @@ async def check_eligibility(request: EligibilityRequestSchema) -> EligibilityRes
     """
     # Calculate compensation using the compensation service
     try:
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport=request.departure_airport.upper(),
             arrival_airport=request.arrival_airport.upper(),
             delay_hours=request.delay_hours,
             incident_type=request.incident_type,
-            distance_km=request.distance_km  # Use API-provided distance if available
+            distance_km=request.distance_km,  # Use API-provided distance if available
+            use_api=True  # Enable AeroDataBox API for any airport
         )
 
         # Return the calculated result

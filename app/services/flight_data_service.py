@@ -209,14 +209,15 @@ class FlightDataService:
                 except Exception as e:
                     logger.warning(f"Failed to calculate distance: {str(e)}")
                     # Use CompensationService fallback
-                    distance = CompensationService.calculate_distance(
+                    distance = await CompensationService.calculate_distance(
                         claim.departure_airport,
-                        claim.arrival_airport
+                        claim.arrival_airport,
+                        use_api=True  # Will try API then hardcoded
                     )
                     parsed_data["distance_km"] = distance if distance else None
 
             # Step 5: Calculate compensation
-            compensation_result = cls._calculate_compensation(claim, parsed_data)
+            compensation_result = await cls._calculate_compensation(claim, parsed_data)
 
             # Step 6: Store FlightData snapshot
             flight_data_record = await cls._store_flight_data(
@@ -350,7 +351,7 @@ class FlightDataService:
             return None
 
     @classmethod
-    def _calculate_compensation(cls, claim: Claim, flight_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _calculate_compensation(cls, claim: Claim, flight_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Calculate EU261 compensation using CompensationService.
 
@@ -372,19 +373,22 @@ class FlightDataService:
             delay_hours = delay_minutes / 60 if delay_minutes else None
 
             # Use CompensationService
-            compensation = CompensationService.calculate_compensation(
+            compensation = await CompensationService.calculate_compensation(
+                departure_airport=claim.departure_airport,
+                arrival_airport=claim.arrival_airport,
                 distance_km=float(distance_km),
                 delay_hours=delay_hours,
-                incident_type=claim.incident_type
+                incident_type=claim.incident_type,
+                use_api=False  # Distance already provided, no need for API call
             )
 
             # Determine tier
             tier = CompensationService._get_distance_tier(float(distance_km))
 
             return {
-                "amount": Decimal(str(compensation)) if compensation else None,
+                "amount": compensation["amount"],
                 "tier": tier,
-                "eligible": compensation > 0 if compensation is not None else None
+                "eligible": compensation["eligible"]
             }
 
         except Exception as e:

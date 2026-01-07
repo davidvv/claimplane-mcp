@@ -294,7 +294,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
                   <div className="relative">
                     <Calendar
                       className="absolute left-3 top-3 w-4 h-4 text-muted-foreground cursor-pointer z-10"
-                      onClick={() => document.getElementById('departureDate')?.showPicker?.()}
+                      onClick={() => (document.getElementById('departureDate') as HTMLInputElement)?.showPicker?.()}
                     />
                     <Input
                       id="departureDate"
@@ -370,7 +370,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
                 <div className="relative">
                   <Calendar
                     className="absolute left-3 top-3 w-4 h-4 text-muted-foreground cursor-pointer z-10"
-                    onClick={() => document.getElementById('routeFlightDate')?.showPicker?.()}
+                    onClick={() => (document.getElementById('routeFlightDate') as HTMLInputElement)?.showPicker?.()}
                   />
                   <Input
                     id="routeFlightDate"

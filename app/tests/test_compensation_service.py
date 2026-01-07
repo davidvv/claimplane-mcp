@@ -5,39 +5,41 @@ from decimal import Decimal
 from app.services.compensation_service import CompensationService
 
 
+@pytest.mark.asyncio
 class TestDistanceCalculation:
     """Test distance calculation between airports."""
 
-    def test_short_haul_distance(self):
+    async def test_short_haul_distance(self):
         """Test calculation for short haul flight."""
         # London to Paris - approximately 350 km
-        distance = CompensationService.calculate_distance("LHR", "CDG")
+        # Use API=False to test hardcoded coordinates only
+        distance = await CompensationService.calculate_distance("LHR", "CDG", use_api=False)
         assert distance is not None
         assert 300 < distance < 400
 
-    def test_medium_haul_distance(self):
+    async def test_medium_haul_distance(self):
         """Test calculation for medium haul flight."""
         # London to Istanbul - approximately 2500 km
-        distance = CompensationService.calculate_distance("LHR", "IST")
+        distance = await CompensationService.calculate_distance("LHR", "IST", use_api=False)
         assert distance is not None
         assert 2400 < distance < 2600
 
-    def test_long_haul_distance(self):
+    async def test_long_haul_distance(self):
         """Test calculation for long haul flight."""
         # London to New York - approximately 5500 km
-        distance = CompensationService.calculate_distance("LHR", "JFK")
+        distance = await CompensationService.calculate_distance("LHR", "JFK", use_api=False)
         assert distance is not None
         assert 5400 < distance < 5600
 
-    def test_unknown_airport(self):
+    async def test_unknown_airport(self):
         """Test handling of unknown airport codes."""
-        distance = CompensationService.calculate_distance("XXX", "YYY")
+        distance = await CompensationService.calculate_distance("XXX", "YYY", use_api=False)
         assert distance is None
 
-    def test_case_insensitive(self):
+    async def test_case_insensitive(self):
         """Test that airport codes are case insensitive."""
-        distance1 = CompensationService.calculate_distance("lhr", "cdg")
-        distance2 = CompensationService.calculate_distance("LHR", "CDG")
+        distance1 = await CompensationService.calculate_distance("lhr", "cdg", use_api=False)
+        distance2 = await CompensationService.calculate_distance("LHR", "CDG", use_api=False)
         assert distance1 == distance2
 
 
@@ -114,104 +116,114 @@ class TestExtraordinaryCircumstances:
         assert keyword is None
 
 
+@pytest.mark.asyncio
 class TestDelayCompensation:
     """Test compensation calculation for delays."""
 
-    def test_short_haul_delay_eligible(self):
+    async def test_short_haul_delay_eligible(self):
         """Test short haul flight with 3+ hour delay."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
             delay_hours=4.0,
-            incident_type="delay"
+            incident_type="delay",
+            use_api=False  # Use hardcoded coordinates for tests
         )
 
         assert result["eligible"] is True
         assert result["amount"] == Decimal("250")
         assert "3" in result["reason"].lower() or "4" in result["reason"]
 
-    def test_short_haul_delay_not_eligible(self):
+    async def test_short_haul_delay_not_eligible(self):
         """Test short haul flight with < 3 hour delay."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
             delay_hours=2.5,
-            incident_type="delay"
+            incident_type="delay",
+            use_api=False
         )
 
         assert result["eligible"] is False
         assert result["amount"] == Decimal("0")
         assert "less than minimum" in result["reason"].lower()
 
-    def test_long_haul_partial_compensation(self):
-        """Test long haul flight with 3-4 hour delay gets 50% compensation."""
-        result = CompensationService.calculate_compensation(
+    async def test_long_haul_partial_compensation(self):
+        """Test long haul flight with 3-4 hour delay gets 20% compensation."""
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="JFK",
             delay_hours=3.5,
-            incident_type="delay"
+            incident_type="delay",
+            use_api=False
         )
 
         assert result["eligible"] is True
-        assert result["amount"] == Decimal("300")  # 50% of 600
-        assert "50%" in result["reason"]
+        assert result["amount"] == Decimal("120")  # 20% of 600
+        assert "20%" in result["reason"]
 
-    def test_long_haul_full_compensation(self):
+    async def test_long_haul_full_compensation(self):
         """Test long haul flight with 4+ hour delay gets full compensation."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="JFK",
             delay_hours=5.0,
-            incident_type="delay"
+            incident_type="delay",
+            use_api=False
         )
 
         assert result["eligible"] is True
         assert result["amount"] == Decimal("600")
 
-    def test_delay_without_hours(self):
+    async def test_delay_without_hours(self):
         """Test delay incident without specifying hours."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
-            incident_type="delay"
+            incident_type="delay",
+            use_api=False
         )
 
         assert result["requires_manual_review"] is True
         assert "not specified" in result["reason"].lower()
 
 
+@pytest.mark.asyncio
 class TestCancellationCompensation:
     """Test compensation calculation for cancellations."""
 
-    def test_short_haul_cancellation(self):
+    async def test_short_haul_cancellation(self):
         """Test cancellation on short haul flight."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
-            incident_type="cancellation"
+            incident_type="cancellation",
+            use_api=False
         )
 
         assert result["eligible"] is True
         assert result["amount"] == Decimal("250")
 
-    def test_medium_haul_cancellation(self):
+    async def test_medium_haul_cancellation(self):
         """Test cancellation on medium haul flight."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="IST",
-            incident_type="cancellation"
+            incident_type="cancellation",
+            use_api=False
         )
 
         assert result["eligible"] is True
         assert result["amount"] == Decimal("400")
 
-    def test_cancellation_with_alternative(self):
+    async def test_cancellation_with_alternative(self):
         """Test cancellation with alternative flight offered."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
             incident_type="cancellation",
-            alternative_flight_offered=True
+            alternative_flight_offered=True,
+            use_api=False
         )
 
         assert result["eligible"] is True
@@ -219,41 +231,46 @@ class TestCancellationCompensation:
         assert "alternative" in result["reason"].lower()
 
 
+@pytest.mark.asyncio
 class TestDeniedBoarding:
     """Test compensation calculation for denied boarding."""
 
-    def test_denied_boarding_short_haul(self):
+    async def test_denied_boarding_short_haul(self):
         """Test denied boarding on short haul flight."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
-            incident_type="denied_boarding"
+            incident_type="denied_boarding",
+            use_api=False
         )
 
         assert result["eligible"] is True
         assert result["amount"] == Decimal("250")
 
-    def test_denied_boarding_long_haul(self):
+    async def test_denied_boarding_long_haul(self):
         """Test denied boarding on long haul flight."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="JFK",
-            incident_type="denied_boarding"
+            incident_type="denied_boarding",
+            use_api=False
         )
 
         assert result["eligible"] is True
         assert result["amount"] == Decimal("600")
 
 
+@pytest.mark.asyncio
 class TestBaggageDelay:
     """Test compensation calculation for baggage delay."""
 
-    def test_baggage_delay_not_covered(self):
+    async def test_baggage_delay_not_covered(self):
         """Test that baggage delay is not covered by EU261."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
-            incident_type="baggage_delay"
+            incident_type="baggage_delay",
+            use_api=False
         )
 
         assert result["eligible"] is False
@@ -262,16 +279,18 @@ class TestBaggageDelay:
         assert result["requires_manual_review"] is True
 
 
+@pytest.mark.asyncio
 class TestExtraordinaryCircumstancesCompensation:
     """Test compensation with extraordinary circumstances."""
 
-    def test_weather_cancellation_no_compensation(self):
+    async def test_weather_cancellation_no_compensation(self):
         """Test that weather-related cancellations get no compensation."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
             incident_type="cancellation",
-            extraordinary_circumstances="Severe storm"
+            extraordinary_circumstances="Severe storm",
+            use_api=False
         )
 
         assert result["eligible"] is False
@@ -279,110 +298,121 @@ class TestExtraordinaryCircumstancesCompensation:
         assert "extraordinary" in result["reason"].lower()
         assert result["requires_manual_review"] is True
 
-    def test_strike_delay_no_compensation(self):
+    async def test_strike_delay_no_compensation(self):
         """Test that strike-related delays get no compensation."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
             delay_hours=5.0,
             incident_type="delay",
-            extraordinary_circumstances="Air traffic control strike"
+            extraordinary_circumstances="Air traffic control strike",
+            use_api=False
         )
 
         assert result["eligible"] is False
         assert result["amount"] == Decimal("0")
 
 
+@pytest.mark.asyncio
 class TestSimpleEstimate:
     """Test simple compensation estimation."""
 
-    def test_simple_estimate_short_haul(self):
+    async def test_simple_estimate_short_haul(self):
         """Test simple estimate for short haul."""
-        estimate = CompensationService.estimate_compensation_simple(
+        estimate = await CompensationService.estimate_compensation_simple(
             departure_airport="LHR",
             arrival_airport="CDG",
-            incident_type="delay"
+            incident_type="delay",
+            use_api=False
         )
 
         assert estimate == Decimal("250")
 
-    def test_simple_estimate_long_haul(self):
+    async def test_simple_estimate_long_haul(self):
         """Test simple estimate for long haul."""
-        estimate = CompensationService.estimate_compensation_simple(
+        estimate = await CompensationService.estimate_compensation_simple(
             departure_airport="LHR",
             arrival_airport="JFK",
-            incident_type="delay"
+            incident_type="delay",
+            use_api=False
         )
 
         assert estimate == Decimal("600")
 
-    def test_simple_estimate_baggage(self):
+    async def test_simple_estimate_baggage(self):
         """Test simple estimate for baggage delay."""
-        estimate = CompensationService.estimate_compensation_simple(
+        estimate = await CompensationService.estimate_compensation_simple(
             departure_airport="LHR",
             arrival_airport="CDG",
-            incident_type="baggage_delay"
+            incident_type="baggage_delay",
+            use_api=False
         )
 
         assert estimate == Decimal("0")
 
-    def test_simple_estimate_unknown_airport(self):
+    async def test_simple_estimate_unknown_airport(self):
         """Test simple estimate with unknown airport."""
-        estimate = CompensationService.estimate_compensation_simple(
+        estimate = await CompensationService.estimate_compensation_simple(
             departure_airport="XXX",
             arrival_airport="YYY",
-            incident_type="delay"
+            incident_type="delay",
+            use_api=False
         )
 
         assert estimate == Decimal("0")
 
 
+@pytest.mark.asyncio
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
-    def test_exact_3_hour_delay(self):
+    async def test_exact_3_hour_delay(self):
         """Test that exactly 3 hours delay qualifies."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
             delay_hours=3.0,
-            incident_type="delay"
+            incident_type="delay",
+            use_api=False
         )
 
         assert result["eligible"] is True
         assert result["amount"] == Decimal("250")
 
-    def test_exact_4_hour_delay_long_haul(self):
+    async def test_exact_4_hour_delay_long_haul(self):
         """Test that exactly 4 hours delay on long haul gets full compensation."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="JFK",
             delay_hours=4.0,
-            incident_type="delay"
+            incident_type="delay",
+            use_api=False
         )
 
         assert result["eligible"] is True
-        assert result["amount"] == Decimal("600")  # Full compensation, not 50%
+        assert result["amount"] == Decimal("600")  # Full compensation, not 20%
 
-    def test_unknown_incident_type(self):
+    async def test_unknown_incident_type(self):
         """Test handling of unknown incident type."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
-            incident_type="unknown_type"
+            incident_type="unknown_type",
+            use_api=False
         )
 
         assert result["requires_manual_review"] is True
         assert "unknown incident type" in result["reason"].lower()
 
-    def test_pre_calculated_distance(self):
+    async def test_pre_calculated_distance(self):
         """Test using pre-calculated distance."""
-        result = CompensationService.calculate_compensation(
+        result = await CompensationService.calculate_compensation(
             departure_airport="LHR",
             arrival_airport="CDG",
             delay_hours=4.0,
             incident_type="delay",
-            distance_km=350.0
+            distance_km=350.0,
+            use_api=False
         )
 
         assert result["eligible"] is True

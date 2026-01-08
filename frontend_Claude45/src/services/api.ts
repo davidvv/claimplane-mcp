@@ -127,8 +127,14 @@ apiClient.interceptors.response.use(
       }
     } else if (error.request) {
       // Request was made but no response received
-      toast.error('Network error. Please check your connection.');
-      console.error('[API Error] No response received', error.request);
+      // Check if it's a timeout error
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        toast.error('Request timeout. The operation took too long. Please try again.');
+        console.error('[API Error] Request timeout', error.message);
+      } else {
+        toast.error('Network error. Please check your connection.');
+        console.error('[API Error] No response received', error.request);
+      }
     } else {
       // Something else happened
       toast.error('An unexpected error occurred.');

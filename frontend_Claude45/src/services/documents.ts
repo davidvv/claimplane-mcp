@@ -40,6 +40,8 @@ export const uploadDocument = async (
     document_type: documentType,  // Backend expects snake_case
   });
 
+  // Use longer timeout for file uploads (5 minutes per file)
+  // File upload involves validation, encryption, Nextcloud upload, and verification
   const response = await apiClient.post<Document>(
     `/claims/${claimId}/documents`,
     formData,
@@ -48,6 +50,7 @@ export const uploadDocument = async (
         'Content-Type': 'multipart/form-data',
       },
       onUploadProgress,
+      timeout: 300000, // 5 minutes (300 seconds) per file
     }
   );
 

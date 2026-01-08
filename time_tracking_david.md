@@ -2,10 +2,59 @@
 # EasyAirClaim Project - Complete Commit History Analysis
 
 ## Summary Statistics
-- **Total Commits**: 136
-- **Date Range**: 2025-09-04 to 2026-01-04
-- **Estimated Total Time**: ~435-495 hours
+- **Total Commits**: 137
+- **Date Range**: 2025-09-04 to 2026-01-08
+- **Estimated Total Time**: ~435.5-496 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
+
+## Latest Work (2026-01-08) - File Upload Timeout Fix
+
+### Bug Fix: File Upload Timeout Issues
+**Estimated Time**: 0.5-1 hour
+
+#### Issue Description:
+File uploads during claim creation were timing out prematurely and losing files without proper error messages. The issue affected users uploading multiple or large files.
+
+#### Key Tasks:
+1. **Diagnosed Upload Timeout Issue**
+   - Identified 30-second global timeout too short for file processing
+   - File upload involves: validation, encryption, Nextcloud upload, verification
+   - Estimated: 0.1-0.2 hours
+
+2. **Increased Upload Timeout** (frontend_Claude45/src/services/documents.ts)
+   - Changed timeout from 30 seconds to 5 minutes per file
+   - Added inline documentation explaining timeout reasoning
+   - Estimated: 0.1 hours
+
+3. **Improved Error Handling** (frontend_Claude45/src/pages/ClaimForm/Step4_Review.tsx)
+   - Added tracking of individual failed files
+   - Prevented premature navigation on upload failures
+   - Added specific timeout error detection and messages
+   - Shows detailed summary of successful vs. failed uploads
+   - Allows user to continue if claim created but uploads failed
+   - Estimated: 0.2-0.4 hours
+
+4. **Enhanced Progress Indicators**
+   - Shows current file being uploaded by name
+   - Better user feedback during multi-file uploads
+   - Estimated: 0.1 hours
+
+5. **Testing & Deployment**
+   - Built frontend with updated code
+   - Restarted nginx container to apply changes
+   - Estimated: 0.1 hours
+
+#### Changes Made:
+- `frontend_Claude45/src/services/documents.ts`: Increased timeout to 300 seconds
+- `frontend_Claude45/src/services/api.ts`: Added timeout error detection
+- `frontend_Claude45/src/pages/ClaimForm/Step4_Review.tsx`: Comprehensive error handling improvements
+
+#### Impact:
+- ✅ File uploads won't timeout prematurely (5 min vs 30 sec)
+- ✅ Clear visibility into upload progress
+- ✅ Detailed error messages for failures
+- ✅ User can proceed even if some uploads fail
+- ✅ Better overall user experience during claim submission
 
 ## Phase Breakdown
 

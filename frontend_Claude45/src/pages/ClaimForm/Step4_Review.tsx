@@ -35,6 +35,7 @@ export function Step4_Review({
 }: Step4Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentUploadFile, setCurrentUploadFile] = useState<string>('');
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleSubmit = async () => {
@@ -46,6 +47,8 @@ export function Step4_Review({
 
     setIsSubmitting(true);
     setUploadProgress(0);
+
+    let claimId: string | null = null;
 
     try {
       // Step 1: Submit the claim
@@ -83,13 +86,18 @@ export function Step4_Review({
       };
 
       const claim = await submitClaim(claimRequest);
+      claimId = claim.id!;
       toast.success('Claim submitted successfully!');
 
       // Step 2: Upload documents
       let uploadErrors = 0;
+      const failedFiles: string[] = [];
+
       if (documents.length > 0 && claim.id) {
         for (let i = 0; i < documents.length; i++) {
           const doc = documents[i];
+          setCurrentUploadFile(doc.file.name);
+
           try {
             await uploadDocument(
               claim.id,
@@ -102,22 +110,43 @@ export function Step4_Review({
                 setUploadProgress(percentCompleted);
               }
             );
-          } catch (error) {
+            console.log(`Successfully uploaded: ${doc.file.name}`);
+          } catch (error: any) {
             console.error('Document upload error:', error);
-            toast.error(`Failed to upload ${doc.file.name}`);
             uploadErrors++;
+            failedFiles.push(doc.file.name);
+
+            // Check if it's a timeout error
+            if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+              toast.error(`Upload timeout for ${doc.file.name}. File may be too large or connection too slow.`);
+            } else {
+              toast.error(`Failed to upload ${doc.file.name}: ${error.response?.data?.detail || error.message || 'Unknown error'}`);
+            }
           }
         }
       }
 
-      // Show success message only if all documents uploaded successfully
+      // Clear upload status
+      setCurrentUploadFile('');
+      setUploadProgress(0);
+
+      // Show appropriate success/warning message
       if (documents.length > 0) {
         if (uploadErrors === 0) {
           toast.success('All documents uploaded successfully!');
         } else if (uploadErrors < documents.length) {
-          toast.warning(`${documents.length - uploadErrors} of ${documents.length} documents uploaded`);
+          toast.warning(
+            `${documents.length - uploadErrors} of ${documents.length} documents uploaded. ` +
+            `Failed: ${failedFiles.join(', ')}. You can upload them later from your claim details.`,
+            { duration: 8000 }
+          );
+        } else {
+          // All uploads failed
+          toast.error(
+            'All document uploads failed. Your claim was created, but you need to upload documents later from your claim details.',
+            { duration: 10000 }
+          );
         }
-        // If all failed, individual error toasts already shown
       }
 
       // Analytics tracking stub
@@ -127,17 +156,38 @@ export function Step4_Review({
           compensationAmount: eligibilityData.compensationAmount,
           regulation: eligibilityData.regulation,
           incidentType: passengerData.incidentType,
+          documentsUploaded: documents.length - uploadErrors,
+          documentsFailed: uploadErrors,
         });
       }
 
-      // Complete the wizard
+      // Complete the wizard - navigate to success page
+      // We navigate even if some uploads failed, but the user has been warned
       onComplete(claim.id!);
     } catch (error: any) {
       console.error('Claim submission error:', error);
-      toast.error(
-        error.response?.data?.error?.message ||
-          'Failed to submit claim. Please try again.'
-      );
+
+      // Check if it's a timeout error
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        toast.error('Request timeout. Please try again or contact support if the issue persists.');
+      } else {
+        toast.error(
+          error.response?.data?.error?.message ||
+          error.response?.data?.detail ||
+            'Failed to submit claim. Please try again.'
+        );
+      }
+
+      // If claim was created but uploads failed, still allow navigation
+      if (claimId) {
+        const shouldNavigate = window.confirm(
+          'Your claim was submitted but there were issues with document uploads. ' +
+          'Would you like to view your claim now? You can upload documents later.'
+        );
+        if (shouldNavigate) {
+          onComplete(claimId);
+        }
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -148,7 +198,9 @@ export function Step4_Review({
       {isSubmitting && (
         <LoadingOverlay
           message={
-            uploadProgress > 0
+            currentUploadFile
+              ? `Uploading ${currentUploadFile}... ${uploadProgress}%`
+              : uploadProgress > 0
               ? `Uploading documents... ${uploadProgress}%`
               : 'Submitting your claim...'
           }

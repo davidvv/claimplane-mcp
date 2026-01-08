@@ -1,16 +1,16 @@
 # EasyAirClaim Project - Complete Time Tracking Summary
 
 ## Project Overview
-- **Project Duration**: 2025-09-04 to 2026-01-07 (4 months)
-- **Total Commits**: 159 (139 by David, 20 by Florian)
-- **Estimated Total Time**: ~503-583 hours
+- **Project Duration**: 2025-09-04 to 2026-01-08 (4 months)
+- **Total Commits**: 160 (140 by David, 20 by Florian)
+- **Estimated Total Time**: ~504-584 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 139 (87.4%)
-- **Estimated Time**: 442-503 hours
+- **Commits**: 140 (87.5%)
+- **Estimated Time**: 443-504 hours
 - **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration
 - **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes
 
@@ -116,11 +116,14 @@
 - `time_tracking_florian.md`: Detailed breakdown of Florian's 60-80 hours
 - `time_tracking_summary.md`: This combined overview (updated with latest commits)
 
-## Latest Update (2026-01-07)
-- **EU261 Compensation Bug Fixes**: Fixed delay calculation bug (€120 → €600 for 3h+ long haul delays)
-- **Cancellation Logic Enhancement**: Added EU261-compliant cancellation handling with notice periods and alternative flight rules
-- **New Commits**: 2 commits by David (c8f81d5, 1a40a60)
-- **Time Added**: 2-3 hours
+## Latest Update (2026-01-08)
+- **File Upload Timeout Fix**: Fixed premature timeout issue affecting file uploads during claim creation
+  - Increased timeout from 30 seconds to 5 minutes per file
+  - Added comprehensive error handling and progress indicators
+  - Improved user feedback for failed uploads
+- **Previous (2026-01-07)**: EU261 Compensation Bug Fixes and Cancellation Logic Enhancement
+- **New Commits**: 1 commit by David
+- **Time Added**: 0.5-1 hour
 
 ## Recommendations for Time Tracking Tool
 1. **Use Detailed Files**: Import `time_tracking_david.md` and `time_tracking_florian.md` for individual tracking

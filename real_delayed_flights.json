@@ -1,0 +1,39 @@
+{
+  "cancelled": [
+    {
+      "flight_number": "BA303",
+      "flight_date": "2025-12-31",
+      "airline": "British Airways",
+      "departure_airport": "CDG",
+      "arrival_airport": "LHR",
+      "status": "canceled",
+      "is_cancelled": true,
+      "delay_minutes": null,
+      "scheduled_arrival": "2025-12-31 10:55Z",
+      "actual_arrival": null,
+      "display_name": "BA303 CDG\u2192LHR on 2025-12-31"
+    },
+    {
+      "flight_number": "LH111",
+      "flight_date": "2025-12-31",
+      "airline": "Lufthansa",
+      "departure_airport": "MUC",
+      "arrival_airport": "FRA",
+      "status": "canceled",
+      "is_cancelled": true,
+      "delay_minutes": null,
+      "scheduled_arrival": "2025-12-31 15:00Z",
+      "actual_arrival": null,
+      "display_name": "LH111 MUC\u2192FRA on 2025-12-31"
+    }
+  ],
+  "delays_over_3h": [],
+  "delays_under_3h": [],
+  "metadata": {
+    "total_flights_found": 2,
+    "api_calls": 55,
+    "successful_calls": 38,
+    "credits_used": 76,
+    "generated_at": "2026-01-02T22:38:54.913960+00:00"
+  }
+}

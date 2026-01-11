@@ -247,7 +247,7 @@ export function Home() {
             </h2>
             <p className="text-xl mb-8 opacity-90">
               Join thousands of passengers who've successfully claimed with
-              EasyAirClaim
+              ClaimPlane
             </p>
             <Link to="/claim/new">
               <Button

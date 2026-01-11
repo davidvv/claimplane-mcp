@@ -17,9 +17,9 @@ export function PrivacyPolicy() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
             <p className="mb-4">
-              EasyAirClaim LLC ("we," "our," or "us") is committed to protecting your privacy and ensuring the
+              ClaimPlane LLC ("we," "our," or "us") is committed to protecting your privacy and ensuring the
               security of your personal information. This Privacy Policy explains how we collect, use, disclose,
-              and safeguard your information when you use our website and services located at www.easyairclaim.com
+              and safeguard your information when you use our website and services located at www.claimplane.com
               (the "Service").
             </p>
             <p className="mb-4">
@@ -226,7 +226,7 @@ export function PrivacyPolicy() {
             </p>
             <div className="bg-muted p-4 rounded-lg mb-4">
               <p className="font-semibold">Privacy Rights Requests</p>
-              <p>Email: privacy@easyairclaim.com</p>
+              <p>Email: privacy@claimplane.com</p>
               <p>Subject: Privacy Rights Request - [Your Name]</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 We will respond to your request within 30 days (or 45 days if complex).
@@ -269,7 +269,7 @@ export function PrivacyPolicy() {
             <p className="mb-4">
               Our Service is not intended for individuals under the age of 18. We do not knowingly collect
               personal information from children. If you are a parent or guardian and believe your child has
-              provided us with personal information, please contact us immediately at privacy@easyairclaim.com.
+              provided us with personal information, please contact us immediately at privacy@claimplane.com.
             </p>
             <p className="mb-4">
               If we become aware that we have collected personal information from a child under 18 without
@@ -338,17 +338,17 @@ export function PrivacyPolicy() {
               please contact us:
             </p>
             <div className="bg-muted p-6 rounded-lg">
-              <p className="font-semibold text-lg mb-2">EasyAirClaim LLC - Privacy Officer</p>
-              <p className="mb-1">Email: privacy@easyairclaim.com</p>
-              <p className="mb-1">Support: support@easyairclaim.com</p>
-              <p className="mb-1">Legal: legal@easyairclaim.com</p>
+              <p className="font-semibold text-lg mb-2">ClaimPlane LLC - Privacy Officer</p>
+              <p className="mb-1">Email: privacy@claimplane.com</p>
+              <p className="mb-1">Support: support@claimplane.com</p>
+              <p className="mb-1">Legal: legal@claimplane.com</p>
               <p className="mb-1">Address: 3436 SW 8th Pl, Cape Coral 33914</p>
               <p className="mb-1">Phone: [Phone Number]</p>
               <p className="mb-3">Hours: Monday-Friday, 9:00 AM - 5:00 PM EST</p>
 
               <div className="mt-4 pt-4 border-t">
                 <p className="font-semibold mb-2">Data Protection Officer (DPO)</p>
-                <p className="mb-1">Email: dpo@easyairclaim.com</p>
+                <p className="mb-1">Email: dpo@claimplane.com</p>
                 <p className="text-sm text-muted-foreground">
                   For GDPR-related inquiries and data protection matters
                 </p>

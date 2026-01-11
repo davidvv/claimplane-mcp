@@ -56,7 +56,7 @@ interface ClaimFormData {
 
 export function useClaimFormPersistence() {
   const [formData, setFormData, clearFormData] = useLocalStorageForm<ClaimFormData>(
-    'easyairclaim_form_data',
+    'claimplane_form_data',
     { currentStep: 1 }
   );
 

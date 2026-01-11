@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 export function useDocumentTitle(title: string) {
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = `${title} – EasyAirClaim`;
+    document.title = `${title} – ClaimPlane`;
 
     // Cleanup: restore previous title on unmount
     return () => {

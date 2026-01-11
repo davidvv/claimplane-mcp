@@ -390,7 +390,7 @@ export function Step4_Review({
                 >
                   terms and conditions
                 </a>{' '}
-                and authorize EasyAirClaim to act on your behalf in pursuing compensation
+                and authorize ClaimPlane to act on your behalf in pursuing compensation
                 from the airline.
               </p>
               <p className="text-muted-foreground mb-4">
@@ -414,7 +414,7 @@ export function Step4_Review({
                   <span className="font-medium">I accept the terms and conditions</span>
                   <span className="text-muted-foreground">
                     {' '}
-                    and authorize EasyAirClaim to process my claim and personal data in
+                    and authorize ClaimPlane to process my claim and personal data in
                     accordance with the{' '}
                     <a
                       href="/terms"

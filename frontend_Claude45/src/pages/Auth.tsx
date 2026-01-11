@@ -242,7 +242,7 @@ export function Auth() {
               <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
               <p className="text-muted-foreground">
                 <strong className="text-foreground">Check your spam folder</strong> if you don't see the email.
-                Magic link emails are sent instantly from noreply@easyairclaim.com.
+                Magic link emails are sent instantly from noreply@claimplane.com.
               </p>
             </div>
           </CardContent>

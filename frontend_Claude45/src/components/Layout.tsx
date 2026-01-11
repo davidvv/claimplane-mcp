@@ -61,7 +61,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="p-2 bg-primary rounded-lg">
               <Plane className="w-5 h-5 text-white" />
             </div>
-            <span>EasyAirClaim</span>
+            <span>ClaimPlane</span>
           </Link>
 
           {/* Navigation */}
@@ -190,7 +190,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Plane className="w-4 h-4" />
-              <span>&copy; 2025 EasyAirClaim. All rights reserved.</span>
+              <span>&copy; 2025 ClaimPlane. All rights reserved.</span>
             </div>
 
             <div className="flex gap-6 text-sm text-muted-foreground">

@@ -1,6 +1,6 @@
 /**
  * Terms and Conditions Page
- * Legal terms for using EasyAirClaim services
+ * Legal terms for using ClaimPlane services
  */
 
 export function TermsAndConditions() {
@@ -17,10 +17,10 @@ export function TermsAndConditions() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
             <p className="mb-4">
-              Welcome to EasyAirClaim LLC ("Company," "we," "our," or "us"). These Terms and Conditions
-              ("Terms") govern your use of our website and services located at www.easyairclaim.com
+              Welcome to ClaimPlane LLC ("Company," "we," "our," or "us"). These Terms and Conditions
+              ("Terms") govern your use of our website and services located at www.claimplane.com
               (the "Service") and constitute a legally binding agreement between you ("Customer," "you,"
-              or "your") and EasyAirClaim LLC, a limited liability company organized under the laws of
+              or "your") and ClaimPlane LLC, a limited liability company organized under the laws of
               the State of Florida, United States of America.
             </p>
             <p className="mb-4">
@@ -34,7 +34,7 @@ export function TermsAndConditions() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">2. Services Provided</h2>
             <p className="mb-4">
-              EasyAirClaim provides claim management services for flight compensation under EU Regulation
+              ClaimPlane provides claim management services for flight compensation under EU Regulation
               261/2004 and other applicable air passenger rights regulations. Our services include:
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
@@ -45,7 +45,7 @@ export function TermsAndConditions() {
               <li>Transfer of compensation (minus our commission) to you</li>
             </ul>
             <p className="mb-4">
-              <strong>Important Notice:</strong> EasyAirClaim does not provide legal advice or legal services.
+              <strong>Important Notice:</strong> ClaimPlane does not provide legal advice or legal services.
               We act as your authorized representative in pursuing flight compensation claims with airlines.
               We do not guarantee any specific outcome or compensation amount, as final decisions are made by airlines.
             </p>
@@ -57,7 +57,7 @@ export function TermsAndConditions() {
 
             <h3 className="text-xl font-semibold mb-3">3.1 Authorization to Act</h3>
             <p className="mb-4">
-              By submitting a claim through our Service, you authorize EasyAirClaim LLC to:
+              By submitting a claim through our Service, you authorize ClaimPlane LLC to:
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
               <li>Act as your authorized representative for the submitted claim</li>
@@ -75,7 +75,7 @@ export function TermsAndConditions() {
               to proceed with your claim.
             </p>
             <p className="mb-4">
-              The Power of Attorney grants EasyAirClaim LLC the following specific powers:
+              The Power of Attorney grants ClaimPlane LLC the following specific powers:
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
               <li><strong>Legal Representation:</strong> Authority to represent you before airlines, aviation authorities,
@@ -120,7 +120,7 @@ export function TermsAndConditions() {
 
             <h3 className="text-xl font-semibold mb-3">3.3 Our Obligations</h3>
             <p className="mb-4">
-              EasyAirClaim LLC commits to:
+              ClaimPlane LLC commits to:
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
               <li>Provide you with regular updates on the progress of your claim</li>
@@ -141,12 +141,12 @@ export function TermsAndConditions() {
             <h3 className="text-xl font-semibold mb-3">3.5 Termination of Claim or Agreement</h3>
             <p className="mb-4">
               You have the right to terminate this agreement and withdraw your claim at any time by sending
-              a written notice to support@easyairclaim.com. To ensure proper processing, please use the
+              a written notice to support@claimplane.com. To ensure proper processing, please use the
               following template:
             </p>
             <div className="bg-muted p-6 rounded-lg mb-4 font-mono text-sm">
               <p className="mb-2">Subject: Claim Termination Request - [Your Claim ID]</p>
-              <p className="mb-4">Dear EasyAirClaim Support Team,</p>
+              <p className="mb-4">Dear ClaimPlane Support Team,</p>
               <p className="mb-2">I hereby formally request the termination of my claim agreement and withdrawal of my claim with the following details:</p>
               <p className="mb-1 ml-4">- Full Name: [Your Full Name]</p>
               <p className="mb-1 ml-4">- Email Address: [Your Email]</p>
@@ -203,7 +203,7 @@ export function TermsAndConditions() {
               When an airline pays compensation:
             </p>
             <ol className="list-decimal pl-6 mb-4 space-y-2">
-              <li>The airline transfers the full compensation amount to EasyAirClaim LLC</li>
+              <li>The airline transfers the full compensation amount to ClaimPlane LLC</li>
               <li>We deduct our 20% commission plus applicable taxes</li>
               <li>We transfer the remaining balance to your designated bank account within 5-7 business days</li>
               <li>You receive a detailed breakdown of the payment calculation</li>
@@ -268,7 +268,7 @@ export function TermsAndConditions() {
             <h2 className="text-2xl font-semibold mb-4">6. Intellectual Property Rights</h2>
             <p className="mb-4">
               All content on our Service, including but not limited to text, graphics, logos, software,
-              and user interfaces, is the property of EasyAirClaim LLC or its licensors and is protected
+              and user interfaces, is the property of ClaimPlane LLC or its licensors and is protected
               by United States and international copyright, trademark, and other intellectual property laws.
             </p>
             <p className="mb-4">
@@ -356,7 +356,7 @@ export function TermsAndConditions() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">9. Indemnification</h2>
             <p className="mb-4">
-              You agree to indemnify, defend, and hold harmless EasyAirClaim LLC, its officers, directors,
+              You agree to indemnify, defend, and hold harmless ClaimPlane LLC, its officers, directors,
               employees, agents, and affiliates from and against any claims, liabilities, damages, losses,
               costs, or expenses (including reasonable professional fees) arising from:
             </p>
@@ -393,7 +393,7 @@ export function TermsAndConditions() {
 
             <h3 className="text-xl font-semibold mb-3">10.3 Informal Dispute Resolution</h3>
             <p className="mb-4">
-              Before filing any formal action, you agree to first contact us at support@easyairclaim.com
+              Before filing any formal action, you agree to first contact us at support@claimplane.com
               and attempt to resolve the dispute informally through good-faith negotiations for at least 30 days.
             </p>
 
@@ -433,7 +433,7 @@ export function TermsAndConditions() {
             <h3 className="text-xl font-semibold mb-3">12.1 Entire Agreement</h3>
             <p className="mb-4">
               These Terms, together with our Privacy Policy and any other legal notices published on the
-              Service, constitute the entire agreement between you and EasyAirClaim LLC regarding the Service.
+              Service, constitute the entire agreement between you and ClaimPlane LLC regarding the Service.
             </p>
 
             <h3 className="text-xl font-semibold mb-3">12.2 Severability</h3>
@@ -447,7 +447,7 @@ export function TermsAndConditions() {
             <p className="mb-4">
               Our failure to enforce any right or provision of these Terms shall not constitute a waiver of
               such right or provision. Any waiver must be in writing and signed by an authorized representative
-              of EasyAirClaim LLC.
+              of ClaimPlane LLC.
             </p>
 
             <h3 className="text-xl font-semibold mb-3">12.4 Assignment</h3>
@@ -462,9 +462,9 @@ export function TermsAndConditions() {
               to us should be sent to:
             </p>
             <div className="bg-muted p-4 rounded-lg mb-4">
-              <p className="font-semibold">EasyAirClaim LLC</p>
+              <p className="font-semibold">ClaimPlane LLC</p>
               <p>Legal Department</p>
-              <p>Email: legal@easyairclaim.com</p>
+              <p>Email: legal@claimplane.com</p>
               <p>Address: 3436 SW 8th Pl, Cape Coral 33914</p>
             </div>
 
@@ -489,9 +489,9 @@ export function TermsAndConditions() {
               If you have any questions about these Terms, please contact us:
             </p>
             <div className="bg-muted p-6 rounded-lg">
-              <p className="font-semibold text-lg mb-2">EasyAirClaim LLC</p>
-              <p className="mb-1">Email: support@easyairclaim.com</p>
-              <p className="mb-1">Legal: legal@easyairclaim.com</p>
+              <p className="font-semibold text-lg mb-2">ClaimPlane LLC</p>
+              <p className="mb-1">Email: support@claimplane.com</p>
+              <p className="mb-1">Legal: legal@claimplane.com</p>
               <p className="mb-1">Business Address: 3436 SW 8th Pl, Cape Coral 33914</p>
             </div>
           </section>

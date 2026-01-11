@@ -291,7 +291,7 @@ export function Step2_Eligibility({
 
                   <div className="bg-muted rounded-lg p-4">
                     <p className="text-sm font-semibold mb-2">
-                      Thank you for considering EasyAirClaim
+                      Thank you for considering ClaimPlane
                     </p>
                     <p className="text-sm">
                       Unfortunately, this flight does not qualify for compensation under

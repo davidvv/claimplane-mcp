@@ -29,10 +29,10 @@ export function Contact() {
               Send us an email and we'll respond within 24 hours
             </p>
             <a
-              href="mailto:support@easyairclaim.com"
+              href="mailto:support@claimplane.com"
               className="text-primary font-semibold text-lg hover:underline"
             >
-              support@easyairclaim.com
+              support@claimplane.com
             </a>
           </div>
 

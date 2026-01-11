@@ -27,7 +27,7 @@ export function About() {
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">About EasyAirClaim</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">About ClaimPlane</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Making flight compensation claims easy, secure, and transparent
           </p>
@@ -35,7 +35,7 @@ export function About() {
 
         {/* Why Choose Us Section */}
         <section className="mb-20">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Choose EasyAirClaim?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Why Choose ClaimPlane?</h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Easy */}
@@ -98,7 +98,7 @@ export function About() {
             <h2 className="text-3xl font-bold mb-6 text-center">Who We Are</h2>
             <div className="prose prose-slate dark:prose-invert max-w-none">
               <p className="text-lg text-muted-foreground text-center mb-6">
-                EasyAirClaim is dedicated to helping air passengers claim the compensation they deserve under EU Regulation 261/2004.
+                ClaimPlane is dedicated to helping air passengers claim the compensation they deserve under EU Regulation 261/2004.
               </p>
               <p className="text-muted-foreground text-center mb-6">
                 Our team of aviation experts and customer advocates work tirelessly to ensure airlines honor their obligations to passengers.

@@ -51,18 +51,18 @@ def send_email_change_notification(
         run_async(
             EmailService.send_email(
                 to_email=old_email,
-                subject="Email Address Changed - EasyAirClaim",
+                subject="Email Address Changed - ClaimPlane",
                 html_content=f"""
                 <h2>Email Address Changed</h2>
                 <p>Hello {user_name},</p>
-                <p>This is to notify you that the email address for your EasyAirClaim account
+                <p>This is to notify you that the email address for your ClaimPlane account
                 has been changed from <strong>{old_email}</strong> to <strong>{new_email}</strong>.</p>
                 <p>If you did not make this change, please contact our support team immediately.</p>
                 <p>All future communications will be sent to your new email address.</p>
                 <p>For security reasons, you have been logged out of all devices and will need to
                 log in again with your new email address.</p>
                 <br>
-                <p>Best regards,<br>The EasyAirClaim Team</p>
+                <p>Best regards,<br>The ClaimPlane Team</p>
                 """
             )
         )
@@ -71,16 +71,16 @@ def send_email_change_notification(
         run_async(
             EmailService.send_email(
                 to_email=new_email,
-                subject="Welcome to Your New Email - EasyAirClaim",
+                subject="Welcome to Your New Email - ClaimPlane",
                 html_content=f"""
                 <h2>Email Address Updated Successfully</h2>
                 <p>Hello {user_name},</p>
-                <p>Your EasyAirClaim account email has been successfully updated to this address.</p>
+                <p>Your ClaimPlane account email has been successfully updated to this address.</p>
                 <p>You can now use <strong>{new_email}</strong> to log in to your account.</p>
                 <p>For security reasons, you have been logged out of all devices. Please log in
                 again with your new email address.</p>
                 <br>
-                <p>Best regards,<br>The EasyAirClaim Team</p>
+                <p>Best regards,<br>The ClaimPlane Team</p>
                 """
             )
         )
@@ -117,11 +117,11 @@ def send_password_change_notification(
         run_async(
             EmailService.send_email(
                 to_email=email,
-                subject="Password Changed - EasyAirClaim",
+                subject="Password Changed - ClaimPlane",
                 html_content=f"""
                 <h2>Password Changed Successfully</h2>
                 <p>Hello {user_name},</p>
-                <p>This is to confirm that your EasyAirClaim account password has been changed.</p>
+                <p>This is to confirm that your ClaimPlane account password has been changed.</p>
                 <p>If you did not make this change, please contact our support team immediately
                 as your account may be compromised.</p>
                 <p>For security reasons, you have been logged out of all devices and will need to
@@ -130,7 +130,7 @@ def send_password_change_notification(
                 <p><strong>Security Tip:</strong> Make sure to use a strong, unique password and
                 never share it with anyone.</p>
                 <br>
-                <p>Best regards,<br>The EasyAirClaim Team</p>
+                <p>Best regards,<br>The ClaimPlane Team</p>
                 """
             )
         )
@@ -168,11 +168,11 @@ def send_account_deletion_request_notification(
         run_async(
             EmailService.send_email(
                 to_email=email,
-                subject="Account Deletion Request Received - EasyAirClaim",
+                subject="Account Deletion Request Received - ClaimPlane",
                 html_content=f"""
                 <h2>Account Deletion Request Received</h2>
                 <p>Hello {user_name},</p>
-                <p>We have received your request to delete your EasyAirClaim account.</p>
+                <p>We have received your request to delete your ClaimPlane account.</p>
                 <p><strong>What happens next:</strong></p>
                 <ul>
                     <li>Your account has been deactivated and you can no longer log in</li>
@@ -181,12 +181,12 @@ def send_account_deletion_request_notification(
                     <li>Once approved, your personal data will be permanently deleted within 30 days</li>
                     <li>Some information may be retained for legal compliance (up to 7 years for financial records)</li>
                 </ul>
-                <p><strong>Changed your mind?</strong> Contact our support team at support@easyairclaim.com
+                <p><strong>Changed your mind?</strong> Contact our support team at support@claimplane.com
                 with your deletion request ID: <strong>{deletion_request_id}</strong></p>
                 <p>We're sorry to see you go. If there's anything we could have done better,
                 please let us know by replying to this email.</p>
                 <br>
-                <p>Best regards,<br>The EasyAirClaim Team</p>
+                <p>Best regards,<br>The ClaimPlane Team</p>
                 """
             )
         )
@@ -231,7 +231,7 @@ def send_account_deletion_admin_notification(
 
         # Send to admin email (from config)
         from app.config import config
-        admin_email = config.ADMIN_EMAIL or "admin@easyairclaim.com"
+        admin_email = config.ADMIN_EMAIL or "admin@claimplane.com"
 
         run_async(
             EmailService.send_email(
@@ -272,7 +272,7 @@ def send_account_deletion_admin_notification(
                 they can no longer log in. Please process this request within 2-3 business days.</p>
 
                 <br>
-                <p>EasyAirClaim Admin System</p>
+                <p>ClaimPlane Admin System</p>
                 """
             )
         )
@@ -310,7 +310,7 @@ def send_account_deletion_approval_notification(
         run_async(
             EmailService.send_email(
                 to_email=email,
-                subject="Account Deletion Approved - EasyAirClaim",
+                subject="Account Deletion Approved - ClaimPlane",
                 html_content=f"""
                 <h2>Account Deletion Request Approved</h2>
                 <p>Hello {customer_name},</p>
@@ -327,9 +327,9 @@ def send_account_deletion_approval_notification(
                 <blockquote style="border-left: 4px solid #3b82f6; padding-left: 1em; margin: 1em 0;">
                     {notes}
                 </blockquote>
-                <p>If you have any questions, please contact our support team at support@easyairclaim.com.</p>
+                <p>If you have any questions, please contact our support team at support@claimplane.com.</p>
                 <br>
-                <p>Best regards,<br>The EasyAirClaim Team</p>
+                <p>Best regards,<br>The ClaimPlane Team</p>
                 """
             )
         )
@@ -367,7 +367,7 @@ def send_account_deletion_rejection_notification(
         run_async(
             EmailService.send_email(
                 to_email=email,
-                subject="Account Deletion Request Update - EasyAirClaim",
+                subject="Account Deletion Request Update - ClaimPlane",
                 html_content=f"""
                 <h2>Account Deletion Request Update</h2>
                 <p>Hello {customer_name},</p>
@@ -381,9 +381,9 @@ def send_account_deletion_rejection_notification(
                 <p>If you still wish to delete your account after resolving the above issue, you can
                 submit a new deletion request from your account settings.</p>
                 <p>If you have any questions or need assistance, please contact our support team at
-                support@easyairclaim.com.</p>
+                support@claimplane.com.</p>
                 <br>
-                <p>Best regards,<br>The EasyAirClaim Team</p>
+                <p>Best regards,<br>The ClaimPlane Team</p>
                 """
             )
         )
@@ -446,7 +446,7 @@ def send_account_deletion_completed_admin_notification(
                 <p>The customer account has been permanently anonymized and can no longer be used.</p>
                 <p>Claims have been retained for legal compliance (7 years) but all personal data has been removed.</p>
                 <br>
-                <p>EasyAirClaim Admin System</p>
+                <p>ClaimPlane Admin System</p>
                 """
             )
         )

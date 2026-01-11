@@ -309,7 +309,7 @@ class QuotaTrackingService:
                 </ul>
 
                 <p style="margin-top: 30px; font-size: 12px; color: #666;">
-                    This is an automated alert from EasyAirClaim API Quota Monitoring.<br>
+                    This is an automated alert from ClaimPlane API Quota Monitoring.<br>
                     Login to admin dashboard to view detailed usage statistics.
                 </p>
             </div>

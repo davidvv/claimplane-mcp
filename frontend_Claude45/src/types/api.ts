@@ -1,6 +1,6 @@
 /**
  * Auto-generated TypeScript types from OpenAPI 3.0.3 specification
- * EasyAirClaim API v1.0.0
+ * ClaimPlane API v1.0.0
  */
 
 // ==================== Flight Types ====================

@@ -92,7 +92,7 @@ class Config:
     SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
     SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "noreply@flightclaim.com")
-    SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "EasyAirClaim LLC")
+    SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "ClaimPlane LLC")
     SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
 
     # Celery Configuration (Phase 2)
@@ -130,7 +130,7 @@ class Config:
     
     # API Configuration
     API_VERSION = os.getenv("API_VERSION", "1.0.0")
-    API_TITLE = os.getenv("API_TITLE", "EasyAirClaim API")
+    API_TITLE = os.getenv("API_TITLE", "ClaimPlane API")
     
     # Security Headers
     SECURITY_HEADERS_ENABLED = os.getenv("SECURITY_HEADERS_ENABLED", "true").lower() == "true"

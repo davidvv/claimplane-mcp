@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
-    logger.info("Starting Flight Claim System API...")
+    logger.info("Starting ClaimPlane API...")
 
     # Create database tables
     async with engine.begin() as conn:
@@ -80,12 +80,12 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
-    logger.info("Shutting down Flight Claim System API...")
+    logger.info("Shutting down ClaimPlane API...")
 
 
 # Create FastAPI app
 app = FastAPI(
-    title="Flight Claim System API",
+    title="ClaimPlane API",
     description="API for managing flight compensation claims with file management",
     version="1.0.0",
     docs_url="/docs",
@@ -138,7 +138,7 @@ app.include_router(admin_deletion_requests.router)  # Phase 4: Deletion Request 
 async def root():
     """Root endpoint."""
     return {
-        "message": "Flight Claim System API",
+        "message": "ClaimPlane API",
         "version": "1.0.0",
         "docs": "/docs",
         "health": "/health"
@@ -149,7 +149,7 @@ async def root():
 async def info():
     """API information endpoint."""
     return {
-        "name": "Flight Claim System API",
+        "name": "ClaimPlane API",
         "version": "1.0.0",
         "description": "API for managing flight compensation claims with file management",
         "environment": "development",

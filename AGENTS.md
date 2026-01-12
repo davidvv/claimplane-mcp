@@ -1,5 +1,17 @@
 # AGENTS.md
 
+## Startup Commands
+```bash
+./start-dev.sh  # Always use this to start all containers (Nextcloud + app)
+```
+
+**Important**: Always use `./start-dev.sh` to start the system. This script starts:
+1. Nextcloud services (required for file uploads)
+2. Main application services (API, workers, nginx)
+3. Vite development server
+
+Starting individual containers with `docker-compose up` without Nextcloud will cause upload failures that appear successful to users.
+
 ## Build/Test Commands
 ```bash
 source /Users/david/miniconda3/bin/activate EasyAirClaim

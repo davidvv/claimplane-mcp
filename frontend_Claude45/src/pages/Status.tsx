@@ -400,7 +400,7 @@ export function Status() {
                   </p>
                 </div>
                 <Button 
-                  onClick={() => navigate(`/claim?resume=${claim.id}`)}
+                  onClick={() => navigate(`/claim/new?resume=${claim.id}`)}
                   className="w-full md:w-auto shrink-0"
                 >
                   Resume Claim

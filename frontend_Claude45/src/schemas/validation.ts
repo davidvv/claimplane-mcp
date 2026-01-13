@@ -192,7 +192,6 @@ export const flightLookupSchema = z.object({
 // Step 2: Eligibility (auto-populated, minimal validation)
 export const eligibilityFormSchema = z.object({
   email: emailSchema,
-  region: z.enum(['EU', 'US', 'CA']),
 });
 
 // Step 3: Passenger Information

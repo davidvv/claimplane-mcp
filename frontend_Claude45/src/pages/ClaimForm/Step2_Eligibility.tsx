@@ -58,9 +58,6 @@ export function Step2_Eligibility({
     formState: { errors },
   } = useForm<EligibilityForm>({
     resolver: zodResolver(eligibilityFormSchema),
-    defaultValues: {
-      region: 'EU',
-    },
   });
 
   const onSubmit = async (data: EligibilityForm) => {
@@ -71,7 +68,7 @@ export function Step2_Eligibility({
         flightInfo: flightData,
         customerInfo: {
           email: data.email,
-          region: data.region,
+          region: 'EU',  // Default to EU for EU261 regulation
         },
       });
 
@@ -114,7 +111,7 @@ export function Step2_Eligibility({
     try {
       // Create draft claim (Workflow v2)
       // This enables progressive file uploads and abandoned cart recovery
-      const response = await apiClient.post('/api/v1/claims/draft', {
+      const response = await apiClient.post('/claims/draft', {
         email: submittedEmail,
         flightInfo: {
           flightNumber: flightData.flightNumber,
@@ -165,44 +162,25 @@ export function Step2_Eligibility({
 
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    className="pl-10"
-                    {...register('email')}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  className="pl-10"
+                  {...register('email')}
+                />
               </div>
-
-              {/* Region */}
-              <div className="space-y-2">
-                <Label htmlFor="region">Your Region</Label>
-                <select
-                  id="region"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  {...register('region')}
-                >
-                  <option value="EU">🇪🇺 European Union</option>
-                  <option value="US">🇺🇸 United States</option>
-                  <option value="CA">🇨🇦 Canada</option>
-                </select>
-                {errors.region && (
-                  <p className="text-sm text-destructive">{errors.region.message}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Select the region where your flight originated or was destined
-                </p>
-              </div>
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                We'll use this to send you updates about your claim
+              </p>
             </div>
 
             <div className="flex gap-2">

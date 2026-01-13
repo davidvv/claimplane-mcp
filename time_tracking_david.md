@@ -60,6 +60,26 @@
 - Analytics events enable drop-off analysis and funnel optimization
 - Reminder system increases claim completion rates
 
+### UI/UX Refinements for Workflow v2
+**Estimated Time**: 0.5-1 hour
+
+#### Key Tasks:
+1. **Step 2 (Eligibility) Optimization**
+   - Removed redundant "Region" field (auto-handled by backend)
+   - Fixed API URL mismatch for draft creation
+   - Estimated: 0.25 hours
+
+2. **Step 3 (Passenger) Improvements**
+   - Implemented "Smart Country Selection": Phone prefix (+49) auto-selects address country (Germany)
+   - Removed default country values to ensure accurate user input
+   - Improved FileUploadZone mobile layout (stacked view, better spacing)
+   - Estimated: 0.5 hours
+
+#### Impact:
+- ✅ Reduced friction in eligibility check (fewer clicks)
+- ✅ Improved mobile usability for document uploads
+- ✅ Smarter form behavior reduces data entry effort
+
 ## Previous Work (2026-01-12) - Email Configuration & DevOps Documentation
 
 ### Email Service Configuration & Startup Script Documentation

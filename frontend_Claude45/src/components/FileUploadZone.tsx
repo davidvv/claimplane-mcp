@@ -204,66 +204,77 @@ export function FileUploadZone({
 
       {/* Uploaded files list */}
       {uploadedFiles.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="text-sm font-medium">
             Uploaded files ({uploadedFiles.length}/{maxFiles})
           </p>
           {uploadedFiles.map((uploadedFile, index) => (
             <div
               key={index}
-              className="flex items-center gap-3 p-3 border rounded-lg bg-card"
+              className="p-3 border rounded-lg bg-card space-y-2"
             >
-              <File className="w-5 h-5 text-muted-foreground shrink-0" />
+              {/* Top row: File icon, name, size, status, remove button */}
+              <div className="flex items-center gap-3">
+                <File className="w-5 h-5 text-muted-foreground shrink-0" />
 
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {uploadedFile.file.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(uploadedFile.file.size)}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {uploadedFile.file.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatFileSize(uploadedFile.file.size)}
+                  </p>
+                </div>
+
+                {/* Status indicator */}
+                {uploadedFile.status === 'uploading' && (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                    <span className="text-xs text-muted-foreground">
+                      {uploadedFile.progress || 0}%
+                    </span>
+                  </div>
+                )}
+                {uploadedFile.status === 'success' && (
+                  <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+                )}
+                {uploadedFile.status === 'error' && (
+                  <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
+                )}
+
+                {/* Remove button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeFile(index)}
+                  className="shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
 
-              {/* Document type selector */}
-              <select
-                value={uploadedFile.documentType}
-                onChange={(e) =>
-                  updateDocumentType(index, e.target.value as DocumentType)
-                }
-                className="text-sm border rounded px-2 py-1 bg-background"
-              >
-                <option value="boarding_pass">Boarding Pass</option>
-                <option value="id_document">ID Document</option>
-                <option value="receipt">Receipt</option>
-                <option value="bank_statement">Bank Statement</option>
-                <option value="other">Other</option>
-              </select>
+              {/* Bottom row: Document type selector (full width on mobile) */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Document type:</span>
+                <select
+                  value={uploadedFile.documentType}
+                  onChange={(e) =>
+                    updateDocumentType(index, e.target.value as DocumentType)
+                  }
+                  className="flex-1 text-sm border rounded px-2 py-1.5 bg-background"
+                >
+                  <option value="boarding_pass">Boarding Pass</option>
+                  <option value="id_document">ID Document</option>
+                  <option value="receipt">Receipt</option>
+                  <option value="bank_statement">Bank Statement</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
 
-              {/* Status indicator */}
-              {uploadedFile.status === 'uploading' && (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                  <span className="text-xs text-muted-foreground">
-                    {uploadedFile.progress || 0}%
-                  </span>
-                </div>
+              {/* Error message if any */}
+              {uploadedFile.status === 'error' && uploadedFile.error && (
+                <p className="text-xs text-destructive">{uploadedFile.error}</p>
               )}
-              {uploadedFile.status === 'success' && (
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              )}
-              {uploadedFile.status === 'error' && (
-                <AlertCircle className="w-5 h-5 text-destructive" />
-              )}
-
-              {/* Remove button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeFile(index)}
-                className="shrink-0"
-              >
-                <X className="w-4 h-4" />
-              </Button>
             </div>
           ))}
         </div>

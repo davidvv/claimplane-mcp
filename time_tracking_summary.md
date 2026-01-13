@@ -28,7 +28,8 @@
   - Celery beat tasks for 30-min/day-5/day-8/day-11 reminders
   - Email templates for draft reminders and expiration
   - Frontend updates for progressive file uploads and resume from URL
-- **Time Added**: 4-6 hours
+  - UI/UX Refinements: Smarter country/phone selection, progressive upload spinner, mobile-friendly file list
+- **Time Added**: 4.5-7 hours
 
 ## Latest Update (2026-01-08)
 - **File Upload Timeout Fix**: Fixed premature timeout issue affecting file uploads during claim creation

@@ -2,12 +2,58 @@
 # EasyAirClaim Project - Complete Commit History Analysis
 
 ## Summary Statistics
-- **Total Commits**: 137
-- **Date Range**: 2025-09-04 to 2026-01-12
-- **Estimated Total Time**: ~436-497 hours
+- **Total Commits**: 138
+- **Date Range**: 2025-09-04 to 2026-01-13
+- **Estimated Total Time**: ~437.5-499 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
-## Latest Work (2026-01-13) - Workflow v2: Draft Claims & Progressive Upload
+## Latest Work (2026-01-13) - Draft Reminder System Bug Fix
+
+### Critical Bug Fix: Celery Worker AsyncPG Connection Pooling
+**Estimated Time**: 1-1.5 hours
+
+#### Problem Identified:
+- Draft reminder system was completely broken since implementation
+- Celery worker crashed on every reminder task execution
+- Error: "asyncpg.InterfaceError: cannot perform operation: another operation is in progress"
+- 17 draft claims with 0 reminders sent despite being 30+ minutes old
+
+#### Root Cause Analysis:
+1. Celery tasks create new event loops via `run_async()` helper
+2. Global database engine (`AsyncSessionLocal`) was shared across event loops
+3. AsyncPG connections cannot be safely shared between event loops
+4. Additional issue: Claims with NULL `last_activity_at` weren't being picked up by queries
+
+#### Solution Implemented:
+1. **Fresh Engine Per Task**: Each reminder task now creates its own database engine
+   - `create_async_engine()` with `pool_pre_ping=True` for health checks
+   - New `sessionmaker` per event loop
+   - Proper `engine.dispose()` in finally blocks
+2. **Improved Event Loop Cleanup**: Enhanced `run_async()` to cancel pending tasks and reset event loop
+3. **Fixed NULL Handling**: Auto-set `last_activity_at` for drafts with NULL values
+
+#### Files Modified:
+- `app/tasks/draft_tasks.py`: Updated all 5 async functions (_send_draft_reminder_30min, _send_draft_reminder_day, _cleanup_expired_drafts, _send_final_reminder)
+- Added fresh engine creation per task with proper cleanup
+
+#### Testing & Verification:
+- ✅ Manually triggered reminder task - succeeded with no errors
+- ✅ Sent reminder email to idavidvv@gmail.com for draft claim UA988
+- ✅ Database updated: reminder_count incremented to 1
+- ✅ ClaimEvent logged: reminder_sent with trigger "30_min_inactive"
+- ✅ Email delivered successfully with magic link
+
+#### Impact:
+- ✅ Draft reminder system now fully operational
+- ✅ Automated reminders running every 5 minutes via Celery Beat
+- ✅ No more connection pooling errors
+- ✅ Proper isolation between Celery tasks
+
+**Estimated Time**: 1-1.5 hours
+
+---
+
+## Previous Work (2026-01-13) - Workflow v2: Draft Claims & Progressive Upload
 
 ### Draft Claim Workflow Implementation
 **Estimated Time**: 4-6 hours

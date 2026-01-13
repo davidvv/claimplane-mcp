@@ -24,7 +24,16 @@ def run_async(coro):
     try:
         return loop.run_until_complete(coro)
     finally:
+        # Clean up any pending tasks
+        pending = asyncio.all_tasks(loop)
+        for task in pending:
+            task.cancel()
+        # Run one more iteration to handle cancellations
+        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+        # Close the loop
         loop.close()
+        # Reset event loop to None to prevent reuse
+        asyncio.set_event_loop(None)
 
 
 async def _send_draft_reminder_30min():
@@ -32,8 +41,20 @@ async def _send_draft_reminder_30min():
     from app.repositories import ClaimRepository, CustomerRepository, ClaimEventRepository
     from app.models import ClaimEvent
     from app.services.auth_service import AuthService
+    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+    from sqlalchemy.orm import sessionmaker
+    import os
 
-    async with AsyncSessionLocal() as session:
+    # Create a fresh engine and session factory for this event loop
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/flight_claim"
+    )
+    engine = create_async_engine(DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
+    SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    session = SessionLocal()
+    try:
         claim_repo = ClaimRepository(session)
         customer_repo = CustomerRepository(session)
         event_repo = ClaimEventRepository(session)
@@ -90,6 +111,9 @@ async def _send_draft_reminder_30min():
 
         await session.commit()
         return sent_count
+    finally:
+        await session.close()
+        await engine.dispose()
 
 
 async def _send_draft_reminder_day(days: int, reminder_number: int):
@@ -97,8 +121,20 @@ async def _send_draft_reminder_day(days: int, reminder_number: int):
     from app.repositories import ClaimRepository, CustomerRepository, ClaimEventRepository
     from app.models import ClaimEvent
     from app.services.auth_service import AuthService
+    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+    from sqlalchemy.orm import sessionmaker
+    import os
 
-    async with AsyncSessionLocal() as session:
+    # Create a fresh engine and session factory for this event loop
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/flight_claim"
+    )
+    engine = create_async_engine(DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
+    SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    session = SessionLocal()
+    try:
         claim_repo = ClaimRepository(session)
         customer_repo = CustomerRepository(session)
         event_repo = ClaimEventRepository(session)
@@ -155,14 +191,29 @@ async def _send_draft_reminder_day(days: int, reminder_number: int):
 
         await session.commit()
         return sent_count
+    finally:
+        await session.close()
+        await engine.dispose()
 
 
 async def _cleanup_expired_drafts():
     """Delete drafts older than 11 days (with special handling for multi-claim users)."""
     from app.repositories import ClaimRepository, CustomerRepository, ClaimEventRepository
     from app.models import ClaimEvent, Claim
+    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+    from sqlalchemy.orm import sessionmaker
+    import os
 
-    async with AsyncSessionLocal() as session:
+    # Create a fresh engine and session factory for this event loop
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/flight_claim"
+    )
+    engine = create_async_engine(DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
+    SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    session = SessionLocal()
+    try:
         claim_repo = ClaimRepository(session)
         customer_repo = CustomerRepository(session)
         event_repo = ClaimEventRepository(session)
@@ -241,14 +292,29 @@ async def _cleanup_expired_drafts():
 
         await session.commit()
         return {"deleted": deleted_count, "notified": notified_count}
+    finally:
+        await session.close()
+        await engine.dispose()
 
 
 async def _send_final_reminder():
     """Send final reminder to multi-claim users 45 days after draft creation."""
     from app.repositories import ClaimRepository, CustomerRepository, ClaimEventRepository
     from app.models import ClaimEvent
+    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+    from sqlalchemy.orm import sessionmaker
+    import os
 
-    async with AsyncSessionLocal() as session:
+    # Create a fresh engine and session factory for this event loop
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/flight_claim"
+    )
+    engine = create_async_engine(DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
+    SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    session = SessionLocal()
+    try:
         claim_repo = ClaimRepository(session)
         customer_repo = CustomerRepository(session)
         event_repo = ClaimEventRepository(session)
@@ -294,6 +360,9 @@ async def _send_final_reminder():
 
         await session.commit()
         return sent_count
+    finally:
+        await session.close()
+        await engine.dispose()
 
 
 # ============================================================================

@@ -2,15 +2,15 @@
 
 ## Project Overview
 - **Project Duration**: 2025-09-04 to 2026-01-13 (4 months)
-- **Total Commits**: 162 (142 by David, 20 by Florian)
-- **Estimated Total Time**: ~510-593 hours
+- **Total Commits**: 163 (143 by David, 20 by Florian)
+- **Estimated Total Time**: ~512-595 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 142 (87.7%)
-- **Estimated Time**: 448-511 hours
+- **Commits**: 143 (87.7%)
+- **Estimated Time**: 449.5-512.5 hours
 - **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration
 - **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes
 
@@ -20,7 +20,15 @@
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
-## Latest Update (2026-01-13)
+## Latest Update (2026-01-13) - Part 2
+- **Critical Bug Fix**: Draft Reminder System AsyncPG Connection Pooling Issue
+  - Fixed Celery worker crashes preventing all reminder emails from sending
+  - Implemented fresh database engine creation per event loop in all reminder tasks
+  - Fixed NULL last_activity_at handling for draft claims
+  - Verified system now sending reminders successfully
+- **Time Added**: 1-1.5 hours
+
+## Latest Update (2026-01-13) - Part 1
 - **Workflow v2 Implementation**: Draft claim workflow with progressive uploads
   - ClaimEvent model for analytics tracking
   - ClaimDraftService for draft management

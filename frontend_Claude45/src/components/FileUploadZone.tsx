@@ -50,15 +50,21 @@ export function FileUploadZone({
   const uploadFileToServer = async (
     fileEntry: UploadedFile,
     index: number,
-    currentFiles: UploadedFile[]
+    // currentFiles argument removed as we rely on state setter
   ) => {
     if (!claimId) return;
 
     // Update status to uploading
-    const updatingFiles = [...currentFiles];
-    updatingFiles[index] = { ...updatingFiles[index], status: 'uploading', progress: 0 };
-    setUploadedFiles(updatingFiles);
-    onFilesChange(updatingFiles);
+    setUploadedFiles((prevFiles) => {
+      const newFiles = [...prevFiles];
+      // Find the file by index (index in prevFiles might match index passed if no reordering happened)
+      // Since we append new files, index should be stable for the batch
+      if (newFiles[index]) {
+        newFiles[index] = { ...newFiles[index], status: 'uploading', progress: 0 };
+        onFilesChange(newFiles);
+      }
+      return newFiles;
+    });
 
     try {
       const result = await uploadDocument(
@@ -66,37 +72,55 @@ export function FileUploadZone({
         fileEntry.file,
         fileEntry.documentType,
         (progressEvent: any) => {
-          const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-          const progressFiles = [...currentFiles];
-          progressFiles[index] = { ...progressFiles[index], progress };
-          setUploadedFiles(progressFiles);
+          // Calculate upload percentage
+          const rawProgress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+          
+          // Cap visual progress at 95% during upload/processing phase
+          // This prevents the "stuck at 100%" issue while server encrypts/moves files
+          const visualProgress = Math.min(rawProgress, 95);
+          
+          setUploadedFiles((prevFiles) => {
+            const newFiles = [...prevFiles];
+            if (newFiles[index]) {
+              newFiles[index] = { ...newFiles[index], progress: visualProgress };
+            }
+            return newFiles;
+          });
         }
       );
 
-      // Update status to success
-      const successFiles = [...currentFiles];
-      successFiles[index] = {
-        ...successFiles[index],
-        status: 'success',
-        progress: 100,
-        uploadedId: result.id,
-      };
-      setUploadedFiles(successFiles);
-      onFilesChange(successFiles);
+      // Update status to success (100%)
+      setUploadedFiles((prevFiles) => {
+        const newFiles = [...prevFiles];
+        if (newFiles[index]) {
+          newFiles[index] = {
+            ...newFiles[index],
+            status: 'success',
+            progress: 100,
+            uploadedId: result.id,
+          };
+          onFilesChange(newFiles);
+        }
+        return newFiles;
+      });
       console.log(`File uploaded successfully: ${fileEntry.file.name}`);
 
     } catch (error: any) {
       console.error(`Failed to upload ${fileEntry.file.name}:`, error);
 
       // Update status to error
-      const errorFiles = [...currentFiles];
-      errorFiles[index] = {
-        ...errorFiles[index],
-        status: 'error',
-        error: error.message || 'Upload failed',
-      };
-      setUploadedFiles(errorFiles);
-      onFilesChange(errorFiles);
+      setUploadedFiles((prevFiles) => {
+        const newFiles = [...prevFiles];
+        if (newFiles[index]) {
+          newFiles[index] = {
+            ...newFiles[index],
+            status: 'error',
+            error: error.message || 'Upload failed',
+          };
+          onFilesChange(newFiles);
+        }
+        return newFiles;
+      });
       toast.error(`Failed to upload ${fileEntry.file.name}`);
     }
   };
@@ -109,15 +133,32 @@ export function FileUploadZone({
         status: claimId ? 'pending' : 'pending',  // Will be uploaded if claimId exists
       }));
 
-      const updatedFiles = [...uploadedFiles, ...newFiles].slice(0, maxFiles);
-      setUploadedFiles(updatedFiles);
-      onFilesChange(updatedFiles);
+      // Calculate the starting index for new files in the updated array
+      // This index will be used for state updates during async upload
+      let startIndex = 0;
+      
+      setUploadedFiles((prevFiles) => {
+        const updatedFiles = [...prevFiles, ...newFiles].slice(0, maxFiles);
+        startIndex = prevFiles.length; // Correct index for appended files
+        onFilesChange(updatedFiles);
+        return updatedFiles;
+      });
 
       // Progressive upload if claimId is provided
       if (claimId) {
-        const startIndex = uploadedFiles.length;
-        for (let i = 0; i < newFiles.length && startIndex + i < maxFiles; i++) {
-          await uploadFileToServer(newFiles[i], startIndex + i, updatedFiles);
+        // We use the startIndex captured from the state update context
+        // This assumes state update is synchronous enough for this logic, 
+        // or effectively we know the index is `uploadedFiles.length` (from before set)
+        // Actually, better to calculate startIndex from current `uploadedFiles.length` OUTSIDE
+        // but `uploadedFiles` in dependency array changes... 
+        
+        // Wait, onDrop closes over `uploadedFiles`.
+        // So startIndex = uploadedFiles.length.
+        const currentCount = uploadedFiles.length;
+        
+        for (let i = 0; i < newFiles.length && currentCount + i < maxFiles; i++) {
+          // Pass the file object directly, not from state array, to avoid stale state issues in loop
+          await uploadFileToServer(newFiles[i], currentCount + i);
         }
       }
     },

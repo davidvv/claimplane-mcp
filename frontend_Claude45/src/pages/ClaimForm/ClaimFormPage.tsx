@@ -11,6 +11,8 @@ import { Stepper } from '@/components/Stepper';
 import { useClaimFormPersistence } from '@/hooks/useLocalStorageForm';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { isAuthenticated, getCurrentUser, type UserProfile, setAuthToken } from '@/services/auth';
+import { getClaim } from '@/services/claims';
+import { toast } from 'sonner';
 import { Step1_Flight } from './Step1_Flight';
 import { Step2_Eligibility } from './Step2_Eligibility';
 import { Step3_Passenger } from './Step3_Passenger';
@@ -64,8 +66,52 @@ export function ClaimFormPage() {
     const resumeClaimId = searchParams.get('resume');
     if (resumeClaimId) {
       setDraftClaimId(resumeClaimId);
-      // When resuming, start at step 3 (passenger info)
-      setCurrentStep(3);
+      
+      // Fetch draft data to hydrate form
+      const loadDraft = async () => {
+        try {
+          const claim = await getClaim(resumeClaimId);
+          
+          // Restore Flight Data
+          const restoredFlight: FlightStatus = {
+            flightNumber: claim.flightInfo.flightNumber,
+            airline: claim.flightInfo.airline,
+            departureAirport: claim.flightInfo.departureAirport,
+            arrivalAirport: claim.flightInfo.arrivalAirport,
+            departureDate: claim.flightInfo.departureDate,
+            // Map optional fields
+            scheduledDeparture: (claim.flightInfo as any).scheduledDeparture,
+            scheduledArrival: (claim.flightInfo as any).scheduledArrival,
+            actualDeparture: (claim.flightInfo as any).actualDeparture,
+            actualArrival: (claim.flightInfo as any).actualArrival,
+            status: (claim.flightInfo as any).status || 'unknown',
+            delayMinutes: (claim.flightInfo as any).delayMinutes,
+            dataSource: 'db',
+          };
+          setFlightData(restoredFlight);
+          updateFlightData(restoredFlight);
+
+          // Restore Eligibility Data
+          const restoredEligibility: EligibilityResponse = {
+            eligible: true,
+            compensationAmount: claim.compensationAmount || 0,
+            currency: claim.currency,
+            regulation: 'EU261',
+            reasons: [],
+          };
+          setEligibilityData(restoredEligibility);
+          updateEligibilityData(restoredEligibility);
+
+          // Restore Step
+          setCurrentStep(3);
+          
+        } catch (error) {
+          console.error("Failed to load draft:", error);
+          toast.error("Could not load draft claim details.");
+        }
+      };
+      
+      loadDraft();
     }
   }, [searchParams]);
 

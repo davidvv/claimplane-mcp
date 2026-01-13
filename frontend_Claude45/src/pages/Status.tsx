@@ -340,54 +340,76 @@ export function Status() {
           </div>
         )}
 
-        {/* Claim ID Lookup */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Lookup Claim</CardTitle>
-            <CardDescription>
-              Your Claim ID was sent to your email when you submitted your claim. It looks like: 123e4567-e89b-12d3-a456-426614174000
-            </CardDescription>
-          </CardHeader>
+        {/* Claim ID Lookup - Only show if no claim is loaded */}
+        {!claim && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Lookup Claim</CardTitle>
+              <CardDescription>
+                Your Claim ID was sent to your email when you submitted your claim. It looks like: 123e4567-e89b-12d3-a456-426614174000
+              </CardDescription>
+            </CardHeader>
 
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="claimId">Claim ID</Label>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Input
-                      id="claimId"
-                      placeholder="Paste your Claim ID here (e.g., 123e4567-e89b-12d3-a456-426614174000)"
-                      {...register('claimId')}
-                    />
-                    {errors.claimId && (
-                      <p className="text-sm text-destructive mt-1">
-                        {errors.claimId.message}
+            <CardContent>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="claimId">Claim ID</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Input
+                        id="claimId"
+                        placeholder="Paste your Claim ID here (e.g., 123e4567-e89b-12d3-a456-426614174000)"
+                        {...register('claimId')}
+                      />
+                      {errors.claimId && (
+                        <p className="text-sm text-destructive mt-1">
+                          {errors.claimId.message}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        The Claim ID is a long alphanumeric string (UUID format) sent to your email after submitting your claim
                       </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      The Claim ID is a long alphanumeric string (UUID format) sent to your email after submitting your claim
-                    </p>
+                    </div>
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <>
+                          <Search className="w-4 h-4 mr-2" />
+                          Search
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <>
-                        <Search className="w-4 h-4 mr-2" />
-                        Search
-                      </>
-                    )}
-                  </Button>
                 </div>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Claim Details */}
         {claim && (
           <div className="space-y-6 fade-in">
+            {/* Resume Draft Banner */}
+            {claim.status === 'draft' && (
+              <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
+                    Complete Your Claim
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    This claim is currently a draft. Resume your application to submit it for review.
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => navigate(`/claim/new?resume=${claim.id}`)}
+                  className="w-full md:w-auto shrink-0"
+                >
+                  Resume Claim
+                </Button>
+              </div>
+            )}
+
             {/* Status Timeline */}
             <Card>
               <CardHeader>

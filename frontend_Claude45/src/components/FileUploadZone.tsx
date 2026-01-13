@@ -1,12 +1,17 @@
 /**
  * Drag-and-drop file upload component
+ *
+ * Workflow v2: When claimId is provided, files are uploaded
+ * immediately as the user selects them (progressive upload).
  */
 
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, File, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn, formatFileSize } from '@/lib/utils';
 import { Button } from './ui/Button';
+import { uploadDocument } from '@/services/documents';
 import type { DocumentType } from '@/types/api';
 
 interface UploadedFile {
@@ -15,12 +20,14 @@ interface UploadedFile {
   status: 'pending' | 'uploading' | 'success' | 'error';
   progress?: number;
   error?: string;
+  uploadedId?: string;  // Server-side file ID after successful upload
 }
 
 interface FileUploadZoneProps {
   onFilesChange: (files: UploadedFile[]) => void;
   maxFiles?: number;
   maxSizeMB?: number;
+  claimId?: string;  // Workflow v2: If provided, upload files immediately
 }
 
 const ALLOWED_TYPES = {
@@ -35,22 +42,86 @@ export function FileUploadZone({
   onFilesChange,
   maxFiles = 5,
   maxSizeMB = 10,
+  claimId,
 }: FileUploadZoneProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
+  // Progressive upload function for Workflow v2
+  const uploadFileToServer = async (
+    fileEntry: UploadedFile,
+    index: number,
+    currentFiles: UploadedFile[]
+  ) => {
+    if (!claimId) return;
+
+    // Update status to uploading
+    const updatingFiles = [...currentFiles];
+    updatingFiles[index] = { ...updatingFiles[index], status: 'uploading', progress: 0 };
+    setUploadedFiles(updatingFiles);
+    onFilesChange(updatingFiles);
+
+    try {
+      const result = await uploadDocument(
+        claimId,
+        fileEntry.file,
+        fileEntry.documentType,
+        (progressEvent: any) => {
+          const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+          const progressFiles = [...currentFiles];
+          progressFiles[index] = { ...progressFiles[index], progress };
+          setUploadedFiles(progressFiles);
+        }
+      );
+
+      // Update status to success
+      const successFiles = [...currentFiles];
+      successFiles[index] = {
+        ...successFiles[index],
+        status: 'success',
+        progress: 100,
+        uploadedId: result.id,
+      };
+      setUploadedFiles(successFiles);
+      onFilesChange(successFiles);
+      console.log(`File uploaded successfully: ${fileEntry.file.name}`);
+
+    } catch (error: any) {
+      console.error(`Failed to upload ${fileEntry.file.name}:`, error);
+
+      // Update status to error
+      const errorFiles = [...currentFiles];
+      errorFiles[index] = {
+        ...errorFiles[index],
+        status: 'error',
+        error: error.message || 'Upload failed',
+      };
+      setUploadedFiles(errorFiles);
+      onFilesChange(errorFiles);
+      toast.error(`Failed to upload ${fileEntry.file.name}`);
+    }
+  };
+
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       const newFiles: UploadedFile[] = acceptedFiles.map((file) => ({
         file,
         documentType: getDocumentType(file.name),
-        status: 'pending',
+        status: claimId ? 'pending' : 'pending',  // Will be uploaded if claimId exists
       }));
 
       const updatedFiles = [...uploadedFiles, ...newFiles].slice(0, maxFiles);
       setUploadedFiles(updatedFiles);
       onFilesChange(updatedFiles);
+
+      // Progressive upload if claimId is provided
+      if (claimId) {
+        const startIndex = uploadedFiles.length;
+        for (let i = 0; i < newFiles.length && startIndex + i < maxFiles; i++) {
+          await uploadFileToServer(newFiles[i], startIndex + i, updatedFiles);
+        }
+      }
     },
-    [uploadedFiles, maxFiles, onFilesChange]
+    [uploadedFiles, maxFiles, onFilesChange, claimId]
   );
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
@@ -169,6 +240,14 @@ export function FileUploadZone({
               </select>
 
               {/* Status indicator */}
+              {uploadedFile.status === 'uploading' && (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                  <span className="text-xs text-muted-foreground">
+                    {uploadedFile.progress || 0}%
+                  </span>
+                </div>
+              )}
               {uploadedFile.status === 'success' && (
                 <CheckCircle className="w-5 h-5 text-green-600" />
               )}

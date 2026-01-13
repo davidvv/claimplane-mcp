@@ -1,5 +1,8 @@
 /**
  * Step 3: Passenger Information & Documents
+ *
+ * Workflow v2: If draftClaimId is provided, files are uploaded
+ * progressively to the draft claim as the user selects them.
  */
 
 import { useState, useEffect } from 'react';
@@ -24,6 +27,7 @@ interface Step3Props {
   initialDocuments: any[];
   customerEmail?: string | null;
   userProfile?: UserProfile | null;
+  draftClaimId?: string | null;  // Workflow v2: Draft claim ID for progressive upload
   onComplete: (data: PassengerInfoForm, documents: any[]) => void;
   onBack: () => void;
 }
@@ -35,6 +39,7 @@ export function Step3_Passenger({
   initialDocuments,
   customerEmail,
   userProfile,
+  draftClaimId,
   onComplete,
   onBack,
 }: Step3Props) {
@@ -466,6 +471,7 @@ export function Step3_Passenger({
             onFilesChange={setDocuments}
             maxFiles={5}
             maxSizeMB={10}
+            claimId={draftClaimId || undefined}
           />
 
           <div className="mt-4 bg-muted rounded-lg p-4">

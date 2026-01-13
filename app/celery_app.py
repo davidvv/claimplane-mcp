@@ -6,6 +6,7 @@ Celery uses Redis as a message broker - tasks go into Redis, and workers pick th
 """
 import logging
 from celery import Celery
+from celery.schedules import crontab
 from app.config import config
 
 # Set up logging
@@ -43,6 +44,7 @@ celery_app.conf.update(
     # Task routing - send all tasks to the 'notifications' queue
     task_routes={
         'app.tasks.claim_tasks.*': {'queue': 'notifications'},
+        'app.tasks.draft_tasks.*': {'queue': 'notifications'},
     },
 
     # Default queue name
@@ -50,6 +52,35 @@ celery_app.conf.update(
 
     # Result expiration - how long to keep task results (1 hour)
     result_expires=3600,
+
+    # Celery Beat schedule for periodic tasks (draft reminders and cleanup)
+    beat_schedule={
+        # Check for 30-min inactive drafts every 5 minutes
+        'send-draft-reminder-30min': {
+            'task': 'send_draft_reminder_30min',
+            'schedule': crontab(minute='*/5'),  # Every 5 minutes
+        },
+        # Send day-5 reminders once per day at 10:00 UTC
+        'send-draft-reminder-day5': {
+            'task': 'send_draft_reminder_day5',
+            'schedule': crontab(hour=10, minute=0),  # Daily at 10:00
+        },
+        # Send day-8 reminders once per day at 10:00 UTC
+        'send-draft-reminder-day8': {
+            'task': 'send_draft_reminder_day8',
+            'schedule': crontab(hour=10, minute=15),  # Daily at 10:15
+        },
+        # Cleanup expired drafts (day 11) once per day at 03:00 UTC
+        'cleanup-expired-drafts': {
+            'task': 'cleanup_expired_drafts',
+            'schedule': crontab(hour=3, minute=0),  # Daily at 03:00
+        },
+        # Send final reminders (day 45) once per day at 10:30 UTC
+        'send-final-reminder': {
+            'task': 'send_final_reminder',
+            'schedule': crontab(hour=10, minute=30),  # Daily at 10:30
+        },
+    },
 )
 
 # Auto-discover tasks from the tasks package

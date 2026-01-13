@@ -400,3 +400,27 @@ export async function validateSession(): Promise<boolean> {
 export async function syncAuthState(): Promise<boolean> {
   return await validateSession();
 }
+
+/**
+ * Set a temporary auth token for API calls (used by draft claims workflow)
+ *
+ * This is used when we receive an access token from the /claims/draft endpoint
+ * before the user has fully authenticated. The token is stored for API calls.
+ *
+ * Note: This is a client-side token for the draft workflow, separate from
+ * the HTTP-only cookie-based auth used for logged-in users.
+ */
+let draftAuthToken: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+  draftAuthToken = token;
+  if (token) {
+    localStorage.setItem('draftAuthToken', token);
+  } else {
+    localStorage.removeItem('draftAuthToken');
+  }
+}
+
+export function getAuthToken(): string | null {
+  return draftAuthToken || localStorage.getItem('draftAuthToken');
+}

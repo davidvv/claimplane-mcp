@@ -264,8 +264,53 @@ class ClaimSubmitResponseSchema(BaseModel):
         from_attributes = True
 
 
+class ClaimDraftSchema(BaseModel):
+    """Schema for creating a draft claim (Step 2 - after eligibility check).
+
+    Creates a minimal claim with draft status to enable:
+    - Progressive file uploads
+    - Abandoned cart recovery
+    - Analytics tracking
+    """
+
+    email: EmailStr
+    flight_info: FlightInfoSchema = Field(..., alias="flightInfo")
+    incident_type: str = Field(..., alias="incidentType")
+    compensation_amount: Optional[Decimal] = Field(None, alias="compensationAmount")
+    currency: Optional[str] = Field("EUR", max_length=3)
+
+    @validator('incident_type')
+    def validate_incident_type(cls, v):
+        """Validate incident type."""
+        valid_types = ["delay", "cancellation", "denied_boarding", "baggage_delay"]
+        if v not in valid_types:
+            raise ValueError(f"Incident type must be one of: {', '.join(valid_types)}")
+        return v
+
+    class Config:
+        populate_by_name = True
+
+
+class ClaimDraftResponseSchema(BaseModel):
+    """Schema for draft claim creation response."""
+
+    claim_id: UUID = Field(..., alias="claimId")
+    customer_id: UUID = Field(..., alias="customerId")
+    access_token: str = Field(..., alias="accessToken")
+    token_type: str = Field(default="bearer", alias="tokenType")
+    compensation_amount: Optional[Decimal] = Field(None, alias="compensationAmount")
+    currency: str = "EUR"
+
+    class Config:
+        populate_by_name = True
+
+
 class ClaimRequestSchema(BaseModel):
-    """Schema for claim request with customer info."""
+    """Schema for claim request with customer info.
+
+    If claim_id is provided, this finalizes an existing draft claim.
+    Otherwise, creates a new claim from scratch.
+    """
 
     customer_info: CustomerCreateSchema = Field(..., alias="customerInfo")
     flight_info: FlightInfoSchema = Field(..., alias="flightInfo")
@@ -274,6 +319,7 @@ class ClaimRequestSchema(BaseModel):
     booking_reference: Optional[str] = Field(None, alias="bookingReference", max_length=20, description="Airline booking/PNR code")
     ticket_number: Optional[str] = Field(None, alias="ticketNumber", max_length=20, description="13-digit ticket number")
     terms_accepted: bool = Field(..., alias="termsAccepted", description="User must accept terms and conditions")
+    claim_id: Optional[UUID] = Field(None, alias="claimId", description="Optional draft claim ID to finalize")
 
     @validator('incident_type')
     def validate_incident_type(cls, v):

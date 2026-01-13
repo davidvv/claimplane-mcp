@@ -30,7 +30,13 @@ apiClient.interceptors.request.use(
     }
 
     // Note: JWT tokens are now sent via HTTP-only cookies automatically
-    // No need to manually add Authorization header
+    // No need to manually add Authorization header for regular auth
+
+    // Workflow v2: Add draft auth token if available (for progressive file uploads)
+    const draftToken = localStorage.getItem('draftAuthToken');
+    if (draftToken && !config.headers['Authorization']) {
+      config.headers['Authorization'] = `Bearer ${draftToken}`;
+    }
 
     // Enhanced debugging for development
     if (import.meta.env.DEV) {

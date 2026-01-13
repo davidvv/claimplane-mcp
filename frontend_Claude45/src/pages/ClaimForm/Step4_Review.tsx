@@ -1,5 +1,8 @@
 /**
  * Step 4: Review & Submit
+ *
+ * Workflow v2: If draftClaimId is provided, we finalize the existing
+ * draft claim instead of creating a new one. Files are already uploaded.
  */
 
 import { useState } from 'react';
@@ -21,6 +24,7 @@ interface Step4Props {
   eligibilityData: EligibilityResponse;
   passengerData: any;
   documents: any[];
+  draftClaimId?: string | null;  // Workflow v2: Draft claim ID to finalize
   onComplete: (claimId: string) => void;
   onBack: () => void;
 }
@@ -30,6 +34,7 @@ export function Step4_Review({
   eligibilityData,
   passengerData,
   documents,
+  draftClaimId,
   onComplete,
   onBack,
 }: Step4Props) {
@@ -83,17 +88,20 @@ export function Step4_Review({
         bookingReference: passengerData.bookingReference || null,
         ticketNumber: passengerData.ticketNumber || null,
         termsAccepted: true,
+        // Workflow v2: Pass draft claim ID to finalize existing draft
+        claimId: draftClaimId || undefined,
       };
 
       const claim = await submitClaim(claimRequest);
       claimId = claim.id!;
       toast.success('Claim submitted successfully!');
 
-      // Step 2: Upload documents
+      // Step 2: Upload documents (only if we don't have a draft claim)
+      // If draftClaimId exists, documents were already uploaded progressively
       let uploadErrors = 0;
       const failedFiles: string[] = [];
 
-      if (documents.length > 0 && claim.id) {
+      if (!draftClaimId && documents.length > 0 && claim.id) {
         for (let i = 0; i < documents.length; i++) {
           const doc = documents[i];
           setCurrentUploadFile(doc.file.name);

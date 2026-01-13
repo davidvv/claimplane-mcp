@@ -1,13 +1,16 @@
 /**
  * Main claim form page with 4-step wizard
+ *
+ * Workflow v2: Draft claim is created at Step 2 after eligibility check.
+ * This enables progressive file uploads and abandoned cart recovery.
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Stepper } from '@/components/Stepper';
 import { useClaimFormPersistence } from '@/hooks/useLocalStorageForm';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { isAuthenticated, getCurrentUser, type UserProfile } from '@/services/auth';
+import { isAuthenticated, getCurrentUser, type UserProfile, setAuthToken } from '@/services/auth';
 import { Step1_Flight } from './Step1_Flight';
 import { Step2_Eligibility } from './Step2_Eligibility';
 import { Step3_Passenger } from './Step3_Passenger';
@@ -21,9 +24,19 @@ const STEPS = [
   { number: 4, title: 'Review', description: 'Review & submit' },
 ];
 
+// Draft claim data returned from /claims/draft endpoint
+interface DraftClaimData {
+  claimId: string;
+  customerId: string;
+  accessToken: string;
+  compensationAmount?: number;
+  currency?: string;
+}
+
 export function ClaimFormPage() {
   useDocumentTitle('File Claim');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const {
     formData,
     updateStep,
@@ -42,6 +55,20 @@ export function ClaimFormPage() {
   const [passengerData, setPassengerData] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
 
+  // Draft claim state (Workflow v2)
+  const [draftClaimId, setDraftClaimId] = useState<string | null>(null);
+  // Note: draftAccessToken is stored in localStorage via setAuthToken, not in state
+
+  // Check for resume parameter (coming from reminder email)
+  useEffect(() => {
+    const resumeClaimId = searchParams.get('resume');
+    if (resumeClaimId) {
+      setDraftClaimId(resumeClaimId);
+      // When resuming, start at step 3 (passenger info)
+      setCurrentStep(3);
+    }
+  }, [searchParams]);
+
   // Check for saved form data on mount (runs only once)
   useEffect(() => {
     // Check if there's saved form data from a previous session
@@ -59,6 +86,13 @@ export function ClaimFormPage() {
         setEligibilityData(formData.eligibilityData || null);
         setPassengerData(formData.passengerData || null);
         setDocuments(formData.documents || []);
+        // Restore draft claim ID if saved
+        if (formData.draftClaimId) {
+          setDraftClaimId(formData.draftClaimId);
+        }
+        if (formData.draftAccessToken) {
+          setAuthToken(formData.draftAccessToken);
+        }
       } else {
         // Clear saved data and start fresh
         clearFormData();
@@ -103,10 +137,25 @@ export function ClaimFormPage() {
     setCurrentStep(2);
   };
 
-  const handleEligibilityComplete = (data: EligibilityResponse, email: string) => {
+  const handleEligibilityComplete = (
+    data: EligibilityResponse,
+    email: string,
+    draftData?: DraftClaimData
+  ) => {
     setEligibilityData(data);
     updateEligibilityData(data);
     setCustomerEmail(email);
+
+    // Store draft claim data if provided (Workflow v2)
+    if (draftData) {
+      setDraftClaimId(draftData.claimId);
+      // Set auth token for subsequent API calls (file uploads)
+      setAuthToken(draftData.accessToken);
+      // Persist to localStorage for page refresh recovery
+      localStorage.setItem('draftClaimId', draftData.claimId);
+      localStorage.setItem('draftAccessToken', draftData.accessToken);
+    }
+
     setCurrentStep(3);
   };
 
@@ -119,8 +168,10 @@ export function ClaimFormPage() {
   };
 
   const handleSubmitComplete = (claimId: string) => {
-    // Clear form data
+    // Clear form data and draft claim data
     clearFormData();
+    localStorage.removeItem('draftClaimId');
+    localStorage.removeItem('draftAccessToken');
     // Navigate to success page
     navigate(`/claim/success?claimId=${claimId}`);
   };
@@ -134,11 +185,14 @@ export function ClaimFormPage() {
   const handleStartNewClaim = () => {
     if (confirm('Are you sure you want to start a new claim? This will clear all current form data.')) {
       clearFormData();
+      localStorage.removeItem('draftClaimId');
+      localStorage.removeItem('draftAccessToken');
       setCurrentStep(1);
       setFlightData(null);
       setEligibilityData(null);
       setPassengerData(null);
       setDocuments([]);
+      setDraftClaimId(null);
     }
   };
 
@@ -193,6 +247,7 @@ export function ClaimFormPage() {
               initialDocuments={documents}
               customerEmail={customerEmail}
               userProfile={userProfile}
+              draftClaimId={draftClaimId}
               onComplete={handlePassengerComplete}
               onBack={handleBack}
             />
@@ -204,6 +259,7 @@ export function ClaimFormPage() {
               eligibilityData={eligibilityData}
               passengerData={passengerData}
               documents={documents}
+              draftClaimId={draftClaimId}
               onComplete={handleSubmitComplete}
               onBack={handleBack}
             />

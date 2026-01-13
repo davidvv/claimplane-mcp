@@ -12,8 +12,23 @@ from app.tasks.claim_tasks import (
     send_document_rejected_email,
 )
 
+from app.tasks.draft_tasks import (
+    send_draft_reminder_30min,
+    send_draft_reminder_day5,
+    send_draft_reminder_day8,
+    cleanup_expired_drafts,
+    send_final_reminder,
+)
+
 __all__ = [
+    # Claim notification tasks
     "send_claim_submitted_email",
     "send_status_update_email",
     "send_document_rejected_email",
+    # Draft reminder tasks (Celery Beat)
+    "send_draft_reminder_30min",
+    "send_draft_reminder_day5",
+    "send_draft_reminder_day8",
+    "cleanup_expired_drafts",
+    "send_final_reminder",
 ]

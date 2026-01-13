@@ -42,38 +42,7 @@ export function Success() {
           </p>
         </div>
 
-        {/* Claim ID */}
-        {claimId && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Your Claim ID</CardTitle>
-              <CardDescription>
-                Save this ID to track your claim status
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              <div className="bg-muted rounded-lg p-6 text-center">
-                <p className="text-sm text-muted-foreground mb-2">Claim ID</p>
-                <p className="text-2xl font-mono font-bold">
-                  {getShortClaimId(claimId)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Full ID: {claimId}
-                </p>
-              </div>
-
-              <div className="mt-4">
-                <Link to={`/status?claimId=${claimId}`}>
-                  <Button variant="outline" className="w-full">
-                    <Search className="w-4 h-4 mr-2" />
-                    View Claim Status
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Short ID removed as per request (pending backend implementation of readable IDs) */}
 
         {/* Next Steps */}
         <Card className="mb-8">

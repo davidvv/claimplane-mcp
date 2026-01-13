@@ -80,6 +80,21 @@
 - ✅ Improved mobile usability for document uploads
 - ✅ Smarter form behavior reduces data entry effort
 
+### Final Polish & Bug Fixes
+**Estimated Time**: 1 hour
+
+#### Key Tasks:
+1. **Resume Link Fix**: Fixed 404 error by correcting path to `/claim/new?resume=...`
+2. **Draft Hydration**: Added logic to fetch and pre-fill draft data when resuming
+3. **Upload UX**: Capped visual progress at 95% to prevent "stuck at 100%" frustration
+4. **Status Page Cleanup**: Hid Claim ID lookup form when viewing a specific claim
+5. **Infrastructure**: Added Celery Beat to docker-compose for automated reminders
+
+#### Impact:
+- ✅ Seamless resumption of draft claims
+- ✅ Better user experience during file processing
+- ✅ Automated reminders now fully functional
+
 ## Previous Work (2026-01-12) - Email Configuration & DevOps Documentation
 
 ### Email Service Configuration & Startup Script Documentation

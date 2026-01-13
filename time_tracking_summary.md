@@ -29,7 +29,8 @@
   - Email templates for draft reminders and expiration
   - Frontend updates for progressive file uploads and resume from URL
   - UI/UX Refinements: Smarter country/phone selection, progressive upload spinner, mobile-friendly file list
-- **Time Added**: 4.5-7 hours
+  - Final Polish: Draft hydration, Resume link fix, 95% upload progress cap, Status page cleanup
+- **Time Added**: 5.5-8 hours
 
 ## Latest Update (2026-01-08)
 - **File Upload Timeout Fix**: Fixed premature timeout issue affecting file uploads during claim creation

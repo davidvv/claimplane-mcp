@@ -4,114 +4,157 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Magic Link Login</title>
-    <style>
-        /* Simple, clean email styling that works across email clients */
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 5px 5px 0 0;
-        }
-        .content {
-            background-color: #f9f9f9;
-            padding: 30px;
-            border: 1px solid #ddd;
-            border-radius: 0 0 5px 5px;
-        }
-        .info-box {
-            background-color: white;
-            padding: 15px;
-            margin: 20px 0;
-            border-left: 4px solid #4CAF50;
-        }
-        .info-box p {
-            margin: 8px 0;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            color: #666;
-            font-size: 12px;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            margin-top: 15px;
-        }
-        .warning {
-            background-color: #fff3cd;
-            border-left: 4px solid: #ffc107;
-            padding: 12px;
-            margin: 20px 0;
-        }
-    </style>
 </head>
-<body>
-    <div class="header">
-        <h1>🔐 Your Secure Login Link</h1>
-    </div>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <!-- Main Container -->
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
 
-    <div class="content">
-        <p>Hello <strong>{{ customer_name }}</strong>,</p>
+                    <!-- Header with Brand Color -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">
+                                ✈️ EasyAirClaim
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px; font-weight: 400;">
+                                Your Flight Compensation Partner
+                            </p>
+                        </td>
+                    </tr>
 
-        <p>You requested a magic link to access your account. Click the button below to securely log in to your Flight Claim account:</p>
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <!-- Headline -->
+                            <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 24px; font-weight: 600; line-height: 1.3;">
+                                🔐 Your Secure Login Link
+                            </h2>
 
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{{ magic_link_url }}" class="button" style="background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 4px; display: inline-block; font-size: 16px; font-weight: bold;">
-                Log In to Your Account
-            </a>
-        </div>
+                            <!-- Greeting -->
+                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                                Hello <strong style="color: #1f2937;">{{ customer_name }}</strong>,
+                            </p>
 
-        <p style="text-align: center; color: #666; font-size: 14px;">
-            Or copy and paste this link into your browser: <br>
-            <a href="{{ magic_link_url }}" style="color: #4CAF50; word-break: break-all;">{{ magic_link_url }}</a>
-        </p>
+                            <!-- Message -->
+                            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                                You requested a magic link to access your account. Click the button below to securely log in to your EasyAirClaim account:
+                            </p>
 
-        <div class="info-box">
-            <h3 style="margin-top: 0;">🛡️ Security Information</h3>
-            <p><strong>This link is valid for 48 hours</strong> and can only be used once.</p>
-            <p><strong>IP Address:</strong> {{ ip_address }}</p>
-            <p><strong>Time:</strong> {{ timestamp }}</p>
-        </div>
+                            <!-- Call to Action Button -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 32px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ magic_link_url }}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 48px; text-decoration: none; border-radius: 8px; font-size: 17px; font-weight: 600; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
+                                            Log In to Your Account →
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
 
-        <div class="warning">
-            <p style="margin: 0;"><strong>⚠️ Didn't request this?</strong></p>
-            <p style="margin: 5px 0 0 0;">If you didn't request this login link, you can safely ignore this email. Your account remains secure.</p>
-        </div>
+                            <!-- Alternative Link -->
+                            <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 13px; line-height: 1.5; text-align: center;">
+                                Or copy and paste this link into your browser:<br>
+                                <a href="{{ magic_link_url }}" style="color: #10b981; text-decoration: underline; word-break: break-all;">{{ magic_link_url }}</a>
+                            </p>
 
-        <p><strong>What you can do once logged in:</strong></p>
-        <ul>
-            <li>View all your submitted claims</li>
-            <li>Track claim status in real-time</li>
-            <li>Upload additional documents</li>
-            <li>Communicate with our support team</li>
-        </ul>
+                            <!-- Security Information Box -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-left: 4px solid #10b981; border-radius: 6px; margin: 32px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 15px; font-weight: 600;">
+                                            🛡️ Security Information
+                                        </p>
+                                        <p style="margin: 0 0 8px 0; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                                            <strong>This link is valid for 48 hours</strong> and can only be used once.
+                                        </p>
+                                        <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 13px;">
+                                            <strong>IP Address:</strong> {{ ip_address }}
+                                        </p>
+                                        <p style="margin: 0; color: #6b7280; font-size: 13px;">
+                                            <strong>Time:</strong> {{ timestamp }}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
 
-        <p>If you have any questions or concerns, please don't hesitate to contact us.</p>
+                            <!-- Warning Box -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff7ed; border-left: 4px solid #f59e0b; border-radius: 6px; margin: 24px 0;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="margin: 0 0 6px 0; color: #78350f; font-size: 14px; font-weight: 600;">
+                                            ⚠️ Didn't request this?
+                                        </p>
+                                        <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;">
+                                            If you didn't request this login link, you can safely ignore this email. Your account remains secure.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
 
-        <p>Best regards,<br>
-        <strong>ClaimPlane Team</strong></p>
-    </div>
+                            <!-- What You Can Do -->
+                            <p style="margin: 24px 0 12px 0; color: #1f2937; font-size: 16px; font-weight: 600;">
+                                What you can do once logged in:
+                            </p>
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
+                                <tr>
+                                    <td style="padding: 6px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">✓</span> View all your submitted claims
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">✓</span> Track claim status in real-time
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">✓</span> Upload additional documents
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">✓</span> Communicate with our support team
+                                    </td>
+                                </tr>
+                            </table>
 
-    <div class="footer">
-        <p>This is an automated email. Please do not reply directly to this message.</p>
-        <p>This login link will expire in 48 hours for your security.</p>
-        <p>&copy; 2025 ClaimPlane LLC. All rights reserved.</p>
-    </div>
+                            <!-- Closing -->
+                            <p style="margin: 32px 0 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                                If you have any questions or concerns, please don't hesitate to contact us.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; border-top: 1px solid #e5e7eb;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px; font-weight: 600;">
+                                            EasyAirClaim
+                                        </p>
+                                        <p style="margin: 0 0 16px 0; color: #9ca3af; font-size: 12px; line-height: 1.5;">
+                                            EU261 Flight Compensation Experts<br>
+                                            Making air travel fair, one claim at a time
+                                        </p>
+                                        <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 11px;">
+                                            This login link will expire in 48 hours for your security.
+                                        </p>
+                                        <p style="margin: 0; color: #9ca3af; font-size: 11px;">
+                                            © 2026 EasyAirClaim. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

@@ -2,23 +2,31 @@
 
 ## Project Overview
 - **Project Duration**: 2025-09-04 to 2026-01-13 (4 months)
-- **Total Commits**: 163 (143 by David, 20 by Florian)
-- **Estimated Total Time**: ~512-595 hours
+- **Total Commits**: 164 (144 by David, 20 by Florian)
+- **Estimated Total Time**: ~513.5-596.5 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 143 (87.7%)
-- **Estimated Time**: 449.5-512.5 hours
-- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration
-- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes
+- **Commits**: 144 (87.8%)
+- **Estimated Time**: 450.5-514 hours
+- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates
+- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding
 
 ### Florian's Contributions (12-15% of total time)
-- **Commits**: 20 (12.3%)
+- **Commits**: 20 (12.2%)
 - **Estimated Time**: 60-80 hours
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
+
+## Latest Update (2026-01-13) - Part 3
+- **Email Template Unification**: Unified branding across all 7 email templates
+  - Replaced inconsistent colors (blue, orange, old green) with unified green gradient
+  - Updated "ClaimPlane" to "EasyAirClaim" branding
+  - Implemented modern table-based layouts for better email client compatibility
+  - All templates now have professional, consistent design
+- **Time Added**: 1-1.5 hours
 
 ## Latest Update (2026-01-13) - Part 2
 - **Critical Bug Fix**: Draft Reminder System AsyncPG Connection Pooling Issue

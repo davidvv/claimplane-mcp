@@ -4,194 +4,263 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Claim Status Update</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        /* Different colors for different statuses */
-        .header-approved {
-            background-color: #4CAF50;
-        }
-        .header-rejected {
-            background-color: #f44336;
-        }
-        .header-paid {
-            background-color: #2196F3;
-        }
-        .header-default {
-            background-color: #FF9800;
-        }
-        .header {
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 5px 5px 0 0;
-        }
-        .content {
-            background-color: #f9f9f9;
-            padding: 30px;
-            border: 1px solid #ddd;
-            border-radius: 0 0 5px 5px;
-        }
-        .claim-details {
-            background-color: white;
-            padding: 15px;
-            margin: 20px 0;
-            border-left: 4px solid #FF9800;
-        }
-        .claim-details.approved {
-            border-left-color: #4CAF50;
-        }
-        .claim-details.rejected {
-            border-left-color: #f44336;
-        }
-        .claim-details.paid {
-            border-left-color: #2196F3;
-        }
-        .claim-details p {
-            margin: 8px 0;
-        }
-        .status-change {
-            background-color: #fffbcc;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 4px;
-            border: 1px solid #ffd700;
-        }
-        .compensation-box {
-            background-color: #e8f5e9;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-            border-radius: 4px;
-            border: 2px solid #4CAF50;
-        }
-        .compensation-amount {
-            font-size: 36px;
-            font-weight: bold;
-            color: #4CAF50;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            color: #666;
-            font-size: 12px;
-        }
-        .warning-box {
-            background-color: #ffebee;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-            border: 1px solid #f44336;
-        }
-    </style>
 </head>
-<body>
-    <!-- Dynamic header color based on status -->
-    <div class="header {% if is_approved %}header-approved{% elif is_rejected %}header-rejected{% elif is_paid %}header-paid{% else %}header-default{% endif %}">
-        <h1>Claim Status Updated</h1>
-        <p>{{ new_status }}</p>
-    </div>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <!-- Main Container -->
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
 
-    <div class="content">
-        <p>Hello <strong>{{ customer_name }}</strong>,</p>
+                    <!-- Header with Brand Color (always green) -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">
+                                ✈️ EasyAirClaim
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px; font-weight: 400;">
+                                Your Flight Compensation Partner
+                            </p>
+                        </td>
+                    </tr>
 
-        <p>Your claim status has been updated.</p>
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <!-- Headline -->
+                            <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 24px; font-weight: 600; line-height: 1.3;">
+                                Claim Status Updated
+                            </h2>
 
-        <div class="status-change">
-            <p><strong>Status Change:</strong> {{ old_status }} → <strong>{{ new_status }}</strong></p>
-        </div>
+                            <!-- Greeting -->
+                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                                Hello <strong style="color: #1f2937;">{{ customer_name }}</strong>,
+                            </p>
 
-        <div class="claim-details {% if is_approved %}approved{% elif is_rejected %}rejected{% elif is_paid %}paid{% endif %}">
-            <h3>Claim Details</h3>
-            <p><strong>Claim ID:</strong> {{ claim_id }}</p>
-            <p><strong>Flight:</strong> {{ airline }} {{ flight_number }}</p>
-            <p><strong>Current Status:</strong> {{ new_status }}</p>
-        </div>
+                            <!-- Message -->
+                            <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                                Your claim status has been updated.
+                            </p>
 
-        <!-- Show compensation if approved -->
-        {% if is_approved and compensation_amount %}
-        <div class="compensation-box">
-            <p>Approved Compensation Amount</p>
-            <div class="compensation-amount">€{{ compensation_amount }}</div>
-            <p style="margin-top: 10px;">Your compensation has been approved! Payment will be processed shortly.</p>
-        </div>
-        {% endif %}
+                            <!-- Status Change Box -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin: 24px 0;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 500; line-height: 1.5;">
+                                            <strong>Status Change:</strong> {{ old_status }} → <strong>{{ new_status }}</strong>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
 
-        <!-- Show paid confirmation -->
-        {% if is_paid %}
-        <div class="compensation-box">
-            <h3>✓ Payment Processed</h3>
-            <p>Your compensation payment has been processed successfully!</p>
-            {% if compensation_amount %}
-            <div class="compensation-amount">€{{ compensation_amount }}</div>
-            {% endif %}
-            <p style="margin-top: 10px;">You should receive the funds within 3-5 business days.</p>
-        </div>
-        {% endif %}
+                            <!-- Claim Details Box -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-left: 4px solid {% if is_approved %}#10b981{% elif is_rejected %}#ef4444{% elif is_paid %}#3b82f6{% else %}#6b7280{% endif %}; border-radius: 6px; margin: 24px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            Claim Details
+                                        </p>
+                                        <p style="margin: 8px 0 0 0; color: #1f2937; font-size: 18px; font-weight: 600;">
+                                            {{ airline }} {{ flight_number }}
+                                        </p>
+                                        <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 14px;">
+                                            Claim ID: <span style="color: #1f2937; font-family: 'Courier New', monospace;">{{ claim_id[:8] if claim_id|length > 8 else claim_id }}</span>
+                                        </p>
+                                        <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 14px;">
+                                            Current Status: <span style="color: {% if is_approved %}#10b981{% elif is_rejected %}#ef4444{% elif is_paid %}#3b82f6{% else %}#f59e0b{% endif %}; font-weight: 600;">{{ new_status }}</span>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
 
-        <!-- Show rejection reason if rejected -->
-        {% if is_rejected %}
-        <div class="warning-box">
-            <h3>Claim Not Approved</h3>
-            <p>Unfortunately, your claim could not be approved at this time.</p>
-            {% if change_reason %}
-            <p><strong>Reason:</strong> {{ change_reason }}</p>
-            {% endif %}
-            <p style="margin-top: 10px;">If you believe this decision was made in error or if you have additional information, please contact our support team.</p>
-        </div>
-        {% endif %}
+                            <!-- Approved - Show compensation -->
+                            {% if is_approved and compensation_amount %}
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; margin: 24px 0;">
+                                <tr>
+                                    <td style="padding: 24px; text-align: center;">
+                                        <p style="margin: 0 0 8px 0; color: #065f46; font-size: 16px; font-weight: 600;">
+                                            🎉 Approved Compensation Amount
+                                        </p>
+                                        <p style="margin: 0; color: #10b981; font-size: 42px; font-weight: 700; line-height: 1;">
+                                            €{{ compensation_amount }}
+                                        </p>
+                                        <p style="margin: 12px 0 0 0; color: #065f46; font-size: 14px;">
+                                            Your compensation has been approved! Payment will be processed shortly.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
 
-        <!-- Show general reason if provided -->
-        {% if change_reason and not is_rejected %}
-        <div class="status-change">
-            <p><strong>Note:</strong> {{ change_reason }}</p>
-        </div>
-        {% endif %}
+                            <!-- Paid - Show payment confirmation -->
+                            {% if is_paid %}
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border: 2px solid #3b82f6; border-radius: 8px; margin: 24px 0;">
+                                <tr>
+                                    <td style="padding: 24px; text-align: center;">
+                                        <p style="margin: 0 0 8px 0; color: #1e3a8a; font-size: 16px; font-weight: 600;">
+                                            ✓ Payment Processed
+                                        </p>
+                                        {% if compensation_amount %}
+                                        <p style="margin: 0; color: #3b82f6; font-size: 42px; font-weight: 700; line-height: 1;">
+                                            €{{ compensation_amount }}
+                                        </p>
+                                        {% endif %}
+                                        <p style="margin: 12px 0 0 0; color: #1e3a8a; font-size: 14px;">
+                                            Your compensation payment has been processed successfully!<br>
+                                            You should receive the funds within 3-5 business days.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
 
-        <p><strong>What happens next?</strong></p>
-        {% if is_approved %}
-        <ul>
-            <li>We will process your payment within 5-7 business days</li>
-            <li>You'll receive a confirmation email once payment is sent</li>
-            <li>Funds typically arrive within 3-5 business days after processing</li>
-        </ul>
-        {% elif is_paid %}
-        <ul>
-            <li>Please allow 3-5 business days for funds to appear in your account</li>
-            <li>Check your bank statement for a transaction from "ClaimPlane LLC"</li>
-            <li>Your claim will be closed automatically once confirmed</li>
-        </ul>
-        {% elif is_rejected %}
-        <ul>
-            <li>Review the reason for rejection above</li>
-            <li>Contact our support team if you have questions</li>
-            <li>You may be able to resubmit with additional information</li>
-        </ul>
-        {% else %}
-        <ul>
-            <li>We will continue processing your claim</li>
-            <li>You'll receive updates via email as status changes</li>
-            <li>Check your email regularly for any requests for additional information</li>
-        </ul>
-        {% endif %}
+                            <!-- Rejected - Show rejection reason -->
+                            {% if is_rejected %}
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef2f2; border-left: 4px solid #ef4444; border-radius: 6px; margin: 24px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 8px 0; color: #991b1b; font-size: 16px; font-weight: 600;">
+                                            Claim Not Approved
+                                        </p>
+                                        <p style="margin: 0 0 12px 0; color: #7f1d1d; font-size: 14px; line-height: 1.6;">
+                                            Unfortunately, your claim could not be approved at this time.
+                                        </p>
+                                        {% if change_reason %}
+                                        <p style="margin: 0 0 12px 0; color: #991b1b; font-size: 14px;">
+                                            <strong>Reason:</strong> {{ change_reason }}
+                                        </p>
+                                        {% endif %}
+                                        <p style="margin: 0; color: #7f1d1d; font-size: 13px; line-height: 1.5;">
+                                            If you believe this decision was made in error or if you have additional information, please contact our support team.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
 
-        <p>If you have any questions, please don't hesitate to contact us with your claim ID: <strong>{{ claim_id }}</strong></p>
+                            <!-- General reason if provided -->
+                            {% if change_reason and not is_rejected %}
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 6px; margin: 24px 0;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="margin: 0; color: #065f46; font-size: 14px; font-weight: 500; line-height: 1.5;">
+                                            <strong>Note:</strong> {{ change_reason }}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
 
-        <p>Best regards,<br>
-        <strong>ClaimPlane Team</strong></p>
-    </div>
+                            <!-- What Happens Next -->
+                            <p style="margin: 24px 0 12px 0; color: #1f2937; font-size: 16px; font-weight: 600;">
+                                What happens next?
+                            </p>
+                            {% if is_approved %}
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> We will process your payment within 5-7 business days
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> You'll receive a confirmation email once payment is sent
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> Funds typically arrive within 3-5 business days after processing
+                                    </td>
+                                </tr>
+                            </table>
+                            {% elif is_paid %}
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> Please allow 3-5 business days for funds to appear in your account
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> Check your bank statement for a transaction from "EasyAirClaim"
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> Your claim will be closed automatically once confirmed
+                                    </td>
+                                </tr>
+                            </table>
+                            {% elif is_rejected %}
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> Review the reason for rejection above
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> Contact our support team if you have questions
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> You may be able to resubmit with additional information
+                                    </td>
+                                </tr>
+                            </table>
+                            {% else %}
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> We will continue processing your claim
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> You'll receive updates via email as status changes
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                        <span style="color: #10b981; font-weight: bold; margin-right: 8px;">•</span> Check your email regularly for any requests for additional information
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
 
-    <div class="footer">
-        <p>This is an automated email. Please do not reply directly to this message.</p>
-        <p>&copy; 2025 ClaimPlane LLC. All rights reserved.</p>
-    </div>
+                            <!-- Closing -->
+                            <p style="margin: 32px 0 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                                If you have any questions, please don't hesitate to contact us with your claim ID: <strong>{{ claim_id }}</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; border-top: 1px solid #e5e7eb;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px; font-weight: 600;">
+                                            EasyAirClaim
+                                        </p>
+                                        <p style="margin: 0 0 16px 0; color: #9ca3af; font-size: 12px; line-height: 1.5;">
+                                            EU261 Flight Compensation Experts<br>
+                                            Making air travel fair, one claim at a time
+                                        </p>
+                                        <p style="margin: 0; color: #9ca3af; font-size: 11px;">
+                                            © 2026 EasyAirClaim. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

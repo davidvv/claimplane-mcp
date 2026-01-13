@@ -72,18 +72,24 @@ export function FileUploadZone({
         fileEntry.file,
         fileEntry.documentType,
         (progressEvent: any) => {
-          const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+          // Calculate upload percentage
+          const rawProgress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+          
+          // Cap visual progress at 95% during upload/processing phase
+          // This prevents the "stuck at 100%" issue while server encrypts/moves files
+          const visualProgress = Math.min(rawProgress, 95);
+          
           setUploadedFiles((prevFiles) => {
             const newFiles = [...prevFiles];
             if (newFiles[index]) {
-              newFiles[index] = { ...newFiles[index], progress };
+              newFiles[index] = { ...newFiles[index], progress: visualProgress };
             }
             return newFiles;
           });
         }
       );
 
-      // Update status to success
+      // Update status to success (100%)
       setUploadedFiles((prevFiles) => {
         const newFiles = [...prevFiles];
         if (newFiles[index]) {

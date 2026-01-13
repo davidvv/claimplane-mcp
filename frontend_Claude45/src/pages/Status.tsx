@@ -388,6 +388,26 @@ export function Status() {
         {/* Claim Details */}
         {claim && (
           <div className="space-y-6 fade-in">
+            {/* Resume Draft Banner */}
+            {claim.status === 'draft' && (
+              <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
+                    Complete Your Claim
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    This claim is currently a draft. Resume your application to submit it for review.
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => navigate(`/claim?resume=${claim.id}`)}
+                  className="w-full md:w-auto shrink-0"
+                >
+                  Resume Claim
+                </Button>
+              </div>
+            )}
+
             {/* Status Timeline */}
             <Card>
               <CardHeader>

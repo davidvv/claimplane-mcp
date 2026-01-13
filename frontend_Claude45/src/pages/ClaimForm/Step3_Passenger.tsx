@@ -105,6 +105,11 @@ export function Step3_Passenger({
     defaultValues: initialData || defaultFormValues,
   });
 
+  // Debug: Check if draft claim ID is received
+  useEffect(() => {
+    console.log('Step3: draftClaimId received:', draftClaimId);
+  }, [draftClaimId]);
+
   // Watch the country field to keep it in sync
   const currentCountry = watch('country');
 
@@ -214,33 +219,33 @@ export function Step3_Passenger({
                   className="w-[140px] flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <option value="">Select...</option>
-                  <option value="+49">+49 DE</option>
-                  <option value="+43">+43 AT</option>
-                  <option value="+41">+41 CH</option>
-                  <option value="+44">+44 UK</option>
-                  <option value="+33">+33 FR</option>
-                  <option value="+39">+39 IT</option>
-                  <option value="+34">+34 ES</option>
-                  <option value="+31">+31 NL</option>
-                  <option value="+32">+32 BE</option>
-                  <option value="+45">+45 DK</option>
-                  <option value="+46">+46 SE</option>
-                  <option value="+47">+47 NO</option>
-                  <option value="+48">+48 PL</option>
-                  <option value="+351">+351 PT</option>
-                  <option value="+353">+353 IE</option>
-                  <option value="+420">+420 CZ</option>
-                  <option value="+30">+30 GR</option>
-                  <option value="+1">+1 US/CA</option>
-                  <option value="+90">+90 TR</option>
-                  <option value="+971">+971 AE</option>
-                  <option value="+81">+81 JP</option>
-                  <option value="+86">+86 CN</option>
-                  <option value="+82">+82 KR</option>
-                  <option value="+91">+91 IN</option>
-                  <option value="+61">+61 AU</option>
-                  <option value="+55">+55 BR</option>
-                  <option value="+52">+52 MX</option>
+                  <option value="+49">🇩🇪 +49</option>
+                  <option value="+43">🇦🇹 +43</option>
+                  <option value="+41">🇨🇭 +41</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+33">🇫🇷 +33</option>
+                  <option value="+39">🇮🇹 +39</option>
+                  <option value="+34">🇪🇸 +34</option>
+                  <option value="+31">🇳🇱 +31</option>
+                  <option value="+32">🇧🇪 +32</option>
+                  <option value="+45">🇩🇰 +45</option>
+                  <option value="+46">🇸🇪 +46</option>
+                  <option value="+47">🇳🇴 +47</option>
+                  <option value="+48">🇵🇱 +48</option>
+                  <option value="+351">🇵🇹 +351</option>
+                  <option value="+353">🇮🇪 +353</option>
+                  <option value="+420">🇨🇿 +420</option>
+                  <option value="+30">🇬🇷 +30</option>
+                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+90">🇹🇷 +90</option>
+                  <option value="+971">🇦🇪 +971</option>
+                  <option value="+81">🇯🇵 +81</option>
+                  <option value="+86">🇨🇳 +86</option>
+                  <option value="+82">🇰🇷 +82</option>
+                  <option value="+91">🇮🇳 +91</option>
+                  <option value="+61">🇦🇺 +61</option>
+                  <option value="+55">🇧🇷 +55</option>
+                  <option value="+52">🇲🇽 +52</option>
                 </select>
                 <div className="relative flex-1">
                   <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />

@@ -110,13 +110,16 @@ export function Step2_Eligibility({
 
     try {
       // Create draft claim (Workflow v2)
-      // This enables progressive file uploads and abandoned cart recovery
+      // Ensure date is YYYY-MM-DD
+      const depDate = flightData.departureDate || flightData.scheduledDeparture?.split('T')[0];
+      const formattedDate = depDate?.includes('T') ? depDate.split('T')[0] : depDate;
+
       const response = await apiClient.post('/claims/draft', {
         email: submittedEmail,
         flightInfo: {
           flightNumber: flightData.flightNumber,
           airline: flightData.airline,
-          departureDate: flightData.scheduledDeparture?.split('T')[0] || flightData.departureDate,
+          departureDate: formattedDate,
           departureAirport: flightData.departureAirport,
           arrivalAirport: flightData.arrivalAirport,
         },

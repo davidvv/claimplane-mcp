@@ -61,19 +61,31 @@ export function ClaimFormPage() {
   const [draftClaimId, setDraftClaimId] = useState<string | null>(null);
   // Note: draftAccessToken is stored in localStorage via setAuthToken, not in state
 
+  // Track if we're resuming from magic link (to skip localStorage prompt)
+  const [isResumingFromMagicLink, setIsResumingFromMagicLink] = useState(false);
+
   // Check for resume parameter (coming from reminder email)
   useEffect(() => {
     const resumeClaimId = searchParams.get('resume');
     if (resumeClaimId) {
+      // Set flag to skip localStorage prompt
+      setIsResumingFromMagicLink(true);
+
+      // Clear any conflicting localStorage data
+      clearFormData();
+      localStorage.removeItem('draftClaimId');
+      localStorage.removeItem('draftAccessToken');
+
       setDraftClaimId(resumeClaimId);
-      
+
       // Fetch draft data to hydrate form
       const loadDraft = async () => {
         try {
           const claim = await getClaim(resumeClaimId);
-          
+
           // Restore Flight Data
           const restoredFlight: FlightStatus = {
+            id: claim.id || resumeClaimId, // Use claim ID or resume ID
             flightNumber: claim.flightInfo.flightNumber,
             airline: claim.flightInfo.airline,
             departureAirport: claim.flightInfo.departureAirport,
@@ -86,6 +98,7 @@ export function ClaimFormPage() {
             actualArrival: (claim.flightInfo as any).actualArrival,
             status: (claim.flightInfo as any).status || 'unknown',
             delayMinutes: (claim.flightInfo as any).delayMinutes,
+            lastUpdated: new Date().toISOString(),
             dataSource: 'db',
           };
           setFlightData(restoredFlight);
@@ -104,19 +117,27 @@ export function ClaimFormPage() {
 
           // Restore Step
           setCurrentStep(3);
-          
+
+          toast.success("Draft claim loaded successfully from your email link!");
+
         } catch (error) {
           console.error("Failed to load draft:", error);
           toast.error("Could not load draft claim details.");
+          setIsResumingFromMagicLink(false); // Allow localStorage prompt on error
         }
       };
-      
+
       loadDraft();
     }
-  }, [searchParams]);
+  }, [searchParams, clearFormData, updateFlightData, updateEligibilityData]);
 
   // Check for saved form data on mount (runs only once)
   useEffect(() => {
+    // Skip localStorage prompt if we're resuming from magic link
+    if (isResumingFromMagicLink) {
+      return;
+    }
+
     // Check if there's saved form data from a previous session
     const hasSavedData = formData.currentStep && formData.currentStep > 1;
 
@@ -145,7 +166,7 @@ export function ClaimFormPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array = runs only once on mount
+  }, [isResumingFromMagicLink]); // Now depends on magic link flag
 
   // Fetch user profile if authenticated
   useEffect(() => {

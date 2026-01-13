@@ -1,5 +1,8 @@
 /**
  * Step 3: Passenger Information & Documents
+ *
+ * Workflow v2: If draftClaimId is provided, files are uploaded
+ * progressively to the draft claim as the user selects them.
  */
 
 import { useState, useEffect } from 'react';
@@ -24,6 +27,7 @@ interface Step3Props {
   initialDocuments: any[];
   customerEmail?: string | null;
   userProfile?: UserProfile | null;
+  draftClaimId?: string | null;  // Workflow v2: Draft claim ID for progressive upload
   onComplete: (data: PassengerInfoForm, documents: any[]) => void;
   onBack: () => void;
 }
@@ -35,12 +39,44 @@ export function Step3_Passenger({
   initialDocuments,
   customerEmail,
   userProfile,
+  draftClaimId,
   onComplete,
   onBack,
 }: Step3Props) {
   const [documents, setDocuments] = useState<any[]>(initialDocuments || []);
-  const [countryCode, setCountryCode] = useState('+1');
+  const [countryCode, setCountryCode] = useState('');  // No default - user must select
   const [phoneNumber, setPhoneNumber] = useState('');
+
+  // Mapping from phone prefix to country name
+  const phoneToCountryMap: Record<string, string> = {
+    '+49': 'Germany',
+    '+43': 'Austria',
+    '+41': 'Switzerland',
+    '+44': 'United Kingdom',
+    '+33': 'France',
+    '+39': 'Italy',
+    '+34': 'Spain',
+    '+31': 'Netherlands',
+    '+32': 'Belgium',
+    '+45': 'Denmark',
+    '+46': 'Sweden',
+    '+47': 'Norway',
+    '+48': 'Poland',
+    '+351': 'Portugal',
+    '+353': 'Ireland',
+    '+420': 'Czech Republic',
+    '+30': 'Greece',
+    '+1': 'United States',
+    '+90': 'Turkey',
+    '+971': 'United Arab Emirates',
+    '+81': 'Japan',
+    '+86': 'China',
+    '+82': 'South Korea',
+    '+91': 'India',
+    '+61': 'Australia',
+    '+55': 'Brazil',
+    '+52': 'Mexico',
+  };
 
   // Merge default values with priority: initialData > customerEmail > userProfile
   const defaultFormValues = {
@@ -61,11 +97,21 @@ export function Step3_Passenger({
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<PassengerInfoForm>({
     resolver: zodResolver(passengerInfoSchema),
     defaultValues: initialData || defaultFormValues,
   });
+
+  // Debug: Check if draft claim ID is received
+  useEffect(() => {
+    console.log('Step3: draftClaimId received:', draftClaimId);
+  }, [draftClaimId]);
+
+  // Watch the country field to keep it in sync
+  const currentCountry = watch('country');
 
   // Initialize phone number from existing data
   useEffect(() => {
@@ -161,19 +207,27 @@ export function Step3_Passenger({
               <div className="flex gap-2">
                 <select
                   value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
+                  onChange={(e) => {
+                    const newCode = e.target.value;
+                    setCountryCode(newCode);
+                    // Auto-fill address country based on phone prefix
+                    const mappedCountry = phoneToCountryMap[newCode];
+                    if (mappedCountry) {
+                      setValue('country', mappedCountry, { shouldValidate: true });
+                    }
+                  }}
                   className="w-[140px] flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <option value="+1">🇺🇸 +1</option>
-                  <option value="+44">🇬🇧 +44</option>
+                  <option value="">Select...</option>
                   <option value="+49">🇩🇪 +49</option>
+                  <option value="+43">🇦🇹 +43</option>
+                  <option value="+41">🇨🇭 +41</option>
+                  <option value="+44">🇬🇧 +44</option>
                   <option value="+33">🇫🇷 +33</option>
                   <option value="+39">🇮🇹 +39</option>
                   <option value="+34">🇪🇸 +34</option>
                   <option value="+31">🇳🇱 +31</option>
                   <option value="+32">🇧🇪 +32</option>
-                  <option value="+41">🇨🇭 +41</option>
-                  <option value="+43">🇦🇹 +43</option>
                   <option value="+45">🇩🇰 +45</option>
                   <option value="+46">🇸🇪 +46</option>
                   <option value="+47">🇳🇴 +47</option>
@@ -182,6 +236,7 @@ export function Step3_Passenger({
                   <option value="+353">🇮🇪 +353</option>
                   <option value="+420">🇨🇿 +420</option>
                   <option value="+30">🇬🇷 +30</option>
+                  <option value="+1">🇺🇸 +1</option>
                   <option value="+90">🇹🇷 +90</option>
                   <option value="+971">🇦🇪 +971</option>
                   <option value="+81">🇯🇵 +81</option>
@@ -189,18 +244,8 @@ export function Step3_Passenger({
                   <option value="+82">🇰🇷 +82</option>
                   <option value="+91">🇮🇳 +91</option>
                   <option value="+61">🇦🇺 +61</option>
-                  <option value="+64">🇳🇿 +64</option>
                   <option value="+55">🇧🇷 +55</option>
                   <option value="+52">🇲🇽 +52</option>
-                  <option value="+27">🇿🇦 +27</option>
-                  <option value="+20">🇪🇬 +20</option>
-                  <option value="+7">🇷🇺 +7</option>
-                  <option value="+65">🇸🇬 +65</option>
-                  <option value="+60">🇲🇾 +60</option>
-                  <option value="+66">🇹🇭 +66</option>
-                  <option value="+84">🇻🇳 +84</option>
-                  <option value="+62">🇮🇩 +62</option>
-                  <option value="+63">🇵🇭 +63</option>
                 </select>
                 <div className="relative flex-1">
                   <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
@@ -334,13 +379,13 @@ export function Step3_Passenger({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="country">Country *</Label>
-              <select
-                id="country"
-                autoComplete="country-name"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                {...register('country')}
+              <div className="space-y-2">
+                <Label htmlFor="country">Country *</Label>
+                <select
+                  id="country"
+                  autoComplete="country-name"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  {...register('country')}
               >
                 <option value="">Select a country</option>
                 <option value="United States">🇺🇸 United States</option>
@@ -466,6 +511,7 @@ export function Step3_Passenger({
             onFilesChange={setDocuments}
             maxFiles={5}
             maxSizeMB={10}
+            claimId={draftClaimId || undefined}
           />
 
           <div className="mt-4 bg-muted rounded-lg p-4">

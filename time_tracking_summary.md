@@ -1,32 +1,35 @@
 # EasyAirClaim Project - Complete Time Tracking Summary
 
 ## Project Overview
-- **Project Duration**: 2025-09-04 to 2026-01-12 (4 months)
-- **Total Commits**: 161 (141 by David, 20 by Florian)
-- **Estimated Total Time**: ~505-585 hours
+- **Project Duration**: 2025-09-04 to 2026-01-13 (4 months)
+- **Total Commits**: 162 (142 by David, 20 by Florian)
+- **Estimated Total Time**: ~510-593 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 141 (87.6%)
-- **Estimated Time**: 444-505 hours
+- **Commits**: 142 (87.7%)
+- **Estimated Time**: 448-511 hours
 - **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration
 - **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes
 
 ### Florian's Contributions (12-15% of total time)
-- **Commits**: 20 (12.4%)
+- **Commits**: 20 (12.3%)
 - **Estimated Time**: 60-80 hours
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
-## Latest Update (2026-01-12)
-- **Email Configuration**: Configured SMTP to send from claimplane@gmail.com
-  - Updated .env configuration
-  - Restarted containers
-  - Created OpenProject WP #97 with 0.5h time tracking
-  - Added startup script documentation to AGENTS.md
-- **Time Added**: 0.5 hours
+## Latest Update (2026-01-13)
+- **Workflow v2 Implementation**: Draft claim workflow with progressive uploads
+  - ClaimEvent model for analytics tracking
+  - ClaimDraftService for draft management
+  - POST /claims/draft endpoint for early draft creation
+  - Celery beat tasks for 30-min/day-5/day-8/day-11 reminders
+  - Email templates for draft reminders and expiration
+  - Frontend updates for progressive file uploads and resume from URL
+  - UI/UX Refinements: Smarter country/phone selection, progressive upload spinner, mobile-friendly file list
+- **Time Added**: 4.5-7 hours
 
 ## Latest Update (2026-01-08)
 - **File Upload Timeout Fix**: Fixed premature timeout issue affecting file uploads during claim creation

@@ -168,6 +168,11 @@ class Claim(Base):
     terms_accepted_at = Column(DateTime(timezone=True), nullable=True)
     terms_acceptance_ip = Column(String(45), nullable=True)  # IPv6 compatible
 
+    # Draft workflow fields (Phase 7 - Workflow v2)
+    last_activity_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    reminder_count = Column(Integer, default=0, server_default="0")  # Number of abandonment reminders sent
+    current_step = Column(Integer, default=2, nullable=True)  # Which wizard step user is on (2-4)
+
     # Admin workflow fields (Phase 1)
     assigned_to = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True)
     assigned_at = Column(DateTime(timezone=True), nullable=True)
@@ -961,3 +966,84 @@ class FlightSearchLog(Base):
                 except ValueError:
                     raise ValueError("Search time must be valid HH:MM format")
         return search_time
+
+
+# ============================================================================
+# PHASE 7: Workflow v2 - Analytics & Draft Tracking
+# ============================================================================
+
+
+class ClaimEvent(Base):
+    """Analytics event model for tracking claim workflow progress.
+
+    Purpose:
+    - Track where users drop off in the claim process
+    - Enable abandoned cart recovery emails
+    - Business intelligence on conversion funnel
+    - Audit trail for customer journey
+    """
+
+    __tablename__ = "claim_events"
+
+    # Event types
+    EVENT_DRAFT_CREATED = "draft_created"
+    EVENT_STEP_COMPLETED = "step_completed"
+    EVENT_FILE_UPLOADED = "file_uploaded"
+    EVENT_FILE_REMOVED = "file_removed"
+    EVENT_CLAIM_SUBMITTED = "claim_submitted"
+    EVENT_CLAIM_ABANDONED = "claim_abandoned"
+    EVENT_REMINDER_SENT = "reminder_sent"
+    EVENT_REMINDER_CLICKED = "reminder_clicked"
+    EVENT_CLAIM_RESUMED = "claim_resumed"
+    EVENT_CLAIM_DELETED = "claim_deleted"
+    EVENT_SESSION_STARTED = "session_started"
+    EVENT_SESSION_ENDED = "session_ended"
+
+    EVENT_TYPES = [
+        EVENT_DRAFT_CREATED,
+        EVENT_STEP_COMPLETED,
+        EVENT_FILE_UPLOADED,
+        EVENT_FILE_REMOVED,
+        EVENT_CLAIM_SUBMITTED,
+        EVENT_CLAIM_ABANDONED,
+        EVENT_REMINDER_SENT,
+        EVENT_REMINDER_CLICKED,
+        EVENT_CLAIM_RESUMED,
+        EVENT_CLAIM_DELETED,
+        EVENT_SESSION_STARTED,
+        EVENT_SESSION_ENDED,
+    ]
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=True, index=True)
+    customer_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True, index=True)
+
+    # Event details
+    event_type = Column(String(50), nullable=False, index=True)
+    event_data = Column(JSON, nullable=True)  # Flexible data for event-specific info
+
+    # Context
+    ip_address = Column(String(45), nullable=True)  # IPv6 compatible
+    user_agent = Column(Text, nullable=True)
+    session_id = Column(String(255), nullable=True)  # Browser session ID
+
+    # Timing
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    # Relationships
+    claim = relationship("Claim", back_populates="events", foreign_keys=[claim_id])
+    customer = relationship("Customer", foreign_keys=[customer_id])
+
+    def __repr__(self):
+        return f"<ClaimEvent(id={self.id}, type={self.event_type}, claim_id={self.claim_id})>"
+
+    @validates('event_type')
+    def validate_event_type(self, key, event_type):
+        """Validate event type."""
+        if event_type not in self.EVENT_TYPES:
+            raise ValueError(f"Invalid event type. Must be one of: {', '.join(self.EVENT_TYPES)}")
+        return event_type
+
+
+# Add events relationship to Claim model
+Claim.events = relationship("ClaimEvent", back_populates="claim", cascade="all, delete-orphan")

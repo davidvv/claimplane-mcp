@@ -16,10 +16,13 @@ from app.schemas import (
     ClaimSubmitResponseSchema,
     ClaimUpdateSchema,
     ClaimPatchSchema,
+    ClaimDraftSchema,
+    ClaimDraftResponseSchema,
     FileResponseSchema
 )
 from app.services.auth_service import AuthService
 from app.services.file_service import FileService, get_file_service
+from app.services.claim_draft_service import ClaimDraftService
 from app.tasks.claim_tasks import send_claim_submitted_email
 from app.config import config
 from app.dependencies.auth import get_current_user, get_optional_current_user, get_current_user_with_claim_access
@@ -163,6 +166,81 @@ async def create_claim(
     return ClaimResponseSchema.from_orm(claim)
 
 
+@router.post("/draft", response_model=ClaimDraftResponseSchema, status_code=status.HTTP_201_CREATED)
+async def create_draft_claim(
+    draft_data: ClaimDraftSchema,
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+) -> ClaimDraftResponseSchema:
+    """
+    Create a draft claim after eligibility check (Step 2).
+
+    This enables progressive file upload before form completion.
+    No authentication required - anyone with a valid email can create a draft.
+
+    The access token is returned immediately for use in the current browser session.
+    A magic link will be sent to the email after 30 minutes of inactivity
+    for abandoned cart recovery.
+
+    Args:
+        draft_data: Draft claim data with email and flight info
+        request: FastAPI request object
+
+    Returns:
+        Draft claim ID and access token for immediate file upload
+
+    Raises:
+        HTTPException: If validation fails
+    """
+    try:
+        ip_address, user_agent = get_client_info(request)
+        session_id = request.headers.get("x-session-id")
+
+        draft_service = ClaimDraftService(db)
+        flight_data = draft_data.flight_info
+
+        claim, customer, access_token = await draft_service.create_draft(
+            email=draft_data.email,
+            flight_number=flight_data.flight_number,
+            airline=flight_data.airline,
+            departure_date=flight_data.departure_date,
+            departure_airport=flight_data.departure_airport,
+            arrival_airport=flight_data.arrival_airport,
+            incident_type=draft_data.incident_type,
+            compensation_amount=float(draft_data.compensation_amount) if draft_data.compensation_amount else None,
+            currency=draft_data.currency or "EUR",
+            ip_address=ip_address,
+            user_agent=user_agent,
+            session_id=session_id
+        )
+
+        logger.info(f"Draft claim created: {claim.id} for customer {customer.id}")
+
+        return ClaimDraftResponseSchema(
+            claimId=claim.id,
+            customerId=customer.id,
+            accessToken=access_token,
+            tokenType="bearer",
+            compensationAmount=claim.compensation_amount,
+            currency=claim.currency or "EUR"
+        )
+
+    except ValueError as e:
+        logger.error(f"Validation error in draft claim creation: {str(e)}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in draft claim creation: {str(e)}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while creating draft claim"
+        )
+
+
 @router.post("/submit", response_model=ClaimSubmitResponseSchema, status_code=status.HTTP_201_CREATED)
 async def submit_claim_with_customer(
     claim_request: ClaimRequestSchema,
@@ -170,73 +248,110 @@ async def submit_claim_with_customer(
     db: AsyncSession = Depends(get_db)
 ) -> ClaimSubmitResponseSchema:
     """
-    Submit a new claim with customer information (creates customer if needed).
+    Submit a claim with customer information.
 
-    Returns an access token for immediate authentication, allowing the user
-    to upload documents without needing to click the magic link first.
+    If claim_id is provided, finalizes an existing draft claim.
+    Otherwise, creates a new claim from scratch.
+
+    Returns an access token for immediate authentication.
 
     Args:
         claim_request: Claim request with customer and flight info
+        request: FastAPI request object
         db: Database session
 
     Returns:
-        Created claim data with access token for immediate authentication
+        Created/finalized claim data with access token
 
     Raises:
         HTTPException: If validation fails
     """
+    from datetime import datetime, timezone
+
+    ip_address, user_agent = get_client_info(request)
+    session_id = request.headers.get("x-session-id")
+    draft_service = ClaimDraftService(db)
+
     try:
         customer_repo = CustomerRepository(db)
         claim_repo = ClaimRepository(db)
-
-        # Check if customer exists by email
         customer_data = claim_request.customer_info
-        customer = await customer_repo.get_by_email(customer_data.email)
+        flight_data = claim_request.flight_info
 
-        if not customer:
-            # Create new customer
-            logger.info(f"Creating new customer: {customer_data.email}")
-            address_data = customer_data.address.dict() if customer_data.address else {}
-            customer = await customer_repo.create_customer(
-                email=customer_data.email,
+        # Check if we're finalizing a draft
+        if claim_request.claim_id:
+            logger.info(f"Finalizing draft claim: {claim_request.claim_id}")
+
+            # Use draft service to finalize
+            address = customer_data.address
+            claim, customer = await draft_service.finalize_draft(
+                claim_id=claim_request.claim_id,
+                customer_email=customer_data.email,
                 first_name=customer_data.first_name,
                 last_name=customer_data.last_name,
                 phone=customer_data.phone,
-                **address_data
+                street=address.street if address else None,
+                city=address.city if address else None,
+                postal_code=address.postal_code if address else None,
+                country=address.country if address else None,
+                notes=claim_request.notes,
+                booking_reference=claim_request.booking_reference,
+                ticket_number=claim_request.ticket_number,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                session_id=session_id
             )
-            logger.info(f"Customer created: {customer.id}")
+            logger.info(f"Draft claim {claim.id} finalized")
 
-        # Create claim
-        flight_data = claim_request.flight_info
-        logger.info(f"Creating claim for customer {customer.id}")
-        logger.info(f"Flight data: {flight_data.dict()}")
-        logger.info(f"Incident type: {claim_request.incident_type}")
+        else:
+            # Original flow: Create new customer and claim
+            logger.info(f"Creating new claim (no draft)")
 
-        # Get client IP for terms acceptance tracking
-        from datetime import datetime, timezone
-        ip_address, _ = get_client_info(request)
+            customer = await customer_repo.get_by_email(customer_data.email)
 
-        claim = await claim_repo.create_claim(
-            customer_id=customer.id,
-            flight_number=flight_data.flight_number,
-            airline=flight_data.airline,
-            departure_date=flight_data.departure_date,
-            departure_airport=flight_data.departure_airport,
-            arrival_airport=flight_data.arrival_airport,
-            incident_type=claim_request.incident_type,
-            notes=claim_request.notes,
-            booking_reference=claim_request.booking_reference,
-            ticket_number=claim_request.ticket_number,
-            terms_accepted_at=datetime.now(timezone.utc),
-            terms_acceptance_ip=ip_address
-        )
-        logger.info(f"Claim created: {claim.id}")
+            if not customer:
+                logger.info(f"Creating new customer: {customer_data.email}")
+                address_data = customer_data.address.dict() if customer_data.address else {}
+                customer = await customer_repo.create_customer(
+                    email=customer_data.email,
+                    first_name=customer_data.first_name,
+                    last_name=customer_data.last_name,
+                    phone=customer_data.phone,
+                    **address_data
+                )
+                logger.info(f"Customer created: {customer.id}")
 
-        # Commit the claim to database before flight verification
-        await db.commit()
-        logger.info(f"Claim {claim.id} committed to database")
+            claim = await claim_repo.create_claim(
+                customer_id=customer.id,
+                flight_number=flight_data.flight_number,
+                airline=flight_data.airline,
+                departure_date=flight_data.departure_date,
+                departure_airport=flight_data.departure_airport,
+                arrival_airport=flight_data.arrival_airport,
+                incident_type=claim_request.incident_type,
+                notes=claim_request.notes,
+                booking_reference=claim_request.booking_reference,
+                ticket_number=claim_request.ticket_number,
+                terms_accepted_at=datetime.now(timezone.utc),
+                terms_acceptance_ip=ip_address
+            )
+            logger.info(f"Claim created: {claim.id}")
 
-        # Phase 6: Flight verification and enrichment (after commit, before email)
+            await db.commit()
+            logger.info(f"Claim {claim.id} committed to database")
+
+            # Log analytics event for new claims
+            await draft_service.log_event(
+                event_type="claim_submitted",
+                claim_id=claim.id,
+                customer_id=customer.id,
+                event_data={"from_draft": False},
+                ip_address=ip_address,
+                user_agent=user_agent,
+                session_id=session_id
+            )
+
+        # Flight verification (for both draft and new claims)
         try:
             from app.services.flight_data_service import FlightDataService
 
@@ -248,40 +363,23 @@ async def submit_claim_with_customer(
                 force_refresh=False
             )
 
-            # Update claim with verified flight data
             if enriched_data.get("verified"):
-                logger.info(f"Flight verified for claim {claim.id}: compensation={enriched_data.get('compensation_amount')} EUR")
-
-                # Update claim with calculated fields
+                logger.info(f"Flight verified for claim {claim.id}")
                 if enriched_data.get("compensation_amount") is not None:
                     claim.calculated_compensation = enriched_data["compensation_amount"]
-
                 if enriched_data.get("distance_km") is not None:
                     claim.flight_distance_km = enriched_data["distance_km"]
-
                 if enriched_data.get("delay_hours") is not None:
                     claim.delay_hours = enriched_data["delay_hours"]
-
-                # Commit updated claim
                 await db.commit()
-                logger.info(f"Updated claim {claim.id} with verified flight data")
             else:
-                logger.warning(
-                    f"Flight not verified for claim {claim.id}: "
-                    f"source={enriched_data.get('verification_source')}"
-                )
+                logger.warning(f"Flight not verified for claim {claim.id}")
 
         except Exception as e:
-            # CRITICAL: Never fail claim submission due to flight verification errors
-            # Graceful degradation - claim will use manual verification
-            logger.error(
-                f"Flight verification failed for claim {claim.id}: {str(e)}",
-                exc_info=True
-            )
-            # Continue with claim submission - admin will verify manually
+            logger.error(f"Flight verification failed for claim {claim.id}: {str(e)}")
 
     except ValueError as e:
-        logger.error(f"Validation error in claim submission: {str(e)}", exc_info=True)
+        logger.error(f"Validation error in claim submission: {str(e)}")
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -292,16 +390,12 @@ async def submit_claim_with_customer(
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while submitting your claim: {str(e)}"
+            detail="An error occurred while submitting your claim"
         )
 
-    # Send claim submitted email notification (Phase 2)
+    # Send claim submitted email notification
     if config.NOTIFICATIONS_ENABLED and customer:
         try:
-            # Get client info
-            ip_address, user_agent = get_client_info(request)
-
-            # Create magic link token
             magic_token, _ = await AuthService.create_magic_link_token(
                 session=db,
                 user_id=customer.id,
@@ -311,7 +405,6 @@ async def submit_claim_with_customer(
             )
             await db.commit()
 
-            # Trigger async email task with magic link token
             send_claim_submitted_email.delay(
                 customer_email=customer.email,
                 customer_name=f"{customer.first_name} {customer.last_name}",
@@ -322,18 +415,19 @@ async def submit_claim_with_customer(
             )
             logger.info(f"Claim submitted email task queued for customer {customer.email}")
         except Exception as e:
-            # Don't fail the API request if email queueing fails
             logger.error(f"Failed to queue claim submitted email: {str(e)}")
 
-    # Generate access token for immediate authentication
-    # This allows users to upload documents without clicking the magic link first
+    # Generate access token
     access_token = AuthService.create_access_token(
-        user_id=customer.id,
+        user_id=str(customer.id),
         email=customer.email,
         role=customer.role,
-        claim_id=claim.id
+        claim_id=str(claim.id)
     )
     logger.info(f"Generated access token for customer {customer.id} with claim {claim.id}")
+
+    # Refresh claim to get latest state
+    await db.refresh(claim)
 
     return ClaimSubmitResponseSchema(
         claim=ClaimResponseSchema.from_orm(claim),

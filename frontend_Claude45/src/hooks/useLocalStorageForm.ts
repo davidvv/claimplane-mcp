@@ -52,6 +52,8 @@ interface ClaimFormData {
   eligibilityData?: any;
   passengerData?: any;
   documents?: any[];
+  draftClaimId?: string;
+  draftAccessToken?: string;
 }
 
 export function useClaimFormPersistence() {

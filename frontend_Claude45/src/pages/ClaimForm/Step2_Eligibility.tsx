@@ -1,5 +1,8 @@
 /**
  * Step 2: Eligibility Check
+ *
+ * Workflow v2: When user clicks "Continue", we create a draft claim
+ * to enable progressive file uploads and abandoned cart recovery.
  */
 
 import { useState } from 'react';
@@ -10,6 +13,7 @@ import { toast } from 'sonner';
 
 import { eligibilityFormSchema, type EligibilityForm } from '@/schemas/validation';
 import { checkEligibility } from '@/services/eligibility';
+import apiClient from '@/services/api';
 import type { FlightStatus, EligibilityResponse } from '@/types/api';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -19,10 +23,19 @@ import { Label } from '@/components/ui/Label';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { formatCurrency } from '@/lib/utils';
 
+// Draft claim data returned from /claims/draft endpoint
+interface DraftClaimData {
+  claimId: string;
+  customerId: string;
+  accessToken: string;
+  compensationAmount?: number;
+  currency?: string;
+}
+
 interface Step2Props {
   flightData: FlightStatus;
   initialData: EligibilityResponse | null;
-  onComplete: (data: EligibilityResponse, email: string) => void;
+  onComplete: (data: EligibilityResponse, email: string, draftData?: DraftClaimData) => void;
   onBack: () => void;
 }
 
@@ -33,6 +46,7 @@ export function Step2_Eligibility({
   onBack,
 }: Step2Props) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingDraft, setIsCreatingDraft] = useState(false);
   const [eligibilityResult, setEligibilityResult] = useState<EligibilityResponse | null>(
     initialData
   );
@@ -44,9 +58,6 @@ export function Step2_Eligibility({
     formState: { errors },
   } = useForm<EligibilityForm>({
     resolver: zodResolver(eligibilityFormSchema),
-    defaultValues: {
-      region: 'EU',
-    },
   });
 
   const onSubmit = async (data: EligibilityForm) => {
@@ -57,7 +68,7 @@ export function Step2_Eligibility({
         flightInfo: flightData,
         customerInfo: {
           email: data.email,
-          region: data.region,
+          region: 'EU',  // Default to EU for EU261 regulation
         },
       });
 
@@ -89,11 +100,53 @@ export function Step2_Eligibility({
     }
   };
 
-  const handleContinue = () => {
-    if (eligibilityResult?.eligible && submittedEmail) {
-      onComplete(eligibilityResult, submittedEmail);
-    } else {
+  const handleContinue = async () => {
+    if (!eligibilityResult?.eligible || !submittedEmail) {
       toast.error('You must be eligible to continue with the claim.');
+      return;
+    }
+
+    setIsCreatingDraft(true);
+
+    try {
+      // Create draft claim (Workflow v2)
+      // Ensure date is YYYY-MM-DD
+      const depDate = flightData.departureDate || flightData.scheduledDeparture?.split('T')[0];
+      const formattedDate = depDate?.includes('T') ? depDate.split('T')[0] : depDate;
+
+      const response = await apiClient.post('/claims/draft', {
+        email: submittedEmail,
+        flightInfo: {
+          flightNumber: flightData.flightNumber,
+          airline: flightData.airline,
+          departureDate: formattedDate,
+          departureAirport: flightData.departureAirport,
+          arrivalAirport: flightData.arrivalAirport,
+        },
+        incidentType: flightData.status === 'cancelled' ? 'cancellation' : 'delay',
+        compensationAmount: eligibilityResult.compensationAmount,
+        currency: eligibilityResult.currency || 'EUR',
+      });
+
+      const draftData: DraftClaimData = {
+        claimId: response.data.claimId,
+        customerId: response.data.customerId,
+        accessToken: response.data.accessToken,
+        compensationAmount: response.data.compensationAmount,
+        currency: response.data.currency,
+      };
+
+      console.log('Draft claim created:', draftData.claimId);
+      onComplete(eligibilityResult, submittedEmail, draftData);
+
+    } catch (error: any) {
+      console.error('Failed to create draft claim:', error);
+      // Don't block the user - continue without draft
+      // The claim will be created at final submit instead
+      toast.error('Note: Draft save failed. Your progress will be saved locally.');
+      onComplete(eligibilityResult, submittedEmail);
+    } finally {
+      setIsCreatingDraft(false);
     }
   };
 
@@ -112,44 +165,25 @@ export function Step2_Eligibility({
 
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    className="pl-10"
-                    {...register('email')}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  className="pl-10"
+                  {...register('email')}
+                />
               </div>
-
-              {/* Region */}
-              <div className="space-y-2">
-                <Label htmlFor="region">Your Region</Label>
-                <select
-                  id="region"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  {...register('region')}
-                >
-                  <option value="EU">🇪🇺 European Union</option>
-                  <option value="US">🇺🇸 United States</option>
-                  <option value="CA">🇨🇦 Canada</option>
-                </select>
-                {errors.region && (
-                  <p className="text-sm text-destructive">{errors.region.message}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Select the region where your flight originated or was destined
-                </p>
-              </div>
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                We'll use this to send you updates about your claim
+              </p>
             </div>
 
             <div className="flex gap-2">
@@ -268,8 +302,19 @@ export function Step2_Eligibility({
                   )}
 
                   {/* Continue Button */}
-                  <Button onClick={handleContinue} className="w-full">
-                    Continue to Passenger Information
+                  <Button 
+                    onClick={handleContinue} 
+                    className="w-full"
+                    disabled={isCreatingDraft}
+                  >
+                    {isCreatingDraft ? (
+                      <>
+                        <LoadingSpinner size="sm" className="mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Continue to Passenger Information'
+                    )}
                   </Button>
                 </>
               ) : (

@@ -7,7 +7,80 @@
 - **Estimated Total Time**: ~436-497 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
-## Latest Work (2026-01-12) - Email Configuration & DevOps Documentation
+## Latest Work (2026-01-13) - Workflow v2: Draft Claims & Progressive Upload
+
+### Draft Claim Workflow Implementation
+**Estimated Time**: 4-6 hours
+
+#### Key Tasks:
+1. **Backend: Database Schema & Models**
+   - Added ClaimEvent model for analytics tracking (draft_created, step_completed, file_uploaded, etc.)
+   - Added fields to Claim model: last_activity_at, reminder_count, current_step
+   - Estimated: 0.5-1 hour
+
+2. **Backend: Repositories & Services**
+   - Created ClaimEventRepository for analytics events
+   - Updated ClaimRepository with draft-specific methods (create_draft_claim, get_stale_drafts, finalize_draft, etc.)
+   - Created ClaimDraftService for draft management and activity tracking
+   - Estimated: 1-1.5 hours
+
+3. **Backend: API Endpoints**
+   - Added POST /claims/draft endpoint - creates draft at Step 2 after eligibility check
+   - Updated POST /claims/submit to handle both new claims AND draft finalization
+   - Returns accessToken for progressive file uploads
+   - Estimated: 0.5-1 hour
+
+4. **Backend: Celery Beat Tasks**
+   - Created draft_tasks.py with scheduled reminders:
+     - 30-min reminder for inactive drafts (every 5 min)
+     - Day 5, 8, 11 reminders (daily)
+     - Day 11 cleanup (delete new users, mark abandoned for existing)
+     - Day 45 final reminder for multi-claim users
+   - Updated celery_app.py with beat_schedule
+   - Estimated: 0.5-1 hour
+
+5. **Backend: Email Templates**
+   - Added send_draft_reminder_email with different messaging per reminder
+   - Added send_draft_expired_email notification
+   - Added send_final_reminder_email for day 45
+   - Estimated: 0.25-0.5 hours
+
+6. **Frontend: Claim Form Flow**
+   - Updated ClaimFormPage.tsx with draftClaimId state and resume from URL
+   - Updated Step2_Eligibility.tsx to call /claims/draft on "Continue"
+   - Updated Step3_Passenger.tsx and Step4_Review.tsx to pass draftClaimId
+   - Updated FileUploadZone.tsx for progressive uploads with claimId
+   - Updated auth service with setAuthToken for draft workflow
+   - Fixed TypeScript errors (ClaimFormData type, scheduledDeparture field)
+   - Estimated: 1-1.5 hours
+
+#### Impact:
+- Users can now resume abandoned claims from reminder emails
+- Progressive file uploads reduce data loss on page refresh
+- Analytics events enable drop-off analysis and funnel optimization
+- Reminder system increases claim completion rates
+
+### UI/UX Refinements for Workflow v2
+**Estimated Time**: 0.5-1 hour
+
+#### Key Tasks:
+1. **Step 2 (Eligibility) Optimization**
+   - Removed redundant "Region" field (auto-handled by backend)
+   - Fixed API URL mismatch for draft creation
+   - Estimated: 0.25 hours
+
+2. **Step 3 (Passenger) Improvements**
+   - Implemented "Smart Country Selection": Phone prefix (+49) auto-selects address country (Germany)
+   - Removed default country values to ensure accurate user input
+   - Improved FileUploadZone mobile layout (stacked view, better spacing)
+   - Estimated: 0.5 hours
+
+#### Impact:
+- ✅ Reduced friction in eligibility check (fewer clicks)
+- ✅ Improved mobile usability for document uploads
+- ✅ Smarter form behavior reduces data entry effort
+
+## Previous Work (2026-01-12) - Email Configuration & DevOps Documentation
 
 ### Email Service Configuration & Startup Script Documentation
 **Estimated Time**: 0.5 hours

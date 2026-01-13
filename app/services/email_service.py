@@ -403,3 +403,271 @@ Best regards,
         except Exception as e:
             logger.error(f"Failed to send document rejected email: {str(e)}")
             return False
+
+    # =========================================================================
+    # Draft Reminder Emails (Phase 7 - Workflow v2)
+    # =========================================================================
+
+    @staticmethod
+    async def send_draft_reminder_email(
+        customer_email: str,
+        customer_name: str,
+        claim_id: str,
+        flight_number: str,
+        airline: str,
+        magic_link_token: str,
+        reminder_number: int
+    ) -> bool:
+        """
+        Send reminder email for abandoned draft claims.
+
+        Args:
+            customer_email: Customer's email address
+            customer_name: Customer's first name or "there"
+            claim_id: UUID of the draft claim
+            flight_number: Flight number
+            airline: Airline name
+            magic_link_token: Token to resume the claim
+            reminder_number: Which reminder this is (1=30min, 2=day5, 3=day8)
+
+        Returns:
+            True if sent successfully
+        """
+        logger.info(f"Sending draft reminder #{reminder_number} to {customer_email}")
+
+        try:
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+            resume_url = f"{frontend_url}/auth/magic-link?token={magic_link_token}&claim_id={claim_id}&resume=true"
+
+            # Different messaging based on reminder number
+            if reminder_number == 1:
+                subject = f"Continue Your Claim - {airline} {flight_number}"
+                headline = "Don't forget to complete your claim!"
+                message = "You started a compensation claim but didn't finish. Your potential compensation is just a few steps away."
+                urgency = ""
+            elif reminder_number == 2:
+                subject = f"Your Claim is Waiting - {airline} {flight_number}"
+                headline = "Your claim is still waiting for you"
+                message = "It's been a few days since you started your compensation claim. We're keeping your progress saved."
+                urgency = "Complete it soon to get the compensation you deserve."
+            else:  # reminder_number == 3
+                subject = f"Last Chance - Complete Your Claim for {airline} {flight_number}"
+                headline = "Your claim will expire soon"
+                message = "This is your final reminder. Your draft claim will be deleted in a few days if not completed."
+                urgency = "Act now to claim your compensation!"
+
+            context = {
+                "customer_name": customer_name,
+                "claim_id": claim_id,
+                "flight_number": flight_number,
+                "airline": airline,
+                "resume_url": resume_url,
+                "headline": headline,
+                "message": message,
+                "urgency": urgency,
+                "reminder_number": reminder_number,
+            }
+
+            # Try to render template, fall back to plain text if template doesn't exist
+            try:
+                html_content = EmailService.render_template("draft_reminder.html", context)
+            except Exception:
+                # Fallback HTML
+                html_content = f"""
+                <html>
+                <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #2563eb;">{headline}</h2>
+                    <p>Hello {customer_name},</p>
+                    <p>{message}</p>
+                    <p><strong>Flight:</strong> {airline} {flight_number}</p>
+                    {"<p style='color: #dc2626; font-weight: bold;'>" + urgency + "</p>" if urgency else ""}
+                    <p style="margin: 30px 0;">
+                        <a href="{resume_url}" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                            Complete My Claim
+                        </a>
+                    </p>
+                    <p style="color: #666; font-size: 12px;">
+                        If the button doesn't work, copy this link: {resume_url}
+                    </p>
+                </body>
+                </html>
+                """
+
+            text_content = f"""
+Hello {customer_name},
+
+{headline}
+
+{message}
+
+Flight: {airline} {flight_number}
+{urgency}
+
+Click this link to continue your claim:
+{resume_url}
+
+Best regards,
+{config.SMTP_FROM_NAME}
+            """.strip()
+
+            return await EmailService.send_email(
+                to_email=customer_email,
+                subject=subject,
+                html_content=html_content,
+                text_content=text_content
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to send draft reminder email: {str(e)}")
+            return False
+
+    @staticmethod
+    async def send_draft_expired_email(
+        customer_email: str,
+        customer_name: str,
+        claim_id: str,
+        flight_number: str,
+        can_still_submit: bool = True
+    ) -> bool:
+        """
+        Send email when a draft claim has expired/been deleted.
+
+        Args:
+            customer_email: Customer's email address
+            customer_name: Customer's first name or "there"
+            claim_id: UUID of the expired claim
+            flight_number: Flight number
+            can_still_submit: Whether customer can start a new claim
+
+        Returns:
+            True if sent successfully
+        """
+        logger.info(f"Sending draft expired email to {customer_email}")
+
+        try:
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+            new_claim_url = f"{frontend_url}/claim/new"
+
+            context = {
+                "customer_name": customer_name,
+                "claim_id": claim_id,
+                "flight_number": flight_number,
+                "can_still_submit": can_still_submit,
+                "new_claim_url": new_claim_url,
+            }
+
+            # Fallback HTML (no template needed for this simple email)
+            html_content = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #666;">Your Draft Claim Has Expired</h2>
+                <p>Hello {customer_name},</p>
+                <p>Your draft claim for flight {flight_number} has expired and been removed from our system.</p>
+                <p>We respect your privacy and have deleted all data associated with this incomplete claim.</p>
+                {"<p>If you still want to claim compensation, you can start a new claim anytime:</p><p><a href='" + new_claim_url + "' style='background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;'>Start New Claim</a></p>" if can_still_submit else ""}
+                <p style="color: #666; font-size: 12px; margin-top: 30px;">
+                    This is an automated message. We won't contact you again about this claim.
+                </p>
+            </body>
+            </html>
+            """
+
+            text_content = f"""
+Hello {customer_name},
+
+Your draft claim for flight {flight_number} has expired and been removed from our system.
+
+We respect your privacy and have deleted all data associated with this incomplete claim.
+
+{"You can start a new claim anytime at: " + new_claim_url if can_still_submit else ""}
+
+This is an automated message. We won't contact you again about this claim.
+
+Best regards,
+{config.SMTP_FROM_NAME}
+            """.strip()
+
+            return await EmailService.send_email(
+                to_email=customer_email,
+                subject=f"Draft Claim Expired - {flight_number}",
+                html_content=html_content,
+                text_content=text_content
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to send draft expired email: {str(e)}")
+            return False
+
+    @staticmethod
+    async def send_final_reminder_email(
+        customer_email: str,
+        customer_name: str,
+        claim_id: str,
+        flight_number: str
+    ) -> bool:
+        """
+        Send final reminder to multi-claim users (45 days after draft creation).
+
+        This is the last email we send, letting them know we won't bother them anymore.
+
+        Args:
+            customer_email: Customer's email address
+            customer_name: Customer's first name or "there"
+            claim_id: UUID of the draft claim
+            flight_number: Flight number
+
+        Returns:
+            True if sent successfully
+        """
+        logger.info(f"Sending final reminder email to {customer_email}")
+
+        try:
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+            new_claim_url = f"{frontend_url}/claim/new"
+
+            html_content = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #666;">Final Reminder</h2>
+                <p>Hello {customer_name},</p>
+                <p>We noticed you started a claim for flight {flight_number} but never completed it.</p>
+                <p>This is our final reminder - we won't send any more emails about this claim.</p>
+                <p>If you'd still like to claim compensation for your disrupted flight, you can start fresh anytime:</p>
+                <p style="margin: 20px 0;">
+                    <a href="{new_claim_url}" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                        Start New Claim
+                    </a>
+                </p>
+                <p style="color: #666; font-size: 12px; margin-top: 30px;">
+                    Thank you for considering our service. We wish you smooth travels!
+                </p>
+            </body>
+            </html>
+            """
+
+            text_content = f"""
+Hello {customer_name},
+
+We noticed you started a claim for flight {flight_number} but never completed it.
+
+This is our final reminder - we won't send any more emails about this claim.
+
+If you'd still like to claim compensation, you can start fresh anytime:
+{new_claim_url}
+
+Thank you for considering our service. We wish you smooth travels!
+
+Best regards,
+{config.SMTP_FROM_NAME}
+            """.strip()
+
+            return await EmailService.send_email(
+                to_email=customer_email,
+                subject=f"Final Reminder - Flight Compensation Claim",
+                html_content=html_content,
+                text_content=text_content
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to send final reminder email: {str(e)}")
+            return False

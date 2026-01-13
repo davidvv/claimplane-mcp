@@ -15,6 +15,10 @@ These features are potential enhancements that can be considered after the MVP i
 
 These are not prioritized but documented for future reference:
 
+### User Experience Improvements
+- **Short Claim IDs**: Replace long UUIDs with human-readable 6-8 char alphanumeric IDs (e.g., CP-2024-ABC) for easier customer reference and support lookup.
+- **Smart Form Automation**: Further enhance form auto-filling based on uploaded documents (OCR).
+
 ### OCR & Data Extraction
 - Extract flight details from boarding passes automatically
 - Extract personal info from ID documents

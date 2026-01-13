@@ -1,12 +1,17 @@
 /**
  * Drag-and-drop file upload component
+ *
+ * Workflow v2: When claimId is provided, files are uploaded
+ * immediately as the user selects them (progressive upload).
  */
 
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, File, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn, formatFileSize } from '@/lib/utils';
 import { Button } from './ui/Button';
+import { uploadDocument } from '@/services/documents';
 import type { DocumentType } from '@/types/api';
 
 interface UploadedFile {
@@ -15,12 +20,14 @@ interface UploadedFile {
   status: 'pending' | 'uploading' | 'success' | 'error';
   progress?: number;
   error?: string;
+  uploadedId?: string;  // Server-side file ID after successful upload
 }
 
 interface FileUploadZoneProps {
   onFilesChange: (files: UploadedFile[]) => void;
   maxFiles?: number;
   maxSizeMB?: number;
+  claimId?: string;  // Workflow v2: If provided, upload files immediately
 }
 
 const ALLOWED_TYPES = {
@@ -35,22 +42,86 @@ export function FileUploadZone({
   onFilesChange,
   maxFiles = 5,
   maxSizeMB = 10,
+  claimId,
 }: FileUploadZoneProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
+  // Progressive upload function for Workflow v2
+  const uploadFileToServer = async (
+    fileEntry: UploadedFile,
+    index: number,
+    currentFiles: UploadedFile[]
+  ) => {
+    if (!claimId) return;
+
+    // Update status to uploading
+    const updatingFiles = [...currentFiles];
+    updatingFiles[index] = { ...updatingFiles[index], status: 'uploading', progress: 0 };
+    setUploadedFiles(updatingFiles);
+    onFilesChange(updatingFiles);
+
+    try {
+      const result = await uploadDocument(
+        claimId,
+        fileEntry.file,
+        fileEntry.documentType,
+        (progressEvent: any) => {
+          const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+          const progressFiles = [...currentFiles];
+          progressFiles[index] = { ...progressFiles[index], progress };
+          setUploadedFiles(progressFiles);
+        }
+      );
+
+      // Update status to success
+      const successFiles = [...currentFiles];
+      successFiles[index] = {
+        ...successFiles[index],
+        status: 'success',
+        progress: 100,
+        uploadedId: result.id,
+      };
+      setUploadedFiles(successFiles);
+      onFilesChange(successFiles);
+      console.log(`File uploaded successfully: ${fileEntry.file.name}`);
+
+    } catch (error: any) {
+      console.error(`Failed to upload ${fileEntry.file.name}:`, error);
+
+      // Update status to error
+      const errorFiles = [...currentFiles];
+      errorFiles[index] = {
+        ...errorFiles[index],
+        status: 'error',
+        error: error.message || 'Upload failed',
+      };
+      setUploadedFiles(errorFiles);
+      onFilesChange(errorFiles);
+      toast.error(`Failed to upload ${fileEntry.file.name}`);
+    }
+  };
+
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       const newFiles: UploadedFile[] = acceptedFiles.map((file) => ({
         file,
         documentType: getDocumentType(file.name),
-        status: 'pending',
+        status: claimId ? 'pending' : 'pending',  // Will be uploaded if claimId exists
       }));
 
       const updatedFiles = [...uploadedFiles, ...newFiles].slice(0, maxFiles);
       setUploadedFiles(updatedFiles);
       onFilesChange(updatedFiles);
+
+      // Progressive upload if claimId is provided
+      if (claimId) {
+        const startIndex = uploadedFiles.length;
+        for (let i = 0; i < newFiles.length && startIndex + i < maxFiles; i++) {
+          await uploadFileToServer(newFiles[i], startIndex + i, updatedFiles);
+        }
+      }
     },
-    [uploadedFiles, maxFiles, onFilesChange]
+    [uploadedFiles, maxFiles, onFilesChange, claimId]
   );
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
@@ -133,58 +204,77 @@ export function FileUploadZone({
 
       {/* Uploaded files list */}
       {uploadedFiles.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="text-sm font-medium">
             Uploaded files ({uploadedFiles.length}/{maxFiles})
           </p>
           {uploadedFiles.map((uploadedFile, index) => (
             <div
               key={index}
-              className="flex items-center gap-3 p-3 border rounded-lg bg-card"
+              className="p-3 border rounded-lg bg-card space-y-2"
             >
-              <File className="w-5 h-5 text-muted-foreground shrink-0" />
+              {/* Top row: File icon, name, size, status, remove button */}
+              <div className="flex items-center gap-3">
+                <File className="w-5 h-5 text-muted-foreground shrink-0" />
 
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {uploadedFile.file.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(uploadedFile.file.size)}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {uploadedFile.file.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatFileSize(uploadedFile.file.size)}
+                  </p>
+                </div>
+
+                {/* Status indicator */}
+                {uploadedFile.status === 'uploading' && (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                    <span className="text-xs text-muted-foreground">
+                      {uploadedFile.progress || 0}%
+                    </span>
+                  </div>
+                )}
+                {uploadedFile.status === 'success' && (
+                  <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+                )}
+                {uploadedFile.status === 'error' && (
+                  <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
+                )}
+
+                {/* Remove button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeFile(index)}
+                  className="shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
 
-              {/* Document type selector */}
-              <select
-                value={uploadedFile.documentType}
-                onChange={(e) =>
-                  updateDocumentType(index, e.target.value as DocumentType)
-                }
-                className="text-sm border rounded px-2 py-1 bg-background"
-              >
-                <option value="boarding_pass">Boarding Pass</option>
-                <option value="id_document">ID Document</option>
-                <option value="receipt">Receipt</option>
-                <option value="bank_statement">Bank Statement</option>
-                <option value="other">Other</option>
-              </select>
+              {/* Bottom row: Document type selector (full width on mobile) */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Document type:</span>
+                <select
+                  value={uploadedFile.documentType}
+                  onChange={(e) =>
+                    updateDocumentType(index, e.target.value as DocumentType)
+                  }
+                  className="flex-1 text-sm border rounded px-2 py-1.5 bg-background"
+                >
+                  <option value="boarding_pass">Boarding Pass</option>
+                  <option value="id_document">ID Document</option>
+                  <option value="receipt">Receipt</option>
+                  <option value="bank_statement">Bank Statement</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
 
-              {/* Status indicator */}
-              {uploadedFile.status === 'success' && (
-                <CheckCircle className="w-5 h-5 text-green-600" />
+              {/* Error message if any */}
+              {uploadedFile.status === 'error' && uploadedFile.error && (
+                <p className="text-xs text-destructive">{uploadedFile.error}</p>
               )}
-              {uploadedFile.status === 'error' && (
-                <AlertCircle className="w-5 h-5 text-destructive" />
-              )}
-
-              {/* Remove button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeFile(index)}
-                className="shrink-0"
-              >
-                <X className="w-4 h-4" />
-              </Button>
             </div>
           ))}
         </div>

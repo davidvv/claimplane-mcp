@@ -1,7 +1,7 @@
 """Claim repository for data access operations."""
 from typing import Optional, List
 from uuid import UUID
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func
@@ -142,3 +142,162 @@ class ClaimRepository(BaseRepository[Claim]):
             'total_claims': total_claims,
             'status_breakdown': status_counts
         }
+
+    # =========================================================================
+    # Draft Workflow Methods (Phase 7 - Workflow v2)
+    # =========================================================================
+
+    async def create_draft_claim(
+        self,
+        customer_id: UUID,
+        flight_number: str,
+        airline: str,
+        departure_date: date,
+        departure_airport: str,
+        arrival_airport: str,
+        incident_type: str,
+        compensation_amount: Optional[float] = None,
+        currency: str = "EUR",
+        current_step: int = 2
+    ) -> Claim:
+        """Create a draft claim (status=draft, no terms acceptance yet)."""
+        return await self.create(
+            customer_id=customer_id,
+            flight_number=flight_number.upper(),
+            airline=airline,
+            departure_date=departure_date,
+            departure_airport=departure_airport.upper(),
+            arrival_airport=arrival_airport.upper(),
+            incident_type=incident_type,
+            status=Claim.STATUS_DRAFT,
+            compensation_amount=compensation_amount,
+            currency=currency,
+            current_step=current_step,
+            reminder_count=0
+        )
+
+    async def get_stale_drafts(
+        self,
+        minutes_inactive: int = 30,
+        max_reminders: int = 0
+    ) -> List[Claim]:
+        """Get draft claims that have been inactive for specified minutes.
+
+        Args:
+            minutes_inactive: Minutes since last activity
+            max_reminders: Maximum reminder count (get drafts with <= this count)
+
+        Returns:
+            List of stale draft claims
+        """
+        cutoff_time = datetime.utcnow() - timedelta(minutes=minutes_inactive)
+
+        stmt = select(Claim).where(
+            and_(
+                Claim.status == Claim.STATUS_DRAFT,
+                Claim.last_activity_at < cutoff_time,
+                Claim.reminder_count <= max_reminders
+            )
+        )
+
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_drafts_for_reminder(
+        self,
+        days_old: int,
+        reminder_count: int
+    ) -> List[Claim]:
+        """Get draft claims that need a specific reminder.
+
+        Args:
+            days_old: Minimum age of draft in days
+            reminder_count: Exact reminder count to match
+
+        Returns:
+            List of draft claims needing this reminder
+        """
+        cutoff_date = datetime.utcnow() - timedelta(days=days_old)
+
+        stmt = select(Claim).where(
+            and_(
+                Claim.status == Claim.STATUS_DRAFT,
+                Claim.submitted_at < cutoff_date,  # submitted_at is creation time for drafts
+                Claim.reminder_count == reminder_count
+            )
+        )
+
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_expired_drafts(self, days_old: int = 11) -> List[Claim]:
+        """Get draft claims that are past expiration for cleanup.
+
+        Args:
+            days_old: Minimum age of draft in days for expiration
+
+        Returns:
+            List of expired draft claims
+        """
+        cutoff_date = datetime.utcnow() - timedelta(days=days_old)
+
+        stmt = select(Claim).where(
+            and_(
+                Claim.status == Claim.STATUS_DRAFT,
+                Claim.submitted_at < cutoff_date
+            )
+        )
+
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def increment_reminder_count(self, claim_id: UUID) -> Optional[Claim]:
+        """Increment the reminder count for a claim."""
+        claim = await self.get_by_id(claim_id)
+        if not claim:
+            return None
+
+        claim.reminder_count = (claim.reminder_count or 0) + 1
+        await self.session.flush()
+        await self.session.refresh(claim)
+        return claim
+
+    async def update_activity(self, claim_id: UUID) -> Optional[Claim]:
+        """Update last_activity_at timestamp for a claim."""
+        claim = await self.get_by_id(claim_id)
+        if not claim:
+            return None
+
+        claim.last_activity_at = datetime.utcnow()
+        await self.session.flush()
+        await self.session.refresh(claim)
+        return claim
+
+    async def finalize_draft(
+        self,
+        claim_id: UUID,
+        notes: Optional[str] = None,
+        booking_reference: Optional[str] = None,
+        ticket_number: Optional[str] = None,
+        terms_accepted_at: Optional[datetime] = None,
+        terms_acceptance_ip: Optional[str] = None
+    ) -> Optional[Claim]:
+        """Finalize a draft claim to submitted status."""
+        claim = await self.get_by_id(claim_id)
+        if not claim:
+            return None
+
+        if claim.status != Claim.STATUS_DRAFT:
+            raise ValueError(f"Claim {claim_id} is not a draft (status: {claim.status})")
+
+        claim.status = Claim.STATUS_SUBMITTED
+        claim.notes = notes
+        claim.booking_reference = booking_reference.upper() if booking_reference else None
+        claim.ticket_number = ticket_number
+        claim.terms_accepted_at = terms_accepted_at or datetime.utcnow()
+        claim.terms_acceptance_ip = terms_acceptance_ip
+        claim.submitted_at = datetime.utcnow()
+
+        await self.session.flush()
+        await self.session.refresh(claim)
+        return claim

@@ -886,3 +886,102 @@ async def upload_claim_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"File upload failed: {str(e)}"
         )
+
+
+@router.post("/ocr-boarding-pass", status_code=status.HTTP_200_OK)
+async def extract_boarding_pass_data(
+    file: UploadFile = File(...),
+    current_user: Customer = Depends(get_optional_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Upload boarding pass image and extract flight details via OCR.
+
+    No claim required - returns extracted data for form pre-filling.
+    Supports: JPEG, PNG, PDF (max 10MB)
+
+    Args:
+        file: Boarding pass image file
+        current_user: Optionally authenticated user
+        db: Database session
+
+    Returns:
+        OCRResponseSchema with extracted flight data and confidence scores
+
+    Raises:
+        HTTPException: 400 if file invalid, 500 if OCR fails
+    """
+    from app.schemas.ocr_schemas import OCRResponseSchema, BoardingPassDataSchema, FieldConfidenceSchema
+    from app.services.ocr_service import ocr_service
+
+    # Validate file type
+    allowed_mimetypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+    content_type = file.content_type or "application/octet-stream"
+
+    if content_type not in allowed_mimetypes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file type '{content_type}'. Allowed types: JPEG, PNG, WebP, PDF"
+        )
+
+    # Read file content
+    try:
+        file_content = await file.read()
+    except Exception as e:
+        logger.error(f"[ocr-boarding-pass] Failed to read file: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to read uploaded file"
+        )
+
+    # Validate file size (10MB limit)
+    max_size = 10 * 1024 * 1024
+    if len(file_content) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File size exceeds 10MB limit (got {len(file_content) / 1024 / 1024:.1f}MB)"
+        )
+
+    if len(file_content) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty"
+        )
+
+    # Run OCR extraction
+    try:
+        logger.info(f"[ocr-boarding-pass] Processing file: {file.filename} ({content_type}, {len(file_content)} bytes)")
+
+        result = await ocr_service.extract_boarding_pass_data(
+            file_content=file_content,
+            mime_type=content_type,
+            preprocessing=True
+        )
+
+        # Build response
+        response = OCRResponseSchema(
+            success=result.get("success", False),
+            data=BoardingPassDataSchema(**result["data"]) if result.get("data") else None,
+            raw_text=result.get("raw_text", ""),
+            confidence_score=result.get("confidence_score", 0.0),
+            field_confidence=FieldConfidenceSchema(**result["field_confidence"]) if result.get("field_confidence") else None,
+            errors=result.get("errors", []),
+            warnings=result.get("warnings", []),
+            processing_time_ms=result.get("processing_time_ms")
+        )
+
+        logger.info(
+            f"[ocr-boarding-pass] Extraction complete: success={response.success}, "
+            f"confidence={response.confidence_score}, time={response.processing_time_ms}ms"
+        )
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[ocr-boarding-pass] OCR extraction failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to extract boarding pass data. Please try again or enter details manually."
+        )

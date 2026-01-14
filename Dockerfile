@@ -16,6 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     libmagic1 \
     file \
+    # OCR dependencies (Phase 7.5)
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    libtesseract-dev \
+    # PDF to image conversion (for OCR)
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies

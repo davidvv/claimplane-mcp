@@ -43,6 +43,13 @@ FileValidationRuleSchema = schemas_module.FileValidationRuleSchema
 FileSummarySchema = schemas_module.FileSummarySchema
 ErrorResponseSchema = schemas_module.ErrorResponseSchema
 
+# Import OCR schemas from local module
+from app.schemas.ocr_schemas import (
+    BoardingPassDataSchema,
+    FieldConfidenceSchema,
+    OCRResponseSchema,
+)
+
 __all__ = [
     "AddressSchema",
     "CustomerCreateSchema",
@@ -67,4 +74,8 @@ __all__ = [
     "FileValidationRuleSchema",
     "FileSummarySchema",
     "ErrorResponseSchema",
+    # OCR schemas
+    "BoardingPassDataSchema",
+    "FieldConfidenceSchema",
+    "OCRResponseSchema",
 ]

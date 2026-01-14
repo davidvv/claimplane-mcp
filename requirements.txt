@@ -28,5 +28,12 @@ jinja2==3.1.2
 # Rate limiting (Phase 4.5)
 slowapi==0.1.9
 
+# OCR dependencies (Phase 7.5)
+pytesseract==0.3.10
+pillow==10.4.0
+opencv-python-headless==4.10.0.84
+pdf2image==1.17.0
+numpy>=1.24.0
+
 # Webhook deployment receiver
 flask==3.0.0

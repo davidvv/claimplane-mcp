@@ -228,3 +228,44 @@ export interface HealthResponse {
   timestamp: string;
   version: string;
 }
+
+// ==================== OCR Types ====================
+export interface BoardingPassData {
+  flightNumber?: string | null;
+  departureAirport?: string | null;
+  arrivalAirport?: string | null;
+  flightDate?: string | null; // YYYY-MM-DD
+  departureTime?: string | null; // HH:MM
+  arrivalTime?: string | null; // HH:MM
+  passengerName?: string | null; // e.g., "SURNAME/FIRSTNAME"
+  bookingReference?: string | null;
+  seatNumber?: string | null;
+  airline?: string | null;
+}
+
+export interface FieldConfidence {
+  value: string | null;
+  confidence: number; // 0.0 to 1.0
+}
+
+export interface BoardingPassDataWithConfidence {
+  flightNumber?: FieldConfidence;
+  departureAirport?: FieldConfidence;
+  arrivalAirport?: FieldConfidence;
+  flightDate?: FieldConfidence;
+  departureTime?: FieldConfidence;
+  arrivalTime?: FieldConfidence;
+  passengerName?: FieldConfidence;
+  bookingReference?: FieldConfidence;
+  seatNumber?: FieldConfidence;
+  airline?: FieldConfidence;
+}
+
+export interface OCRResponse {
+  success: boolean;
+  data: BoardingPassData;
+  confidence: BoardingPassDataWithConfidence;
+  overallConfidence: number; // 0.0 to 1.0
+  message?: string;
+  warnings?: string[];
+}

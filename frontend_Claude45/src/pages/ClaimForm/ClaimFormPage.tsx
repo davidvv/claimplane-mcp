@@ -13,7 +13,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { isAuthenticated, getCurrentUser, type UserProfile, setAuthToken } from '@/services/auth';
 import { getClaim } from '@/services/claims';
 import { toast } from 'sonner';
-import { Step1_Flight } from './Step1_Flight';
+import { Step1_Flight, type OCRData } from './Step1_Flight';
 import { Step2_Eligibility } from './Step2_Eligibility';
 import { Step3_Passenger } from './Step3_Passenger';
 import { Step4_Review } from './Step4_Review';
@@ -56,6 +56,9 @@ export function ClaimFormPage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [passengerData, setPassengerData] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
+  
+  // OCR data from boarding pass upload
+  const [ocrData, setOcrData] = useState<OCRData | null>(null);
 
   // Draft claim state (Workflow v2)
   const [draftClaimId, setDraftClaimId] = useState<string | null>(null);
@@ -198,9 +201,15 @@ export function ClaimFormPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
-  const handleFlightComplete = (data: FlightStatus) => {
+  const handleFlightComplete = (data: FlightStatus, ocrExtractedData?: OCRData) => {
     setFlightData(data);
     updateFlightData(data);
+    
+    // Store OCR data if provided
+    if (ocrExtractedData) {
+      setOcrData(ocrExtractedData);
+    }
+    
     setCurrentStep(2);
   };
 
@@ -260,6 +269,7 @@ export function ClaimFormPage() {
       setPassengerData(null);
       setDocuments([]);
       setDraftClaimId(null);
+      setOcrData(null); // Clear OCR data
     }
   };
 
@@ -315,6 +325,7 @@ export function ClaimFormPage() {
               customerEmail={customerEmail}
               userProfile={userProfile}
               draftClaimId={draftClaimId}
+              ocrData={ocrData} // Pass OCR data for pre-filling
               onComplete={handlePassengerComplete}
               onBack={handleBack}
             />

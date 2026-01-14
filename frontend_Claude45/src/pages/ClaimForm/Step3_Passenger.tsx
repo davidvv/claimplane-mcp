@@ -8,16 +8,18 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User, Mail, Phone, MapPin, FileText } from 'lucide-react';
+import { User, Mail, Phone, MapPin, FileText, Sparkles } from 'lucide-react';
 
 import { passengerInfoSchema, type PassengerInfoForm } from '@/schemas/validation';
 import type { FlightStatus, EligibilityResponse } from '@/types/api';
 import type { UserProfile } from '@/services/auth';
+import type { OCRData } from './Step1_Flight';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import { Badge } from '@/components/ui/Badge';
 import { FileUploadZone } from '@/components/FileUploadZone';
 
 interface Step3Props {
@@ -28,6 +30,7 @@ interface Step3Props {
   customerEmail?: string | null;
   userProfile?: UserProfile | null;
   draftClaimId?: string | null;  // Workflow v2: Draft claim ID for progressive upload
+  ocrData?: OCRData | null;  // OCR-extracted data from boarding pass
   onComplete: (data: PassengerInfoForm, documents: any[]) => void;
   onBack: () => void;
 }
@@ -40,6 +43,7 @@ export function Step3_Passenger({
   customerEmail,
   userProfile,
   draftClaimId,
+  ocrData,
   onComplete,
   onBack,
 }: Step3Props) {
@@ -78,18 +82,18 @@ export function Step3_Passenger({
     '+52': 'Mexico',
   };
 
-  // Merge default values with priority: initialData > customerEmail > userProfile
+  // Merge default values with priority: initialData > ocrData > customerEmail > userProfile
   const defaultFormValues = {
     incidentType: flightData.status === 'cancelled' ? 'cancellation' : 'delay',
     email: customerEmail || userProfile?.email || '',
-    firstName: userProfile?.first_name || '',
-    lastName: userProfile?.last_name || '',
+    firstName: ocrData?.firstName || userProfile?.first_name || '',
+    lastName: ocrData?.lastName || userProfile?.last_name || '',
     phone: userProfile?.phone || '',
     street: userProfile?.address?.street || '',
     city: userProfile?.address?.city || '',
     postalCode: userProfile?.address?.postalCode || '',
     country: userProfile?.address?.country || '',
-    bookingReference: '',
+    bookingReference: ocrData?.bookingReference || '',
     ticketNumber: '',
     notes: '',
   };
@@ -153,7 +157,15 @@ export function Step3_Passenger({
           <div className="grid md:grid-cols-2 gap-4">
             {/* First Name */}
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name *</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="firstName">First Name *</Label>
+                {ocrData?.firstName && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    From boarding pass
+                  </Badge>
+                )}
+              </div>
               <Input
                 id="firstName"
                 autoComplete="given-name"
@@ -168,7 +180,15 @@ export function Step3_Passenger({
 
             {/* Last Name */}
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name *</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="lastName">Last Name *</Label>
+                {ocrData?.lastName && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    From boarding pass
+                  </Badge>
+                )}
+              </div>
               <Input
                 id="lastName"
                 autoComplete="family-name"
@@ -294,7 +314,15 @@ export function Step3_Passenger({
           <div className="grid md:grid-cols-2 gap-4">
             {/* Booking Reference */}
             <div className="space-y-2">
-              <Label htmlFor="bookingReference">Booking Reference (PNR)</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="bookingReference">Booking Reference (PNR)</Label>
+                {ocrData?.bookingReference && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    From boarding pass
+                  </Badge>
+                )}
+              </div>
               <Input
                 id="bookingReference"
                 placeholder="e.g., ABC123"

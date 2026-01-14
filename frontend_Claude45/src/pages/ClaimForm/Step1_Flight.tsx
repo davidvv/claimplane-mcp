@@ -1,21 +1,25 @@
 /**
- * Step 1: Flight Lookup (Dual-Mode)
+ * Step 1: Flight Lookup with OCR-First Design
  *
- * Phase 6.5: Added route search functionality
- * - Users can now search by route (departure → arrival + date + optional time)
- * - Flight number search remains the default
+ * Three input modes:
+ * 1. Boarding Pass Upload (OCR) - PRIMARY
+ * 2. Flight Number Search
+ * 3. Route Search
  */
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plane, Calendar, Search, MapPin, ArrowUpDown } from 'lucide-react';
+import { Plane, Calendar, Search, MapPin, ArrowUpDown, FileUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { flightLookupSchema, type FlightLookupForm } from '@/schemas/validation';
 import { getFlightStatus, searchFlightsByRoute } from '@/services/flights';
-import type { FlightStatus, FlightSearchResult, Airport } from '@/types/api';
+import { ocrBoardingPass } from '@/services/claims';
+import type { FlightStatus, FlightSearchResult, Airport, OCRResponse } from '@/types/api';
 import { AirportAutocomplete } from '@/components/AirportAutocomplete';
+import { BoardingPassUploadZone } from '@/components/BoardingPassUploadZone';
+import { ExtractedDataPreview, type EditedBoardingPassData } from '@/components/ExtractedDataPreview';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -27,15 +31,28 @@ import { formatDateTime, getStatusLabel } from '@/lib/utils';
 
 interface Step1Props {
   initialData: FlightStatus | null;
-  onComplete: (data: FlightStatus) => void;
+  onComplete: (data: FlightStatus, ocrData?: OCRData) => void;
 }
 
-type InputMode = 'flight-number' | 'route-search';
+// OCR data to pass to next steps
+export interface OCRData {
+  firstName: string;
+  lastName: string;
+  bookingReference?: string;
+  boardingPassFile?: File;
+}
+
+type InputMode = 'boarding-pass' | 'flight-number' | 'route-search';
 
 export function Step1_Flight({ initialData, onComplete }: Step1Props) {
-  const [inputMode, setInputMode] = useState<InputMode>('flight-number');
+  const [inputMode, setInputMode] = useState<InputMode>('boarding-pass');
   const [isLoading, setIsLoading] = useState(false);
   const [flightResult, setFlightResult] = useState<FlightStatus | null>(initialData);
+
+  // OCR state
+  const [boardingPassFile, setBoardingPassFile] = useState<File | null>(null);
+  const [ocrResult, setOcrResult] = useState<OCRResponse | null>(null);
+  const [ocrError, setOcrError] = useState<string | null>(null);
 
   // Route search state
   const [departureAirport, setDepartureAirport] = useState<Airport | null>(null);
@@ -43,7 +60,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
   const [flightDate, setFlightDate] = useState<string>('');
   const [timeFilter, setTimeFilter] = useState<string>('');
   const [searchResults, setSearchResults] = useState<FlightSearchResult[]>([]);
-  const [swapKey, setSwapKey] = useState<number>(0); // Key to force re-render on swap
+  const [swapKey, setSwapKey] = useState<number>(0);
 
   const {
     register,
@@ -59,7 +76,72 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
       : undefined,
   });
 
-  // Flight number search handler (existing functionality)
+  // ==================== OCR Handlers ====================
+
+  const handleFileSelect = async (file: File) => {
+    setBoardingPassFile(file);
+    setOcrError(null);
+    setIsLoading(true);
+
+    try {
+      const result = await ocrBoardingPass(file);
+      
+      if (!result.success) {
+        throw new Error(result.message || 'OCR processing failed');
+      }
+
+      setOcrResult(result);
+      toast.success('Boarding pass data extracted successfully!');
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || error.message || 'Failed to extract data from boarding pass';
+      setOcrError(errorMsg);
+      toast.error(errorMsg);
+      console.error('OCR error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOCRConfirm = async (editedData: EditedBoardingPassData) => {
+    setIsLoading(true);
+
+    try {
+      // Fetch full flight details using extracted data
+      const result = await getFlightStatus({
+        flightNumber: editedData.flightNumber,
+        date: editedData.flightDate,
+      });
+
+      // Pass both flight data and OCR-extracted passenger info
+      const ocrData: OCRData = {
+        firstName: editedData.firstName,
+        lastName: editedData.lastName,
+        bookingReference: editedData.bookingReference,
+        boardingPassFile: boardingPassFile || undefined,
+      };
+
+      setFlightResult(result);
+      setOcrResult(null); // Clear OCR preview
+      toast.success('Flight verified!');
+      
+      // Complete step with OCR data
+      onComplete(result, ocrData);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error?.message || 'Failed to verify flight. Please enter manually.');
+      console.error('Flight verification error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOCRRetry = () => {
+    setBoardingPassFile(null);
+    setOcrResult(null);
+    setOcrError(null);
+  };
+
+  // ==================== Flight Number Handlers ====================
+
   const onSubmitFlightNumber = async (data: FlightLookupForm) => {
     setIsLoading(true);
 
@@ -70,10 +152,9 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
       });
 
       setFlightResult(result);
-      setSearchResults([]); // Clear route search results
+      setSearchResults([]);
       toast.success('Flight found!');
     } catch (error: any) {
-      // Clear previous results when search fails
       setFlightResult(null);
       setSearchResults([]);
       toast.error(error.response?.data?.error?.message || 'Flight not found. Please check your details.');
@@ -83,11 +164,11 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
     }
   };
 
-  // Route search handler (Phase 6.5)
+  // ==================== Route Search Handlers ====================
+
   const onSubmitRouteSearch = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
     if (!departureAirport) {
       toast.error('Please select a departure airport');
       return;
@@ -103,66 +184,44 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
 
     setIsLoading(true);
 
-    console.log('Route Search Request:', {
-      from: departureAirport.iata,
-      to: arrivalAirport.iata,
-      date: flightDate,
-      time: timeFilter || undefined,
-    });
-
     try {
       const response = await searchFlightsByRoute({
         from: departureAirport.iata,
         to: arrivalAirport.iata,
         date: flightDate,
         time: timeFilter || undefined,
-        force_refresh: true, // Always bypass cache to avoid stale results
+        force_refresh: true,
       });
 
-      console.log('Route Search Response:', response);
-      console.log('Flights array:', response.flights);
-      console.log('Flight count:', response.flights?.length || 0);
-
-      if (response.flights && response.flights.length > 0) {
-        console.log('First flight:', response.flights[0]);
-      }
-
       setSearchResults(response.flights || []);
-      setFlightResult(null); // Clear selected flight
+      setFlightResult(null);
 
       if (!response.flights || response.flights.length === 0) {
-        console.warn('No flights in response');
         toast.error('No flights found for this route. Try adjusting your search criteria.');
       } else {
-        console.log(`Setting ${response.flights.length} flights to search results`);
         toast.success(`Found ${response.flights.length} flight${response.flights.length > 1 ? 's' : ''}!`);
       }
     } catch (error: any) {
-      // Clear previous results when search fails
       setSearchResults([]);
       setFlightResult(null);
-      console.error('Route search error:', error);
-      console.error('Error response:', error.response);
       toast.error(error.response?.data?.detail || 'Route search failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle flight selection from route search results
   const handleSelectFlight = async (flight: FlightSearchResult) => {
     setIsLoading(true);
 
     try {
-      // Fetch full flight details using flight number and date
       const result = await getFlightStatus({
         flightNumber: flight.flightNumber,
         date: flightDate,
       });
 
       setFlightResult(result);
-      setSearchResults([]); // Clear search results
-      setInputMode('flight-number'); // Switch back to flight number mode to show result
+      setSearchResults([]);
+      setInputMode('flight-number');
       toast.success('Flight selected!');
     } catch (error: any) {
       // Fallback: Convert flight search result to FlightStatus format
@@ -200,33 +259,20 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
     }
   };
 
-  // Switch mode handler
   const handleModeSwitch = (mode: InputMode) => {
     setInputMode(mode);
     setFlightResult(null);
     setSearchResults([]);
+    setOcrResult(null);
+    setBoardingPassFile(null);
+    setOcrError(null);
   };
 
-  // Swap airports handler
   const handleSwapAirports = () => {
-    console.log('Swapping airports:', {
-      before: {
-        departure: departureAirport?.iata,
-        arrival: arrivalAirport?.iata
-      }
-    });
-
     const temp = departureAirport;
     setDepartureAirport(arrivalAirport);
     setArrivalAirport(temp);
-    setSwapKey(prev => prev + 1); // Force re-render
-
-    console.log('After swap:', {
-      after: {
-        departure: arrivalAirport?.iata,
-        arrival: temp?.iata
-      }
-    });
+    setSwapKey(prev => prev + 1);
   };
 
   return (
@@ -235,196 +281,246 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plane className="w-5 h-5" />
-            Flight Details
+            Start Your Claim in Seconds
           </CardTitle>
           <CardDescription>
-            Find your flight by flight number or search by route
+            Upload your boarding pass for instant data extraction, or enter your flight details manually
           </CardDescription>
         </CardHeader>
 
         <CardContent>
-          {/* Mode Toggle */}
-          <div className="flex gap-2 mb-6">
-            <Button
-              type="button"
-              variant={inputMode === 'flight-number' ? 'default' : 'outline'}
-              onClick={() => handleModeSwitch('flight-number')}
-              className="flex-1"
-            >
-              <Plane className="w-4 h-4 mr-2" />
-              Flight Number
-            </Button>
-            <Button
-              type="button"
-              variant={inputMode === 'route-search' ? 'default' : 'outline'}
-              onClick={() => handleModeSwitch('route-search')}
-              className="flex-1"
-            >
-              <Search className="w-4 h-4 mr-2" />
-              Route Search
-            </Button>
-          </div>
+          {/* ==================== Boarding Pass Mode (Primary) ==================== */}
+          {inputMode === 'boarding-pass' && !ocrResult && (
+            <div className="space-y-6">
+              <BoardingPassUploadZone
+                onFileSelect={handleFileSelect}
+                onOCRSuccess={(result, file) => {
+                  setOcrResult(result);
+                  setBoardingPassFile(file);
+                }}
+                onOCRError={(error) => {
+                  setOcrError(error.message);
+                  toast.error(error.message);
+                }}
+                disabled={isLoading}
+              />
 
-          {/* Flight Number Mode */}
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white dark:bg-gray-900 text-muted-foreground">
+                    or enter manually
+                  </span>
+                </div>
+              </div>
+
+              {/* Manual Entry Options */}
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleModeSwitch('flight-number')}
+                  className="flex-1"
+                >
+                  <Plane className="w-4 h-4 mr-2" />
+                  Flight Number
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleModeSwitch('route-search')}
+                  className="flex-1"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Route Search
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* ==================== OCR Result Preview ==================== */}
+          {inputMode === 'boarding-pass' && ocrResult && (
+            <ExtractedDataPreview
+              data={ocrResult.data}
+              confidence={ocrResult.confidence}
+              overallConfidence={ocrResult.overallConfidence}
+              onConfirm={handleOCRConfirm}
+              onRetry={handleOCRRetry}
+              isLoading={isLoading}
+            />
+          )}
+
+          {/* ==================== Flight Number Mode ==================== */}
           {inputMode === 'flight-number' && (
-            <form onSubmit={handleSubmit(onSubmitFlightNumber)} className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                {/* Flight Number */}
-                <div className="space-y-2">
-                  <Label htmlFor="flightNumber">Flight Number</Label>
-                  <div className="relative">
-                    <Plane className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="flightNumber"
-                      placeholder="e.g., LH1234"
-                      className="pl-10"
-                      {...register('flightNumber')}
-                    />
+            <>
+              {/* Back to Upload Button */}
+              <div className="mb-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleModeSwitch('boarding-pass')}
+                >
+                  <FileUp className="w-4 h-4 mr-2" />
+                  Back to Upload
+                </Button>
+              </div>
+
+              <form onSubmit={handleSubmit(onSubmitFlightNumber)} className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="flightNumber">Flight Number</Label>
+                    <div className="relative">
+                      <Plane className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="flightNumber"
+                        placeholder="e.g., LH1234"
+                        className="pl-10"
+                        {...register('flightNumber')}
+                      />
+                    </div>
+                    {errors.flightNumber && (
+                      <p className="text-sm text-destructive">{errors.flightNumber.message}</p>
+                    )}
                   </div>
-                  {errors.flightNumber && (
-                    <p className="text-sm text-destructive">
-                      {errors.flightNumber.message}
-                    </p>
-                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="departureDate">Departure Date *</Label>
+                    <div className="relative">
+                      <Calendar
+                        className="absolute left-3 top-3 w-4 h-4 text-muted-foreground cursor-pointer z-10"
+                        onClick={() => (document.getElementById('departureDate') as HTMLInputElement)?.showPicker?.()}
+                      />
+                      <Input
+                        id="departureDate"
+                        type="date"
+                        className="pl-10"
+                        max={new Date().toISOString().split('T')[0]}
+                        required
+                        {...register('departureDate', { required: 'Departure date is required' })}
+                      />
+                    </div>
+                    {errors.departureDate && (
+                      <p className="text-sm text-destructive">{errors.departureDate.message}</p>
+                    )}
+                  </div>
                 </div>
 
-                {/* Departure Date */}
+                <Button type="submit" disabled={isLoading} className="w-full">
+                  {isLoading ? (
+                    <>
+                      <LoadingSpinner size="sm" className="mr-2" />
+                      Searching...
+                    </>
+                  ) : (
+                    'Search Flight'
+                  )}
+                </Button>
+              </form>
+            </>
+          )}
+
+          {/* ==================== Route Search Mode ==================== */}
+          {inputMode === 'route-search' && (
+            <>
+              {/* Back to Upload Button */}
+              <div className="mb-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleModeSwitch('boarding-pass')}
+                >
+                  <FileUp className="w-4 h-4 mr-2" />
+                  Back to Upload
+                </Button>
+              </div>
+
+              <form onSubmit={onSubmitRouteSearch} className="space-y-4">
+                <AirportAutocomplete
+                  key={`departure-${swapKey}`}
+                  value={departureAirport}
+                  onChange={setDepartureAirport}
+                  label="Departure Airport *"
+                  placeholder="Search by city or airport code (e.g., Munich, MUC)"
+                />
+
+                <div className="flex justify-center -my-2 z-10">
+                  <button
+                    type="button"
+                    onClick={handleSwapAirports}
+                    className="rounded-full w-10 h-10 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-500 transition-all shadow-sm"
+                    title="Swap departure and arrival airports"
+                  >
+                    <ArrowUpDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                  </button>
+                </div>
+
+                <AirportAutocomplete
+                  key={`arrival-${swapKey}`}
+                  value={arrivalAirport}
+                  onChange={setArrivalAirport}
+                  label="Arrival Airport *"
+                  placeholder="Search by city or airport code (e.g., New York, JFK)"
+                />
+
                 <div className="space-y-2">
-                  <Label htmlFor="departureDate">Departure Date *</Label>
+                  <Label htmlFor="routeFlightDate">Flight Date *</Label>
                   <div className="relative">
                     <Calendar
                       className="absolute left-3 top-3 w-4 h-4 text-muted-foreground cursor-pointer z-10"
-                      onClick={() => (document.getElementById('departureDate') as HTMLInputElement)?.showPicker?.()}
+                      onClick={() => (document.getElementById('routeFlightDate') as HTMLInputElement)?.showPicker?.()}
                     />
                     <Input
-                      id="departureDate"
+                      id="routeFlightDate"
                       type="date"
                       className="pl-10"
                       max={new Date().toISOString().split('T')[0]}
+                      value={flightDate}
+                      onChange={(e) => setFlightDate(e.target.value)}
                       required
-                      {...register('departureDate', {
-                        required: 'Departure date is required',
-                      })}
                     />
                   </div>
-                  {errors.departureDate && (
-                    <p className="text-sm text-destructive">
-                      {errors.departureDate.message}
-                    </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="timeFilter">Approximate Time (Optional)</Label>
+                  <select
+                    id="timeFilter"
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                    value={timeFilter}
+                    onChange={(e) => setTimeFilter(e.target.value)}
+                  >
+                    <option value="">Any time</option>
+                    <option value="morning">Morning (6:00 - 12:00)</option>
+                    <option value="afternoon">Afternoon (12:00 - 18:00)</option>
+                    <option value="evening">Evening (18:00 - 23:59)</option>
+                  </select>
+                </div>
+
+                <Button type="submit" disabled={isLoading} className="w-full">
+                  {isLoading ? (
+                    <>
+                      <LoadingSpinner size="sm" className="mr-2" />
+                      Searching...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-4 h-4 mr-2" />
+                      Search Flights
+                    </>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    Enter the scheduled departure date in local time
-                  </p>
-                </div>
-              </div>
-
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <>
-                    <LoadingSpinner size="sm" className="mr-2" />
-                    Searching...
-                  </>
-                ) : (
-                  'Search Flight'
-                )}
-              </Button>
-            </form>
-          )}
-
-          {/* Route Search Mode (Phase 6.5) */}
-          {inputMode === 'route-search' && (
-            <form onSubmit={onSubmitRouteSearch} className="space-y-4">
-              {/* Departure Airport */}
-              <AirportAutocomplete
-                key={`departure-${swapKey}`}
-                value={departureAirport}
-                onChange={setDepartureAirport}
-                label="Departure Airport *"
-                placeholder="Search by city or airport code (e.g., Munich, MUC)"
-              />
-
-              {/* Swap Button */}
-              <div className="flex justify-center -my-2 z-10">
-                <button
-                  type="button"
-                  onClick={handleSwapAirports}
-                  className="rounded-full w-10 h-10 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-500 transition-all shadow-sm"
-                  title="Swap departure and arrival airports"
-                >
-                  <ArrowUpDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                </button>
-              </div>
-
-              {/* Arrival Airport */}
-              <AirportAutocomplete
-                key={`arrival-${swapKey}`}
-                value={arrivalAirport}
-                onChange={setArrivalAirport}
-                label="Arrival Airport *"
-                placeholder="Search by city or airport code (e.g., New York, JFK)"
-              />
-
-              {/* Flight Date */}
-              <div className="space-y-2">
-                <Label htmlFor="routeFlightDate">Flight Date *</Label>
-                <div className="relative">
-                  <Calendar
-                    className="absolute left-3 top-3 w-4 h-4 text-muted-foreground cursor-pointer z-10"
-                    onClick={() => (document.getElementById('routeFlightDate') as HTMLInputElement)?.showPicker?.()}
-                  />
-                  <Input
-                    id="routeFlightDate"
-                    type="date"
-                    className="pl-10"
-                    max={new Date().toISOString().split('T')[0]}
-                    value={flightDate}
-                    onChange={(e) => setFlightDate(e.target.value)}
-                    required
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Must be within the last 6 years (EU261 claim window)
-                </p>
-              </div>
-
-              {/* Approximate Time (Optional) */}
-              <div className="space-y-2">
-                <Label htmlFor="timeFilter">Approximate Time (Optional)</Label>
-                <select
-                  id="timeFilter"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                  value={timeFilter}
-                  onChange={(e) => setTimeFilter(e.target.value)}
-                >
-                  <option value="">Any time</option>
-                  <option value="morning">Morning (6:00 - 12:00)</option>
-                  <option value="afternoon">Afternoon (12:00 - 18:00)</option>
-                  <option value="evening">Evening (18:00 - 23:59)</option>
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  Narrow down your search by approximate departure time
-                </p>
-              </div>
-
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <>
-                    <LoadingSpinner size="sm" className="mr-2" />
-                    Searching...
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4 mr-2" />
-                    Search Flights
-                  </>
-                )}
-              </Button>
-            </form>
+                </Button>
+              </form>
+            </>
           )}
         </CardContent>
       </Card>
 
-      {/* Route Search Results (Phase 6.5) */}
+      {/* Route Search Results */}
       {searchResults.length > 0 && (
         <Card className="fade-in">
           <CardHeader>
@@ -439,14 +535,9 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
               <div
                 key={`${flight.flightNumber}-${index}`}
                 onClick={() => handleSelectFlight(flight)}
-                className="
-                  p-4 border rounded-lg cursor-pointer transition-all
-                  hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-gray-800
-                  hover:shadow-md
-                "
+                className="p-4 border rounded-lg cursor-pointer transition-all hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-gray-800 hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-4">
-                  {/* Flight Info */}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <p className="font-semibold text-lg">{flight.flightNumber}</p>
@@ -461,12 +552,9 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
                     </div>
 
                     {flight.scheduledDeparture && (
-                      <p className="text-sm">
-                        Departure: {formatDateTime(flight.scheduledDeparture)}
-                      </p>
+                      <p className="text-sm">Departure: {formatDateTime(flight.scheduledDeparture)}</p>
                     )}
 
-                    {/* Delay/Status Badge */}
                     <div className="mt-2 flex items-center gap-2">
                       <Badge variant={
                         flight.status === 'cancelled' || flight.delayMinutes && flight.delayMinutes >= 180
@@ -483,7 +571,6 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
                         }
                       </Badge>
 
-                      {/* Estimated Compensation */}
                       {flight.estimatedCompensation && flight.estimatedCompensation > 0 && (
                         <Badge variant="destructive">
                           €{flight.estimatedCompensation} compensation
@@ -492,7 +579,6 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
                     </div>
                   </div>
 
-                  {/* Arrow Icon */}
                   <div className="text-muted-foreground">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -505,7 +591,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
         </Card>
       )}
 
-      {/* Flight Result (Existing functionality) */}
+      {/* Flight Result */}
       {flightResult && (
         <Card className="fade-in">
           <CardHeader>
@@ -514,7 +600,6 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            {/* Basic Info */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Flight Number</p>
@@ -534,7 +619,6 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
               </div>
             </div>
 
-            {/* Status */}
             <div>
               <p className="text-sm text-muted-foreground mb-2">Status</p>
               <Badge variant={flightResult.status === 'delayed' || flightResult.status === 'cancelled' ? 'destructive' : 'default'}>
@@ -542,7 +626,6 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
               </Badge>
             </div>
 
-            {/* Delay Info - Don't show for cancelled flights */}
             {flightResult.delay !== null &&
              flightResult.delay !== undefined &&
              flightResult.status?.toLowerCase() !== 'canceled' &&
@@ -576,7 +659,6 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
               </div>
             )}
 
-            {/* Cancellation Notice */}
             {(flightResult.status?.toLowerCase() === 'canceled' ||
               flightResult.status?.toLowerCase() === 'cancelled') && (
               <div className="rounded-lg p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
@@ -589,39 +671,28 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
               </div>
             )}
 
-            {/* Times */}
             <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-              {/* Departure Times */}
               {flightResult.scheduledDeparture && (
                 <div>
                   <p className="text-sm text-muted-foreground">Scheduled Departure</p>
-                  <p className="font-medium">
-                    {formatDateTime(flightResult.scheduledDeparture)}
-                  </p>
+                  <p className="font-medium">{formatDateTime(flightResult.scheduledDeparture)}</p>
                   {flightResult.actualDeparture && (
                     <>
                       <p className="text-sm text-muted-foreground mt-2">Actual Departure</p>
-                      <p className="font-medium">
-                        {formatDateTime(flightResult.actualDeparture)}
-                      </p>
+                      <p className="font-medium">{formatDateTime(flightResult.actualDeparture)}</p>
                     </>
                   )}
                 </div>
               )}
 
-              {/* Arrival Times */}
               {flightResult.scheduledArrival && (
                 <div>
                   <p className="text-sm text-muted-foreground">Scheduled Arrival</p>
-                  <p className="font-medium">
-                    {formatDateTime(flightResult.scheduledArrival)}
-                  </p>
+                  <p className="font-medium">{formatDateTime(flightResult.scheduledArrival)}</p>
                   {flightResult.actualArrival && (
                     <>
                       <p className="text-sm text-muted-foreground mt-2">Actual Arrival</p>
-                      <p className="font-medium">
-                        {formatDateTime(flightResult.actualArrival)}
-                      </p>
+                      <p className="font-medium">{formatDateTime(flightResult.actualArrival)}</p>
                     </>
                   )}
                 </div>

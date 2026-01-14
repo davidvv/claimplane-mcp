@@ -9,6 +9,7 @@ import type {
   ClaimListParams,
   PaginatedResponse,
   ApiResponse,
+  OCRResponse,
 } from '@/types/api';
 
 /**
@@ -102,4 +103,25 @@ export const patchClaim = async (
   }
 
   return response.data.data;
+};
+
+/**
+ * Extract data from boarding pass using OCR
+ * POST /claims/ocr-boarding-pass
+ */
+export const ocrBoardingPass = async (file: File): Promise<OCRResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await apiClient.post<OCRResponse>('/claims/ocr-boarding-pass', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  if (!response.data) {
+    throw new Error('OCR processing failed');
+  }
+
+  return response.data;
 };

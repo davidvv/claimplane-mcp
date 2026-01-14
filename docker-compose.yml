@@ -79,6 +79,7 @@ services:
       FLIGHT_SEARCH_CACHE_HOURS: ${FLIGHT_SEARCH_CACHE_HOURS:-24}
       AIRPORT_AUTOCOMPLETE_CACHE_DAYS: ${AIRPORT_AUTOCOMPLETE_CACHE_DAYS:-7}
       FLIGHT_SEARCH_ANALYTICS_ENABLED: ${FLIGHT_SEARCH_ANALYTICS_ENABLED:-true}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/google-cloud-key.json
     ports:
       - "8000:8000"
     depends_on:
@@ -86,6 +87,7 @@ services:
         condition: service_healthy
     volumes:
       - ./app:/app/app
+      - ./google-cloud-key.json:/app/google-cloud-key.json:ro
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - nextcloud_network
@@ -107,6 +109,7 @@ services:
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Flight Claim System}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       FRONTEND_URL: ${FRONTEND_URL:-https://eac.dvvcloud.work}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/google-cloud-key.json
     depends_on:
       redis:
         condition: service_healthy
@@ -114,6 +117,7 @@ services:
         condition: service_healthy
     volumes:
       - ./app:/app/app
+      - ./google-cloud-key.json:/app/google-cloud-key.json:ro
     command: celery -A app.celery_app worker --loglevel=info
     networks:
       - nextcloud_network
@@ -135,6 +139,7 @@ services:
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Flight Claim System}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       FRONTEND_URL: ${FRONTEND_URL:-https://eac.dvvcloud.work}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/google-cloud-key.json
     depends_on:
       redis:
         condition: service_healthy
@@ -142,6 +147,7 @@ services:
         condition: service_healthy
     volumes:
       - ./app:/app/app
+      - ./google-cloud-key.json:/app/google-cloud-key.json:ro
     command: celery -A app.celery_app beat --loglevel=info
     networks:
       - nextcloud_network

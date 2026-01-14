@@ -55,6 +55,9 @@ secrets/*
 .env.production
 .env.staging
 .env.*.local
+google-cloud-key.json
+claimplane*.json
+*-key.json
 
 # Security Files
 docker-secrets.txt

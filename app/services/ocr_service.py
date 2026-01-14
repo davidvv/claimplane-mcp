@@ -75,6 +75,7 @@ class OCRService:
         self._pyzbar_available = None
         self._google_vision_available = None
         self._google_credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        logger.info(f"OCRService initialized. Credentials path: {self._google_credentials_path}")
 
     def _check_dependencies(self) -> Dict[str, bool]:
         """Check if OCR dependencies are available."""
@@ -224,6 +225,8 @@ class OCRService:
         """Run Google Cloud Vision API OCR."""
         try:
             from google.cloud import vision
+            from google.api_core.exceptions import PermissionDenied
+            
             client = vision.ImageAnnotatorClient()
             image = vision.Image(content=file_content)
             response = client.document_text_detection(image=image)
@@ -236,7 +239,15 @@ class OCRService:
             elif response.text_annotations:
                 return response.text_annotations[0].description if response.text_annotations else ""
             return ""
+        except ImportError:
+            logger.error("Google Cloud Vision library not installed")
+            raise
         except Exception as e:
+            # Handle PermissionDenied specifically (billing issues)
+            if "PermissionDenied" in str(type(e)) or "billing" in str(e).lower():
+                logger.error(f"Google Vision Billing Error: {str(e)}")
+                raise Exception("Google Cloud Billing is not enabled for this project. Please enable billing in Google Cloud Console.")
+            
             logger.error(f"Google Vision OCR failed: {str(e)}", exc_info=True)
             raise
 

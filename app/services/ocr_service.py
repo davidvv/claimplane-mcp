@@ -133,20 +133,55 @@ class OCRService:
                 result["errors"].append(f"Failed to load image from {mime_type} file")
                 return result
 
-            # Preprocess image if enabled
+            # Preprocess image if enabled - creates multiple variants
             if preprocessing and deps.get("opencv"):
-                image = self._preprocess_image(image)
+                image_variants = self._preprocess_image(image)
+            else:
+                image_variants = [("original", image)]
 
-            # Run OCR
-            raw_text = self._run_ocr(image)
-            result["raw_text"] = raw_text
+            # Try OCR on each variant and keep the best result
+            best_raw_text = ""
+            best_field_count = 0
+            best_data = None
+            best_confidence = None
 
-            if not raw_text or len(raw_text.strip()) < 10:
-                result["errors"].append("OCR extracted very little or no text from image")
+            logger.info(f"Running OCR on {len(image_variants)} image variants...")
+
+            for variant_name, variant_image in image_variants:
+                logger.info(f"Processing variant: {variant_name}")
+
+                # Run OCR on this variant
+                variant_text = self._run_ocr(variant_image)
+
+                if not variant_text or len(variant_text.strip()) < 10:
+                    logger.info(f"Variant {variant_name} extracted insufficient text")
+                    continue
+
+                # Parse this variant's text
+                variant_data, variant_confidence = self._parse_boarding_pass_text(variant_text)
+
+                # Count how many fields were extracted
+                field_count = sum(1 for v in variant_data.values() if v is not None)
+
+                logger.info(f"Variant {variant_name}: {field_count} fields extracted, {len(variant_text)} chars")
+
+                # Keep the variant with most fields extracted
+                if field_count > best_field_count:
+                    best_raw_text = variant_text
+                    best_field_count = field_count
+                    best_data = variant_data
+                    best_confidence = variant_confidence
+                    logger.info(f"New best variant: {variant_name} with {field_count} fields")
+
+            if not best_raw_text or best_field_count == 0:
+                result["errors"].append("OCR could not extract boarding pass data from any image variant")
                 return result
 
-            # Parse extracted text
-            extracted_data, field_confidence = self._parse_boarding_pass_text(raw_text)
+            logger.info(f"Best result: {best_field_count} fields extracted from {len(best_raw_text)} characters")
+
+            result["raw_text"] = best_raw_text
+            extracted_data = best_data
+            field_confidence = best_confidence
 
             # Validate extracted data
             validation_errors, validation_warnings = self._validate_extracted_data(extracted_data)
@@ -216,64 +251,168 @@ class OCRService:
             logger.error(f"Failed to load image: {str(e)}", exc_info=True)
             return None
 
-    def _preprocess_image(self, image: Any) -> Any:
+    def _is_clean_digital_image(self, image: Any) -> bool:
+        """
+        Detect if image is a clean digital screenshot (vs blurry photo).
+        Clean screenshots don't need preprocessing.
+        """
+        try:
+            import cv2
+            import numpy as np
+
+            img_array = np.array(image)
+            if len(img_array.shape) == 3:
+                gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
+            else:
+                gray = img_array
+
+            # Check sharpness using Laplacian variance
+            laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+
+            # Check contrast
+            contrast = gray.std()
+
+            # If sharp (>100) and good contrast (>50), it's likely a clean digital image
+            # Digital screenshots: laplacian_var > 500, contrast > 60
+            # Blurry photos: laplacian_var < 100, contrast < 50
+            is_clean = laplacian_var > 200 and contrast > 40
+
+            logger.info(f"Image quality check: laplacian_var={laplacian_var:.1f}, contrast={contrast:.1f}, is_clean={is_clean}")
+            return is_clean
+
+        except Exception as e:
+            logger.warning(f"Image quality check failed: {str(e)}")
+            return False
+
+    def _preprocess_image(self, image: Any) -> list:
         """
         Preprocess image for better OCR results.
-
-        Steps:
-        1. Convert to grayscale
-        2. Apply CLAHE (adaptive contrast enhancement)
-        3. Denoise
-        4. Binarization (thresholding)
+        Returns multiple preprocessed versions to try OCR on each.
         """
         try:
             import cv2
             import numpy as np
             from PIL import Image
 
-            # Convert PIL Image to numpy array
             img_array = np.array(image)
-
-            # Convert to grayscale if color
             if len(img_array.shape) == 3:
                 gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
             else:
                 gray = img_array
 
-            # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
-            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-            enhanced = clahe.apply(gray)
+            is_clean = self._is_clean_digital_image(image)
+            variants = []
 
-            # Denoise
-            denoised = cv2.fastNlMeansDenoising(enhanced, h=10)
+            # Variant 1: Original grayscale
+            variants.append(("original_gray", Image.fromarray(gray)))
 
-            # Adaptive thresholding for binarization
-            binary = cv2.adaptiveThreshold(
-                denoised,
-                255,
-                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                cv2.THRESH_BINARY,
-                11,
-                2
-            )
+            # Variant 2: Upscaled 3x for better text recognition (slow but accurate)
+            height, width = gray.shape
+            upscaled_3x = cv2.resize(gray, (width * 3, height * 3), interpolation=cv2.INTER_CUBIC)
+            variants.append(("upscaled_3x", Image.fromarray(upscaled_3x)))
 
-            # Convert back to PIL Image
-            return Image.fromarray(binary)
+            if not is_clean:
+                logger.info("Blurry/photo image - creating enhanced variants")
+
+                # Variant 3: CLAHE enhanced
+                clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+                enhanced = clahe.apply(gray)
+                variants.append(("clahe", Image.fromarray(enhanced)))
+
+                # Variant 4: Denoised
+                denoised = cv2.fastNlMeansDenoising(enhanced, h=10)
+                variants.append(("denoised", Image.fromarray(denoised)))
+
+                # Variant 5: Binary threshold
+                binary = cv2.adaptiveThreshold(
+                    denoised,
+                    255,
+                    cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                    cv2.THRESH_BINARY,
+                    11,
+                    2
+                )
+                variants.append(("binary", Image.fromarray(binary)))
+
+                # Variant 6: Otsu thresholding
+                _, otsu = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                variants.append(("otsu", Image.fromarray(otsu)))
+            else:
+                logger.info("Clean digital image - using minimal preprocessing")
+
+                # Variant 3: Slight sharpening for digital images
+                kernel_sharpen = np.array([[-1,-1,-1],
+                                          [-1, 9,-1],
+                                          [-1,-1,-1]])
+                sharpened = cv2.filter2D(gray, -1, kernel_sharpen)
+                variants.append(("sharpened", Image.fromarray(sharpened)))
+
+                # Variant 4: Upscaled 4x (aggressive but good for small text)
+                upscaled_4x = cv2.resize(gray, (width * 4, height * 4), interpolation=cv2.INTER_CUBIC)
+                variants.append(("upscaled_4x", Image.fromarray(upscaled_4x)))
+
+            logger.info(f"Created {len(variants)} image variants for OCR")
+            return variants
 
         except Exception as e:
             logger.warning(f"Image preprocessing failed, using original: {str(e)}")
-            return image
+            return [("original", image)]
 
     def _run_ocr(self, image: Any) -> str:
-        """Run Tesseract OCR on image."""
+        """Run Tesseract OCR on image with exhaustive strategies."""
         try:
             import pytesseract
 
-            # Run OCR with custom config for better accuracy
-            custom_config = r'--oem 3 --psm 6'
-            text = pytesseract.image_to_string(image, config=custom_config)
+            # Try MANY configurations - slow but thorough
+            # OEM 3 = Default (Legacy + LSTM)
+            # OEM 1 = LSTM only (best for clean text)
+            # PSM modes:
+            #   3 = Fully automatic page segmentation
+            #   4 = Assume single column of text
+            #   6 = Assume uniform block of text
+            #   11 = Sparse text
+            #   12 = Sparse text with OSD
 
-            return text.strip()
+            configs = [
+                # LSTM engine with different page segmentation modes
+                r'--oem 1 --psm 3',   # LSTM + auto segmentation
+                r'--oem 1 --psm 4',   # LSTM + single column
+                r'--oem 1 --psm 6',   # LSTM + uniform block
+                r'--oem 1 --psm 11',  # LSTM + sparse text
+                r'--oem 1 --psm 12',  # LSTM + sparse text with OSD
+
+                # Default engine (Legacy + LSTM)
+                r'--oem 3 --psm 3',   # Default + auto segmentation
+                r'--oem 3 --psm 4',   # Default + single column
+                r'--oem 3 --psm 6',   # Default + uniform block
+                r'--oem 3 --psm 11',  # Default + sparse text
+
+                # Legacy engine
+                r'--oem 0 --psm 3',   # Legacy + auto segmentation
+                r'--oem 0 --psm 6',   # Legacy + uniform block
+            ]
+
+            results = []
+            for i, config in enumerate(configs):
+                try:
+                    logger.info(f"Trying OCR config {i+1}/{len(configs)}: {config}")
+                    text = pytesseract.image_to_string(image, config=config)
+                    cleaned = text.strip()
+                    if cleaned:
+                        results.append(cleaned)
+                        logger.info(f"Config {i+1} extracted {len(cleaned)} characters")
+                except Exception as e:
+                    logger.warning(f"Config {i+1} failed: {str(e)}")
+                    continue
+
+            if not results:
+                logger.warning("No OCR results from any configuration")
+                return ""
+
+            # Return the longest result (usually means more text extracted)
+            best = max(results, key=len)
+            logger.info(f"Best result: {len(best)} characters from {len(results)} successful attempts")
+            return best
 
         except Exception as e:
             logger.error(f"Tesseract OCR failed: {str(e)}", exc_info=True)

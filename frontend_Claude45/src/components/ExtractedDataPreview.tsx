@@ -10,19 +10,19 @@
  */
 
 import { useState, useEffect } from 'react';
-import { CheckCircle2, AlertTriangle, Edit2, Plane, MapPin, Calendar, User, Hash } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Edit2, Plane, User } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
-import type { BoardingPassData, BoardingPassDataWithConfidence } from '@/types/api';
+import type { BoardingPassData, FieldConfidenceScores } from '@/types/api';
 
 interface ExtractedDataPreviewProps {
   data: BoardingPassData;
-  confidence: BoardingPassDataWithConfidence;
-  overallConfidence: number;
+  fieldConfidence: FieldConfidenceScores;
+  confidenceScore: number;
   onConfirm: (editedData: EditedBoardingPassData) => void;
   onRetry: () => void;
   isLoading?: boolean;
@@ -94,14 +94,14 @@ function ConfidenceBadge({ confidence }: { confidence: number }) {
 
 export function ExtractedDataPreview({
   data,
-  confidence,
-  overallConfidence,
+  fieldConfidence,
+  confidenceScore,
   onConfirm,
   onRetry,
   isLoading = false,
 }: ExtractedDataPreviewProps) {
   const parsedName = parseName(data.passengerName);
-  
+
   const [editMode, setEditMode] = useState(false);
   const [editedData, setEditedData] = useState<EditedBoardingPassData>({
     flightNumber: data.flightNumber || '',
@@ -131,7 +131,7 @@ export function ExtractedDataPreview({
     onConfirm(editedData);
   };
 
-  const hasLowConfidenceFields = overallConfidence < 0.6;
+  const hasLowConfidenceFields = confidenceScore < 0.6;
 
   return (
     <Card className="border-2 border-blue-500">
@@ -148,7 +148,7 @@ export function ExtractedDataPreview({
           </div>
           <div className="text-right">
             <p className="text-sm text-muted-foreground mb-1">Overall Confidence</p>
-            <ConfidenceBadge confidence={overallConfidence} />
+            <ConfidenceBadge confidence={confidenceScore} />
           </div>
         </div>
       </CardHeader>
@@ -206,8 +206,8 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.flightNumber || '-'}</p>
                 )}
-                {confidence.flightNumber && (
-                  <ConfidenceBadge confidence={confidence.flightNumber.confidence} />
+                {fieldConfidence.flightNumber !== undefined && (
+                  <ConfidenceBadge confidence={fieldConfidence.flightNumber} />
                 )}
               </div>
             </div>
@@ -227,8 +227,8 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.flightDate || '-'}</p>
                 )}
-                {confidence.flightDate && (
-                  <ConfidenceBadge confidence={confidence.flightDate.confidence} />
+                {fieldConfidence.flightDate !== undefined && (
+                  <ConfidenceBadge confidence={fieldConfidence.flightDate} />
                 )}
               </div>
             </div>
@@ -248,8 +248,8 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.departureAirport || '-'}</p>
                 )}
-                {confidence.departureAirport && (
-                  <ConfidenceBadge confidence={confidence.departureAirport.confidence} />
+                {fieldConfidence.departureAirport !== undefined && (
+                  <ConfidenceBadge confidence={fieldConfidence.departureAirport} />
                 )}
               </div>
             </div>
@@ -269,8 +269,8 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.arrivalAirport || '-'}</p>
                 )}
-                {confidence.arrivalAirport && (
-                  <ConfidenceBadge confidence={confidence.arrivalAirport.confidence} />
+                {fieldConfidence.arrivalAirport !== undefined && (
+                  <ConfidenceBadge confidence={fieldConfidence.arrivalAirport} />
                 )}
               </div>
             </div>
@@ -299,8 +299,8 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.firstName || '-'}</p>
                 )}
-                {confidence.passengerName && (
-                  <ConfidenceBadge confidence={confidence.passengerName.confidence} />
+                {fieldConfidence.passengerName !== undefined && (
+                  <ConfidenceBadge confidence={fieldConfidence.passengerName} />
                 )}
               </div>
             </div>
@@ -341,8 +341,8 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.bookingReference || '-'}</p>
                 )}
-                {confidence.bookingReference && (
-                  <ConfidenceBadge confidence={confidence.bookingReference.confidence} />
+                {fieldConfidence.bookingReference !== undefined && (
+                  <ConfidenceBadge confidence={fieldConfidence.bookingReference} />
                 )}
               </div>
             </div>

@@ -102,7 +102,7 @@ export function Step3_Passenger({
     register,
     handleSubmit,
     setValue,
-    watch,
+    // watch,
     formState: { errors },
   } = useForm<PassengerInfoForm>({
     resolver: zodResolver(passengerInfoSchema),
@@ -115,7 +115,7 @@ export function Step3_Passenger({
   }, [draftClaimId]);
 
   // Watch the country field to keep it in sync
-  const currentCountry = watch('country');
+  // const currentCountry = watch('country');
 
   // Initialize phone number from existing data
   useEffect(() => {

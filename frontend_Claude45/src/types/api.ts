@@ -243,29 +243,27 @@ export interface BoardingPassData {
   airline?: string | null;
 }
 
-export interface FieldConfidence {
-  value: string | null;
-  confidence: number; // 0.0 to 1.0
-}
-
-export interface BoardingPassDataWithConfidence {
-  flightNumber?: FieldConfidence;
-  departureAirport?: FieldConfidence;
-  arrivalAirport?: FieldConfidence;
-  flightDate?: FieldConfidence;
-  departureTime?: FieldConfidence;
-  arrivalTime?: FieldConfidence;
-  passengerName?: FieldConfidence;
-  bookingReference?: FieldConfidence;
-  seatNumber?: FieldConfidence;
-  airline?: FieldConfidence;
+// Field-level confidence scores (backend returns just numbers)
+export interface FieldConfidenceScores {
+  flightNumber?: number;
+  departureAirport?: number;
+  arrivalAirport?: number;
+  flightDate?: number;
+  departureTime?: number;
+  arrivalTime?: number;
+  passengerName?: number;
+  bookingReference?: number;
+  seatNumber?: number;
+  airline?: number;
 }
 
 export interface OCRResponse {
   success: boolean;
   data: BoardingPassData;
-  confidence: BoardingPassDataWithConfidence;
-  overallConfidence: number; // 0.0 to 1.0
-  message?: string;
+  fieldConfidence: FieldConfidenceScores; // Backend uses fieldConfidence
+  confidenceScore: number; // Backend uses confidenceScore (not overallConfidence)
+  rawText?: string;
+  errors?: string[];
   warnings?: string[];
+  processingTimeMs?: number;
 }

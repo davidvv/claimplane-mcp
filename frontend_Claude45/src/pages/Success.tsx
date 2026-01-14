@@ -7,9 +7,9 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Mail, Search, FileText } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { getShortClaimId } from '@/lib/utils';
+// import { getShortClaimId } from '@/lib/utils';
 
 export function Success() {
   const [searchParams] = useSearchParams();

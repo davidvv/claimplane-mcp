@@ -135,11 +135,11 @@ export function FileUploadZone({
 
       // Calculate the starting index for new files in the updated array
       // This index will be used for state updates during async upload
-      let startIndex = 0;
-      
+      // let startIndex = 0;
+
       setUploadedFiles((prevFiles) => {
         const updatedFiles = [...prevFiles, ...newFiles].slice(0, maxFiles);
-        startIndex = prevFiles.length; // Correct index for appended files
+        // startIndex = prevFiles.length; // Correct index for appended files
         onFilesChange(updatedFiles);
         return updatedFiles;
       });

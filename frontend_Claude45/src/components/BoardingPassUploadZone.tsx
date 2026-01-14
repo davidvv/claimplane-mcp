@@ -18,11 +18,11 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import type { OCRResponse } from '@/types/api';
+// import type { OCRResponse } from '@/types/api';
 
 interface BoardingPassUploadZoneProps {
-  onOCRSuccess: (result: OCRResponse, file: File) => void;
-  onOCRError?: (error: Error) => void;
+  // onOCRSuccess: (result: OCRResponse, file: File) => void;
+  // onOCRError?: (error: Error) => void;
   onFileSelect?: (file: File) => void;
   disabled?: boolean;
 }
@@ -35,8 +35,8 @@ const ACCEPTED_FILE_TYPES = {
 };
 
 export function BoardingPassUploadZone({
-  onOCRSuccess,
-  onOCRError,
+  // onOCRSuccess,
+  // onOCRError,
   onFileSelect,
   disabled = false,
 }: BoardingPassUploadZoneProps) {

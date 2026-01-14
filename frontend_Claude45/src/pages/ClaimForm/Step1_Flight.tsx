@@ -52,7 +52,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
   // OCR state
   const [boardingPassFile, setBoardingPassFile] = useState<File | null>(null);
   const [ocrResult, setOcrResult] = useState<OCRResponse | null>(null);
-  const [ocrError, setOcrError] = useState<string | null>(null);
+  // const [ocrError, setOcrError] = useState<string | null>(null); // Unused for now
 
   // Route search state
   const [departureAirport, setDepartureAirport] = useState<Airport | null>(null);
@@ -80,21 +80,22 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
 
   const handleFileSelect = async (file: File) => {
     setBoardingPassFile(file);
-    setOcrError(null);
+    // setOcrError(null);
     setIsLoading(true);
 
     try {
       const result = await ocrBoardingPass(file);
-      
+
       if (!result.success) {
-        throw new Error(result.message || 'OCR processing failed');
+        const errorMessage = result.errors?.[0] || 'OCR processing failed';
+        throw new Error(errorMessage);
       }
 
       setOcrResult(result);
       toast.success('Boarding pass data extracted successfully!');
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.message || 'Failed to extract data from boarding pass';
-      setOcrError(errorMsg);
+      // setOcrError(errorMsg);
       toast.error(errorMsg);
       console.error('OCR error:', error);
     } finally {
@@ -137,7 +138,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
   const handleOCRRetry = () => {
     setBoardingPassFile(null);
     setOcrResult(null);
-    setOcrError(null);
+    // setOcrError(null);
   };
 
   // ==================== Flight Number Handlers ====================
@@ -265,7 +266,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
     setSearchResults([]);
     setOcrResult(null);
     setBoardingPassFile(null);
-    setOcrError(null);
+    // setOcrError(null);
   };
 
   const handleSwapAirports = () => {
@@ -294,14 +295,6 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
             <div className="space-y-6">
               <BoardingPassUploadZone
                 onFileSelect={handleFileSelect}
-                onOCRSuccess={(result, file) => {
-                  setOcrResult(result);
-                  setBoardingPassFile(file);
-                }}
-                onOCRError={(error) => {
-                  setOcrError(error.message);
-                  toast.error(error.message);
-                }}
                 disabled={isLoading}
               />
 
@@ -345,8 +338,8 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
           {inputMode === 'boarding-pass' && ocrResult && (
             <ExtractedDataPreview
               data={ocrResult.data}
-              confidence={ocrResult.confidence}
-              overallConfidence={ocrResult.overallConfidence}
+              fieldConfidence={ocrResult.fieldConfidence}
+              confidenceScore={ocrResult.confidenceScore}
               onConfirm={handleOCRConfirm}
               onRetry={handleOCRRetry}
               isLoading={isLoading}

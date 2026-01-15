@@ -671,3 +671,50 @@ Best regards,
         except Exception as e:
             logger.error(f"Failed to send final reminder email: {str(e)}")
             return False
+
+    @staticmethod
+    async def send_admin_alert(
+        recipient_email: str,
+        subject: str,
+        message: str
+    ) -> bool:
+        """
+        Send a generic alert email to an administrator.
+
+        Args:
+            recipient_email: Admin's email address
+            subject: Alert subject
+            message: Alert message body (plain text or simple HTML)
+
+        Returns:
+            True if sent successfully
+        """
+        logger.info(f"Sending admin alert to {recipient_email}: {subject}")
+
+        try:
+            # Simple HTML wrapper
+            html_content = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2 style="color: #d32f2f;">System Alert</h2>
+                <p><strong>Subject:</strong> {subject}</p>
+                <div style="background-color: #f5f5f5; padding: 15px; border-left: 4px solid #d32f2f; margin: 20px 0;">
+                    {message.replace(chr(10), '<br>')}
+                </div>
+                <p style="color: #666; font-size: 12px;">
+                    EasyAirClaim System Notification
+                </p>
+            </body>
+            </html>
+            """
+
+            return await EmailService.send_email(
+                to_email=recipient_email,
+                subject=f"[Admin Alert] {subject}",
+                html_content=html_content,
+                text_content=message
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to send admin alert: {str(e)}")
+            return False

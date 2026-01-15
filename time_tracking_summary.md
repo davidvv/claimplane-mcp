@@ -2,15 +2,15 @@
 
 ## Project Overview
 - **Project Duration**: 2025-09-04 to 2026-01-14 (4 months)
-- **Total Commits**: 166 (146 by David, 20 by Florian)
-- **Estimated Total Time**: ~518-602 hours
+- **Total Commits**: 167 (147 by David, 20 by Florian)
+- **Estimated Total Time**: ~518.75-602.75 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 146 (88.0%)
-- **Estimated Time**: 455-519.5 hours
+- **Commits**: 147 (88.0%)
+- **Estimated Time**: 455.75-520.25 hours
 - **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR
 - **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction
 
@@ -20,7 +20,15 @@
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
-## Latest Update (2026-01-14) - Google Vision Setup
+## Latest Update (2026-01-14) - Google Vision Usage Limits
+- **Usage Limits & Alerts**: Implemented safety mechanisms for Google Vision API
+  - Hard limit: 999 requests/month (Free tier)
+  - Warning threshold: 900 requests/month (Email alert)
+  - Redis-based tracking with automatic monthly reset
+  - Admin alert email system
+- **Time Added**: 0.75 hours
+
+## Previous Update (2026-01-14) - Google Vision Setup
 - **Google Cloud Vision Integration**: Completed setup and configuration
   - Verified and installed google-cloud-key.json
   - Updated docker-compose and environment configuration

@@ -10,7 +10,11 @@ import logging
 import os
 import re
 import time
+from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple
+
+from app.services.cache_service import CacheService
+from app.tasks.admin_tasks import send_admin_alert_email
 
 logger = logging.getLogger(__name__)
 
@@ -221,9 +225,72 @@ class OCRService:
             logger.error(f"Failed to load image: {str(e)}", exc_info=True)
             return None
 
+    async def _check_and_increment_usage(self) -> bool:
+        """
+        Check and increment Google Vision API usage counter.
+        
+        Enforces a strict limit of 999 requests per month (Free tier limit).
+        Sends an alert email when usage reaches 900.
+        
+        Returns:
+            True if usage is within limit, False if limit exceeded.
+        """
+        try:
+            client = await CacheService.get_redis_client()
+            if not client:
+                logger.warning("Redis unavailable, proceeding without usage tracking (risk of overage)")
+                return True
+
+            # Monthly key format: ocr:usage:2026-01
+            current_month = datetime.now().strftime("%Y-%m")
+            usage_key = f"ocr:usage:{current_month}"
+            warning_key = f"ocr:warning_sent:{current_month}"
+            
+            # Get current usage (atomic increment)
+            current_usage = await client.incr(usage_key)
+            
+            # Set expiry for 40 days (auto-cleanup) if new key
+            if current_usage == 1:
+                await client.expire(usage_key, 60 * 60 * 24 * 40)
+
+            logger.info(f"Google Vision API usage for {current_month}: {current_usage}/999")
+
+            # Check Hard Limit (999)
+            if current_usage > 999:
+                logger.error(f"Google Vision API monthly limit reached ({current_usage}/999). Blocking request.")
+                return False
+
+            # Check Warning Threshold (900)
+            if current_usage >= 900:
+                warning_sent = await client.get(warning_key)
+                if not warning_sent:
+                    logger.warning(f"Google Vision API usage reached warning threshold ({current_usage}/999). Sending alert.")
+                    
+                    # Send alert email
+                    send_admin_alert_email.delay(
+                        subject=f"Action Required: Google Vision API Limit Warning ({current_usage}/999)",
+                        message=f"Google Vision API usage has reached {current_usage} requests for {current_month}.\n\n"
+                                f"The hard limit is set to 999 to prevent billing charges.\n"
+                                f"Please review usage or increase the limit if needed."
+                    )
+                    
+                    # Mark warning as sent (expire after 40 days)
+                    await client.setex(warning_key, 60 * 60 * 24 * 40, "1")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error checking usage limit: {str(e)}", exc_info=True)
+            # Default to allow if tracking fails, to avoid breaking service on Redis error
+            return True
+
     async def _run_google_vision_ocr(self, file_content: bytes) -> str:
         """Run Google Cloud Vision API OCR."""
         try:
+            # Check monthly usage limit first
+            if not await self._check_and_increment_usage():
+                raise Exception("Monthly OCR usage limit reached (999). Please try again next month or contact support.")
+
             from google.cloud import vision
             from google.api_core.exceptions import PermissionDenied
             

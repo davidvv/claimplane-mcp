@@ -2,12 +2,40 @@
 # EasyAirClaim Project - Complete Commit History Analysis
 
 ## Summary Statistics
-- **Total Commits**: 146
+- **Total Commits**: 147
 - **Date Range**: 2025-09-04 to 2026-01-14
-- **Estimated Total Time**: ~455-519.5 hours
+- **Estimated Total Time**: ~455.75-520.25 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
-## Latest Work (2026-01-14) - Google Vision API Setup
+## Latest Work (2026-01-14) - Google Vision Usage Limits
+
+### Google Vision API Usage Limits & Alerts
+**Estimated Time**: 0.75 hours
+**Work Package**: #132
+
+#### Overview:
+Implemented strict usage limits and email alerts for Google Cloud Vision API to prevent billing overages.
+
+#### Key Tasks:
+1. **Usage Tracking Logic** (app/services/ocr_service.py)
+   - Implemented `_check_and_increment_usage` method
+   - Added Redis counter with monthly reset (`ocr:usage:YYYY-MM`)
+   - Added strict 999 request limit enforcement
+   - Added 900 request warning threshold
+   - Estimated: 0.5 hours
+
+2. **Alert System** (app/tasks/admin_tasks.py)
+   - Created `send_admin_alert_email` Celery task
+   - Updated `EmailService` with generic admin alert capability
+   - Configured email triggers for quota warnings
+   - Estimated: 0.25 hours
+
+### Updated Summary Statistics
+- **Total Commits**: 147 (added 1 new commit)
+- **Date Range**: 2025-09-04 to 2026-01-14
+- **Estimated Total Time**: ~455.75-520.25 hours (added 0.75 hours)
+
+## Previous Work (2026-01-14) - Google Vision API Setup
 
 ### Google Cloud Vision Integration
 **Estimated Time**: 0.5 hours

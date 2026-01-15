@@ -4,6 +4,9 @@
 import sys
 import os
 
+# Add project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 def test_libmagic_import():
     """Test if python-magic can be imported and used."""
     try:

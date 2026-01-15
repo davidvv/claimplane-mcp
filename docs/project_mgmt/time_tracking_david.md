@@ -39,6 +39,31 @@ Significantly improved OCR data extraction quality by fixing passenger name pars
 - **Date Range**: 2025-09-04 to 2026-01-15
 - **Estimated Total Time**: ~457.25-521.75 hours (added 1.5 hours)
 
+## Latest Work (2026-01-15) - Project Cleanup
+
+### Project Directory Reorganization
+**Estimated Time**: 0.5 hours
+
+#### Overview:
+Cleaned up the project root by organizing files into logical subdirectories (docs, scripts, tests).
+
+#### Key Tasks:
+1. **Directory Structure**
+   - Created `docs/archive`, `docs/setup`, `docs/deployment`
+   - Created `scripts/maintenance`, `scripts/deployment`
+   - Created `tests/scripts`, `tests/data`
+   - Estimated: 0.25 hours
+
+2. **Script Updates**
+   - Updated Python scripts to fix import paths (`sys.path`)
+   - Ensured scripts run correctly from new locations
+   - Estimated: 0.25 hours
+
+### Updated Summary Statistics
+- **Total Commits**: 149 (added 1 new commit)
+- **Date Range**: 2025-09-04 to 2026-01-15
+- **Estimated Total Time**: ~457.75-522.25 hours (added 0.5 hours)
+
 ## Previous Work (2026-01-14) - Google Vision Usage Limits
 
 ### Google Vision API Usage Limits & Alerts

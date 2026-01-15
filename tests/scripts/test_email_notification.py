@@ -4,6 +4,11 @@ This will submit a test claim and trigger the email notification.
 """
 import asyncio
 import sys
+import os
+
+# Add project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 

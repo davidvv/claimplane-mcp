@@ -1,5 +1,11 @@
 """Drop and recreate all database tables for Phase 3."""
 import asyncio
+import sys
+import os
+
+# Add project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from app.database import engine, Base
 from app.models import *  # Import all models
 

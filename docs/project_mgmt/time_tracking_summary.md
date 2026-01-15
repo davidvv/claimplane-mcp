@@ -20,6 +20,13 @@
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
+## Latest Update (2026-01-15) - Project Cleanup
+- **Project Reorganization**: Organized root directory into structured subdirectories (docs, scripts, tests)
+  - Created archives for old docs
+  - Organized setup and deployment guides
+  - Updated script paths to ensure functionality
+- **Time Added**: 0.5 hours
+
 ## Latest Update (2026-01-15) - OCR Quality
 - **OCR Quality Improvements**: Fixed passenger name parsing, date logic, and false positives
   - Improved regex for names and flight data

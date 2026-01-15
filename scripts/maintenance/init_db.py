@@ -6,6 +6,11 @@ Creates all tables defined in the models
 
 import asyncio
 import sys
+import os
+
+# Add project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.database import Base
 from app.models import Customer, Claim, ClaimFile, FileAccessLog, FileValidationRule

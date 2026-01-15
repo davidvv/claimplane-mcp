@@ -1,5 +1,11 @@
 """Create a test user with known credentials for testing."""
 import asyncio
+import sys
+import os
+
+# Add project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from passlib.context import CryptContext
 from sqlalchemy import select
 from app.database import get_db

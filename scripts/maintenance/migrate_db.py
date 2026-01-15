@@ -5,6 +5,12 @@ Adds ClaimEvent table and new fields to Claim table
 """
 
 import asyncio
+import sys
+import os
+
+# Add project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from sqlalchemy import text
 from app.database import engine, get_db
 from app.models import Base

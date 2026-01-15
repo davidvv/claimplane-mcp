@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 # Add the app directory to the path (using relative path from script location)
-script_dir = Path(__file__).parent
+script_dir = Path(__file__).resolve().parents[2]
 sys.path.append(str(script_dir))
 
 from app.services.encryption_service import encryption_service

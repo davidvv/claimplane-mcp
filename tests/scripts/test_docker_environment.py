@@ -6,6 +6,9 @@ import sys
 import tempfile
 import os
 
+# Add project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 def test_dockerfile_dependencies():
     """Test if the dependencies we added to Dockerfile are sufficient."""
     

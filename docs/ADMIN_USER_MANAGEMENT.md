@@ -1,6 +1,6 @@
 # Admin User Management Guide
 
-This guide explains how to create and manage admin users in the EasyAirClaim platform.
+This guide explains how to create and manage admin users in the ClaimPlane platform.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ This guide explains how to create and manage admin users in the EasyAirClaim pla
 
 ## Overview
 
-EasyAirClaim uses a role-based access control (RBAC) system with three user roles:
+ClaimPlane uses a role-based access control (RBAC) system with three user roles:
 
 - **Customer**: Regular users who submit flight compensation claims
 - **Admin**: Staff who manage claims, review documents, and update claim statuses
@@ -70,7 +70,7 @@ The easiest way to create admin users is using the interactive script:
 
 ```bash
 # 1. Activate the conda environment
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # 2. Navigate to project root
 cd /Users/david/Documents/Proyectos/flight_claim
@@ -91,7 +91,7 @@ python scripts/create_admin_user.py
 **Example session:**
 ```
 ============================================================
-EasyAirClaim - Admin User Creation
+ClaimPlane - Admin User Creation
 ============================================================
 
 Enter admin user details:
@@ -367,14 +367,14 @@ docker-compose up -d db
 **Solution:**
 ```bash
 # 1. Activate conda environment
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # 2. Navigate to project root
 cd /Users/david/Documents/Proyectos/flight_claim
 
 # 3. Verify Python path
 which python
-# Should show: /Users/david/miniconda3/envs/EasyAirClaim/bin/python
+# Should show: /Users/david/miniconda3/envs/ClaimPlane/bin/python
 
 # 4. Run script
 python scripts/create_admin_user.py
@@ -431,7 +431,7 @@ The following features are planned for future versions:
 
 ### Create First Admin
 ```bash
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 cd /Users/david/Documents/Proyectos/flight_claim
 python scripts/create_admin_user.py
 ```

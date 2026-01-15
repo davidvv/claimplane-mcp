@@ -1,7 +1,7 @@
 # Backend Testing Report - Flight Claim Management System
 **Date**: 2025-11-05
 **Testing Agent**: backend-tester
-**Environment**: EasyAirClaim (Python 3.11.13, pytest 7.4.3)
+**Environment**: ClaimPlane (Python 3.11.13, pytest 7.4.3)
 
 ---
 
@@ -352,7 +352,7 @@ A comprehensive test suite with **97+ new test cases** has been successfully cre
 
 ### Run All Tests
 ```bash
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 pytest
 ```
 

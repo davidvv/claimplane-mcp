@@ -1,5 +1,5 @@
 # Florian's Time Tracking Report
-# EasyAirClaim Project - Complete Commit History Analysis
+# ClaimPlane Project - Complete Commit History Analysis
 
 ## Summary Statistics
 - **Total Commits**: 20

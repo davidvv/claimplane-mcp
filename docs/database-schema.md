@@ -6,7 +6,7 @@
 
 ## Flight Claim System - Database Design
 
-This document provides comprehensive documentation of the PostgreSQL database schema for the EasyAirClaim flight compensation claim management platform, including entity relationships, constraints, indexes, and data validation rules.
+This document provides comprehensive documentation of the PostgreSQL database schema for the ClaimPlane flight compensation claim management platform, including entity relationships, constraints, indexes, and data validation rules.
 
 ---
 

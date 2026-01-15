@@ -32,7 +32,7 @@ This project uses a dedicated Python virtual environment.
 
 **MANDATORY RULES**:
 - ✅ ALWAYS use a virtual environment (conda, venv, or virtualenv)
-- ✅ Name your environment: `EasyAirClaim` (recommended for consistency)
+- ✅ Name your environment: `ClaimPlane` (recommended for consistency)
 - ✅ Install dependencies from: `requirements.txt`
 - ✅ Verify environment: `which python` should NOT show system Python
 - ❌ NEVER install packages to base/system Python
@@ -40,8 +40,8 @@ This project uses a dedicated Python virtual environment.
 **Setup for new developers:**
 ```bash
 # Option 1: Using conda (recommended)
-conda create -n EasyAirClaim python=3.11
-conda activate EasyAirClaim
+conda create -n ClaimPlane python=3.11
+conda activate ClaimPlane
 pip install -r requirements.txt
 
 # Option 2: Using venv
@@ -222,7 +222,7 @@ ClaimFile 1→N FileAccessLog
 ### Running the Application
 
 ```bash
-# Activate environment first (conda activate EasyAirClaim OR source venv/bin/activate)
+# Activate environment first (conda activate ClaimPlane OR source venv/bin/activate)
 
 # Local development
 python app/main.py
@@ -257,7 +257,7 @@ npm run build
 ### Testing
 
 ```bash
-# Activate environment first (conda activate EasyAirClaim OR source venv/bin/activate)
+# Activate environment first (conda activate ClaimPlane OR source venv/bin/activate)
 
 # Run all tests
 pytest
@@ -572,7 +572,7 @@ When working on this codebase:
 ## Next Steps for New Sessions
 
 1. ✅ Read `DEVELOPMENT_WORKFLOW.md` (environment setup)
-2. ✅ Activate EasyAirClaim conda environment
+2. ✅ Activate ClaimPlane conda environment
 3. ✅ Check `.claude/ARCHITECTURE_DECISIONS.md` (owner-approval requirements)
 4. ✅ Read `ROADMAP.md` "NEXT STEPS" section (current priorities)
 5. ✅ Check `docs/SECURITY_AUDIT_v0.2.0.md` (security context)

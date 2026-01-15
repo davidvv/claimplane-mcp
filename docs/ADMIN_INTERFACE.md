@@ -1,6 +1,6 @@
 # Admin Interface Guide
 
-Complete guide to using the EasyAirClaim Admin Dashboard for managing flight compensation claims.
+Complete guide to using the ClaimPlane Admin Dashboard for managing flight compensation claims.
 
 ## Table of Contents
 
@@ -37,7 +37,7 @@ First, you need an admin account. See [ADMIN_USER_MANAGEMENT.md](./ADMIN_USER_MA
 **Quick setup:**
 ```bash
 # Activate conda environment
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # Run admin creation script
 python scripts/create_admin_user.py

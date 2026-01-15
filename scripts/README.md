@@ -1,6 +1,6 @@
 # Scripts Directory
 
-This directory contains utility scripts for managing and maintaining the EasyAirClaim platform.
+This directory contains utility scripts for managing and maintaining the ClaimPlane platform.
 
 ## Available Scripts
 
@@ -84,7 +84,7 @@ All Python scripts require:
 
 1. **Conda environment activated:**
    ```bash
-   source /Users/david/miniconda3/bin/activate EasyAirClaim
+   source /Users/david/miniconda3/bin/activate ClaimPlane
    ```
 
 2. **Run from project root:**
@@ -102,7 +102,7 @@ All Python scripts require:
 
 ```bash
 # 1. Activate environment
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # 2. Run interactive script
 python scripts/create_admin_user.py

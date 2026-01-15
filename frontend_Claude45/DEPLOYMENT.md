@@ -1,6 +1,6 @@
-# Deployment Guide - EasyAirClaim Portal
+# Deployment Guide - ClaimPlane Portal
 
-Complete guide for deploying the EasyAirClaim frontend to various platforms.
+Complete guide for deploying the ClaimPlane frontend to various platforms.
 
 ## Pre-Deployment Checklist
 

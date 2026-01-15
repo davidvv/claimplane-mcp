@@ -1,6 +1,6 @@
 # Deployment Guide - For Development Partner
 
-This guide explains how automatic deployments work for the EasyAirClaim project using GitHub Webhooks.
+This guide explains how automatic deployments work for the ClaimPlane project using GitHub Webhooks.
 
 ## Overview
 

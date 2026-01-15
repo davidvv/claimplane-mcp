@@ -14,7 +14,7 @@ Starting individual containers with `docker-compose up` without Nextcloud will c
 
 ## Build/Test Commands
 ```bash
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 pytest tests/test_specific.py::test_name -v  # Single test
 pytest --cov=app --cov-report=html           # Coverage
 uvicorn app.main:app --reload                # Dev server

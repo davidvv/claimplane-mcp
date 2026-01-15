@@ -39,7 +39,7 @@ Phase 2 implements automated email notifications. We'll test:
 
 Before starting, ensure you have:
 
-- [ ] EasyAirClaim conda environment activated
+- [ ] ClaimPlane conda environment activated
 - [ ] Gmail account (or any email account for testing)
 - [ ] Docker installed (for Redis service)
 - [ ] Terminal access
@@ -128,7 +128,7 @@ SMTP_PASSWORD=abcd efgh ijkl mnop                 # ← Change this! (16-char ap
 
 # Email "From" Address (can be anything!)
 SMTP_FROM_EMAIL=noreply@easyairclaim.com          # ← This is what customers see
-SMTP_FROM_NAME=EasyAirClaim Support
+SMTP_FROM_NAME=ClaimPlane Support
 
 # Email Settings
 SMTP_USE_TLS=true
@@ -152,7 +152,7 @@ ENVIRONMENT=development
 - `SMTP_USERNAME`: Your full Gmail address (e.g., `john.doe@gmail.com`)
 - `SMTP_PASSWORD`: The 16-character app password from Step 1 (e.g., `abcd efgh ijkl mnop`)
 - `SMTP_FROM_EMAIL`: The address customers will see (can be anything, like `noreply@easyairclaim.com`)
-- `SMTP_FROM_NAME`: The name customers will see (e.g., "EasyAirClaim Support")
+- `SMTP_FROM_NAME`: The name customers will see (e.g., "ClaimPlane Support")
 
 **Save the file** (Ctrl+O in nano, then Ctrl+X to exit)
 
@@ -175,11 +175,11 @@ Activate your conda environment and install new packages:
 
 ```bash
 # Activate environment
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # Verify environment
 which python
-# Should show: /Users/david/miniconda3/envs/EasyAirClaim/bin/python
+# Should show: /Users/david/miniconda3/envs/ClaimPlane/bin/python
 
 # Install new dependencies
 pip install -r requirements.txt
@@ -217,7 +217,7 @@ docker ps
 **Terminal 2: Start API**
 ```bash
 # Activate environment
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # Start FastAPI
 python app/main.py
@@ -230,7 +230,7 @@ python app/main.py
 **Terminal 3: Start Celery Worker** ⭐ **This is where the magic happens!**
 ```bash
 # Activate environment
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # Start Celery worker
 celery -A app.celery_app worker --loglevel=info
@@ -363,7 +363,7 @@ Immediately after submitting, switch to Terminal 3 (Celery worker). You should s
 ### Step 5: Check Your Email
 
 1. Open your email inbox (the email you used for the customer)
-2. **Look for email from "EasyAirClaim Support"** or your `SMTP_FROM_NAME`
+2. **Look for email from "ClaimPlane Support"** or your `SMTP_FROM_NAME`
 3. Subject should be: "Claim Submitted - Lufthansa LH123"
 4. Open the email
 
@@ -541,7 +541,7 @@ exit
 
 ```bash
 # In Python shell
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 python
 
 >>> from app.celery_app import celery_app
@@ -726,18 +726,18 @@ When you send an email, there are actually TWO addresses involved:
 ```bash
 SMTP_USERNAME=john.doe@gmail.com           # Your actual Gmail
 SMTP_FROM_EMAIL=noreply@easyairclaim.com  # What customers see
-SMTP_FROM_NAME=EasyAirClaim Support        # Display name
+SMTP_FROM_NAME=ClaimPlane Support        # Display name
 ```
 
 **What customers see**:
 ```
-From: EasyAirClaim Support <noreply@easyairclaim.com>
+From: ClaimPlane Support <noreply@easyairclaim.com>
 Subject: Claim Submitted - Lufthansa LH123
 ```
 
 **Potential issues**:
 - Some email clients show "via gmail.com" next to sender
-- Example: `EasyAirClaim Support <noreply@easyairclaim.com> via gmail.com`
+- Example: `ClaimPlane Support <noreply@easyairclaim.com> via gmail.com`
 - Emails might go to spam more often
 - SPF checks might fail (Gmail's servers sending for your domain)
 
@@ -884,11 +884,11 @@ If something doesn't work:
 docker-compose up db redis -d
 
 # Terminal 2: API
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 python app/main.py
 
 # Terminal 3: Celery Worker
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 celery -A app.celery_app worker --loglevel=info
 ```
 
@@ -934,7 +934,7 @@ SMTP_PORT=587
 SMTP_USERNAME=your-gmail@gmail.com
 SMTP_PASSWORD=your-16-char-app-password
 SMTP_FROM_EMAIL=noreply@easyairclaim.com
-SMTP_FROM_NAME=EasyAirClaim Support
+SMTP_FROM_NAME=ClaimPlane Support
 SMTP_USE_TLS=true
 NOTIFICATIONS_ENABLED=true
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/flight_claim

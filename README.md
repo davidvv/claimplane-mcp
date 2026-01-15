@@ -1,4 +1,4 @@
-# EasyAirClaim - Flight Compensation Platform
+# ClaimPlane - Flight Compensation Platform
 
 FastAPI-based flight compensation claim management platform with EU261/2004 calculation, admin dashboard, async email notifications, and secure file storage.
 
@@ -55,7 +55,7 @@ The Vite dev server has hot reload - changes appear instantly at http://localhos
 docker-compose restart api
 
 # Or run locally (requires conda environment)
-source ~/miniconda3/bin/activate EasyAirClaim
+source ~/miniconda3/bin/activate ClaimPlane
 python app/main.py
 ```
 
@@ -75,7 +75,7 @@ docker-compose logs -f celery_worker
 
 ```bash
 # Backend tests (activate conda environment first)
-source ~/miniconda3/bin/activate EasyAirClaim
+source ~/miniconda3/bin/activate ClaimPlane
 pytest
 
 # Frontend tests

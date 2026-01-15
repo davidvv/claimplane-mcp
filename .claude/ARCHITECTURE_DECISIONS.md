@@ -303,7 +303,7 @@ This is a setup issue, not an architecture issue.
 Let me check your environment:
 
 1. Did you activate the conda environment?
-   Run: source /Users/david/miniconda3/bin/activate EasyAirClaim
+   Run: source /Users/david/miniconda3/bin/activate ClaimPlane
    Verify: which python
 
 2. Is PostgreSQL running?

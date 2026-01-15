@@ -1,4 +1,4 @@
-# EasyAirClaim - Flight Compensation Portal
+# ClaimPlane - Flight Compensation Portal
 
 A production-ready, responsive single-page application (SPA) for filing flight compensation claims. Built with React, TypeScript, Tailwind CSS, and fully typed using OpenAPI specifications.
 

@@ -1,4 +1,4 @@
-# EasyAirClaim Portal - Complete Project Summary
+# ClaimPlane Portal - Complete Project Summary
 
 ## Overview
 

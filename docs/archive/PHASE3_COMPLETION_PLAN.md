@@ -534,7 +534,7 @@ async def test_registration_login_flow(client: AsyncClient):
 ### Quick Start:
 ```bash
 # 1. Activate environment
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # 2. Start server
 uvicorn app.main:app --reload --port 8000

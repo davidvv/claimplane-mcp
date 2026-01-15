@@ -291,7 +291,7 @@ All integrations:
 
 ```bash
 # Activate environment
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # Install new dependencies
 pip install -r requirements.txt

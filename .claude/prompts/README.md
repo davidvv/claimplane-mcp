@@ -1,6 +1,6 @@
 # Custom Slash Commands
 
-This directory contains custom slash commands for the EasyAirClaim project. These commands streamline common workflows and reduce repetitive instructions.
+This directory contains custom slash commands for the ClaimPlane project. These commands streamline common workflows and reduce repetitive instructions.
 
 ## Available Commands
 

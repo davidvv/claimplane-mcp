@@ -40,7 +40,7 @@ This directory contains comprehensive tests for all API endpoints in the Flight 
 2. **Environment Setup**
    ```bash
    # Activate conda environment
-   source /Users/david/miniconda3/bin/activate EasyAirClaim
+   source /Users/david/miniconda3/bin/activate ClaimPlane
    ```
 
 ### Running All Tests

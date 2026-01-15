@@ -702,7 +702,7 @@ Best regards,
                     {message.replace(chr(10), '<br>')}
                 </div>
                 <p style="color: #666; font-size: 12px;">
-                    EasyAirClaim System Notification
+                    ClaimPlane System Notification
                 </p>
             </body>
             </html>

@@ -11,9 +11,9 @@ Run the test suite and provide a comprehensive test report.
    ```bash
    which python
    ```
-2. If not in EasyAirClaim environment, remind user to activate:
+2. If not in ClaimPlane environment, remind user to activate:
    ```bash
-   conda activate EasyAirClaim
+   conda activate ClaimPlane
    ```
 
 ### Step 2: Run Tests

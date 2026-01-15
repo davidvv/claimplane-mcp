@@ -22,7 +22,7 @@ Your `.env` file containing SMTP credentials was committed to git history (commi
 2. **Generate a new app password:**
    - Go to: https://myaccount.google.com/apppasswords
    - Select app: "Mail"
-   - Select device: "Other (Custom name)" → Name it "EasyAirClaim Production"
+   - Select device: "Other (Custom name)" → Name it "ClaimPlane Production"
    - Copy the generated 16-character password
 
 3. **Update your `.env` file:**

@@ -315,11 +315,11 @@ See [ROADMAP.md](ROADMAP.md) for complete Phase 2 details.
 
 ### Environment Management ⚠️
 
-**CRITICAL**: This project uses the `EasyAirClaim` conda environment.
+**CRITICAL**: This project uses the `ClaimPlane` conda environment.
 
 Always activate it before running commands:
 ```bash
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 ```
 
 See [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) for complete instructions.
@@ -337,7 +337,7 @@ X-Admin-ID: <admin-user-uuid>
 
 ```bash
 # Activate environment
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # Run the application
 python app/main.py
@@ -350,7 +350,7 @@ python app/main.py
 
 ```bash
 # Activate environment first
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 
 # Run compensation tests
 pytest app/tests/test_compensation_service.py -v

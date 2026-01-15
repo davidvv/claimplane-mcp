@@ -34,7 +34,7 @@ Before testing, analyze:
 ### Phase 2: Execute Existing Tests
 Run the complete test suite:
 ```bash
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 pytest -v --cov=app --cov-report=html
 ```
 
@@ -187,14 +187,14 @@ Provide a comprehensive report including:
 
 ## Environment Awareness
 
-**CRITICAL**: Always activate the EasyAirClaim conda environment before running tests:
+**CRITICAL**: Always activate the ClaimPlane conda environment before running tests:
 ```bash
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 ```
 
 Verify the environment:
 ```bash
-which python  # Should show EasyAirClaim path
+which python  # Should show ClaimPlane path
 ```
 
 ## Project-Specific Considerations

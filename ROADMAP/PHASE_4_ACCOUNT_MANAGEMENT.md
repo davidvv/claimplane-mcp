@@ -783,7 +783,7 @@ plausible('Claim Submitted', {
 - ❌ Overkill for your use case
 - ❌ Slower (large script)
 
-**Verdict**: **Not recommended** for EasyAirClaim - privacy concerns and ad-blocking make it less effective than alternatives
+**Verdict**: **Not recommended** for ClaimPlane - privacy concerns and ad-blocking make it less effective than alternatives
 
 ---
 

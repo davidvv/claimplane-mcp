@@ -34,6 +34,21 @@ export const deleteClaim = async (claimId: string): Promise<void> => {
   await apiClient.delete(`/claims/${claimId}`);
 };
 
+/**
+ * Get specific claim details
+ * GET /claims/{claimId}
+ */
+export const getClaim = async (claimId: string): Promise<Claim> => {
+  const response = await apiClient.get<Claim>(`/claims/${claimId}`);
+
+  if (!response.data) {
+    throw new Error('Claim not found');
+  }
+
+  return response.data;
+};
+
+
 
 /**
  * Submit new claim (passwordless - auto-creates customer and sends magic link)

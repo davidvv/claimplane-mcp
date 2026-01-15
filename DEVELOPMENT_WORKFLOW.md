@@ -13,10 +13,10 @@
 **Option 1: Using Conda (Recommended)**
 ```bash
 # Create environment with Python 3.11
-conda create -n EasyAirClaim python=3.11
+conda create -n ClaimPlane python=3.11
 
 # Activate environment
-conda activate EasyAirClaim
+conda activate ClaimPlane
 
 # Install all dependencies
 pip install -r requirements.txt
@@ -54,7 +54,7 @@ python --version  # Should show Python 3.11.x
 
 ```bash
 # For conda users
-conda activate EasyAirClaim
+conda activate ClaimPlane
 
 # For venv users
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -86,7 +86,7 @@ pip freeze > requirements.txt
 
 ```bash
 # Make sure your virtual environment is activated first!
-# (conda activate EasyAirClaim OR source venv/bin/activate)
+# (conda activate ClaimPlane OR source venv/bin/activate)
 
 # Run the application
 python app/main.py
@@ -99,7 +99,7 @@ uvicorn app.main:app --reload
 
 ```bash
 # Make sure your virtual environment is activated first!
-# (conda activate EasyAirClaim OR source venv/bin/activate)
+# (conda activate ClaimPlane OR source venv/bin/activate)
 
 # Run all tests
 pytest
@@ -145,7 +145,7 @@ pytest --cov=app --cov-report=html
 When you start a new Claude Code session on this project:
 
 1. ✅ Read this file first
-2. ✅ Activate virtual environment (conda activate EasyAirClaim OR source venv/bin/activate)
+2. ✅ Activate virtual environment (conda activate ClaimPlane OR source venv/bin/activate)
 3. ✅ Verify you're in the right environment (`which python` should NOT show system Python)
 4. ✅ Check `.claude/ARCHITECTURE_DECISIONS.md` for protected files
 5. ✅ Proceed with development tasks
@@ -175,7 +175,7 @@ The project dependencies are in:
 ```bash
 # Show conda env
 echo $CONDA_PREFIX
-# Should show: /Users/david/miniconda3/envs/EasyAirClaim (or base if not activated)
+# Should show: /Users/david/miniconda3/envs/ClaimPlane (or base if not activated)
 
 # Alternative
 conda info --envs
@@ -185,7 +185,7 @@ conda info --envs
 ## Troubleshooting
 
 If you get "module not found" errors:
-1. Check you're in EasyAirClaim environment: `which python`
+1. Check you're in ClaimPlane environment: `which python`
 2. Install missing package: `pip install package_name`
 3. Verify installation: `pip list | grep package_name`
 

@@ -1,4 +1,4 @@
-# Full Stack Setup Guide - EasyAirClaim
+# Full Stack Setup Guide - ClaimPlane
 
 Complete guide to run the full stack (Backend + Frontend) with Phase 3 JWT authentication.
 
@@ -14,7 +14,7 @@ Complete guide to run the full stack (Backend + Frontend) with Phase 3 JWT authe
 ### 1. Activate Conda Environment
 
 ```bash
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 ```
 
 ### 2. Verify Environment Variables
@@ -44,7 +44,7 @@ API docs available at: **http://localhost:8000/docs**
 
 In a separate terminal:
 ```bash
-source /Users/david/miniconda3/bin/activate EasyAirClaim
+source /Users/david/miniconda3/bin/activate ClaimPlane
 celery -A app.celery_app worker --loglevel=info
 ```
 

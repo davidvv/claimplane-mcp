@@ -2,7 +2,7 @@
 
 ## Context & Mission
 
-You are an AI agent controlling a web browser to test the **Phase 2 release** of the EasyAirClaim Flight Compensation System. Your mission is to comprehensively test the new email notification system and async task processing via Celery.
+You are an AI agent controlling a web browser to test the **Phase 2 release** of the ClaimPlane Flight Compensation System. Your mission is to comprehensively test the new email notification system and async task processing via Celery.
 
 **What you're testing:**
 - ✅ Claim submitted confirmation emails
@@ -140,7 +140,7 @@ You are an AI agent controlling a web browser to test the **Phase 2 release** of
 
 **Step 3.3: Expected Email Content** (if emails are enabled)
 - **To**: test.phase2@example.com
-- **From**: EasyAirClaim Support (or configured from address)
+- **From**: ClaimPlane Support (or configured from address)
 - **Subject**: "Claim Submitted - Lufthansa LH456"
 - **Content Should Include**:
   - Greeting: "Hello Phase TwoTester"

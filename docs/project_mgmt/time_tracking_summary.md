@@ -20,6 +20,12 @@
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
+## Latest Update (2026-01-15) - Skill Updates
+- **OpenProject Skill Update**: Added time estimation step to task creation
+  - Tasks now include `estimated_hours` field
+  - Ensures planned work has clear time expectations from the start
+- **Time Added**: 0.1 hours
+
 ## Latest Update (2026-01-15) - Rebranding
 - **Brand Consistency**: Renamed project references from "EasyAirClaim" to "ClaimPlane" across all documentation and configuration files (WP #110).
 - **Time Added**: 0.5 hours

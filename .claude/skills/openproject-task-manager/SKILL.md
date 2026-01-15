@@ -22,6 +22,7 @@ This skill ensures that every task received from the user is properly investigat
 1.  **Analyze Request**: Read the user's prompt carefully.
 2.  **Investigate Context**: Use tools (`grep`, `glob`, `read`) to understand the codebase state relevant to the request.
 3.  **Formulate Plan**: Create a detailed, step-by-step plan of action. This will be the "Description" of your OpenProject work package.
+4.  **Estimate Effort**: Estimate the time required to complete the task in hours (e.g., 0.5, 2.0).
 
 ### Step 2: OpenProject Task Management
 **Goal**: Ensure the task exists in the system and handle interruptions.
@@ -41,6 +42,7 @@ This skill ensures that every task received from the user is properly investigat
         - **Subject**: Concise summary of the request.
         - **Description**: The detailed plan from Step 1.
         - **Type**: 1 (Task) or 7 (Bug) as appropriate.
+        - **estimated_hours**: The effort estimate from Step 1.
         - **Note the ID** of this new work package.
 
 ### Step 3: Start Work (In Progress)

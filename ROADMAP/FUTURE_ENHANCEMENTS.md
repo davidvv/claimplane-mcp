@@ -17,13 +17,13 @@ These are not prioritized but documented for future reference:
 
 ### User Experience Improvements
 - **Short Claim IDs**: Replace long UUIDs with human-readable 6-8 char alphanumeric IDs (e.g., CP-2024-ABC) for easier customer reference and support lookup.
-- **Smart Form Automation**: Further enhance form auto-filling based on uploaded documents (OCR).
+- **Smart Form Automation**: Further enhance form auto-filling based on uploaded documents (advanced OCR features).
 
-### OCR & Data Extraction
-- Extract flight details from boarding passes automatically
-- Extract personal info from ID documents
-- Reduce manual data entry
-- Validate extracted data against user input
+### OCR & Data Extraction (Basic Implementation → Phase 7.5)
+- ✅ **Boarding Pass OCR**: Moved to Phase 7.5 (IN PROGRESS) - Extract flight details automatically
+- Extract personal info from ID documents (future)
+- Barcode/QR code scanning for boarding passes (future)
+- Advanced validation against flight databases (future)
 
 ### Customer Portal (Frontend)
 - React/Vue.js single-page application

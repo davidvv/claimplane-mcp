@@ -1,26 +1,34 @@
 # EasyAirClaim Project - Complete Time Tracking Summary
 
 ## Project Overview
-- **Project Duration**: 2025-09-04 to 2026-01-14 (4 months)
-- **Total Commits**: 167 (147 by David, 20 by Florian)
-- **Estimated Total Time**: ~518.75-602.75 hours
+- **Project Duration**: 2025-09-04 to 2026-01-15 (4 months)
+- **Total Commits**: 168 (148 by David, 20 by Florian)
+- **Estimated Total Time**: ~520.25-604.25 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 147 (88.0%)
-- **Estimated Time**: 455.75-520.25 hours
+- **Commits**: 148 (88.1%)
+- **Estimated Time**: 457.25-521.75 hours
 - **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR
 - **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction
 
 ### Florian's Contributions (12-15% of total time)
-- **Commits**: 20 (12.2%)
+- **Commits**: 20 (11.9%)
 - **Estimated Time**: 60-80 hours
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
-## Latest Update (2026-01-14) - Google Vision Usage Limits
+## Latest Update (2026-01-15) - OCR Quality
+- **OCR Quality Improvements**: Fixed passenger name parsing, date logic, and false positives
+  - Improved regex for names and flight data
+  - Added blocklists for better accuracy
+  - Refined time extraction logic
+  - Work Package #133 updated
+- **Time Added**: 1.5 hours
+
+## Previous Update (2026-01-14) - Google Vision Usage Limits
 - **Usage Limits & Alerts**: Implemented safety mechanisms for Google Vision API
   - Hard limit: 999 requests/month (Free tier)
   - Warning threshold: 900 requests/month (Email alert)

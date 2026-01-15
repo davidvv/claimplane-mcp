@@ -45,11 +45,10 @@ async def _send_draft_reminder_30min():
     from sqlalchemy.orm import sessionmaker
     import os
 
+    from app.config import config
+
     # Create a fresh engine and session factory for this event loop
-    DATABASE_URL = os.getenv(
-        "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/flight_claim"
-    )
+    DATABASE_URL = config.DATABASE_URL
     engine = create_async_engine(DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -125,11 +124,10 @@ async def _send_draft_reminder_day(days: int, reminder_number: int):
     from sqlalchemy.orm import sessionmaker
     import os
 
+    from app.config import config
+
     # Create a fresh engine and session factory for this event loop
-    DATABASE_URL = os.getenv(
-        "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/flight_claim"
-    )
+    DATABASE_URL = config.DATABASE_URL
     engine = create_async_engine(DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -204,11 +202,10 @@ async def _cleanup_expired_drafts():
     from sqlalchemy.orm import sessionmaker
     import os
 
+    from app.config import config
+
     # Create a fresh engine and session factory for this event loop
-    DATABASE_URL = os.getenv(
-        "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/flight_claim"
-    )
+    DATABASE_URL = config.DATABASE_URL
     engine = create_async_engine(DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -305,11 +302,10 @@ async def _send_final_reminder():
     from sqlalchemy.orm import sessionmaker
     import os
 
+    from app.config import config
+
     # Create a fresh engine and session factory for this event loop
-    DATABASE_URL = os.getenv(
-        "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/flight_claim"
-    )
+    DATABASE_URL = config.DATABASE_URL
     engine = create_async_engine(DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

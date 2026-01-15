@@ -1,7 +1,12 @@
+---
+name: commit-workflow
+description: Ensures proper commit practices, version tagging, and roadmap maintenance for the ClaimPlane project.
+---
+
 # Commit Workflow & Versioning Skill
 
 ## Purpose
-This skill ensures proper commit practices, version tagging, and roadmap maintenance for the EasyAirClaim project.
+This skill ensures proper commit practices, version tagging, and roadmap maintenance for the ClaimPlane project.
 
 ## When to Use This Skill
 - After completing a feature implementation

@@ -195,7 +195,7 @@ class ClaimRepository(BaseRepository[Claim]):
         stmt = select(Claim).where(
             and_(
                 Claim.status == Claim.STATUS_DRAFT,
-                Claim.last_activity_at < cutoff_time,
+                func.coalesce(Claim.last_activity_at, Claim.submitted_at) < cutoff_time,
                 Claim.reminder_count <= max_reminders
             )
         )

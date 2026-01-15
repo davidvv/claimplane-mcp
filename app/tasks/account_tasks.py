@@ -14,14 +14,22 @@ logger = logging.getLogger(__name__)
 
 
 def run_async(coro):
-    """
-    Helper function to run async code in Celery tasks.
-
-    Celery doesn't natively support async/await, so we need to create
-    an event loop to run our async EmailService methods.
-    """
-    loop = asyncio.get_event_loop()
-    return loop.run_until_complete(coro)
+    """Helper function to run async code in Celery tasks."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        # Clean up any pending tasks
+        pending = asyncio.all_tasks(loop)
+        for task in pending:
+            task.cancel()
+        # Run one more iteration to handle cancellations
+        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+        # Close the loop
+        loop.close()
+        # Reset event loop to None to prevent reuse
+        asyncio.set_event_loop(None)
 
 
 @celery_app.task(

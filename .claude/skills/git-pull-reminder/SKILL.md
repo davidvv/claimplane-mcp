@@ -1,3 +1,8 @@
+---
+name: git-pull-reminder
+description: Ensures Claude Code always pulls the latest changes from GitHub before starting work.
+---
+
 # Git Pull Reminder Skill
 
 ## Purpose

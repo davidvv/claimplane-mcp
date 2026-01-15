@@ -175,13 +175,23 @@ export function BoardingPassUploadZone({
         <Card className="p-4">
           <div className="flex items-start gap-4">
             {/* Preview Image or PDF Icon */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 relative">
               {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt="Boarding pass preview"
-                  className="w-24 h-24 object-cover rounded border border-gray-200 dark:border-gray-700"
-                />
+                <div className="relative">
+                  <img
+                    src={previewUrl}
+                    alt="Boarding pass preview"
+                    className="w-24 h-24 object-cover rounded border border-gray-200 dark:border-gray-700"
+                  />
+                  {/* Scanning animation overlay */}
+                  {isProcessing && (
+                    <div className="absolute inset-0 bg-blue-500/10 rounded overflow-hidden">
+                      <div className="absolute inset-0 animate-scan">
+                        <div className="h-1 bg-blue-500 shadow-lg shadow-blue-500/50" />
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="w-24 h-24 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
                   <FileText className="w-12 h-12 text-gray-400" />

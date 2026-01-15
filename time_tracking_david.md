@@ -7,7 +7,39 @@
 - **Estimated Total Time**: ~455.75-520.25 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
-## Latest Work (2026-01-14) - Google Vision Usage Limits
+## Latest Work (2026-01-15) - OCR Quality Improvements
+
+### OCR Data Extraction Quality Fixes
+**Estimated Time**: 1.5 hours
+**Work Package**: #133
+
+#### Overview:
+Significantly improved OCR data extraction quality by fixing passenger name parsing, date logic, and false positives.
+
+#### Key Tasks:
+1. **Passenger Name Parsing** (app/services/ocr_service.py)
+   - Fixed regex for "SURNAME, NAME" format
+   - Added name validation and blocklists
+   - Implemented proximity-based search near "PASSENGER" keywords
+   - Estimated: 0.5 hours
+
+2. **Date & Time Logic** (app/services/ocr_service.py)
+   - Fixed 4-digit year parsing (e.g. 2022)
+   - Improved time extraction to distinguish Boarding/Gate Close from Arrival
+   - Added 45-min duration heuristic check
+   - Estimated: 0.5 hours
+
+3. **False Positive Reduction** (app/services/ocr_service.py)
+   - Added extensive blocklists for booking reference false positives (Cities, Labels)
+   - Added blocklists for Airport Codes (Month names)
+   - Estimated: 0.5 hours
+
+### Updated Summary Statistics
+- **Total Commits**: 148 (added 1 new commit)
+- **Date Range**: 2025-09-04 to 2026-01-15
+- **Estimated Total Time**: ~457.25-521.75 hours (added 1.5 hours)
+
+## Previous Work (2026-01-14) - Google Vision Usage Limits
 
 ### Google Vision API Usage Limits & Alerts
 **Estimated Time**: 0.75 hours

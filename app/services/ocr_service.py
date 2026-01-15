@@ -41,19 +41,26 @@ class OCRService:
         'UA': 'United', 'VS': 'Virgin Atlantic', 'WN': 'Southwest',
         'FR': 'Ryanair', 'U2': 'easyJet', 'VY': 'Vueling', 'W6': 'Wizz Air',
         'AZ': 'ITA Airways', 'LO': 'LOT Polish', 'SK': 'SAS', 'TP': 'TAP Portugal',
+        'AV': 'Avianca', 'JJ': 'LATAM', 'LA': 'LATAM', 'IB': 'Iberia',
+        'UX': 'Air Europa', 'EI': 'Aer Lingus', 'AY': 'Finnair', 'SU': 'Aeroflot',
+        'JL': 'Japan Airlines', 'KE': 'Korean Air', 'CX': 'Cathay Pacific',
     }
 
     # Regex patterns for extracting boarding pass data
     PATTERNS = {
-        "flight_number": r"\b([A-Z]{2})\s*(\d{1,4})\b",
+        # Relaxed flight number to catch spaces (e.g. "L H 1234") and alphanumeric flight numbers
+        "flight_number": r"\b([A-Z0-9]{2})\s*([0-9][A-Z0-9]{0,4})\b",
         "airport_code": r"\b([A-Z]{3})\b",
         "date_dmy": r"\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2,4})\b",
         "date_iso": r"\b(\d{4})[/.\-](\d{1,2})[/.\-](\d{1,2})\b",
-        "date_compact": r"\b(\d{1,2})(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\d{2})\b",
+        # Relaxed compact date to allow spaces (27 JUN 2022)
+        "date_compact": r"\b(\d{1,2})\s*[-/.]?\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*[-/.]?\s*(\d{2,4})\b",
         "time": r"\b(\d{1,2}):(\d{2})\b",
         "booking_ref": r"\b([A-Z0-9]{5,6})\b",
-        "passenger_name": r"\b([A-Z]{2,})\s*/\s*([A-Z]{2,})\b",
-        "seat": r"\b(\d{1,2})([A-F])\b",
+        # Support SURNAME/NAME, SURNAME, NAME and NAME SURNAME formats
+        # Prevent newline matching in separator by using [ \t] instead of \s
+        "passenger_name": r"([A-Z][A-Z\-\ \t]*)(?:/|,\s*|[ \t]+)([A-Z][A-Z\-\ \t]*)",
+        "seat": r"\b(\d{1,2})\s*([A-F])\b",
     }
 
     CONTEXT_KEYWORDS = {
@@ -296,16 +303,27 @@ class OCRService:
             
             client = vision.ImageAnnotatorClient()
             image = vision.Image(content=file_content)
-            response = client.document_text_detection(image=image)
+            
+            # Use document text detection with language hints for better accuracy
+            image_context = vision.ImageContext(language_hints=["en"])
+            response = client.document_text_detection(image=image, image_context=image_context)
 
             if response.error.message:
                 raise Exception(f"Google Vision API error: {response.error.message}")
 
+            text = ""
             if response.full_text_annotation:
-                return response.full_text_annotation.text
+                text = response.full_text_annotation.text
             elif response.text_annotations:
-                return response.text_annotations[0].description if response.text_annotations else ""
-            return ""
+                text = response.text_annotations[0].description if response.text_annotations else ""
+            
+            # Log the first 500 characters of extracted text for debugging quality issues
+            if text:
+                logger.info(f"OCR Raw Text Sample (first 500 chars):\n{text[:500]}...")
+            else:
+                logger.warning("OCR returned empty text.")
+                
+            return text
         except ImportError:
             logger.error("Google Cloud Vision library not installed")
             raise
@@ -445,7 +463,7 @@ class OCRService:
             data["passenger_name"] = passenger
             confidence["passenger_name"] = 0.8
 
-        booking_ref = self._find_booking_reference(text_upper, data.get("flight_number"))
+        booking_ref = self._find_booking_reference(text_upper, data.get("flight_number"), data.get("passenger_name"))
         if booking_ref:
             data["booking_reference"] = booking_ref
             confidence["booking_reference"] = 0.7
@@ -475,6 +493,8 @@ class OCRService:
             "THE", "AND", "FOR", "ARE", "BUT", "NOT", "YOU", "ALL", "CAN", "HAD", "HER", "WAS", "ONE", "OUR", "OUT",
             "DEP", "ARR", "STD", "STA", "ETD", "ETA", "ROW", "SEQ", "REF", "PNR", "MSG", "TAX", "FEE", "BAG",
             "BRD", "GTE", "FLT", "PAX", "CLS", "CLA", "ECO", "BUS", "FST",
+            "GRP", "SEC", "PRN", "TKT", "GATE", "SITZ", "SEAT", "ZONE", "GROUP", "STATUS", "MEMBER",
+            "PRE", "GAP", "AIR"  # Add PRE (often Group/Premium) to blocklist
         }
         airport_codes = [code for code in all_codes if code not in common_words]
 
@@ -491,9 +511,21 @@ class OCRService:
                     result["arrival_confidence"] = 0.85
 
         if not result.get("departure") and not result.get("arrival"):
-            if len(airport_codes) >= 2:
-                result["departure"] = airport_codes[0]
-                result["arrival"] = airport_codes[1]
+            # Filter out months and common names from fallback candidates
+            filtered_codes = []
+            months = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"}
+            names = {"DOE", "JON", "DAN", "TOM", "PAT", "LEO", "SAM", "JIM", "TIM", "RON", "BEN", "MAX", "RAY"}
+            
+            for code in airport_codes:
+                if code in months:
+                    continue
+                if code in names:
+                    continue
+                filtered_codes.append(code)
+                
+            if len(filtered_codes) >= 2:
+                result["departure"] = filtered_codes[0]
+                result["arrival"] = filtered_codes[1]
                 result["departure_confidence"] = 0.6
                 result["arrival_confidence"] = 0.6
 
@@ -505,63 +537,203 @@ class OCRService:
             day, month, year = compact_matches[0]
             month_num = self.MONTH_MAP.get(month)
             if month_num:
-                year_full = f"20{year}" if int(year) < 50 else f"19{year}"
+                # Handle 2-digit and 4-digit years
+                if len(year) == 4:
+                    year_full = year
+                else:
+                    year_full = f"20{year}" if int(year) < 50 else f"19{year}"
                 return f"{year_full}-{month_num}-{day.zfill(2)}"
 
         iso_matches = re.findall(self.PATTERNS["date_iso"], text)
         if iso_matches:
             year, month, day = iso_matches[0]
+            if len(year) == 2: # Should not happen with \d{4} regex but good for safety
+                 year = f"20{year}"
             return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
 
         dmy_matches = re.findall(self.PATTERNS["date_dmy"], text)
         if dmy_matches:
             day, month, year = dmy_matches[0]
-            if len(year) == 2:
-                year = f"20{year}" if int(year) < 50 else f"19{year}"
-            return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+            if len(year) == 4:
+                year_full = year
+            else:
+                year_full = f"20{year}" if int(year) < 50 else f"19{year}"
+            return f"{year_full}-{month_num}-{day.zfill(2)}" if 'month_num' in locals() else f"{year_full}-{month.zfill(2)}-{day.zfill(2)}"
 
         return None
 
     def _find_times(self, text: str, lines: List[str]) -> Dict[str, str]:
         result = {}
         pattern = self.PATTERNS["time"]
-        all_times = re.findall(pattern, text)
-        formatted_times = [f"{h.zfill(2)}:{m}" for h, m in all_times if 0 <= int(h) <= 23 and 0 <= int(m) <= 59]
+        
+        # Helper to check proximity to keywords
+        def is_near_keyword(line: str, keywords: List[str]) -> bool:
+            return any(kw.upper() in line for kw in keywords)
 
+        # First pass: Look for times on the same line as keywords
         for line in lines:
             times_in_line = re.findall(pattern, line)
             times_in_line = [f"{h.zfill(2)}:{m}" for h, m in times_in_line if 0 <= int(h) <= 23 and 0 <= int(m) <= 59]
-            if any(kw.upper() in line for kw in self.CONTEXT_KEYWORDS["from"] + ["DEP", "STD", "BOARD"]):
-                if times_in_line:
-                    result["departure"] = times_in_line[0]
-            if any(kw.upper() in line for kw in self.CONTEXT_KEYWORDS["to"] + ["ARR", "STA"]):
-                if times_in_line:
-                    result["arrival"] = times_in_line[0]
+            
+            if not times_in_line:
+                continue
 
-        if not result.get("departure") and formatted_times:
-            result["departure"] = formatted_times[0]
-        if not result.get("arrival") and len(formatted_times) >= 2:
-            result["arrival"] = formatted_times[1]
+            if is_near_keyword(line, self.CONTEXT_KEYWORDS["from"] + ["DEP", "STD", "BOARD", "ABFLUG"]):
+                result["departure"] = times_in_line[0]
+            
+            if is_near_keyword(line, self.CONTEXT_KEYWORDS["to"] + ["ARR", "STA", "ANKUNFT", "DEST"]):
+                result["arrival"] = times_in_line[-1]
+
+        # Second pass: If still missing, look at all times but ignore first few lines (often status bar)
+        if not result.get("departure") or not result.get("arrival"):
+            all_times = []
+            for i, line in enumerate(lines):
+                # Skip first 2 lines to avoid phone status bar times (e.g., 15:16)
+                if i < 2:
+                    continue
+                    
+                # Ignore lines with Gate Close or Boarding keywords for Arrival time candidate
+                is_boarding_line = any(kw in line.upper() for kw in ["BOARDING", "GATE", "SCHLIESST", "CLOSE", "DEPART", "ABFLUG"])
+                
+                matches = re.findall(pattern, line)
+                for h, m in matches:
+                    if 0 <= int(h) <= 23 and 0 <= int(m) <= 59:
+                        all_times.append({"time": f"{h.zfill(2)}:{m}", "is_boarding": is_boarding_line})
+
+            if not result.get("departure") and all_times:
+                result["departure"] = all_times[0]["time"]
+            
+            if not result.get("arrival") and len(all_times) >= 2:
+                candidate = all_times[1]
+                if not candidate["is_boarding"]:
+                    # Check duration if we have both times
+                    dep_time = result.get("departure")
+                    arr_time = candidate["time"]
+                    
+                    if dep_time and arr_time:
+                        try:
+                            # Simple check: if difference is < 30 mins, likely not a flight
+                            # Handle HH:MM
+                            dep_h, dep_m = map(int, dep_time.split(':'))
+                            arr_h, arr_m = map(int, arr_time.split(':'))
+                            
+                            dep_mins = dep_h * 60 + dep_m
+                            arr_mins = arr_h * 60 + arr_m
+                            
+                            # Handle date rollover (arrival next day) - usually arrival > dep
+                            # If arr < dep (next day), diff is (24*60 + arr) - dep
+                            # But here we are worried about small positive diffs (e.g. 08:00 -> 08:15)
+                            
+                            diff = arr_mins - dep_mins
+                            if 0 < diff < 45: # Less than 45 mins flight is very rare (usually gate close)
+                                pass # Ignore this candidate as arrival
+                            else:
+                                result["arrival"] = arr_time
+                        except:
+                            result["arrival"] = arr_time
+                    else:
+                        result["arrival"] = arr_time
 
         return result
 
     def _find_passenger_name(self, text: str) -> Optional[str]:
         pattern = self.PATTERNS["passenger_name"]
+        
+        # Blocklist for words that indicate end of name
+        name_blocklist = [
+            "PASSAGIER", "PASSENGER", "NAME", "KLASSE", "CLASS", "STATUS", "ECONOMY", "BUSINESS", 
+            "FIRST", "M/M", "MR", "MRS", "MS", "BOARDING", "PASS", "TICKET", "FLIGHT", "GRP", 
+            "SITZ", "SEAT", "PRE", "SEC", "NO", "GATE", "ZONE", "GROUP"
+        ]
+        
+        # Helper to clean and validate name
+        def validate_name(surname, firstname):
+             # Clean up
+            surname = surname.strip().replace('\n', ' ')
+            firstname = firstname.strip().replace('\n', ' ')
+            
+            # Truncate at any blocklist word (case insensitive check)
+            for blocked in name_blocklist:
+                # Check surname
+                idx = surname.upper().find(blocked)
+                if idx != -1:
+                    surname = surname[:idx].strip()
+                
+                # Check firstname
+                idx = firstname.upper().find(blocked)
+                if idx != -1:
+                    firstname = firstname[:idx].strip()
+
+            full_str = f"{surname} {firstname}".upper()
+            
+            if "AIRLINES" in full_str or "AIRWAYS" in full_str:
+                return None
+            
+            # Ensure we still have a valid name after truncation
+            if len(surname) < 2 or len(firstname) < 2:
+                return None
+            
+            # Check if name contains digits (invalid)
+            if any(char.isdigit() for char in full_str):
+                return None
+            
+            # Check if it matches any blocklist word exactly
+            if surname.upper() in name_blocklist or firstname.upper() in name_blocklist:
+                return None
+                
+            return f"{surname}/{firstname}"
+
+        # 1. First Pass: Look for names near "PASSENGER" keywords
+        lines = text.split('\n')
+        for i, line in enumerate(lines):
+            if any(kw.upper() in line.upper() for kw in self.CONTEXT_KEYWORDS["passenger"]):
+                # Check this line and next 4 lines (names often appear below labels)
+                for offset in range(5):
+                    if i + offset >= len(lines):
+                        break
+                    
+                    matches = re.findall(pattern, lines[i + offset])
+                    for s, f in matches:
+                        valid = validate_name(s, f)
+                        if valid:
+                            return valid
+
+        # 2. Second Pass: Global search
         matches = re.findall(pattern, text)
-        if matches:
-            return f"{matches[0][0]}/{matches[0][1]}"
+        for surname, firstname in matches:
+            valid = validate_name(surname, firstname)
+            if valid:
+                return valid
+
         return None
 
-    def _find_booking_reference(self, text: str, flight_number: Optional[str] = None) -> Optional[str]:
+    def _find_booking_reference(self, text: str, flight_number: Optional[str] = None, passenger_name: Optional[str] = None) -> Optional[str]:
         pattern = self.PATTERNS["booking_ref"]
+        # Words to ignore (false positives)
+        ignore_words = {
+            "DATUM", "FLIGHT", "BOARD", "CLASS", "SEAT", "GATE", "ENTRY", "GROUP", "ZONE", 
+            "START", "FIRST", "PRIOR", "ECONO", "BUSIN", "WORLD", "MILES", "EXTRA", "TOTAL", 
+            "TAXES", "FARES", "PHONE", "EMAIL", "STATUS", "MEMBER", "SHORT", "LABEL", "INDEX",
+            "PRINT", "CHECK", "IN", "OUT", "PASS", "NAME", "DATE", "TIME", "FROM", "DEST",
+            "SYDNEY", "PARIS", "MADRID", "LONDON", "ROME", "BERLIN", "MUNICH", "MUNCHEN", 
+            "MÜNCHEN", "BARAJAS", "HEATHROW", "GATWICK", "KENNEDY", "NEWARK", "ORLY", "KLASSE"
+        }
+        
         for line in text.split('\n'):
             if any(kw.upper() in line.upper() for kw in self.CONTEXT_KEYWORDS["booking"]):
                 matches = re.findall(pattern, line)
                 if matches:
-                    return matches[0]
+                    candidate = matches[0]
+                    if candidate not in ignore_words:
+                        return candidate
+                        
         all_matches = re.findall(pattern, text)
         for match in all_matches:
             if flight_number and match in flight_number:
+                continue
+            if passenger_name and match in passenger_name.upper():
+                continue
+            if match in ignore_words:
                 continue
             if not match.isdigit() and len(set(match)) > 2:
                 return match
@@ -569,11 +741,21 @@ class OCRService:
 
     def _find_seat(self, text: str) -> Optional[str]:
         pattern = self.PATTERNS["seat"]
+        # Prioritize lines with "SEAT" or "SITZ"
         for line in text.split('\n'):
             if any(kw.upper() in line.upper() for kw in self.CONTEXT_KEYWORDS["seat"]):
                 matches = re.findall(pattern, line)
                 if matches:
                     return f"{matches[0][0]}{matches[0][1]}"
+        
+        # Fallback: Look for the pattern anywhere, but ignore "K14" or "15:16" false positives
+        all_matches = re.findall(pattern, text)
+        for num, letter in all_matches:
+            # Filter out things that might be time parts or gates like K14 (K is not A-F)
+            # Regex only allows A-F so K14 is already excluded.
+            # But what about "15:16"? "15" and ":", no match. "16" and "?".
+            return f"{num}{letter}"
+            
         return None
 
     def _validate_extracted_data(self, data: Dict[str, Any]) -> Tuple[List[str], List[str]]:

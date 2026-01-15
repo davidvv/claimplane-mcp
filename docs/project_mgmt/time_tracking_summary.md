@@ -2,23 +2,31 @@
 
 ## Project Overview
 - **Project Duration**: 2025-09-04 to 2026-01-15 (4 months)
-- **Total Commits**: 168 (148 by David, 20 by Florian)
-- **Estimated Total Time**: ~520.25-604.25 hours
+- **Total Commits**: 169 (149 by David, 20 by Florian)
+- **Estimated Total Time**: ~520.75-604.75 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 148 (88.1%)
-- **Estimated Time**: 457.25-521.75 hours
-- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR
+- **Commits**: 149 (88.2%)
+- **Estimated Time**: 457.75-522.25 hours
+- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic
 - **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction
 
 ### Florian's Contributions (12-15% of total time)
-- **Commits**: 20 (11.9%)
+- **Commits**: 20 (11.8%)
 - **Estimated Time**: 60-80 hours
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
+
+## Latest Update (2026-01-15) - Ineligible Draft Cleanup
+- **Draft Claim Cleanup**: Implemented logic to remove draft claims if user is ineligible
+  - Added `DELETE /claims/{claim_id}` endpoint for drafts
+  - Updated frontend to automatically delete drafts upon rejection
+  - Prevents "abandoned claim" emails for rejected users
+  - Work Package #134 completed and closed
+- **Time Added**: 0.5 hours
 
 ## Latest Update (2026-01-15) - Project Cleanup
 - **Project Reorganization**: Organized root directory into structured subdirectories (docs, scripts, tests)

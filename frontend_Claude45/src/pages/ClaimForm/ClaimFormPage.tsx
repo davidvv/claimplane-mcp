@@ -258,6 +258,12 @@ export function ClaimFormPage() {
     }
   };
 
+  const handleDraftCancelled = () => {
+    setDraftClaimId(null);
+    localStorage.removeItem('draftClaimId');
+    localStorage.removeItem('draftAccessToken');
+  };
+
   const handleStartNewClaim = () => {
     if (confirm('Are you sure you want to start a new claim? This will clear all current form data.')) {
       clearFormData();
@@ -311,8 +317,10 @@ export function ClaimFormPage() {
             <Step2_Eligibility
               flightData={flightData}
               initialData={eligibilityData}
+              draftClaimId={draftClaimId}
               onComplete={handleEligibilityComplete}
               onBack={handleBack}
+              onDraftCancelled={handleDraftCancelled}
             />
           )}
 

@@ -7,6 +7,33 @@
 - **Estimated Total Time**: ~455.75-520.25 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
+## Latest Work (2026-01-15) - Ineligible Draft Cleanup
+
+### Ineligible Draft Claim Cleanup Logic
+**Estimated Time**: 0.5 hours
+**Work Package**: #134
+
+#### Overview:
+Implemented logic to prevent creating or retaining draft claims when a user is determined to be ineligible for compensation. This prevents users from receiving "abandoned claim" reminder emails for claims they were rejected for.
+
+#### Key Tasks:
+1. **Backend API Update** (app/routers/claims.py)
+   - Added `DELETE /claims/{claim_id}` endpoint
+   - Implemented access control: customers can only delete their own DRAFT claims
+   - Verified with new tests `app/tests/test_claim_deletion.py`
+   - Estimated: 0.25 hours
+
+2. **Frontend Logic** (frontend_Claude45/src/pages/ClaimForm/)
+   - Updated `Step2_Eligibility.tsx` to delete existing draft if eligibility check fails
+   - Updated `ClaimFormPage.tsx` to handle draft cancellation state cleanup
+   - Added `deleteClaim` service method
+   - Estimated: 0.25 hours
+
+### Updated Summary Statistics
+- **Total Commits**: 150 (added 1 new commit)
+- **Date Range**: 2025-09-04 to 2026-01-15
+- **Estimated Total Time**: ~458.25-522.75 hours (added 0.5 hours)
+
 ## Latest Work (2026-01-15) - OCR Quality Improvements
 
 ### OCR Data Extraction Quality Fixes

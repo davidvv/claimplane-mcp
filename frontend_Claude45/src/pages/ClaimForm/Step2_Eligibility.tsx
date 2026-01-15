@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 import { eligibilityFormSchema, type EligibilityForm } from '@/schemas/validation';
 import { checkEligibility } from '@/services/eligibility';
+import { deleteClaim } from '@/services/claims';
 import apiClient from '@/services/api';
 import type { FlightStatus, EligibilityResponse } from '@/types/api';
 
@@ -35,15 +36,19 @@ interface DraftClaimData {
 interface Step2Props {
   flightData: FlightStatus;
   initialData: EligibilityResponse | null;
+  draftClaimId: string | null;
   onComplete: (data: EligibilityResponse, email: string, draftData?: DraftClaimData) => void;
   onBack: () => void;
+  onDraftCancelled: () => void;
 }
 
 export function Step2_Eligibility({
   flightData,
   initialData,
+  draftClaimId,
   onComplete,
   onBack,
+  onDraftCancelled,
 }: Step2Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
@@ -74,6 +79,18 @@ export function Step2_Eligibility({
 
       setEligibilityResult(result);
       setSubmittedEmail(data.email);
+
+      // If user is NOT eligible and has a draft claim, delete it to prevent "abandoned claim" reminders
+      if (!result.eligible && draftClaimId) {
+        try {
+          console.log(`Deleting ineligible draft claim: ${draftClaimId}`);
+          await deleteClaim(draftClaimId);
+          onDraftCancelled();
+        } catch (error) {
+          console.error('Failed to delete ineligible draft claim:', error);
+          // Non-blocking error
+        }
+      }
 
       // Determine if we're using fallback data
       const isFallback = flightData.dataSource === 'mock';

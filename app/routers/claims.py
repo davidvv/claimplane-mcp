@@ -816,6 +816,50 @@ async def list_claim_documents(
     return [FileResponseSchema.model_validate(f) for f in files]
 
 
+@router.delete("/{claim_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_claim(
+    claim_id: UUID,
+    current_user: Customer = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete a claim.
+
+    Customers can only delete their own claims, and ONLY if they are in DRAFT status.
+    Admins can delete any claim.
+
+    Args:
+        claim_id: ID of the claim to delete
+        current_user: Currently authenticated user
+        db: Database session
+
+    Raises:
+        HTTPException: If claim not found, access denied, or cannot be deleted
+    """
+    claim_repo = ClaimRepository(db)
+    claim = await claim_repo.get_by_id(claim_id)
+
+    if not claim:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Claim with id {claim_id} not found"
+        )
+
+    # Verify access
+    verify_claim_access(claim, current_user)
+
+    # Customers can only delete DRAFT claims
+    if current_user.role not in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
+        if claim.status != Claim.STATUS_DRAFT:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only delete draft claims. Please contact support to cancel submitted claims."
+            )
+
+    await claim_repo.delete(claim)
+    logger.info(f"Deleted claim {claim_id}")
+
+
 @router.post("/{claim_id}/documents", response_model=FileResponseSchema, status_code=status.HTTP_201_CREATED)
 async def upload_claim_document(
     claim_id: UUID,

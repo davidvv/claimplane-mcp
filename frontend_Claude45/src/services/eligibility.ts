@@ -25,7 +25,7 @@ export const checkEligibility = async (
   const backendRequest = {
     departure_airport: request.flightInfo.departureAirport,
     arrival_airport: request.flightInfo.arrivalAirport,
-    delay_hours: delayMinutes !== null && delayMinutes > 0 ? delayMinutes / 60 : null,
+    delay_hours: delayMinutes !== null ? delayMinutes / 60 : null,
     incident_type: isCancelled ? 'cancellation' : 'delay',
     distance_km: request.flightInfo.distanceKm ?? null,  // Pass distance from API
   };

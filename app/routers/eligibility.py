@@ -13,7 +13,7 @@ class EligibilityRequestSchema(BaseModel):
     """Request schema for eligibility check."""
     departure_airport: str = Field(..., min_length=3, max_length=3, description="IATA code")
     arrival_airport: str = Field(..., min_length=3, max_length=3, description="IATA code")
-    delay_hours: Optional[float] = Field(None, ge=0, le=72, description="Delay in hours")
+    delay_hours: Optional[float] = Field(None, le=72, description="Delay in hours (negative = early arrival)")
     incident_type: str = Field(..., description="delay, cancellation, denied_boarding, baggage_delay")
     distance_km: Optional[float] = Field(None, ge=0, description="Great circle distance in km (if known from API)")
 

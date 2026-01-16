@@ -295,8 +295,18 @@ class CompensationService:
         # Handle different incident types
         if incident_type == "delay":
             if delay_hours is None:
-                result["reason"] = "Delay duration not specified"
+                result["reason"] = "Unable to determine delay duration. Flights arriving early do not qualify for EU261 compensation (compensation only applies to delays of 3+ hours or cancellations)."
                 result["requires_manual_review"] = True
+                return result
+
+            # Check for early arrivals
+            if delay_hours <= 0:
+                result["eligible"] = False
+                result["amount"] = Decimal("0")
+                if delay_hours == 0:
+                    result["reason"] = "Flight arrived on time. On-time arrivals do not qualify for EU261 compensation (compensation only applies to delays of 3+ hours or cancellations)."
+                else:
+                    result["reason"] = f"Flight arrived {abs(delay_hours * 60):.0f} minutes early. Early arrivals do not qualify for EU261 compensation (compensation only applies to delays of 3+ hours or cancellations)."
                 return result
 
             # EU261 requires 3+ hours delay for compensation

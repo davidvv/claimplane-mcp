@@ -957,15 +957,19 @@ async def extract_boarding_pass_data(
     """
     from app.schemas.ocr_schemas import OCRResponseSchema, BoardingPassDataSchema, FieldConfidenceSchema
     from app.services.ocr_service import ocr_service
+    from app.services.email_parser_service import EmailParserService
 
     # Validate file type
-    allowed_mimetypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+    allowed_mimetypes = [
+        "image/jpeg", "image/png", "image/webp", "application/pdf",
+        "message/rfc822", "application/octet-stream"  # Added support for .eml
+    ]
     content_type = file.content_type or "application/octet-stream"
 
-    if content_type not in allowed_mimetypes:
+    if content_type not in allowed_mimetypes and not file.filename.lower().endswith('.eml'):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file type '{content_type}'. Allowed types: JPEG, PNG, WebP, PDF"
+            detail=f"Invalid file type '{content_type}'. Allowed types: JPEG, PNG, WebP, PDF, EML"
         )
 
     # Read file content
@@ -992,7 +996,42 @@ async def extract_boarding_pass_data(
             detail="Uploaded file is empty"
         )
 
-    # Run OCR extraction
+    # Handle .eml files (Email Processing)
+    if content_type == "message/rfc822" or file.filename.lower().endswith('.eml'):
+        try:
+            logger.info(f"[ocr-email] Processing email file: {file.filename}")
+            import time
+            start_time = time.time()
+            
+            # Parse email structure
+            email_data = EmailParserService.parse_eml(file_content)
+            
+            # Extract flight data using Gemini
+            extracted = await ocr_service.extract_from_email_text(
+                email_subject=email_data["subject"],
+                email_body=email_data["body"]
+            )
+            
+            processing_time = int((time.time() - start_time) * 1000)
+            
+            return OCRResponseSchema(
+                success=True,
+                data=BoardingPassDataSchema(**extracted),
+                raw_text=email_data["body"][:2000],  # Return first 2KB of text for context
+                confidence_score=0.95,  # Email text is usually very accurate
+                field_confidence={k: 0.95 for k in extracted if extracted[k]},
+                errors=[],
+                warnings=[],
+                processing_time_ms=processing_time
+            )
+        except Exception as e:
+            logger.error(f"[ocr-email] Email processing failed: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to process email file: {str(e)}"
+            )
+
+    # Run OCR extraction (Images/PDFs)
     try:
         logger.info(f"[ocr-boarding-pass] Processing file: {file.filename} ({content_type}, {len(file_content)} bytes)")
 

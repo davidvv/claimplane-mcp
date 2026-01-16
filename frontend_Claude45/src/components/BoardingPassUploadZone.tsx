@@ -13,7 +13,7 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, X, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, FileText, X, AlertCircle, Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/Button';
@@ -32,6 +32,7 @@ const ACCEPTED_FILE_TYPES = {
   'image/jpeg': ['.jpg', '.jpeg'],
   'image/png': ['.png'],
   'application/pdf': ['.pdf'],
+  'message/rfc822': ['.eml'],
 };
 
 export function BoardingPassUploadZone({
@@ -54,8 +55,9 @@ export function BoardingPassUploadZone({
       if (file.type.startsWith('image/')) {
         const url = URL.createObjectURL(file);
         setPreviewUrl(url);
-      } else if (file.type === 'application/pdf') {
-        setPreviewUrl(null); // No preview for PDFs
+      } else {
+        // No preview for PDFs or EMLs
+        setPreviewUrl(null);
       }
 
       // Notify parent that file was selected
@@ -80,7 +82,7 @@ export function BoardingPassUploadZone({
           setError(errorMsg);
           toast.error(errorMsg);
         } else if (rejection.errors?.[0]?.code === 'file-invalid-type') {
-          const errorMsg = 'Invalid file type. Please upload a JPG, PNG, or PDF.';
+          const errorMsg = 'Invalid file type. Please upload a JPG, PNG, PDF, or EML (Email).';
           setError(errorMsg);
           toast.error(errorMsg);
         } else {
@@ -149,14 +151,14 @@ export function BoardingPassUploadZone({
             <div>
               <p className="text-lg font-semibold mb-1">
                 {isDragActive
-                  ? 'Drop your boarding pass here'
-                  : 'Drop your boarding pass here'}
+                  ? 'Drop your boarding pass or email here'
+                  : 'Drop your boarding pass or email here'}
               </p>
               <p className="text-sm text-muted-foreground mb-2">
                 or click to browse files
               </p>
               <p className="text-xs text-muted-foreground">
-                Supports: JPG, PNG, PDF • Max size: 10MB
+                Supports: JPG, PNG, PDF, EML • Max size: 10MB
               </p>
             </div>
 
@@ -194,7 +196,11 @@ export function BoardingPassUploadZone({
                 </div>
               ) : (
                 <div className="w-24 h-24 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
-                  <FileText className="w-12 h-12 text-gray-400" />
+                  {selectedFile.name.toLowerCase().endsWith('.eml') ? (
+                    <Mail className="w-12 h-12 text-gray-400" />
+                  ) : (
+                    <FileText className="w-12 h-12 text-gray-400" />
+                  )}
                 </div>
               )}
             </div>

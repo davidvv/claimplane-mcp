@@ -57,6 +57,32 @@ Rules:
 - passenger_name format: LASTNAME/FIRSTNAME (slash separated)
 """
 
+    # Prompt for Gemini to extract flight info from email text
+    EMAIL_PROMPT = """
+Analyze this flight confirmation/delay email and extract flight information.
+Return ONLY valid JSON with this exact structure (use null for missing fields):
+
+{
+  "flight_number": "XX1234",
+  "departure_airport": "XXX",
+  "arrival_airport": "XXX",
+  "flight_date": "YYYY-MM-DD",
+  "departure_time": "HH:MM",
+  "arrival_time": "HH:MM",
+  "passenger_name": "LASTNAME/FIRSTNAME",
+  "booking_reference": "XXXXXX",
+  "airline": "Full Airline Name",
+  "incident_type": "delay|cancellation|denied_boarding|none",
+  "delay_minutes": 120,
+  "cancellation_reason": "Reason if mentioned"
+}
+
+Rules:
+- Airport codes must be 3-letter IATA codes. If only city names are present (e.g. London to New York), try to infer IATA codes if unambiguous, otherwise leave null.
+- incident_type should be inferred from text (e.g. "Your flight is delayed", "Flight cancelled").
+- delay_minutes: Extract explicitly mentioned delay duration in minutes.
+"""
+
     # Major airline IATA codes for validation
     KNOWN_AIRLINES = {
         'AA': 'American Airlines', 'AC': 'Air Canada', 'AF': 'Air France',
@@ -361,77 +387,70 @@ Rules:
             logger.error("Google Cloud Vision library not installed")
             raise
         except Exception as e:
-            # Handle PermissionDenied specifically (billing issues)
-            if "PermissionDenied" in str(type(e)) or "billing" in str(e).lower():
-                logger.error(f"Google Vision Billing Error: {str(e)}")
-                raise Exception("Google Cloud Billing is not enabled for this project. Please enable billing in Google Cloud Console.")
-            
-            logger.error(f"Google Vision OCR failed: {str(e)}", exc_info=True)
+            logger.error(f"Gemini OCR failed: {str(e)}", exc_info=True)
             raise
 
-    async def _run_gemini_ocr(self, file_content: bytes, mime_type: str = "image/jpeg") -> Dict[str, Any]:
+    async def extract_from_email_text(self, email_subject: str, email_body: str) -> Dict[str, Any]:
         """
-        Run Gemini 2.5 Flash for semantic boarding pass extraction.
-        
+        Extract flight data from email content using Gemini.
+
         Args:
-            file_content: Image bytes
-            mime_type: MIME type of the image
-            
+            email_subject: Email subject line
+            email_body: Cleaned email body text
+
         Returns:
-            Dictionary with extracted boarding pass fields
+            Dictionary with extracted flight fields
         """
         try:
             # Check monthly usage limit first
             if not await self._check_and_increment_usage():
-                raise Exception("Monthly OCR usage limit reached (999). Please try again next month or contact support.")
+                raise Exception("Monthly AI usage limit reached. Please contact support.")
 
             from google import genai
-            from google.genai.types import Part, GenerateContentConfig
-            
+            from google.genai.types import GenerateContentConfig
+
             # Initialize Gemini client
             client = genai.Client(
                 vertexai=True,
                 project=self._gcp_project,
                 location=self._gcp_location
             )
+
+            full_text = f"Subject: {email_subject}\n\n{email_body}"
             
-            # Prepare the image part
-            image_part = Part.from_bytes(data=file_content, mime_type=mime_type)
-            
-            logger.info(f"Sending boarding pass to Gemini 2.5 Flash (project: {self._gcp_project})")
-            
-            # Call Gemini with structured output
+            logger.info(f"Sending email content to Gemini (length: {len(full_text)} chars)")
+
+            # Call Gemini
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=[
-                    image_part,
-                    self.BOARDING_PASS_PROMPT
+                    full_text,
+                    self.EMAIL_PROMPT
                 ],
                 config=GenerateContentConfig(
                     response_mime_type="application/json",
-                    temperature=0.1,  # Low temperature for consistent extraction
+                    temperature=0.1,
                 )
             )
-            
-            # Parse JSON response
+
+            # Parse response
             extracted_data = json.loads(response.text)
             
-            # Normalize null values to None
+            # Normalize nulls
             normalized_data = {k: (v if v else None) for k, v in extracted_data.items()}
             
-            logger.info(f"Gemini extracted fields: {list(normalized_data.keys())}")
-            logger.info(f"Gemini response sample: {response.text[:200]}...")
+            logger.info(f"Gemini extracted from email: {list(normalized_data.keys())}")
             
             return normalized_data
-            
+
         except ImportError:
             logger.error("google-genai package not installed")
             raise
-        except json.JSONDecodeError as e:
-            logger.error(f"Gemini returned invalid JSON: {response.text[:500]}", exc_info=True)
-            raise Exception("Failed to parse Gemini response as JSON")
+        except json.JSONDecodeError:
+            logger.error(f"Gemini returned invalid JSON for email extraction")
+            raise Exception("Failed to parse Gemini response")
         except Exception as e:
-            logger.error(f"Gemini OCR failed: {str(e)}", exc_info=True)
+            logger.error(f"Gemini email extraction failed: {str(e)}", exc_info=True)
             raise
 
     def _decode_barcode(self, image: Any) -> Optional[Dict[str, Any]]:

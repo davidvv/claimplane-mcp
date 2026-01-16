@@ -20,8 +20,8 @@ class FileValidationService:
         self.default_rules = {
             "boarding_pass": {
                 "max_file_size": 10 * 1024 * 1024,  # 10MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp"],
-                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp", "message/rfc822", "application/octet-stream"],
+                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".eml"],
                 "max_pages": 5,
                 "requires_scan": True,
                 "requires_encryption": True
@@ -52,8 +52,8 @@ class FileValidationService:
             },
             "flight_ticket": {
                 "max_file_size": 5 * 1024 * 1024,  # 5MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp"],
-                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp", "message/rfc822", "application/octet-stream"],
+                "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".eml"],
                 "max_pages": 3,
                 "requires_scan": True,
                 "requires_encryption": True

@@ -16,6 +16,9 @@ class BoardingPassDataSchema(BaseModel):
     booking_reference: Optional[str] = Field(None, alias="bookingReference")
     seat_number: Optional[str] = Field(None, alias="seatNumber")
     airline: Optional[str] = None
+    incident_type: Optional[str] = Field(None, alias="incidentType")
+    delay_minutes: Optional[int] = Field(None, alias="delayMinutes")
+    cancellation_reason: Optional[str] = Field(None, alias="cancellationReason")
 
     class Config:
         populate_by_name = True

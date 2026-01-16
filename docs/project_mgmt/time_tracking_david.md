@@ -7,6 +7,24 @@
 - **Estimated Total Time**: ~459.6-524.1 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
+## Latest Work (2026-01-16) - Smart Email Processing
+
+### Option A: .eml Support
+**Estimated Time**: 1.5 hours
+**Work Package**: #151, #152
+
+#### Key Tasks:
+1. **Planning & Architecture**
+   - Designed 3-option strategy (File, Forwarding, Chat)
+   - Created OpenProject Epics and User Stories
+2. **Backend Implementation (.eml)**
+   - Created `EmailParserService` for MIME parsing
+   - Updated `OCRService` with Gemini prompt for email text
+   - Updated `FileValidationService` to allow .eml files
+   - Updated API endpoint to route emails to parser
+3. **Frontend Implementation**
+   - Updated `BoardingPassUploadZone` to accept .eml and show Mail icon
+
 ## Latest Work (2026-01-16) - Early Arrival Bug Fix
 
 ### Compensation Logic Fix

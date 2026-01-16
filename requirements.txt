@@ -29,7 +29,8 @@ jinja2==3.1.2
 slowapi==0.1.9
 
 # OCR dependencies (Phase 7.5)
-google-cloud-vision==3.8.0  # Google Cloud Vision API for OCR
+google-cloud-vision==3.8.0  # Google Cloud Vision API for OCR (deprecated, will be removed)
+google-genai==1.0.0  # Gemini via Vertex AI for semantic OCR
 pillow==10.4.0
 pyzbar==0.1.9  # Barcode/QR code reading for boarding passes
 numpy>=1.24.0

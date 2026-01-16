@@ -37,6 +37,7 @@ This skill ensures that every task received from the user is properly investigat
         - Retrieve details (`openproject_get_work_packages` or from search result).
         - If status is "Closed" (ID 12), confirm with user before reopening.
         - If status is "In progress" (ID 7) or "New" (ID 1), resume this task.
+        - **Share the task URL with the user** (e.g., "Task #123: http://...")
     - **IF NOT FOUND**:
         - Create a new work package (`openproject_create_work_package`).
         - **Subject**: Concise summary of the request.
@@ -44,15 +45,19 @@ This skill ensures that every task received from the user is properly investigat
         - **Type**: 1 (Task) or 7 (Bug) as appropriate.
         - **estimated_hours**: The effort estimate from Step 1.
         - **Note the ID** of this new work package.
+        - **IMPORTANT**: Share the task URL with the user immediately (from the `url` field in the response)
 
 ### Step 3: Start Work (In Progress)
-**Goal**: Signal that work has begun.
+**Goal**: Signal that work has begun and inform the user.
 
 1.  **Update Status**:
     - Use `openproject_update_work_package`.
     - Set `status` to **7** ("In progress").
 2.  **Record Start Time**:
     - Note the current wall-clock time internally (e.g., "Started at 14:00").
+3.  **Inform User**:
+    - Tell the user which task you're working on with the task link.
+    - Example: "Starting work on Task #137: Setup Vertex AI (http://...)"
 
 ### Step 4: Execute Task
 **Goal**: Implement the plan.
@@ -61,7 +66,7 @@ This skill ensures that every task received from the user is properly investigat
 2.  Use standard tools (`edit`, `bash`, etc.) to modify the codebase.
 
 ### Step 5: Completion & Time Tracking
-**Goal**: Close the loop and log effort.
+**Goal**: Close the loop, log effort, and confirm completion with user.
 
 1.  **Record End Time**: Note the current time (e.g., "Finished at 15:30").
 2.  **Close Task**:
@@ -75,6 +80,9 @@ This skill ensures that every task received from the user is properly investigat
         - `hours`: Calculated duration.
         - `spent_on`: Today's date (YYYY-MM-DD).
         - `comment`: "Worked from [Start Time] to [End Time]. Total: [Duration]. [Brief summary of outcome]."
+4.  **Inform User**:
+    - Tell the user the task is complete with the task link.
+    - Example: "✅ Completed Task #138: Add dependencies (http://...)"
 
 ---
 
@@ -83,7 +91,10 @@ This skill ensures that every task received from the user is properly investigat
 - [ ] **Plan Created**: Detailed steps formulated.
 - [ ] **Project Identified**: Correct project ID found.
 - [ ] **Task Exists**: Checked for existing task (found or created).
+- [ ] **Task URL Shared**: User informed of task link when created/found.
 - [ ] **Status -> In Progress**: Updated status to ID 7.
+- [ ] **User Informed of Start**: Told user which task is being worked on.
 - [ ] **Work Done**: Implementation complete.
 - [ ] **Status -> Closed**: Updated status to ID 12.
 - [ ] **Time Logged**: Time entry created with start/end times in comment.
+- [ ] **User Informed of Completion**: Told user task is complete with link.

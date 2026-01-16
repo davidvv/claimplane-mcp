@@ -1,7 +1,7 @@
 """
 OCR Service for extracting flight data from boarding pass images.
 
-Uses Google Cloud Vision API for high-quality OCR with barcode reading fallback.
+Uses Gemini 2.5 Flash for semantic OCR with barcode reading as primary method.
 """
 
 import io
@@ -22,14 +22,40 @@ logger = logging.getLogger(__name__)
 class OCRService:
     """
     Extract flight data from boarding pass images using:
-    1. Barcode/QR code reading (pyzbar) - Free, instant, 100% accurate
-    2. Google Cloud Vision API - Premium OCR, $1.50/1000 images
+    1. Barcode/QR code reading (pyzbar) - Free, instant, 95%+ accurate
+    2. Gemini 2.5 Flash (Vertex AI) - Semantic OCR, ~$0.10/1M tokens
 
     Supports:
     - JPEG, PNG, WebP images
     - PDF documents (first page)
     - Barcode extraction (PDF417, QR, DataMatrix, Aztec)
     """
+
+    # Prompt for Gemini to extract boarding pass data
+    BOARDING_PASS_PROMPT = """
+Analyze this boarding pass image and extract flight information.
+Return ONLY valid JSON with this exact structure (use null for missing fields):
+
+{
+  "flight_number": "XX1234",
+  "departure_airport": "XXX",
+  "arrival_airport": "XXX",
+  "flight_date": "YYYY-MM-DD",
+  "departure_time": "HH:MM",
+  "arrival_time": "HH:MM",
+  "passenger_name": "LASTNAME/FIRSTNAME",
+  "booking_reference": "XXXXXX",
+  "seat_number": "12A",
+  "airline": "Full Airline Name"
+}
+
+Rules:
+- Airport codes must be 3-letter IATA codes (e.g., JFK, LHR, FRA)
+- Dates in YYYY-MM-DD format, times in 24-hour HH:MM format
+- If year is not visible, assume current or next year based on context
+- If multiple flight legs exist, extract only the first segment
+- passenger_name format: LASTNAME/FIRSTNAME (slash separated)
+"""
 
     # Major airline IATA codes for validation
     KNOWN_AIRLINES = {
@@ -84,32 +110,41 @@ class OCRService:
     def __init__(self):
         """Initialize OCR service."""
         self._pyzbar_available = None
-        self._google_vision_available = None
+        self._gemini_available = None
         self._google_credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-        logger.info(f"OCRService initialized. Credentials path: {self._google_credentials_path}")
+        self._gcp_project = os.getenv('GOOGLE_CLOUD_PROJECT')
+        self._gcp_location = os.getenv('GOOGLE_CLOUD_LOCATION', 'us-central1')
+        logger.info(f"OCRService initialized. Credentials path: {self._google_credentials_path}, "
+                   f"GCP Project: {self._gcp_project}, Location: {self._gcp_location}")
 
     def _check_dependencies(self) -> Dict[str, bool]:
         """Check if OCR dependencies are available."""
         status = {}
 
+        # Check barcode reader
         try:
             import pyzbar
             status["pyzbar"] = True
         except ImportError:
             status["pyzbar"] = False
 
+        # Check Gemini (via google-genai)
         try:
-            from google.cloud import vision
-            if self._google_credentials_path and os.path.exists(self._google_credentials_path):
-                status["google_vision"] = True
+            from google import genai
+            # Verify credentials and project ID are configured
+            if (self._google_credentials_path and os.path.exists(self._google_credentials_path) 
+                and self._gcp_project):
+                status["gemini"] = True
             else:
-                try:
-                    client = vision.ImageAnnotatorClient()
-                    status["google_vision"] = True
-                except Exception:
-                    status["google_vision"] = False
+                # Try without explicit credentials (uses default auth)
+                if self._gcp_project:
+                    status["gemini"] = True
+                else:
+                    status["gemini"] = False
+                    logger.warning("GOOGLE_CLOUD_PROJECT not set - Gemini OCR unavailable")
         except ImportError:
-            status["google_vision"] = False
+            status["gemini"] = False
+            logger.warning("google-genai package not installed - Gemini OCR unavailable")
 
         return status
 
@@ -163,51 +198,44 @@ class OCRService:
                         result["processing_time_ms"] = int((time.time() - start_time) * 1000)
                         return result
                 else:
-                    logger.info("No barcode found, falling back to Google Vision OCR")
-                    result["warnings"].append("No machine-readable barcode found, using cloud OCR")
+                    logger.info("No barcode found, falling back to Gemini OCR")
+                    result["warnings"].append("No machine-readable barcode found, using Gemini semantic OCR")
 
-            # STEP 2: Fall back to Google Cloud Vision API
-            if not deps.get("google_vision"):
+            # STEP 2: Fall back to Gemini 2.5 Flash
+            if not deps.get("gemini"):
                 result["errors"].append(
-                    "Google Cloud Vision API not configured. "
-                    "Please set GOOGLE_APPLICATION_CREDENTIALS environment variable."
+                    "Gemini OCR not configured. "
+                    "Please set GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables."
                 )
                 return result
 
-            logger.info("Starting Google Cloud Vision OCR...")
-            result["extraction_method"] = "google_vision_api"
+            logger.info("Starting Gemini 2.5 Flash semantic OCR...")
+            result["extraction_method"] = "gemini_2.5_flash"
 
-            ocr_text = await self._run_google_vision_ocr(file_content)
+            # Gemini returns structured data directly (no regex parsing needed!)
+            extracted_data = await self._run_gemini_ocr(file_content, mime_type)
 
-            if not ocr_text or len(ocr_text.strip()) < 10:
-                result["errors"].append("Google Vision could not extract text from image")
+            if not extracted_data or not any(v is not None for v in extracted_data.values()):
+                result["errors"].append("Gemini could not extract boarding pass data from image")
                 return result
 
-            logger.info(f"Google Vision extracted {len(ocr_text)} characters")
-            result["raw_text"] = ocr_text
-
-            extracted_data, field_confidence = self._parse_boarding_pass_text(ocr_text)
             field_count = sum(1 for v in extracted_data.values() if v is not None)
-            
-            logger.info(f"Parsed {field_count} fields from Google Vision text")
+            logger.info(f"Gemini extracted {field_count} fields")
 
-            if field_count == 0:
-                result["errors"].append("Could not parse boarding pass data from extracted text")
-                return result
-
+            # Validate extracted data
             validation_errors, validation_warnings = self._validate_extracted_data(extracted_data)
             result["warnings"].extend(validation_warnings + validation_errors)
 
-            overall_confidence = self._calculate_overall_confidence(field_confidence)
+            # Calculate confidence (Gemini is more reliable than regex, so base = 0.85)
+            field_confidence = {k: 0.9 if v else 0.0 for k, v in extracted_data.items()}
+            overall_confidence = 0.85 if field_count >= 3 else 0.6
 
             result["success"] = True
             result["data"] = extracted_data
             result["field_confidence"] = field_confidence
             result["confidence_score"] = overall_confidence
 
-            if overall_confidence < 0.5:
-                result["warnings"].append("Low confidence extraction - please verify all fields manually")
-            elif overall_confidence < 0.7:
+            if overall_confidence < 0.7:
                 result["warnings"].append("Some fields may need verification")
 
         except Exception as e:
@@ -291,6 +319,11 @@ class OCRService:
             # Default to allow if tracking fails, to avoid breaking service on Redis error
             return True
 
+    # ========================================================================
+    # DEPRECATED: Old Google Vision API code - kept for reference
+    # TODO: Remove after Gemini migration is fully tested
+    # ========================================================================
+
     async def _run_google_vision_ocr(self, file_content: bytes) -> str:
         """Run Google Cloud Vision API OCR."""
         try:
@@ -334,6 +367,71 @@ class OCRService:
                 raise Exception("Google Cloud Billing is not enabled for this project. Please enable billing in Google Cloud Console.")
             
             logger.error(f"Google Vision OCR failed: {str(e)}", exc_info=True)
+            raise
+
+    async def _run_gemini_ocr(self, file_content: bytes, mime_type: str = "image/jpeg") -> Dict[str, Any]:
+        """
+        Run Gemini 2.5 Flash for semantic boarding pass extraction.
+        
+        Args:
+            file_content: Image bytes
+            mime_type: MIME type of the image
+            
+        Returns:
+            Dictionary with extracted boarding pass fields
+        """
+        try:
+            # Check monthly usage limit first
+            if not await self._check_and_increment_usage():
+                raise Exception("Monthly OCR usage limit reached (999). Please try again next month or contact support.")
+
+            from google import genai
+            from google.genai.types import Part, GenerateContentConfig
+            
+            # Initialize Gemini client
+            client = genai.Client(
+                vertexai=True,
+                project=self._gcp_project,
+                location=self._gcp_location
+            )
+            
+            # Prepare the image part
+            image_part = Part.from_bytes(data=file_content, mime_type=mime_type)
+            
+            logger.info(f"Sending boarding pass to Gemini 2.5 Flash (project: {self._gcp_project})")
+            
+            # Call Gemini with structured output
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[
+                    image_part,
+                    self.BOARDING_PASS_PROMPT
+                ],
+                config=GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.1,  # Low temperature for consistent extraction
+                )
+            )
+            
+            # Parse JSON response
+            extracted_data = json.loads(response.text)
+            
+            # Normalize null values to None
+            normalized_data = {k: (v if v else None) for k, v in extracted_data.items()}
+            
+            logger.info(f"Gemini extracted fields: {list(normalized_data.keys())}")
+            logger.info(f"Gemini response sample: {response.text[:200]}...")
+            
+            return normalized_data
+            
+        except ImportError:
+            logger.error("google-genai package not installed")
+            raise
+        except json.JSONDecodeError as e:
+            logger.error(f"Gemini returned invalid JSON: {response.text[:500]}", exc_info=True)
+            raise Exception("Failed to parse Gemini response as JSON")
+        except Exception as e:
+            logger.error(f"Gemini OCR failed: {str(e)}", exc_info=True)
             raise
 
     def _decode_barcode(self, image: Any) -> Optional[Dict[str, Any]]:
@@ -415,6 +513,11 @@ class OCRService:
             logger.warning(f"Barcode parsing failed: {str(e)}")
 
         return extracted, confidence
+
+    # ========================================================================
+    # DEPRECATED: Regex-based text parsing - replaced by Gemini structured output
+    # TODO: Remove after Gemini migration is fully tested
+    # ========================================================================
 
     def _parse_boarding_pass_text(self, raw_text: str) -> Tuple[Dict[str, Any], Dict[str, float]]:
         """Parse text to find boarding pass fields."""

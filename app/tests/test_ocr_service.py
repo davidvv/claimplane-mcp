@@ -218,9 +218,8 @@ class TestDependencyCheck:
     def test_check_dependencies(self):
         """Test dependency check returns expected keys."""
         deps = self.service._check_dependencies()
-        assert "tesseract" in deps
-        assert "opencv" in deps
-        assert "pdf" in deps
+        assert "pyzbar" in deps
+        assert "gemini" in deps
 
 
 @pytest.mark.asyncio
@@ -231,8 +230,8 @@ class TestOCRExtraction:
         """Test handling of empty file content."""
         service = OCRService()
 
-        # Mock dependencies check to return tesseract available
-        with patch.object(service, '_check_dependencies', return_value={"tesseract": True, "opencv": True, "pdf": False}):
+        # Mock dependencies check to return pyzbar available
+        with patch.object(service, '_check_dependencies', return_value={"pyzbar": True, "gemini": True}):
             with patch.object(service, '_load_image', return_value=None):
                 result = await service.extract_boarding_pass_data(
                     file_content=b"",
@@ -242,11 +241,11 @@ class TestOCRExtraction:
                 assert result["success"] is False
                 assert len(result["errors"]) > 0
 
-    async def test_extract_no_tesseract(self):
-        """Test handling when tesseract is not available."""
+    async def test_extract_no_gemini(self):
+        """Test handling when Gemini is not available."""
         service = OCRService()
 
-        with patch.object(service, '_check_dependencies', return_value={"tesseract": False, "opencv": False, "pdf": False}):
+        with patch.object(service, '_check_dependencies', return_value={"pyzbar": False, "gemini": False}):
             result = await service.extract_boarding_pass_data(
                 file_content=b"test content",
                 mime_type="image/jpeg"

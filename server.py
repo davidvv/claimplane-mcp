@@ -670,6 +670,9 @@ async def app_lifespan(app: Starlette):
 
 
 # Create combined app with health endpoint and MCP
+# Note: Set streamable_http_path to "/" so the actual endpoint is at /mcp (not /mcp/mcp)
+mcp.settings.streamable_http_path = "/"
+
 app = Starlette(
     routes=[
         Route("/", root_endpoint),

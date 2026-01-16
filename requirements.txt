@@ -6,21 +6,21 @@ starlette>=0.27.0
 httpx>=0.25.2
 
 # Database (match main app)
-sqlalchemy[asyncio]==2.0.23
-asyncpg==0.29.0
-psycopg2-binary==2.9.9
+sqlalchemy[asyncio]>=2.0.23
+asyncpg>=0.29.0
+psycopg2-binary>=2.9.9
 
 # Utilities
-python-dotenv==1.0.0
-pydantic==2.5.2
-pydantic-settings==2.1.0
+python-dotenv>=1.0.0
+pydantic>=2.5.2
+pydantic-settings>=2.5.2
 
 # Cryptography (for file encryption)
-cryptography==41.0.7
-passlib[bcrypt]==1.7.4
-python-jose[cryptography]==3.3.0
-python-multipart==0.0.6
+cryptography>=41.0.7
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.9
 
 # Development
-pytest==7.4.3
-pytest-asyncio==0.21.1
+pytest>=7.4.3
+pytest-asyncio>=0.21.1

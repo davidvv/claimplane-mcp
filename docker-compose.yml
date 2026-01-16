@@ -5,8 +5,8 @@ services:
     build: .
     container_name: easyairclaim-mcp-server
     ports:
-      - "39128:39128"  # SSE/MCP endpoint
-      - "8083:8083"    # Dashboard endpoint
+      - "39128:39128"  # MCP endpoint (Streamable HTTP at /mcp, health at /health)
+      - "8083:8083"    # Dashboard endpoint (reserved)
     environment:
       - ENVIRONMENT=development
       - DATABASE_URL=${DATABASE_URL}

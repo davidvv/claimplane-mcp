@@ -1,13 +1,19 @@
-"""EasyAirClaim MCP Server with SSE support."""
-import asyncio
-import json
-import logging
-from typing import Dict, Any, Callable
-from contextlib import asynccontextmanager
+"""EasyAirClaim MCP Server using official MCP SDK (FastMCP).
 
-from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse
-from sse_starlette import EventSourceResponse
+This server provides tools for interacting with the EasyAirClaim database
+for development and testing purposes.
+"""
+import contextlib
+import logging
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+from typing import Dict, Any, Optional
+
+from starlette.applications import Starlette
+from starlette.routing import Mount, Route
+from starlette.responses import JSONResponse
+
+from mcp.server.fastmcp import FastMCP
 
 from config import MCPConfig
 from database import init_database, close_database
@@ -21,645 +27,662 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# Tool Registry: Maps tool names to functions
-TOOL_REGISTRY: Dict[str, Callable] = {
-    # Health & System
-    "health_check": tools.health_check,
-    "get_database_stats": tools.get_database_stats,
-    "get_environment_info": tools.get_environment_info,
-    
-    # Customer Management
-    "create_customer": tools.create_customer,
-    "get_customer": tools.get_customer,
-    "get_customer_by_email": tools.get_customer_by_email,
-    "list_customers": tools.list_customers,
-    "delete_customer": tools.delete_customer,
-    
-    # Claim Management
-    "create_claim": tools.create_claim,
-    "get_claim": tools.get_claim,
-    "list_claims": tools.list_claims,
-    "transition_claim_status": tools.transition_claim_status,
-    "add_claim_note": tools.add_claim_note,
-    
-    # File Management
-    "list_claim_files": tools.list_claim_files,
-    "get_file_metadata": tools.get_file_metadata,
-    "get_file_validation_status": tools.get_file_validation_status,
-    "approve_file": tools.approve_file,
-    "reject_file": tools.reject_file,
-    "delete_file": tools.delete_file,
-    "get_files_by_status": tools.get_files_by_status,
-    
-    # User/Admin Management
-    "create_user": tools.create_user,
-    "create_admin": tools.create_admin,
-    "get_user": tools.get_user,
-    "get_user_by_email": tools.get_user_by_email,
-    "list_users": tools.list_users,
-    "update_user": tools.update_user,
-    "delete_user": tools.delete_user,
-    "activate_user": tools.activate_user,
-    "deactivate_user": tools.deactivate_user,
-    "verify_user_email": tools.verify_user_email,
-    
-    # Development Tools
-    "seed_realistic_data": tools.seed_realistic_data,
-    "create_test_scenario": tools.create_test_scenario,
-    "reset_database": tools.reset_database,
-    "validate_data_integrity": tools.validate_data_integrity,
-}
+# =============================================================================
+# Lifespan Context for Database Management
+# =============================================================================
+
+@dataclass
+class AppContext:
+    """Application context with database connection status."""
+    db_ready: bool
 
 
-# Tool Schemas for MCP Protocol
-TOOL_SCHEMAS = [
-    {
-        "name": "health_check",
-        "description": "Check MCP server and database connectivity",
-        "inputSchema": {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
-    },
-    {
-        "name": "get_database_stats",
-        "description": "Get database statistics (counts of customers, claims, files, users)",
-        "inputSchema": {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
-    },
-    {
-        "name": "get_environment_info",
-        "description": "Get environment and configuration information",
-        "inputSchema": {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
-    },
-    {
-        "name": "create_customer",
-        "description": "Create a new customer with contact and address details",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "email": {"type": "string"},
-                "first_name": {"type": "string"},
-                "last_name": {"type": "string"},
-                "phone": {"type": "string"},
-                "street": {"type": "string"},
-                "city": {"type": "string"},
-                "postal_code": {"type": "string"},
-                "country": {"type": "string"}
-            },
-            "required": ["email", "first_name", "last_name"]
-        }
-    },
-    {
-        "name": "get_customer",
-        "description": "Get customer details by ID",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "customer_id": {"type": "string"}
-            },
-            "required": ["customer_id"]
-        }
-    },
-    {
-        "name": "get_customer_by_email",
-        "description": "Find customer by email address",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "email": {"type": "string"}
-            },
-            "required": ["email"]
-        }
-    },
-    {
-        "name": "list_customers",
-        "description": "List customers with pagination",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "limit": {"type": "integer"},
-                "offset": {"type": "integer"}
-            },
-            "required": []
-        }
-    },
-    {
-        "name": "delete_customer",
-        "description": "Delete a customer by ID",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "customer_id": {"type": "string"}
-            },
-            "required": ["customer_id"]
-        }
-    },
-    {
-        "name": "create_claim",
-        "description": "Create a new flight compensation claim with EU261 calculation",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "customer_id": {"type": "string"},
-                "flight_number": {"type": "string"},
-                "flight_date": {"type": "string"},
-                "departure_airport": {"type": "string"},
-                "arrival_airport": {"type": "string"},
-                "incident_type": {"type": "string"},
-                "scheduled_departure": {"type": "string"},
-                "actual_departure": {"type": "string"},
-                "scheduled_arrival": {"type": "string"},
-                "actual_arrival": {"type": "string"},
-                "delay_minutes": {"type": "integer"},
-                "description": {"type": "string"}
-            },
-            "required": ["customer_id", "flight_number", "flight_date", "departure_airport", "arrival_airport", "incident_type"]
-        }
-    },
-    {
-        "name": "get_claim",
-        "description": "Get complete claim details by ID",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "claim_id": {"type": "string"}
-            },
-            "required": ["claim_id"]
-        }
-    },
-    {
-        "name": "list_claims",
-        "description": "List claims with optional filters (customer_id, status)",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "customer_id": {"type": "string"},
-                "status": {"type": "string"},
-                "limit": {"type": "integer"},
-                "offset": {"type": "integer"}
-            },
-            "required": []
-        }
-    },
-    {
-        "name": "transition_claim_status",
-        "description": "Update claim status (submitted, under_review, approved, rejected, paid)",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "claim_id": {"type": "string"},
-                "new_status": {"type": "string"},
-                "admin_id": {"type": "string"},
-                "note": {"type": "string"}
-            },
-            "required": ["claim_id", "new_status"]
-        }
-    },
-    {
-        "name": "add_claim_note",
-        "description": "Add an admin note to a claim",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "claim_id": {"type": "string"},
-                "note": {"type": "string"},
-                "admin_id": {"type": "string"}
-            },
-            "required": ["claim_id", "note"]
-        }
-    },
-    {
-        "name": "seed_realistic_data",
-        "description": "Populate database with realistic test data (customers and claims)",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "scenario": {"type": "string"},
-                "count": {"type": "integer"}
-            },
-            "required": []
-        }
-    },
-    {
-        "name": "create_test_scenario",
-        "description": "Create a complete test scenario (customer + claim)",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "email": {"type": "string"},
-                "scenario_type": {"type": "string"}
-            },
-            "required": []
-        }
-    },
-    {
-        "name": "reset_database",
-        "description": "⚠️ WARNING: Delete all test data from database",
-        "inputSchema": {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
-    },
-    {
-        "name": "validate_data_integrity",
-        "description": "Check for data integrity issues (orphaned records, etc)",
-        "inputSchema": {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
-    },
-    # File Management Tools
-    {
-        "name": "list_claim_files",
-        "description": "List all files for a specific claim",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "claim_id": {"type": "string"}
-            },
-            "required": ["claim_id"]
-        }
-    },
-    {
-        "name": "get_file_metadata",
-        "description": "Get detailed file metadata and validation status",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "file_id": {"type": "string"}
-            },
-            "required": ["file_id"]
-        }
-    },
-    {
-        "name": "get_file_validation_status",
-        "description": "Get file validation and security scan status",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "file_id": {"type": "string"}
-            },
-            "required": ["file_id"]
-        }
-    },
-    {
-        "name": "approve_file",
-        "description": "Approve a file (admin action)",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "file_id": {"type": "string"},
-                "admin_id": {"type": "string"}
-            },
-            "required": ["file_id"]
-        }
-    },
-    {
-        "name": "reject_file",
-        "description": "Reject a file with reason (admin action)",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "file_id": {"type": "string"},
-                "reason": {"type": "string"},
-                "admin_id": {"type": "string"}
-            },
-            "required": ["file_id", "reason"]
-        }
-    },
-    {
-        "name": "delete_file",
-        "description": "Delete a file by ID",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "file_id": {"type": "string"}
-            },
-            "required": ["file_id"]
-        }
-    },
-    {
-        "name": "get_files_by_status",
-        "description": "Get files filtered by validation status",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "validation_status": {"type": "string"},
-                "limit": {"type": "integer"},
-                "offset": {"type": "integer"}
-            },
-            "required": ["validation_status"]
-        }
-    },
-    # User/Admin Management Tools
-    {
-        "name": "create_user",
-        "description": "Create a new user account",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "email": {"type": "string"},
-                "password": {"type": "string"},
-                "first_name": {"type": "string"},
-                "last_name": {"type": "string"},
-                "role": {"type": "string"}
-            },
-            "required": ["email", "password", "first_name", "last_name"]
-        }
-    },
-    {
-        "name": "create_admin",
-        "description": "Create a new admin user account",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "email": {"type": "string"},
-                "password": {"type": "string"},
-                "first_name": {"type": "string"},
-                "last_name": {"type": "string"}
-            },
-            "required": ["email", "password", "first_name", "last_name"]
-        }
-    },
-    {
-        "name": "get_user",
-        "description": "Get user details by ID",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "string"}
-            },
-            "required": ["user_id"]
-        }
-    },
-    {
-        "name": "get_user_by_email",
-        "description": "Find user by email address",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "email": {"type": "string"}
-            },
-            "required": ["email"]
-        }
-    },
-    {
-        "name": "list_users",
-        "description": "List users with optional role filter",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "role": {"type": "string"},
-                "limit": {"type": "integer"},
-                "offset": {"type": "integer"}
-            },
-            "required": []
-        }
-    },
-    {
-        "name": "update_user",
-        "description": "Update user details",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "string"},
-                "email": {"type": "string"},
-                "first_name": {"type": "string"},
-                "last_name": {"type": "string"},
-                "role": {"type": "string"},
-                "is_active": {"type": "boolean"},
-                "is_email_verified": {"type": "boolean"}
-            },
-            "required": ["user_id"]
-        }
-    },
-    {
-        "name": "delete_user",
-        "description": "Delete a user by ID",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "string"}
-            },
-            "required": ["user_id"]
-        }
-    },
-    {
-        "name": "activate_user",
-        "description": "Activate a user account",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "string"}
-            },
-            "required": ["user_id"]
-        }
-    },
-    {
-        "name": "deactivate_user",
-        "description": "Deactivate a user account",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "string"}
-            },
-            "required": ["user_id"]
-        }
-    },
-    {
-        "name": "verify_user_email",
-        "description": "Mark user email as verified",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "string"}
-            },
-            "required": ["user_id"]
-        }
-    }
-]
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifespan manager."""
-    # Startup
-    logger.warning(
-        "\n"
-        "═══════════════════════════════════════════════════════════════\n"
-        "  ⚠️  EASYAIRCLAIM MCP SERVER - DEVELOPMENT MODE ONLY  ⚠️\n"
-        "═══════════════════════════════════════════════════════════════\n"
-        f"  Environment: {MCPConfig.ENVIRONMENT}\n"
-        f"  MCP Port: {MCPConfig.MCP_PORT}\n"
-        f"  Dashboard Port: {MCPConfig.DASHBOARD_PORT}\n"
-        "  Database: Full access enabled\n"
-        "  Destructive Operations: " + ("✓ ENABLED" if MCPConfig.ENABLE_DESTRUCTIVE_OPS else "✗ DISABLED") + "\n"
-        "═══════════════════════════════════════════════════════════════\n"
-        "  WARNING: This server has unrestricted database access!\n"
-        "           DO NOT run in production!\n"
-        "═══════════════════════════════════════════════════════════════\n"
-    )
+@contextlib.asynccontextmanager
+async def mcp_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
+    """Manage database lifecycle for FastMCP server."""
+    logger.warning("=" * 60)
+    logger.warning("  EasyAirClaim MCP Server - DEVELOPMENT MODE ONLY")
+    logger.warning("  Full database access - NO authentication!")
+    logger.warning("=" * 60)
     
-    # Initialize database connection
     try:
         await init_database()
         logger.info("Database connection established")
-    except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
-        raise
-    
-    yield
-    
-    # Shutdown
-    logger.info("Shutting down EasyAirClaim MCP Server...")
-    await close_database()
+        yield AppContext(db_ready=True)
+    finally:
+        await close_database()
+        logger.info("Database connection closed")
 
 
-# Create FastAPI app
-app = FastAPI(
-    title="EasyAirClaim MCP Server",
-    description="Model Context Protocol Server for EasyAirClaim Development",
-    version="1.0.0",
-    lifespan=lifespan
+# =============================================================================
+# Create FastMCP Server
+# =============================================================================
+
+mcp = FastMCP(
+    name="easyairclaim-dev",
+    instructions="""
+    EasyAirClaim Development MCP Server.
+    
+    This server provides tools for managing:
+    - Customers (create, read, list, delete)
+    - Claims (create, read, list, status transitions)
+    - Files (list, metadata, approve/reject)
+    - Users (create, read, update, delete, activate/deactivate)
+    - Development utilities (seed data, reset, validation)
+    
+    All operations are for DEVELOPMENT/TESTING only.
+    """,
+    lifespan=mcp_lifespan,
+    stateless_http=True,
+    json_response=True,
 )
 
 
-@app.get("/")
-async def root():
-    """Root endpoint."""
-    return {
-        "name": "EasyAirClaim MCP Server",
-        "version": "1.0.0",
-        "environment": MCPConfig.ENVIRONMENT,
-        "tools_available": len(TOOL_REGISTRY),
-        "sse_endpoint": "/sse"
-    }
+# =============================================================================
+# Health & System Tools
+# =============================================================================
 
-
-@app.get("/health")
-async def health():
-    """Health check endpoint."""
+@mcp.tool()
+async def health_check() -> Dict[str, Any]:
+    """Check MCP server and database connectivity.
+    
+    Returns health status with database connection info.
+    """
     return await tools.health_check()
 
 
-@app.get("/tools")
-async def list_tools():
-    """List available tools."""
-    return {
-        "tools": TOOL_SCHEMAS
-    }
-
-
-async def handle_mcp_request(request_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle MCP tool call request."""
-    try:
-        method = request_data.get("method")
-        params = request_data.get("params", {})
-        
-        if method == "initialize":
-            return {
-                "protocolVersion": "0.1.0",
-                "serverInfo": {
-                    "name": "easyairclaim-dev",
-                    "version": "1.0.0"
-                },
-                "capabilities": {
-                    "tools": {}
-                }
-            }
-        
-        elif method == "tools/list":
-            return {
-                "tools": TOOL_SCHEMAS
-            }
-        
-        elif method == "tools/call":
-            tool_name = params.get("name")
-            tool_args = params.get("arguments", {})
-            
-            if tool_name not in TOOL_REGISTRY:
-                return {
-                    "error": f"Unknown tool: {tool_name}"
-                }
-            
-            # Call the tool
-            tool_func = TOOL_REGISTRY[tool_name]
-            result = await tool_func(**tool_args)
-            
-            return {
-                "content": [
-                    {
-                        "type": "text",
-                        "text": json.dumps(result, indent=2)
-                    }
-                ]
-            }
-        
-        else:
-            return {"error": f"Unknown method: {method}"}
-            
-    except Exception as e:
-        logger.error(f"Error handling MCP request: {e}", exc_info=True)
-        return {"error": str(e)}
-
-
-@app.get("/sse")
-async def sse_endpoint(request: Request):
-    """SSE endpoint for MCP protocol."""
-    async def event_generator():
-        try:
-            while True:
-                # Wait for client messages (simplified for now)
-                # In a full implementation, this would handle bi-directional communication
-                
-                # Send periodic heartbeat
-                yield {
-                    "event": "heartbeat",
-                    "data": json.dumps({"timestamp": asyncio.get_event_loop().time()})
-                }
-                
-                await asyncio.sleep(30)
-                
-        except asyncio.CancelledError:
-            logger.info("SSE connection closed")
+@mcp.tool()
+async def get_database_stats() -> Dict[str, Any]:
+    """Get database statistics (counts of various entities).
     
-    return EventSourceResponse(event_generator())
+    Returns counts of customers, claims, and files.
+    """
+    return await tools.get_database_stats()
 
 
-@app.post("/rpc")
-async def rpc_endpoint(request: Request):
-    """JSON-RPC endpoint for MCP calls."""
+@mcp.tool()
+async def get_environment_info() -> Dict[str, Any]:
+    """Get environment and configuration information.
+    
+    Returns environment details and configuration.
+    """
+    return await tools.get_environment_info()
+
+
+# =============================================================================
+# Customer Management Tools
+# =============================================================================
+
+@mcp.tool()
+async def create_customer(
+    email: str,
+    first_name: str,
+    last_name: str,
+    phone: Optional[str] = None,
+    street: Optional[str] = None,
+    city: Optional[str] = None,
+    postal_code: Optional[str] = None,
+    country: Optional[str] = None
+) -> Dict[str, Any]:
+    """Create a new customer with contact and address details.
+    
+    Args:
+        email: Customer email address
+        first_name: First name
+        last_name: Last name
+        phone: Phone number (optional)
+        street: Street address (optional)
+        city: City (optional)
+        postal_code: Postal code (optional)
+        country: Country (optional)
+    """
+    return await tools.create_customer(
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        phone=phone,
+        street=street,
+        city=city,
+        postal_code=postal_code,
+        country=country
+    )
+
+
+@mcp.tool()
+async def get_customer(customer_id: str) -> Dict[str, Any]:
+    """Get customer details by ID.
+    
+    Args:
+        customer_id: Customer ID (UUID)
+    """
+    return await tools.get_customer(customer_id=customer_id)
+
+
+@mcp.tool()
+async def get_customer_by_email(email: str) -> Dict[str, Any]:
+    """Find customer by email address.
+    
+    Args:
+        email: Customer email address
+    """
+    return await tools.get_customer_by_email(email=email)
+
+
+@mcp.tool()
+async def list_customers(limit: int = 10, offset: int = 0) -> Dict[str, Any]:
+    """List customers with pagination.
+    
+    Args:
+        limit: Number of results to return (default: 10)
+        offset: Number of results to skip (default: 0)
+    """
+    return await tools.list_customers(limit=limit, offset=offset)
+
+
+@mcp.tool()
+async def delete_customer(customer_id: str) -> Dict[str, Any]:
+    """Delete a customer by ID.
+    
+    Args:
+        customer_id: Customer ID (UUID)
+    """
+    return await tools.delete_customer(customer_id=customer_id)
+
+
+# =============================================================================
+# Claim Management Tools
+# =============================================================================
+
+@mcp.tool()
+async def create_claim(
+    customer_id: str,
+    flight_number: str,
+    flight_date: str,
+    departure_airport: str,
+    arrival_airport: str,
+    incident_type: str,
+    scheduled_departure: Optional[str] = None,
+    actual_departure: Optional[str] = None,
+    scheduled_arrival: Optional[str] = None,
+    actual_arrival: Optional[str] = None,
+    delay_minutes: Optional[int] = None,
+    description: Optional[str] = None
+) -> Dict[str, Any]:
+    """Create a new flight compensation claim with EU261 calculation.
+    
+    Args:
+        customer_id: Customer ID (UUID)
+        flight_number: Flight number (e.g., "LH123")
+        flight_date: Flight date (YYYY-MM-DD)
+        departure_airport: Departure airport IATA code
+        arrival_airport: Arrival airport IATA code
+        incident_type: Type of incident (delay, cancellation, denied_boarding, missed_connection)
+        scheduled_departure: Scheduled departure time (ISO format, optional)
+        actual_departure: Actual departure time (ISO format, optional)
+        scheduled_arrival: Scheduled arrival time (ISO format, optional)
+        actual_arrival: Actual arrival time (ISO format, optional)
+        delay_minutes: Delay in minutes (optional)
+        description: Claim description (optional)
+    """
+    return await tools.create_claim(
+        customer_id=customer_id,
+        flight_number=flight_number,
+        flight_date=flight_date,
+        departure_airport=departure_airport,
+        arrival_airport=arrival_airport,
+        incident_type=incident_type,
+        scheduled_departure=scheduled_departure,
+        actual_departure=actual_departure,
+        scheduled_arrival=scheduled_arrival,
+        actual_arrival=actual_arrival,
+        delay_minutes=delay_minutes,
+        description=description
+    )
+
+
+@mcp.tool()
+async def get_claim(claim_id: str) -> Dict[str, Any]:
+    """Get complete claim details by ID.
+    
+    Args:
+        claim_id: Claim ID (UUID)
+    """
+    return await tools.get_claim(claim_id=claim_id)
+
+
+@mcp.tool()
+async def list_claims(
+    customer_id: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 10,
+    offset: int = 0
+) -> Dict[str, Any]:
+    """List claims with optional filters.
+    
+    Args:
+        customer_id: Filter by customer ID (optional)
+        status: Filter by status (optional)
+        limit: Number of results (default: 10)
+        offset: Number to skip (default: 0)
+    """
+    return await tools.list_claims(
+        customer_id=customer_id,
+        status=status,
+        limit=limit,
+        offset=offset
+    )
+
+
+@mcp.tool()
+async def transition_claim_status(
+    claim_id: str,
+    new_status: str,
+    admin_id: Optional[str] = None,
+    note: Optional[str] = None
+) -> Dict[str, Any]:
+    """Update claim status (submitted, under_review, approved, rejected, paid).
+    
+    Args:
+        claim_id: Claim ID (UUID)
+        new_status: New status
+        admin_id: Admin user ID performing transition (optional)
+        note: Note about the transition (optional)
+    """
+    return await tools.transition_claim_status(
+        claim_id=claim_id,
+        new_status=new_status,
+        admin_id=admin_id,
+        note=note
+    )
+
+
+@mcp.tool()
+async def add_claim_note(
+    claim_id: str,
+    note: str,
+    admin_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """Add an admin note to a claim.
+    
+    Args:
+        claim_id: Claim ID (UUID)
+        note: Note content
+        admin_id: Admin user ID (optional)
+    """
+    return await tools.add_claim_note(
+        claim_id=claim_id,
+        note=note,
+        admin_id=admin_id
+    )
+
+
+# =============================================================================
+# File Management Tools
+# =============================================================================
+
+@mcp.tool()
+async def list_claim_files(claim_id: str) -> Dict[str, Any]:
+    """List all files for a specific claim.
+    
+    Args:
+        claim_id: Claim ID (UUID)
+    """
+    return await tools.list_claim_files(claim_id=claim_id)
+
+
+@mcp.tool()
+async def get_file_metadata(file_id: str) -> Dict[str, Any]:
+    """Get detailed file metadata and validation status.
+    
+    Args:
+        file_id: File ID (UUID)
+    """
+    return await tools.get_file_metadata(file_id=file_id)
+
+
+@mcp.tool()
+async def get_file_validation_status(file_id: str) -> Dict[str, Any]:
+    """Get file validation and security scan status.
+    
+    Args:
+        file_id: File ID (UUID)
+    """
+    return await tools.get_file_validation_status(file_id=file_id)
+
+
+@mcp.tool()
+async def approve_file(file_id: str, admin_id: Optional[str] = None) -> Dict[str, Any]:
+    """Approve a file (admin action).
+    
+    Args:
+        file_id: File ID (UUID)
+        admin_id: Admin user ID (optional)
+    """
+    return await tools.approve_file(file_id=file_id, admin_id=admin_id)
+
+
+@mcp.tool()
+async def reject_file(
+    file_id: str,
+    reason: str,
+    admin_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """Reject a file (admin action).
+    
+    Args:
+        file_id: File ID (UUID)
+        reason: Rejection reason
+        admin_id: Admin user ID (optional)
+    """
+    return await tools.reject_file(file_id=file_id, reason=reason, admin_id=admin_id)
+
+
+@mcp.tool()
+async def delete_file(file_id: str) -> Dict[str, Any]:
+    """Delete a file.
+    
+    Args:
+        file_id: File ID (UUID)
+    """
+    return await tools.delete_file(file_id=file_id)
+
+
+@mcp.tool()
+async def get_files_by_status(
+    validation_status: str,
+    limit: int = 10,
+    offset: int = 0
+) -> Dict[str, Any]:
+    """Get files by validation status.
+    
+    Args:
+        validation_status: Status (pending, approved, rejected)
+        limit: Number of results (default: 10)
+        offset: Number to skip (default: 0)
+    """
+    return await tools.get_files_by_status(
+        validation_status=validation_status,
+        limit=limit,
+        offset=offset
+    )
+
+
+# =============================================================================
+# User Management Tools
+# =============================================================================
+
+@mcp.tool()
+async def create_user(
+    email: str,
+    password: str,
+    first_name: str,
+    last_name: str,
+    role: str = "customer"
+) -> Dict[str, Any]:
+    """Create a new user.
+    
+    Args:
+        email: User email address
+        password: User password
+        first_name: First name
+        last_name: Last name
+        role: User role (customer, admin, support)
+    """
+    return await tools.create_user(
+        email=email,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+        role=role
+    )
+
+
+@mcp.tool()
+async def create_admin(
+    email: str,
+    password: str,
+    first_name: str,
+    last_name: str
+) -> Dict[str, Any]:
+    """Create a new admin user.
+    
+    Args:
+        email: Admin email address
+        password: Admin password
+        first_name: First name
+        last_name: Last name
+    """
+    return await tools.create_admin(
+        email=email,
+        password=password,
+        first_name=first_name,
+        last_name=last_name
+    )
+
+
+@mcp.tool()
+async def get_user(user_id: str) -> Dict[str, Any]:
+    """Get user by ID.
+    
+    Args:
+        user_id: User ID (UUID)
+    """
+    return await tools.get_user(user_id=user_id)
+
+
+@mcp.tool()
+async def get_user_by_email(email: str) -> Dict[str, Any]:
+    """Find user by email address.
+    
+    Args:
+        email: User email address
+    """
+    return await tools.get_user_by_email(email=email)
+
+
+@mcp.tool()
+async def list_users(
+    role: Optional[str] = None,
+    limit: int = 10,
+    offset: int = 0
+) -> Dict[str, Any]:
+    """List users with optional role filter.
+    
+    Args:
+        role: Filter by role (customer, admin, support)
+        limit: Number of results (default: 10)
+        offset: Number to skip (default: 0)
+    """
+    return await tools.list_users(role=role, limit=limit, offset=offset)
+
+
+@mcp.tool()
+async def update_user(
+    user_id: str,
+    email: Optional[str] = None,
+    first_name: Optional[str] = None,
+    last_name: Optional[str] = None,
+    role: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    is_email_verified: Optional[bool] = None
+) -> Dict[str, Any]:
+    """Update user details.
+    
+    Args:
+        user_id: User ID (UUID)
+        email: New email (optional)
+        first_name: New first name (optional)
+        last_name: New last name (optional)
+        role: New role (optional)
+        is_active: Active status (optional)
+        is_email_verified: Email verified status (optional)
+    """
+    return await tools.update_user(
+        user_id=user_id,
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        role=role,
+        is_active=is_active,
+        is_email_verified=is_email_verified
+    )
+
+
+@mcp.tool()
+async def delete_user(user_id: str) -> Dict[str, Any]:
+    """Delete a user.
+    
+    Args:
+        user_id: User ID (UUID)
+    """
+    return await tools.delete_user(user_id=user_id)
+
+
+@mcp.tool()
+async def activate_user(user_id: str) -> Dict[str, Any]:
+    """Activate a user account.
+    
+    Args:
+        user_id: User ID (UUID)
+    """
+    return await tools.activate_user(user_id=user_id)
+
+
+@mcp.tool()
+async def deactivate_user(user_id: str) -> Dict[str, Any]:
+    """Deactivate a user account.
+    
+    Args:
+        user_id: User ID (UUID)
+    """
+    return await tools.deactivate_user(user_id=user_id)
+
+
+@mcp.tool()
+async def verify_user_email(user_id: str) -> Dict[str, Any]:
+    """Mark user email as verified.
+    
+    Args:
+        user_id: User ID (UUID)
+    """
+    return await tools.verify_user_email(user_id=user_id)
+
+
+# =============================================================================
+# Development Tools
+# =============================================================================
+
+@mcp.tool()
+async def seed_realistic_data(
+    scenario: str = "basic",
+    count: int = 5
+) -> Dict[str, Any]:
+    """Populate database with realistic test data (customers and claims).
+    
+    Args:
+        scenario: Type of scenario (basic, complex, mixed)
+        count: Number of test entities to create
+    """
+    return await tools.seed_realistic_data(scenario=scenario, count=count)
+
+
+@mcp.tool()
+async def create_test_scenario(
+    email: str = "test@example.com",
+    scenario_type: str = "delayed_flight"
+) -> Dict[str, Any]:
+    """Create a complete test scenario (customer + claim).
+    
+    Args:
+        email: Customer email
+        scenario_type: Type (delayed_flight, cancelled_flight, denied_boarding)
+    """
+    return await tools.create_test_scenario(email=email, scenario_type=scenario_type)
+
+
+@mcp.tool()
+async def reset_database() -> Dict[str, Any]:
+    """WARNING: Delete all test data from database.
+    
+    This operation requires ENABLE_DESTRUCTIVE_OPS=true.
+    """
+    return await tools.reset_database()
+
+
+@mcp.tool()
+async def validate_data_integrity() -> Dict[str, Any]:
+    """Check for data integrity issues (orphaned records, etc)."""
+    return await tools.validate_data_integrity()
+
+
+# =============================================================================
+# HTTP Health Check Endpoint (for Docker)
+# =============================================================================
+
+async def health_endpoint(request):
+    """HTTP health check endpoint for Docker/load balancers."""
     try:
-        request_data = await request.json()
-        result = await handle_mcp_request(request_data)
-        
-        return {
-            "jsonrpc": "2.0",
-            "id": request_data.get("id"),
-            "result": result
-        }
+        result = await tools.health_check()
+        status_code = 200 if result.get("success") else 503
+        return JSONResponse(result, status_code=status_code)
     except Exception as e:
-        logger.error(f"RPC error: {e}", exc_info=True)
-        return {
-            "jsonrpc": "2.0",
-            "id": request_data.get("id") if 'request_data' in locals() else None,
-            "error": {
-                "code": -32603,
-                "message": str(e)
-            }
-        }
+        return JSONResponse(
+            {"success": False, "status": "unhealthy", "error": str(e)},
+            status_code=503
+        )
 
+
+async def root_endpoint(request):
+    """Root endpoint with server info."""
+    return JSONResponse({
+        "name": "easyairclaim-dev",
+        "version": "2.0.0",
+        "protocol": "MCP (Model Context Protocol)",
+        "sdk": "FastMCP",
+        "mcp_endpoint": "/mcp",
+        "health_endpoint": "/health",
+        "environment": MCPConfig.ENVIRONMENT,
+        "message": "EasyAirClaim MCP Server running with official MCP SDK"
+    })
+
+
+# =============================================================================
+# Combined Starlette Application
+# =============================================================================
+
+@contextlib.asynccontextmanager
+async def app_lifespan(app: Starlette):
+    """Combined lifespan for Starlette app with MCP session manager."""
+    async with mcp.session_manager.run():
+        # Initialize database
+        logger.warning("=" * 60)
+        logger.warning("  EasyAirClaim MCP Server - DEVELOPMENT MODE ONLY")
+        logger.warning("  Full database access - NO authentication!")
+        logger.warning("=" * 60)
+        
+        try:
+            await init_database()
+            logger.info("Database connection established")
+            yield
+        finally:
+            await close_database()
+            logger.info("Database connection closed")
+
+
+# Create combined app with health endpoint and MCP
+app = Starlette(
+    routes=[
+        Route("/", root_endpoint),
+        Route("/health", health_endpoint),
+        Mount("/mcp", app=mcp.streamable_http_app()),
+    ],
+    lifespan=app_lifespan,
+)
+
+
+# =============================================================================
+# Main Entry Point
+# =============================================================================
 
 if __name__ == "__main__":
     import uvicorn

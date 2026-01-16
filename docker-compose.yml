@@ -80,6 +80,8 @@ services:
       AIRPORT_AUTOCOMPLETE_CACHE_DAYS: ${AIRPORT_AUTOCOMPLETE_CACHE_DAYS:-7}
       FLIGHT_SEARCH_ANALYTICS_ENABLED: ${FLIGHT_SEARCH_ANALYTICS_ENABLED:-true}
       GOOGLE_APPLICATION_CREDENTIALS: /app/google-cloud-key.json
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION}
     ports:
       - "8000:8000"
     depends_on:
@@ -110,6 +112,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       FRONTEND_URL: ${FRONTEND_URL:-https://eac.dvvcloud.work}
       GOOGLE_APPLICATION_CREDENTIALS: /app/google-cloud-key.json
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION}
     depends_on:
       redis:
         condition: service_healthy
@@ -140,6 +144,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       FRONTEND_URL: ${FRONTEND_URL:-https://eac.dvvcloud.work}
       GOOGLE_APPLICATION_CREDENTIALS: /app/google-cloud-key.json
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION}
     depends_on:
       redis:
         condition: service_healthy

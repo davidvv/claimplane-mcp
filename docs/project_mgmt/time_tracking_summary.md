@@ -20,6 +20,15 @@
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
+## Latest Update (2026-01-16) - Gemini OCR Migration
+- **Gemini 2.5 Flash Integration**: Replaced Google Vision API with Gemini AI
+  - Improved accuracy with semantic understanding (no regex)
+  - Lower cost ($0.10/1M tokens vs $1.50/1k images)
+  - Configured for EU/GDPR compliance (europe-west4)
+  - Successful end-to-end test with claim creation and file attachment
+  - Work Packages #136-#140 completed
+- **Time Added**: 3.5 hours
+
 ## Latest Update (2026-01-15) - Skill Updates
 - **OpenProject Skill Update**: Added time estimation step to task creation
   - Tasks now include `estimated_hours` field

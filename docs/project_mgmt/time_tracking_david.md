@@ -7,10 +7,47 @@
 - **Estimated Total Time**: ~459.1-523.6 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
-## Latest Work (2026-01-15) - Skill Updates
+## Latest Work (2026-01-16) - Gemini OCR Migration
 
-### OpenProject Skill Improvement
-**Estimated Time**: 0.1 hours
+### Gemini 2.5 Flash OCR Integration
+**Estimated Time**: 3.5 hours
+**Work Package**: #136, #137, #138, #139, #140
+
+#### Overview:
+Replaced Google Vision API with Gemini 2.5 Flash for boarding pass extraction. This improves accuracy, adds semantic understanding, and significantly reduces costs.
+
+#### Key Tasks:
+1. **Implementation** (app/services/ocr_service.py)
+   - Added `google-genai` integration
+   - Implemented `_run_gemini_ocr` with structured JSON prompting
+   - Removed ~350 lines of complex/fragile regex parsing logic
+   - Updated fallback logic: Barcode -> Gemini
+   - Estimated: 1.5 hours
+
+2. **Configuration & DevOps**
+   - Updated `docker-compose.yml` to pass GCP variables
+   - Fixed volume mount issues for webhook deployment scripts
+   - Cleaned up 1.2GB of old Docker images
+   - Restored missing deployment scripts
+   - Estimated: 1.0 hours
+
+3. **Skills & Process**
+   - Created `docker-build-helper` skill
+   - Created `skill-creator` skill
+   - Standardized `commit-workflow` skill
+   - Estimated: 0.5 hours
+
+4. **Testing & Verification**
+   - Verified Gemini connectivity in EU region (europe-west4)
+   - Tested end-to-end extraction with `Boarding_MUC-MAD.png`
+   - Created test claim `123e...` with attached file
+   - Estimated: 0.5 hours
+
+### Updated Summary Statistics
+- **Total Commits**: 154 (added 1 new commit)
+- **Date Range**: 2025-09-04 to 2026-01-16
+- **Estimated Total Time**: ~462.6-527.1 hours (added 3.5 hours)
+
 **Work Package**: N/A (Internal Tooling)
 
 #### Overview:

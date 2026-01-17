@@ -73,6 +73,12 @@ function parseName(passengerName?: string | null): { firstName: string; lastName
   }
 }
 
+// Check if name might need verification (multi-word names)
+function hasMultiWordName(firstName: string, lastName: string): boolean {
+  const totalWords = (firstName.split(/\s+/).length || 0) + (lastName.split(/\s+/).length || 0);
+  return totalWords >= 3;
+}
+
 // Confidence badge helper - now accepts optional fallback for when field confidence is unavailable
 function ConfidenceBadge({ confidence, fallback }: { confidence?: number | null; fallback?: number }) {
   // Use fallback (overall confidence) when field confidence is null/undefined
@@ -464,24 +470,42 @@ export function ExtractedDataPreview({
             </div>
 
             {/* Booking Reference */}
-            <div>
-              <Label htmlFor="edit-booking-ref">Booking Reference (PNR)</Label>
-              <div className="flex items-center gap-2">
-                {editMode ? (
-                  <Input
-                    id="edit-booking-ref"
-                    value={editedData.bookingReference}
-                    onChange={(e) => setEditedData({ ...editedData, bookingReference: e.target.value.toUpperCase() })}
-                    className="flex-1"
-                  />
-                ) : (
-                  <p className="text-lg font-medium">{editedData.bookingReference || '-'}</p>
-                )}
-                <ConfidenceBadge confidence={fieldConfidence.bookingReference} fallback={confidenceScore} />
-              </div>
-            </div>
-          </div>
-        </div>
+             <div>
+               <Label htmlFor="edit-booking-ref">Booking Reference (PNR)</Label>
+               <div className="flex items-center gap-2">
+                 {editMode ? (
+                   <Input
+                     id="edit-booking-ref"
+                     value={editedData.bookingReference}
+                     onChange={(e) => setEditedData({ ...editedData, bookingReference: e.target.value.toUpperCase() })}
+                     className="flex-1"
+                   />
+                 ) : (
+                   <p className="text-lg font-medium">{editedData.bookingReference || '-'}</p>
+                 )}
+                 <ConfidenceBadge confidence={fieldConfidence.bookingReference} fallback={confidenceScore} />
+               </div>
+             </div>
+           </div>
+
+           {/* Warning for Multi-Word Names */}
+           {hasMultiWordName(editedData.firstName, editedData.lastName) && (
+             <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 p-4 mt-4">
+               <div className="flex gap-2">
+                 <AlertTriangle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                 <div>
+                   <p className="font-medium text-blue-900 dark:text-blue-200">
+                     Please verify the name split
+                   </p>
+                   <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                     We detected multiple words in your name (common for Spanish, Portuguese, Dutch, German, and French surnames). 
+                     Please check that the First Name and Last Name are split correctly. You can edit them above if needed.
+                   </p>
+                 </div>
+               </div>
+             </div>
+           )}
+         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-3 pt-4 border-t">

@@ -21,6 +21,16 @@ uvicorn app.main:app --reload                # Dev server
 celery -A app.celery_app worker --loglevel=info  # Background tasks
 ```
 
+## OpenProject Task Management
+
+**CRITICAL**: For any significant work or feature implementation:
+1. **Always create an OpenProject work package FIRST** before starting implementation
+2. Use the `openproject-task-manager` skill for full task lifecycle
+3. Log time entries when work is complete
+4. Update ROADMAP and time_tracking_david.md as per `commit-workflow` skill
+
+Refer to skills: `.claude/skills/commit-workflow/SKILL.md` and `.claude/skills/openproject-task-manager/SKILL.md`
+
 ## Code Style
 - **Imports**: Standard lib → 3rd party → local, absolute imports only
 - **Types**: Full type hints, async/await everywhere, Pydantic models for validation

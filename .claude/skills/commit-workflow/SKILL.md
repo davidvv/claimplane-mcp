@@ -36,7 +36,7 @@ This skill ensures proper commit practices, version tagging, and roadmap mainten
 
 ---
 
-## Commit Workflow Steps
+## Workflow Steps
 
 ### Step 1: Check & Update ROADMAP.md (MANDATORY FIRST STEP)
 
@@ -380,7 +380,7 @@ git push origin v0.X.0
 
 ---
 
-## Complete Workflow Checklist
+## Checklist
 
 Use this checklist for **EVERY** commit:
 

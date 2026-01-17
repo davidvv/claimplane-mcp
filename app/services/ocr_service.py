@@ -80,6 +80,38 @@ Rules:
 - The top-level flight_number, departure_airport, etc. should contain the FIRST flight's data
 - Ticket numbers are typically 13 digits
 
+CRITICAL - Passenger Name Rules (Multi-Word Names):
+Names can contain multiple words separated by SPACES in both first_name and last_name fields.
+Preserve all spaces within names.
+
+1. Spanish/Portuguese Names (Spain, Latin America):
+   - Common pattern: Multiple first names + Multiple surnames
+   - 4 words total: first="word1 word2", last="word3 word4"
+   - 3 words total: first="word1", last="word2 word3"
+   - Examples:
+     * "Diana Lorena Dueñas Sanabria" → first="Diana Lorena", last="Dueñas Sanabria"
+     * "Juan Carlos García López" → first="Juan Carlos", last="García López"
+     * "María José Flores" → first="María José", last="Flores"
+
+2. Dutch/German/French Names (Europe):
+   - Name particles (van, von, de, du, der, den) are PART of the surname, not separators
+   - These prepositions should stay attached to the surname
+   - Examples:
+     * "Jan van der Berg" → first="Jan", last="van der Berg"
+     * "Hans von Müller" → first="Hans", last="von Müller"
+     * "Marie de la Cruz" → first="Marie", last="de la Cruz"
+     * "Jean-Pierre Dubois" → first="Jean-Pierre", last="Dubois"
+
+3. Hyphenated Names:
+   - Keep hyphens intact as part of the name
+   - "Anna Smith-Jones" → first="Anna", last="Smith-Jones"
+   - "Jean-Paul Martin" → first="Jean-Paul", last="Martin"
+
+4. When in Doubt:
+   - Use the boarding pass structure (e.g., "LASTNAME/FIRSTNAME" format) as primary guide
+   - Preserve all text and spaces as shown on the document
+   - Better to keep multiple words together than to split incorrectly
+
 CRITICAL - Flight Classification Rules:
 1. leg_type values:
    - "outbound" = first/main flight going TO the destination

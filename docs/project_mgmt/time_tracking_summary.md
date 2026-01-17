@@ -1,24 +1,32 @@
 # ClaimPlane Project - Complete Time Tracking Summary
 
 ## Project Overview
-- **Project Duration**: 2025-09-04 to 2026-01-17 (4 months)
-- **Total Commits**: 173 (153 by David, 20 by Florian)
-- **Estimated Total Time**: ~526.25-610.25 hours
+- **Project Duration**: 2025-09-04 to 2026-01-17 (4+ months)
+- **Total Commits**: 174 (157 by David, 17 by Florian)
+- **Estimated Total Time**: ~536.25-620.25 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 153 (88.4%)
-- **Estimated Time**: 464.0-528.5 hours
-- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic
-- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction
+- **Commits**: 157 (90.2%)
+- **Estimated Time**: 470.0-536.5 hours
+- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes
+- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction, multi-passenger support, UX optimization
 
 ### Florian's Contributions (12-15% of total time)
-- **Commits**: 20 (11.8%)
-- **Estimated Time**: 60-80 hours
+- **Commits**: 17 (9.8%)
+- **Estimated Time**: 66-84 hours
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
+
+## Latest Update (2026-01-17) - UX Fixes
+- **3 Critical Fixes**: OCR spinner, boarding pass carry-over, claim finalization bug
+  - Added visual feedback for OCR processing (spinner + progress bar)
+  - Auto-populate boarding pass from Step 1 to Step 3
+  - Fixed silent claim submission failure (multi-passenger data structure)
+  - Work Packages #156-#158 completed
+- **Time Added**: 4.0 hours
 
 ## Latest Update (2026-01-16) - Gemini OCR Migration
 - **Gemini 2.5 Flash Integration**: Replaced Google Vision API with Gemini AI

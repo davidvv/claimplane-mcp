@@ -2,10 +2,53 @@
 # ClaimPlane Project - Complete Commit History Analysis
 
 ## Summary Statistics
-- **Total Commits**: 154
-- **Date Range**: 2025-09-04 to 2026-01-16
-- **Estimated Total Time**: ~459.6-524.1 hours
+- **Total Commits**: 157
+- **Date Range**: 2025-09-04 to 2026-01-17
+- **Estimated Total Time**: ~468.1-532.6 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
+
+## Latest Work (2026-01-17) - Frontend UX Fixes: OCR & Claim Finalization
+
+### 3 Critical UX Issues Fixed
+**Estimated Time**: 4.0 hours
+**Work Packages**: #156, #157, #158
+
+#### Key Tasks:
+1. **OCR Processing Spinner** (WP #156)
+   - Added `isProcessing` prop to BoardingPassUploadZone component
+   - Implemented prominent loading indicator with animated progress bar
+   - Displays message: "AI is reading your boarding pass. This usually takes 3-5 seconds."
+   - Updated Step1_Flight.tsx to pass `isProcessing={isLoading}` when OCR active
+   - Files: BoardingPassUploadZone.tsx, Step1_Flight.tsx
+   - Estimated: 1.0 hour
+
+2. **Pass Boarding Pass to Step 3** (WP #157)
+   - Added `initialFiles` prop to FileUploadZone component
+   - Implemented `buildInitialDocuments()` function in Step3_Passenger
+   - Boarding pass automatically appears in Step 3 documents with status='success'
+   - Prevents duplicate uploads and improves UX flow
+   - Files: FileUploadZone.tsx, Step3_Passenger.tsx
+   - Estimated: 1.5 hours
+
+3. **Fix Claim Finalization Bug** (WP #158)
+   - Fixed silent failure at Step 4: form read undefined `passengerData.firstName`
+   - Root cause: Form uses multi-passenger array structure where data is in `passengers[0].firstName`
+   - Implemented primary passenger extraction with fallback for backward compatibility
+   - Updated UI to display multiple passengers when available
+   - Files: Step4_Review.tsx
+   - Estimated: 1.5 hours
+
+#### Testing & Deployment:
+- Built frontend successfully (no TypeScript errors)
+- Verified all 3 fixes compile and integrate correctly
+- Ready for testing in docker compose environment
+
+### Updated Summary Statistics
+- **Total Commits**: 157 (added 1 new commit 7d5d1df)
+- **Date Range**: 2025-09-04 to 2026-01-17
+- **Estimated Total Time**: ~468.1-532.6 hours (added 4.0 hours)
+- **OpenProject Tasks Created**: 3 tasks (156, 157, 158)
+- **Time Entries Logged**: 4.0 hours total
 
 ## Latest Work (2026-01-17) - Multi-Passenger Foundation
 

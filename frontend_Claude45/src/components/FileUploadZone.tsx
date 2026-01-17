@@ -28,6 +28,7 @@ interface FileUploadZoneProps {
   maxFiles?: number;
   maxSizeMB?: number;
   claimId?: string;  // Workflow v2: If provided, upload files immediately
+  initialFiles?: UploadedFile[];  // Pre-populate with existing files (e.g., boarding pass from OCR)
 }
 
 const ALLOWED_TYPES = {
@@ -43,8 +44,9 @@ export function FileUploadZone({
   maxFiles = 5,
   maxSizeMB = 10,
   claimId,
+  initialFiles,
 }: FileUploadZoneProps) {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>(initialFiles || []);
 
   // Progressive upload function for Workflow v2
   const uploadFileToServer = async (

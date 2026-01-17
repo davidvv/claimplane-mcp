@@ -43,6 +43,13 @@ export function Step4_Review({
   const [currentUploadFile, setCurrentUploadFile] = useState<string>('');
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  // Extract primary passenger for display (support both multi-passenger and legacy formats)
+  const primaryPassenger = passengerData.passengers?.[0] || {
+    firstName: passengerData.firstName || '',
+    lastName: passengerData.lastName || '',
+  };
+  const allPassengers = passengerData.passengers || [primaryPassenger];
+
   const handleSubmit = async () => {
     // Validate terms acceptance
     if (!termsAccepted) {
@@ -56,12 +63,20 @@ export function Step4_Review({
     let claimId: string | null = null;
 
     try {
+      // Extract primary passenger from passengers array (multi-passenger support)
+      // Fall back to flat fields for backward compatibility
+      const primaryPassenger = passengerData.passengers?.[0] || {
+        firstName: passengerData.firstName,
+        lastName: passengerData.lastName,
+        ticketNumber: passengerData.ticketNumber,
+      };
+
       // Step 1: Submit the claim
       const claimRequest: ClaimRequest = {
         customerInfo: {
           email: passengerData.email,
-          firstName: passengerData.firstName,
-          lastName: passengerData.lastName,
+          firstName: primaryPassenger.firstName,
+          lastName: primaryPassenger.lastName,
           phone: passengerData.phone || null,
           address: {
             street: passengerData.street,
@@ -86,7 +101,7 @@ export function Step4_Review({
         incidentType: passengerData.incidentType,
         notes: passengerData.notes || null,
         bookingReference: passengerData.bookingReference || null,
-        ticketNumber: passengerData.ticketNumber || null,
+        ticketNumber: primaryPassenger.ticketNumber || null,
         termsAccepted: true,
         // Workflow v2: Pass draft claim ID to finalize existing draft
         claimId: draftClaimId || undefined,
@@ -297,18 +312,35 @@ export function Step4_Review({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-5 h-5" />
-              Your Information
+              {allPassengers.length > 1 ? 'Passengers' : 'Your Information'}
             </CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-3">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Name</p>
-                <p className="font-semibold">
-                  {passengerData.firstName} {passengerData.lastName}
-                </p>
+            {/* Show all passengers */}
+            {allPassengers.length > 1 ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Passengers ({allPassengers.length})</p>
+                <ul className="space-y-1">
+                  {allPassengers.map((p: any, i: number) => (
+                    <li key={i} className="font-semibold">
+                      {i + 1}. {p.firstName} {p.lastName}
+                    </li>
+                  ))}
+                </ul>
               </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Name</p>
+                  <p className="font-semibold">
+                    {primaryPassenger.firstName} {primaryPassenger.lastName}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
                 <p className="font-semibold">{passengerData.email}</p>

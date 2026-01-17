@@ -48,7 +48,28 @@ export function Step3_Passenger({
   onComplete,
   onBack,
 }: Step3Props) {
-  const [documents, setDocuments] = useState<any[]>(initialDocuments || []);
+  // Build initial documents list including boarding pass from OCR
+  const buildInitialDocuments = () => {
+    const docs = [...(initialDocuments || [])];
+    
+    // If we have a boarding pass from OCR and it's not already in the list
+    if (ocrData?.boardingPassFile) {
+      const alreadyHasIt = docs.some(
+        (d) => d.file?.name === ocrData.boardingPassFile?.name
+      );
+      if (!alreadyHasIt) {
+        docs.unshift({
+          file: ocrData.boardingPassFile,
+          documentType: 'boarding_pass' as const,
+          status: 'success' as const,  // Already processed by OCR
+          progress: 100,
+        });
+      }
+    }
+    return docs;
+  };
+
+  const [documents, setDocuments] = useState<any[]>(buildInitialDocuments);
   const [countryCode, setCountryCode] = useState('');  // No default - user must select
   const [phoneNumber, setPhoneNumber] = useState('');
 
@@ -421,6 +442,7 @@ export function Step3_Passenger({
             maxFiles={10} // Increased for families
             maxSizeMB={10}
             claimId={draftClaimId || undefined}
+            initialFiles={buildInitialDocuments()}
           />
         </CardContent>
       </Card>

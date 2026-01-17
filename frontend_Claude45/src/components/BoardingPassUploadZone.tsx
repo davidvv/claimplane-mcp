@@ -25,6 +25,7 @@ interface BoardingPassUploadZoneProps {
   // onOCRError?: (error: Error) => void;
   onFileSelect?: (file: File) => void;
   disabled?: boolean;
+  isProcessing?: boolean;  // External processing state from parent
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -40,16 +41,20 @@ export function BoardingPassUploadZone({
   // onOCRError,
   onFileSelect,
   disabled = false,
+  isProcessing: externalProcessing = false,
 }: BoardingPassUploadZoneProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLocalProcessing, setIsLocalProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Combine local and external processing states
+  const isProcessing = isLocalProcessing || externalProcessing;
 
   const processFile = useCallback(
     async (file: File) => {
       setError(null);
-      setIsProcessing(true);
+      setIsLocalProcessing(true);
 
       // Generate preview for images
       if (file.type.startsWith('image/')) {
@@ -65,7 +70,7 @@ export function BoardingPassUploadZone({
 
       // Note: OCR processing will be triggered by parent component
       // This component only handles the upload UI
-      setIsProcessing(false);
+      setIsLocalProcessing(false);
     },
     [onFileSelect]
   );
@@ -212,9 +217,19 @@ export function BoardingPassUploadZone({
                 {(selectedFile.size / 1024).toFixed(1)} KB
               </p>
               {isProcessing && (
-                <div className="flex items-center gap-2 mt-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                  <span className="text-sm text-blue-600">Processing...</span>
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                    <span className="text-sm font-medium text-blue-600">
+                      Extracting flight details...
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                    <div className="h-full bg-blue-600 rounded-full animate-pulse" style={{ width: '75%' }} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    AI is reading your boarding pass. This usually takes 3-5 seconds.
+                  </p>
                 </div>
               )}
             </div>

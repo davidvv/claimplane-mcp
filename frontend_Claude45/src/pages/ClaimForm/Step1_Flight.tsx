@@ -314,6 +314,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
               <BoardingPassUploadZone
                 onFileSelect={handleFileSelect}
                 disabled={isLoading}
+                isProcessing={isLoading}
               />
 
               {/* Divider */}

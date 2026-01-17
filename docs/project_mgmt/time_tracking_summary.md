@@ -2,25 +2,34 @@
 
 ## Project Overview
 - **Project Duration**: 2025-09-04 to 2026-01-17 (4+ months)
-- **Total Commits**: 174 (157 by David, 17 by Florian)
-- **Estimated Total Time**: ~536.25-620.25 hours
+- **Total Commits**: 175 (158 by David, 17 by Florian)
+- **Estimated Total Time**: ~540.25-624.25 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 157 (90.2%)
-- **Estimated Time**: 470.0-536.5 hours
-- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes
-- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction, multi-passenger support, UX optimization
+- **Commits**: 158 (90.3%)
+- **Estimated Time**: 472.5-539.0 hours
+- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support
+- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction, multi-passenger support, UX optimization, multi-language name handling
 
 ### Florian's Contributions (12-15% of total time)
-- **Commits**: 17 (9.8%)
-- **Estimated Time**: 66-84 hours
+- **Commits**: 17 (9.7%)
+- **Estimated Time**: 68-85 hours
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
-## Latest Update (2026-01-17) - UX Fixes
+## Latest Update (2026-01-17) - Multi-Language OCR Name Handling
+- **Multi-Word Name Support**: Improved OCR for Spanish, Portuguese, Dutch, German, French naming conventions
+  - Enhanced Gemini prompt with explicit multi-word rules
+  - Added frontend warning for 3+ word names
+  - 11 comprehensive test cases, all passing
+  - Names now preserve spaces instead of concatenating
+  - Work Package #160 completed and closed
+- **Time Added**: 2.5 hours
+
+## Previous Update (2026-01-17) - UX Fixes
 - **3 Critical Fixes**: OCR spinner, boarding pass carry-over, claim finalization bug
   - Added visual feedback for OCR processing (spinner + progress bar)
   - Auto-populate boarding pass from Step 1 to Step 3

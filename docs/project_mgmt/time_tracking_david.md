@@ -2,12 +2,67 @@
 # ClaimPlane Project - Complete Commit History Analysis
 
 ## Summary Statistics
-- **Total Commits**: 157
+- **Total Commits**: 158
 - **Date Range**: 2025-09-04 to 2026-01-17
-- **Estimated Total Time**: ~468.1-532.6 hours
+- **Estimated Total Time**: ~470.6-535.1 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
-## Latest Work (2026-01-17) - Frontend UX Fixes: OCR & Claim Finalization
+## Latest Work (2026-01-17) - Multi-Word Name Handling in OCR
+
+### Multi-Language Passenger Name Support
+**Estimated Time**: 2.5 hours
+**Work Package**: #160
+
+#### Key Tasks:
+1. **Gemini Prompt Enhancement** (1.0 hour)
+   - Added explicit rules for Spanish/Portuguese double surnames
+   - Documented Dutch/German/French name particles (van, von, de)
+   - Clarified hyphenated surname handling
+   - Space preservation rules for multi-word names
+   - Examples: "Diana Lorena Dueñas Sanabria" → first="Diana Lorena", last="Dueñas Sanabria"
+   - Files: app/services/ocr_service.py
+
+2. **Frontend Warning System** (0.5 hour)
+   - Added hasMultiWordName() helper function
+   - Displays warning when 3+ total words detected
+   - User-friendly message explaining common patterns
+   - Encourages verification of name split
+   - Files: frontend_Claude45/src/components/ExtractedDataPreview.tsx
+
+3. **Comprehensive Test Coverage** (0.5 hour)
+   - 11 new test cases in TestMultiWordNameHandling class
+   - Spanish: Diana Lorena Dueñas Sanabria, Juan Carlos García López, María José Flores
+   - Portuguese: João Pedro Silva Santos
+   - Dutch/German: Jan van der Berg, Hans von Müller
+   - French: Marie de la Cruz, Jean-Pierre Dubois
+   - Hyphenated: Anna Smith-Jones, Jean-Paul Martin
+   - Baselines: John Doe, Florian Luhn
+   - Regression tests: Verify spaces preserved, not concatenated
+   - All 11 tests passing
+
+4. **Documentation Update** (0.25 hour)
+   - Added OpenProject Task Management section to AGENTS.md
+   - Clarified requirement for significant work
+
+5. **Integration & Testing** (0.25 hour)
+   - Frontend builds successfully
+   - Nginx restarted with new build
+   - Ready for user testing
+
+#### Languages Covered:
+- ✅ Spanish/Portuguese (Spain, Latin America)
+- ✅ Dutch/German/French (Europe)
+- ✅ Hyphenated surnames (UK, etc.)
+- ⏳ Asian names (deferred - not priority)
+
+### Updated Summary Statistics
+- **Total Commits**: 158 (added 1 new commit 400855a)
+- **Date Range**: 2025-09-04 to 2026-01-17
+- **Estimated Total Time**: ~470.6-535.1 hours (added 2.5 hours)
+- **OpenProject Tasks Closed**: 1 (WP #160)
+- **Time Entries Logged**: 2.5 hours total
+
+## Previous Work (2026-01-17) - Frontend UX Fixes: OCR & Claim Finalization
 
 ### 3 Critical UX Issues Fixed
 **Estimated Time**: 4.0 hours

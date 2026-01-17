@@ -1,6 +1,7 @@
 """Pytest configuration and shared fixtures for tests."""
 import pytest
 import pytest_asyncio
+import os
 from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
@@ -13,7 +14,11 @@ from app.services.auth_service import AuthService
 from app.config import config
 
 # Test database URL (using same credentials as main database)
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/test_flight_claim"
+# Allow overriding via environment variable (e.g. for Docker)
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL", 
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/test_flight_claim"
+)
 
 # Create test engine
 test_engine = create_async_engine(

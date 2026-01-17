@@ -203,3 +203,4 @@ docker-compose.prod.yml
 SESSION_SUMMARY_2025-12-26.md
 .opencode/
 app/tests/fixtures/
+test_ocr_batch.py

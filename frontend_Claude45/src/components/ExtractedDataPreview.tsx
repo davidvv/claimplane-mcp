@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
-import type { BoardingPassData, FieldConfidenceScores } from '@/types/api';
+import type { BoardingPassData, FieldConfidenceScores, FlightSegment } from '@/types/api';
 
 interface ExtractedDataPreviewProps {
   data: BoardingPassData;
@@ -36,6 +36,7 @@ export interface EditedBoardingPassData {
   firstName: string;
   lastName: string;
   bookingReference?: string;
+  flights?: FlightSegment[];
 }
 
 // Parse "SURNAME/FIRSTNAME" format
@@ -162,6 +163,7 @@ export function ExtractedDataPreview({
     firstName: parsedName.firstName,
     lastName: parsedName.lastName,
     bookingReference: effectiveBookingReference,
+    flights: selectedTrip?.flights,
   });
 
   // Update edited data when OCR data or selected trip changes
@@ -190,6 +192,7 @@ export function ExtractedDataPreview({
       firstName: parsedName.firstName,
       lastName: parsedName.lastName,
       bookingReference: effectiveBookingReference,
+      flights: selectedTrip?.flights,
     });
   }, [data, selectedTripIndex, trips]);
 

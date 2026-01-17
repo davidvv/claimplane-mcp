@@ -28,6 +28,11 @@ export const checkEligibility = async (
     delay_hours: delayMinutes !== null ? delayMinutes / 60 : null,
     incident_type: isCancelled ? 'cancellation' : 'delay',
     distance_km: request.flightInfo.distanceKm ?? null,  // Pass distance from API
+    flights: request.flightInfo.flights?.map(f => ({
+      departure_airport: f.departureAirport || '',
+      arrival_airport: f.arrivalAirport || '',
+      flight_number: f.flightNumber || undefined
+    })).filter(f => f.departure_airport && f.arrival_airport),
   };
 
   const response = await apiClient.post<any>(

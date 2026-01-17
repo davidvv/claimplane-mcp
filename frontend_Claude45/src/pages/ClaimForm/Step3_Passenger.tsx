@@ -10,7 +10,7 @@
 import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User, Mail, Phone, MapPin, FileText, Sparkles, Plus, Trash2, Users } from 'lucide-react';
+import { User, Mail, Phone, FileText, Sparkles, Plus, Trash2, Users } from 'lucide-react';
 
 import { passengerInfoSchema, type PassengerInfoForm } from '@/schemas/validation';
 import type { FlightStatus, EligibilityResponse } from '@/types/api';
@@ -23,7 +23,6 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
 import { FileUploadZone } from '@/components/FileUploadZone';
-import { Separator } from '@/components/ui/Separator';
 
 interface Step3Props {
   flightData: FlightStatus;
@@ -40,7 +39,6 @@ interface Step3Props {
 
 export function Step3_Passenger({
   flightData,
-  eligibilityData,
   initialData,
   initialDocuments,
   customerEmail,

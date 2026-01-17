@@ -18,6 +18,7 @@ export interface FlightInfo {
   delay?: number | null; // Delay in minutes (negative = early)
   delayMinutes?: number | null; // Legacy field, use delay instead
   distanceKm?: number | null; // Great circle distance in kilometers
+  flights?: FlightSegment[]; // List of flight segments for multi-leg journeys
 }
 
 export interface FlightStatus extends FlightInfo {

@@ -119,6 +119,11 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
         date: editedData.flightDate,
       });
 
+      // Attach the full list of flights for multi-leg journeys
+      if (editedData.flights && editedData.flights.length > 0) {
+        result.flights = editedData.flights;
+      }
+
       // Pass both flight data and OCR-extracted passenger info
       const ocrData: OCRData = {
         firstName: editedData.firstName,

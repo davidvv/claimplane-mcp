@@ -63,24 +63,37 @@ Analyze this flight confirmation/delay email and extract flight information.
 Return ONLY valid JSON with this exact structure (use null for missing fields):
 
 {
-  "flight_number": "XX1234",
-  "departure_airport": "XXX",
-  "arrival_airport": "XXX",
-  "flight_date": "YYYY-MM-DD",
-  "departure_time": "HH:MM",
-  "arrival_time": "HH:MM",
-  "passenger_name": "LASTNAME/FIRSTNAME",
-  "booking_reference": "XXXXXX",
-  "airline": "Full Airline Name",
+  "passengers": [
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "ticket_number": "2201234567890",
+      "booking_reference": "ABC123"
+    }
+  ],
+  "flights": [
+    {
+      "flight_number": "LH123",
+      "departure_airport": "LHR",
+      "arrival_airport": "FRA",
+      "departure_date": "2023-10-25",
+      "departure_time": "10:00",
+      "arrival_time": "12:00",
+      "airline": "Lufthansa"
+    }
+  ],
   "incident_type": "delay|cancellation|denied_boarding|none",
   "delay_minutes": 120,
-  "cancellation_reason": "Reason if mentioned"
+  "cancellation_reason": "Reason if mentioned",
+  "booking_reference": "Main PNR"
 }
 
 Rules:
-- Airport codes must be 3-letter IATA codes. If only city names are present (e.g. London to New York), try to infer IATA codes if unambiguous, otherwise leave null.
-- incident_type should be inferred from text (e.g. "Your flight is delayed", "Flight cancelled").
+- Airport codes must be 3-letter IATA codes.
+- incident_type should be inferred from text.
 - delay_minutes: Extract explicitly mentioned delay duration in minutes.
+- If multiple passengers are found, list them all.
+- If multiple flight segments are found (e.g. LHR->FRA, FRA->JFK), list them in chronological order.
 """
 
     # Major airline IATA codes for validation

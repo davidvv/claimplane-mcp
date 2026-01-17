@@ -190,6 +190,8 @@ class Claim(Base):
     reviewer = relationship("Customer", foreign_keys=[reviewed_by])
     claim_notes = relationship("ClaimNote", back_populates="claim", cascade="all, delete-orphan")
     status_history = relationship("ClaimStatusHistory", back_populates="claim", cascade="all, delete-orphan")
+    passengers = relationship("Passenger", back_populates="claim", cascade="all, delete-orphan")
+    segments = relationship("FlightSegment", back_populates="claim", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Claim(id={self.id}, flight={self.flight_number}, incident={self.incident_type}, status={self.status})>"
@@ -225,6 +227,46 @@ class Claim(Base):
             if len(flight_number) < 3:
                 raise ValueError("Flight number too short")
         return flight_number.upper()
+
+
+class Passenger(Base):
+    """Passenger model for multi-passenger claims (Phase 5)."""
+    __tablename__ = "passengers"
+    
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False, index=True)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    ticket_number = Column(String(50), nullable=True)
+    email = Column(String(255), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    claim = relationship("Claim", back_populates="passengers")
+
+    def __repr__(self):
+        return f"<Passenger(id={self.id}, name={self.first_name} {self.last_name})>"
+
+
+class FlightSegment(Base):
+    """Flight segment model for multi-leg journeys."""
+    __tablename__ = "flight_segments"
+    
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False, index=True)
+    flight_number = Column(String(10), nullable=False)
+    airline = Column(String(100), nullable=True)
+    departure_airport = Column(String(3), nullable=False)
+    arrival_airport = Column(String(3), nullable=False)
+    departure_date = Column(Date, nullable=False)
+    segment_order = Column(Integer, default=1)
+    status = Column(String(50), default="scheduled")
+    
+    # Relationships
+    claim = relationship("Claim", back_populates="segments")
+
+    def __repr__(self):
+        return f"<FlightSegment({self.flight_number}, {self.departure_airport}->{self.arrival_airport})>"
 
 
 class ClaimFile(Base):

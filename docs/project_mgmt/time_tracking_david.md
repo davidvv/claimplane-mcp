@@ -7,6 +7,26 @@
 - **Estimated Total Time**: ~459.6-524.1 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
+## Latest Work (2026-01-17) - Multi-Passenger Foundation
+
+### Phase 5 Implementation (Lite)
+**Estimated Time**: 3.0 hours
+**Work Package**: #155
+
+#### Key Tasks:
+1. **Data Model Refactoring**
+   - Created `Passenger` table (1:N with Claim)
+   - Created `FlightSegment` table (1:N with Claim) for multi-leg journeys
+   - Updated `Claim` model to support relationships
+2. **Backend Logic**
+   - Updated `OCRService` to prompt Gemini for `passengers` list and `flights` list
+   - Updated schemas to support list structures
+   - Enabled deterministic multi-passenger extraction from emails
+3. **Frontend Implementation**
+   - Refactored `Step3_Passenger.tsx` to use `useFieldArray` for dynamic lists
+   - Added "Add Passenger" manual entry support
+   - Pre-filled passenger list from OCR data
+
 ## Latest Work (2026-01-16) - Smart Email Processing
 
 ### Option A: .eml Support

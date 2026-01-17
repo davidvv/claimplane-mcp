@@ -40,6 +40,12 @@ export interface OCRData {
   lastName: string;
   bookingReference?: string;
   boardingPassFile?: File;
+  passengers?: Array<{
+    firstName: string;
+    lastName: string;
+    ticketNumber?: string;
+    bookingReference?: string;
+  }>;
 }
 
 type InputMode = 'boarding-pass' | 'flight-number' | 'route-search';
@@ -119,6 +125,13 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
         lastName: editedData.lastName,
         bookingReference: editedData.bookingReference,
         boardingPassFile: boardingPassFile || undefined,
+        // Pass the raw passengers list if available (from email/multi-pax OCR)
+        passengers: ocrResult?.data?.passengers?.map((p: any) => ({
+          firstName: p.firstName,
+          lastName: p.lastName,
+          ticketNumber: p.ticketNumber,
+          bookingReference: p.bookingReference
+        }))
       };
 
       setFlightResult(result);

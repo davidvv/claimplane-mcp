@@ -3,6 +3,31 @@ from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 
 
+class FlightSegmentSchema(BaseModel):
+    """Schema for a single flight segment."""
+    flight_number: Optional[str] = Field(None, alias="flightNumber")
+    departure_airport: Optional[str] = Field(None, alias="departureAirport")
+    arrival_airport: Optional[str] = Field(None, alias="arrivalAirport")
+    departure_date: Optional[str] = Field(None, alias="departureDate")
+    departure_time: Optional[str] = Field(None, alias="departureTime")
+    arrival_time: Optional[str] = Field(None, alias="arrivalTime")
+    airline: Optional[str] = None
+    
+    class Config:
+        populate_by_name = True
+
+
+class PassengerSchema(BaseModel):
+    """Schema for a single passenger."""
+    first_name: Optional[str] = Field(None, alias="firstName")
+    last_name: Optional[str] = Field(None, alias="lastName")
+    ticket_number: Optional[str] = Field(None, alias="ticketNumber")
+    booking_reference: Optional[str] = Field(None, alias="bookingReference")
+    
+    class Config:
+        populate_by_name = True
+
+
 class BoardingPassDataSchema(BaseModel):
     """Extracted flight data from boarding pass OCR."""
 
@@ -19,6 +44,10 @@ class BoardingPassDataSchema(BaseModel):
     incident_type: Optional[str] = Field(None, alias="incidentType")
     delay_minutes: Optional[int] = Field(None, alias="delayMinutes")
     cancellation_reason: Optional[str] = Field(None, alias="cancellationReason")
+    
+    # New fields for multi-passenger/multi-segment
+    passengers: Optional[List[PassengerSchema]] = None
+    flights: Optional[List[FlightSegmentSchema]] = None
 
     class Config:
         populate_by_name = True

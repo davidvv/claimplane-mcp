@@ -230,6 +230,13 @@ export interface HealthResponse {
 }
 
 // ==================== OCR Types ====================
+export interface Passenger {
+  firstName?: string | null;
+  lastName?: string | null;
+  ticketNumber?: string | null;
+  bookingReference?: string | null;
+}
+
 export interface BoardingPassData {
   flightNumber?: string | null;
   departureAirport?: string | null;
@@ -241,6 +248,7 @@ export interface BoardingPassData {
   bookingReference?: string | null;
   seatNumber?: string | null;
   airline?: string | null;
+  passengers?: Passenger[]; // List of passengers for multi-pax claims
 }
 
 // Field-level confidence scores (backend returns just numbers)

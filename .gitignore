@@ -202,3 +202,4 @@ docker-compose.nextcloud.prod.yml
 docker-compose.prod.yml
 SESSION_SUMMARY_2025-12-26.md
 .opencode/
+app/tests/fixtures/

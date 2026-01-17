@@ -249,6 +249,22 @@ export interface BoardingPassData {
   seatNumber?: string | null;
   airline?: string | null;
   passengers?: Passenger[]; // List of passengers for multi-pax claims
+  flights?: FlightSegment[]; // List of flight segments for multi-leg journeys
+}
+
+// Flight segment for multi-leg journeys
+export interface FlightSegment {
+  flightNumber?: string | null;
+  departureAirport?: string | null;
+  arrivalAirport?: string | null;
+  departureDate?: string | null; // YYYY-MM-DD
+  departureTime?: string | null; // HH:MM
+  arrivalTime?: string | null; // HH:MM
+  airline?: string | null;
+  // Leg type classification
+  legType?: 'outbound' | 'outbound_connection' | 'return' | 'return_connection' | null;
+  // Trip index: groups flights into logical trips (1=outbound, 2=return, etc.)
+  tripIndex?: number | null;
 }
 
 // Field-level confidence scores (backend returns just numbers)

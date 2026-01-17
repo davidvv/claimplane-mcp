@@ -84,10 +84,17 @@ class EmailParserService:
     @staticmethod
     def _strip_html(html_content: str) -> str:
         """Remove HTML tags using regex (simple fallback since BeautifulSoup not available)."""
-        # Remove script and style elements
-        clean = re.sub(r'<(script|style).*?</\1>(?s)', '', html_content)
+        # Remove script and style elements (using re.DOTALL for Python 3.11+ compatibility)
+        clean = re.sub(r'<(script|style).*?</\1>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
+        # Remove HTML comments
+        clean = re.sub(r'<!--.*?-->', '', clean, flags=re.DOTALL)
         # Remove tags
         clean = re.sub(r'<[^>]+>', ' ', clean)
+        # Decode common HTML entities
+        clean = clean.replace('&nbsp;', ' ')
+        clean = clean.replace('&amp;', '&')
+        clean = clean.replace('&lt;', '<')
+        clean = clean.replace('&gt;', '>')
         # Fix spacing
         return EmailParserService._clean_text(clean)
 

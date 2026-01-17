@@ -33,7 +33,7 @@ class OCRService:
 
     # Prompt for Gemini to extract boarding pass data
     BOARDING_PASS_PROMPT = """
-Analyze this boarding pass image and extract flight information.
+Analyze this boarding pass or flight document and extract ALL flight and passenger information.
 Return ONLY valid JSON with this exact structure (use null for missing fields):
 
 {
@@ -46,15 +46,60 @@ Return ONLY valid JSON with this exact structure (use null for missing fields):
   "passenger_name": "LASTNAME/FIRSTNAME",
   "booking_reference": "XXXXXX",
   "seat_number": "12A",
-  "airline": "Full Airline Name"
+  "airline": "Full Airline Name",
+  "passengers": [
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "ticket_number": "2201234567890",
+      "booking_reference": "ABC123"
+    }
+  ],
+  "flights": [
+    {
+      "flight_number": "LH123",
+      "departure_airport": "LHR",
+      "arrival_airport": "FRA",
+      "departure_date": "2023-10-25",
+      "departure_time": "10:00",
+      "arrival_time": "12:00",
+      "airline": "Lufthansa",
+      "leg_type": "outbound|outbound_connection|return|return_connection",
+      "trip_index": 1
+    }
+  ]
 }
 
 Rules:
 - Airport codes must be 3-letter IATA codes (e.g., JFK, LHR, FRA)
 - Dates in YYYY-MM-DD format, times in 24-hour HH:MM format
 - If year is not visible, assume current or next year based on context
-- If multiple flight legs exist, extract only the first segment
-- passenger_name format: LASTNAME/FIRSTNAME (slash separated)
+- passenger_name format: LASTNAME/FIRSTNAME (slash separated) - for backward compatibility
+- If multiple passengers are found, list them ALL in the passengers array
+- If multiple flight segments are found, list them ALL in the flights array in chronological order
+- The top-level flight_number, departure_airport, etc. should contain the FIRST flight's data
+- Ticket numbers are typically 13 digits
+
+CRITICAL - Flight Classification Rules:
+1. leg_type values:
+   - "outbound" = first/main flight going TO the destination
+   - "outbound_connection" = connecting flight that is part of the outbound journey (same day/next day, previous arrival = this departure)
+   - "return" = first flight going BACK (different day, origin/destination swapped from outbound)
+   - "return_connection" = connecting flight that is part of the return journey
+
+2. trip_index: Group flights into logical trips (1, 2, 3...)
+   - Trip 1 = outbound journey (may have multiple connecting flights)
+   - Trip 2 = return journey (may have multiple connecting flights)
+   - For multi-city: each major destination change starts a new trip
+
+3. How to identify connections vs separate trips:
+   - SAME TRIP if: flights are same day or consecutive days AND arrival airport of flight N = departure airport of flight N+1
+   - DIFFERENT TRIP if: several days gap OR origin/destination pattern reverses OR completely different city pair
+
+Example classifications:
+- MUC->FRA->MAD (same day): trip_index=1, leg_types=[outbound, outbound_connection]
+- MAD->MUC (2 weeks later): trip_index=2, leg_type=return
+- MUC->MAD, MAD->LIS, LIS->MUC: trip_index=[1,2,3], leg_types=[outbound, outbound, return]
 """
 
     # Prompt for Gemini to extract flight info from email text
@@ -79,7 +124,9 @@ Return ONLY valid JSON with this exact structure (use null for missing fields):
       "departure_date": "2023-10-25",
       "departure_time": "10:00",
       "arrival_time": "12:00",
-      "airline": "Lufthansa"
+      "airline": "Lufthansa",
+      "leg_type": "outbound|outbound_connection|return|return_connection",
+      "trip_index": 1
     }
   ],
   "incident_type": "delay|cancellation|denied_boarding|none",
@@ -93,7 +140,23 @@ Rules:
 - incident_type should be inferred from text.
 - delay_minutes: Extract explicitly mentioned delay duration in minutes.
 - If multiple passengers are found, list them all.
-- If multiple flight segments are found (e.g. LHR->FRA, FRA->JFK), list them in chronological order.
+- If multiple flight segments are found, list them in chronological order.
+
+CRITICAL - Flight Classification Rules:
+1. leg_type values:
+   - "outbound" = first/main flight going TO the destination
+   - "outbound_connection" = connecting flight that is part of the outbound journey
+   - "return" = first flight going BACK (origin/destination swapped)
+   - "return_connection" = connecting flight that is part of the return journey
+
+2. trip_index: Group flights into logical trips (1, 2, 3...)
+   - Trip 1 = outbound journey (may have multiple connecting flights)
+   - Trip 2 = return journey (may have multiple connecting flights)
+   - For multi-city: each major destination change starts a new trip
+
+3. How to identify connections vs separate trips:
+   - SAME TRIP if: same day or consecutive days AND arrival airport = next departure airport
+   - DIFFERENT TRIP if: several days gap OR origin/destination reverses
 """
 
     # Major airline IATA codes for validation
@@ -298,6 +361,71 @@ Rules:
         except Exception as e:
             logger.error(f"Failed to load image: {str(e)}", exc_info=True)
             return None
+
+    async def _run_gemini_ocr(self, file_content: bytes, mime_type: str = "image/jpeg") -> Dict[str, Any]:
+        """
+        Run Gemini 2.5 Flash for semantic boarding pass extraction.
+        
+        Args:
+            file_content: Image bytes
+            mime_type: MIME type of the image
+            
+        Returns:
+            Dictionary with extracted boarding pass fields
+        """
+        try:
+            # Check monthly usage limit first
+            if not await self._check_and_increment_usage():
+                raise Exception("Monthly OCR usage limit reached (999). Please try again next month or contact support.")
+
+            from google import genai
+            from google.genai.types import Part, GenerateContentConfig
+            
+            # Initialize Gemini client
+            client = genai.Client(
+                vertexai=True,
+                project=self._gcp_project,
+                location=self._gcp_location
+            )
+            
+            # Prepare the image part
+            image_part = Part.from_bytes(data=file_content, mime_type=mime_type)
+            
+            logger.info(f"Sending boarding pass to Gemini 2.5 Flash (project: {self._gcp_project})")
+            
+            # Call Gemini with structured output
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[
+                    image_part,
+                    self.BOARDING_PASS_PROMPT
+                ],
+                config=GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.1,  # Low temperature for consistent extraction
+                )
+            )
+            
+            # Parse JSON response
+            extracted_data = json.loads(response.text)
+            
+            # Normalize null values to None
+            normalized_data = {k: (v if v else None) for k, v in extracted_data.items()}
+            
+            logger.info(f"Gemini extracted fields: {list(normalized_data.keys())}")
+            logger.info(f"Gemini response sample: {response.text[:200]}...")
+            
+            return normalized_data
+            
+        except ImportError:
+            logger.error("google-genai package not installed")
+            raise
+        except json.JSONDecodeError as e:
+            logger.error(f"Gemini returned invalid JSON: {str(e)}", exc_info=True)
+            raise Exception("Failed to parse Gemini response as JSON")
+        except Exception as e:
+            logger.error(f"Gemini OCR failed: {str(e)}", exc_info=True)
+            raise
 
     async def _check_and_increment_usage(self) -> bool:
         """

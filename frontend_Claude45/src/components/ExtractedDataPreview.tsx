@@ -9,8 +9,8 @@
  * - Actions: Use Data, Try Another Image
  */
 
-import { useState, useEffect } from 'react';
-import { CheckCircle2, AlertTriangle, Edit2, Plane, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle2, AlertTriangle, Edit2, Plane, User, ArrowLeftRight } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -72,14 +72,17 @@ function parseName(passengerName?: string | null): { firstName: string; lastName
   }
 }
 
-// Confidence badge helper
-function ConfidenceBadge({ confidence }: { confidence: number }) {
-  if (confidence >= 0.8) {
+// Confidence badge helper - now accepts optional fallback for when field confidence is unavailable
+function ConfidenceBadge({ confidence, fallback }: { confidence?: number | null; fallback?: number }) {
+  // Use fallback (overall confidence) when field confidence is null/undefined
+  const effectiveConfidence = confidence ?? fallback ?? 0;
+  
+  if (effectiveConfidence >= 0.8) {
     return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800">
       <CheckCircle2 className="w-3 h-3 mr-1" />
       High confidence
     </Badge>;
-  } else if (confidence >= 0.5) {
+  } else if (effectiveConfidence >= 0.5) {
     return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300 dark:border-yellow-800">
       <AlertTriangle className="w-3 h-3 mr-1" />
       Medium confidence
@@ -100,32 +103,95 @@ export function ExtractedDataPreview({
   onRetry,
   isLoading = false,
 }: ExtractedDataPreviewProps) {
-  const parsedName = parseName(data.passengerName);
+  // Group flights by tripIndex to identify separate trips (outbound vs return)
+  const trips = React.useMemo(() => {
+    if (!data.flights?.length) return [];
+    
+    const tripMap = new Map<number, typeof data.flights>();
+    data.flights.forEach(flight => {
+      const tripIdx = flight.tripIndex ?? 1;
+      if (!tripMap.has(tripIdx)) tripMap.set(tripIdx, []);
+      tripMap.get(tripIdx)!.push(flight);
+    });
+    
+    return Array.from(tripMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([tripIndex, flights]) => ({
+        tripIndex,
+        flights,
+        // Use first flight of trip for display
+        mainFlight: flights[0],
+        label: flights[0]?.legType?.includes('return') ? 'Return Flight' : 'Outbound Flight',
+      }));
+  }, [data.flights]);
+
+  const hasMultipleTrips = trips.length > 1;
+  
+  // State for selected trip (default to first trip)
+  const [selectedTripIndex, setSelectedTripIndex] = useState(1);
+  
+  // Get selected trip's main flight
+  const selectedTrip = trips.find(t => t.tripIndex === selectedTripIndex) || trips[0];
+  const selectedFlight = selectedTrip?.mainFlight;
+  
+  const firstPassenger = data.passengers?.[0];
+  
+  // Use selected flight data (or fallback to flat fields)
+  const effectiveFlightNumber = selectedFlight?.flightNumber || data.flightNumber || '';
+  const effectiveDepartureAirport = selectedFlight?.departureAirport || data.departureAirport || '';
+  const effectiveArrivalAirport = selectedFlight?.arrivalAirport || data.arrivalAirport || '';
+  const effectiveFlightDate = selectedFlight?.departureDate || data.flightDate || '';
+  const effectiveBookingReference = data.bookingReference || firstPassenger?.bookingReference || '';
+  
+  // For passenger name, prefer passengers array, then fall back to passengerName field
+  const effectiveFirstName = firstPassenger?.firstName || '';
+  const effectiveLastName = firstPassenger?.lastName || '';
+  const parsedName = (effectiveFirstName || effectiveLastName) 
+    ? { firstName: effectiveFirstName, lastName: effectiveLastName }
+    : parseName(data.passengerName);
+
+  // Count for multi-passenger display
+  const passengerCount = data.passengers?.length || (data.passengerName ? 1 : 0);
 
   const [editMode, setEditMode] = useState(false);
   const [editedData, setEditedData] = useState<EditedBoardingPassData>({
-    flightNumber: data.flightNumber || '',
-    departureAirport: data.departureAirport || '',
-    arrivalAirport: data.arrivalAirport || '',
-    flightDate: data.flightDate || '',
+    flightNumber: effectiveFlightNumber,
+    departureAirport: effectiveDepartureAirport,
+    arrivalAirport: effectiveArrivalAirport,
+    flightDate: effectiveFlightDate,
     firstName: parsedName.firstName,
     lastName: parsedName.lastName,
-    bookingReference: data.bookingReference || '',
+    bookingReference: effectiveBookingReference,
   });
 
-  // Update edited data when OCR data changes
+  // Update edited data when OCR data or selected trip changes
   useEffect(() => {
-    const parsedName = parseName(data.passengerName);
+    const selectedTrip = trips.find(t => t.tripIndex === selectedTripIndex) || trips[0];
+    const selectedFlight = selectedTrip?.mainFlight;
+    const firstPassenger = data.passengers?.[0];
+    
+    const effectiveFlightNumber = selectedFlight?.flightNumber || data.flightNumber || '';
+    const effectiveDepartureAirport = selectedFlight?.departureAirport || data.departureAirport || '';
+    const effectiveArrivalAirport = selectedFlight?.arrivalAirport || data.arrivalAirport || '';
+    const effectiveFlightDate = selectedFlight?.departureDate || data.flightDate || '';
+    const effectiveBookingReference = data.bookingReference || firstPassenger?.bookingReference || '';
+    
+    const effectiveFirstName = firstPassenger?.firstName || '';
+    const effectiveLastName = firstPassenger?.lastName || '';
+    const parsedName = (effectiveFirstName || effectiveLastName) 
+      ? { firstName: effectiveFirstName, lastName: effectiveLastName }
+      : parseName(data.passengerName);
+
     setEditedData({
-      flightNumber: data.flightNumber || '',
-      departureAirport: data.departureAirport || '',
-      arrivalAirport: data.arrivalAirport || '',
-      flightDate: data.flightDate || '',
+      flightNumber: effectiveFlightNumber,
+      departureAirport: effectiveDepartureAirport,
+      arrivalAirport: effectiveArrivalAirport,
+      flightDate: effectiveFlightDate,
       firstName: parsedName.firstName,
       lastName: parsedName.lastName,
-      bookingReference: data.bookingReference || '',
+      bookingReference: effectiveBookingReference,
     });
-  }, [data]);
+  }, [data, selectedTripIndex, trips]);
 
   const handleConfirm = () => {
     onConfirm(editedData);
@@ -171,6 +237,83 @@ export function ExtractedDataPreview({
           </div>
         )}
 
+        {/* Multi-passenger notification */}
+        {passengerCount > 1 && (
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 p-4">
+            <div className="flex gap-2">
+              <User className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-blue-900 dark:text-blue-200">
+                  Group booking detected
+                </p>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                  Found <strong>{passengerCount} passengers</strong>.
+                  Showing primary passenger below. All passengers will be added in Step 3.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Multi-trip flight selector (round-trip / multi-city) */}
+        {hasMultipleTrips && (
+          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-4">
+            <div className="flex gap-2">
+              <ArrowLeftRight className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-medium text-amber-900 dark:text-amber-200 mb-2">
+                  Multiple trips detected - Select the flight to claim
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+                  This booking contains {trips.length} separate trips. Please select which flight was delayed or cancelled.
+                </p>
+                <div className="grid gap-2">
+                  {trips.map((trip) => (
+                    <button
+                      key={trip.tripIndex}
+                      type="button"
+                      onClick={() => setSelectedTripIndex(trip.tripIndex)}
+                      className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
+                        selectedTripIndex === trip.tripIndex
+                          ? 'border-amber-500 bg-amber-100 dark:bg-amber-900/30'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-amber-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {trip.mainFlight?.flightNumber}
+                          </span>
+                          <span className="mx-2 text-gray-500">|</span>
+                          <span className="text-gray-700 dark:text-gray-300">
+                            {trip.mainFlight?.departureAirport} → {trip.mainFlight?.arrivalAirport}
+                          </span>
+                          <span className="mx-2 text-gray-500">|</span>
+                          <span className="text-gray-600 dark:text-gray-400">
+                            {trip.mainFlight?.departureDate}
+                          </span>
+                        </div>
+                        <Badge variant="outline" className={
+                          trip.mainFlight?.legType?.includes('return')
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : 'bg-green-50 text-green-700 border-green-200'
+                        }>
+                          {trip.label}
+                        </Badge>
+                      </div>
+                      {trip.flights.length > 1 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          + {trip.flights.length - 1} connecting flight{trip.flights.length > 2 ? 's' : ''}
+                        </p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Edit Mode Toggle */}
         <div className="flex justify-end">
           <Button
@@ -206,9 +349,7 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.flightNumber || '-'}</p>
                 )}
-                {fieldConfidence.flightNumber !== undefined && (
-                  <ConfidenceBadge confidence={fieldConfidence.flightNumber} />
-                )}
+                <ConfidenceBadge confidence={fieldConfidence.flightNumber} fallback={confidenceScore} />
               </div>
             </div>
 
@@ -227,9 +368,7 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.flightDate || '-'}</p>
                 )}
-                {fieldConfidence.flightDate !== undefined && (
-                  <ConfidenceBadge confidence={fieldConfidence.flightDate} />
-                )}
+                <ConfidenceBadge confidence={fieldConfidence.flightDate} fallback={confidenceScore} />
               </div>
             </div>
 
@@ -248,9 +387,7 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.departureAirport || '-'}</p>
                 )}
-                {fieldConfidence.departureAirport !== undefined && (
-                  <ConfidenceBadge confidence={fieldConfidence.departureAirport} />
-                )}
+                <ConfidenceBadge confidence={fieldConfidence.departureAirport} fallback={confidenceScore} />
               </div>
             </div>
 
@@ -269,9 +406,7 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.arrivalAirport || '-'}</p>
                 )}
-                {fieldConfidence.arrivalAirport !== undefined && (
-                  <ConfidenceBadge confidence={fieldConfidence.arrivalAirport} />
-                )}
+                <ConfidenceBadge confidence={fieldConfidence.arrivalAirport} fallback={confidenceScore} />
               </div>
             </div>
           </div>
@@ -299,9 +434,7 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.firstName || '-'}</p>
                 )}
-                {fieldConfidence.passengerName !== undefined && (
-                  <ConfidenceBadge confidence={fieldConfidence.passengerName} />
-                )}
+                <ConfidenceBadge confidence={fieldConfidence.passengerName} fallback={confidenceScore} />
               </div>
             </div>
 
@@ -341,9 +474,7 @@ export function ExtractedDataPreview({
                 ) : (
                   <p className="text-lg font-medium">{editedData.bookingReference || '-'}</p>
                 )}
-                {fieldConfidence.bookingReference !== undefined && (
-                  <ConfidenceBadge confidence={fieldConfidence.bookingReference} />
-                )}
+                <ConfidenceBadge confidence={fieldConfidence.bookingReference} fallback={confidenceScore} />
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 """Pydantic schemas for OCR boarding pass extraction."""
 from typing import Optional, List, Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class FlightSegmentSchema(BaseModel):
@@ -12,9 +12,15 @@ class FlightSegmentSchema(BaseModel):
     departure_time: Optional[str] = Field(None, alias="departureTime")
     arrival_time: Optional[str] = Field(None, alias="arrivalTime")
     airline: Optional[str] = None
-    
-    class Config:
-        populate_by_name = True
+    # Leg type: "outbound", "outbound_connection", "return", "return_connection"
+    leg_type: Optional[str] = Field(None, alias="legType")
+    # Trip index: groups flights into logical trips (1=outbound journey, 2=return journey, etc.)
+    trip_index: Optional[int] = Field(None, alias="tripIndex")
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
 
 class PassengerSchema(BaseModel):
@@ -23,9 +29,11 @@ class PassengerSchema(BaseModel):
     last_name: Optional[str] = Field(None, alias="lastName")
     ticket_number: Optional[str] = Field(None, alias="ticketNumber")
     booking_reference: Optional[str] = Field(None, alias="bookingReference")
-    
-    class Config:
-        populate_by_name = True
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
 
 class BoardingPassDataSchema(BaseModel):
@@ -44,13 +52,15 @@ class BoardingPassDataSchema(BaseModel):
     incident_type: Optional[str] = Field(None, alias="incidentType")
     delay_minutes: Optional[int] = Field(None, alias="delayMinutes")
     cancellation_reason: Optional[str] = Field(None, alias="cancellationReason")
-    
+
     # New fields for multi-passenger/multi-segment
     passengers: Optional[List[PassengerSchema]] = None
     flights: Optional[List[FlightSegmentSchema]] = None
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
 
 class FieldConfidenceSchema(BaseModel):
@@ -64,8 +74,10 @@ class FieldConfidenceSchema(BaseModel):
     passenger_name: Optional[float] = Field(None, alias="passengerName", ge=0.0, le=1.0)
     booking_reference: Optional[float] = Field(None, alias="bookingReference", ge=0.0, le=1.0)
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
 
 class OCRResponseSchema(BaseModel):
@@ -80,5 +92,7 @@ class OCRResponseSchema(BaseModel):
     warnings: List[str] = Field(default_factory=list)
     processing_time_ms: Optional[int] = Field(None, alias="processingTimeMs")
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )

@@ -12,7 +12,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle2, AlertTriangle, Edit2, Plane, User, ArrowLeftRight } from 'lucide-react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -210,26 +210,27 @@ export function ExtractedDataPreview({
   const hasLowConfidenceFields = confidenceScore < 0.6;
 
   return (
-    <Card className="border-2 border-blue-500">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
-              Data Extracted Successfully
-            </CardTitle>
-            <CardDescription>
-              Review the extracted information and make corrections if needed
-            </CardDescription>
-          </div>
-          <div className="text-left sm:text-right shrink-0">
-            <p className="text-sm text-muted-foreground mb-1">Overall Confidence</p>
-            <ConfidenceBadge confidence={confidenceScore} />
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        {/* Header Section - No inner border, just content */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold flex items-center gap-2 mb-1">
+                <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                Data Extracted Successfully
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Review the extracted information and make corrections if needed
+              </p>
+            </div>
+            <div className="text-left sm:text-right shrink-0">
+              <p className="text-sm text-muted-foreground mb-1">Overall Confidence</p>
+              <ConfidenceBadge confidence={confidenceScore} />
+            </div>
           </div>
         </div>
-      </CardHeader>
 
-      <CardContent className="space-y-6">
         {/* Warning for low confidence */}
         {hasLowConfidenceFields && (
           <div className="rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 p-4">
@@ -325,25 +326,24 @@ export function ExtractedDataPreview({
           </div>
         )}
 
-        {/* Edit Mode Toggle */}
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setEditMode(!editMode)}
-          >
-            <Edit2 className="w-4 h-4 mr-2" />
-            {editMode ? 'View Mode' : 'Edit Mode'}
-          </Button>
-        </div>
-
-        {/* Flight Information */}
-        <div className="space-y-4">
-          <h3 className="font-semibold flex items-center gap-2">
-            <Plane className="w-4 h-4" />
-            Flight Information
-          </h3>
+        {/* Flight Information - Edit button moved to header */}
+        <div className="space-y-4 pt-6">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Plane className="w-4 h-4" />
+              Flight Information
+            </h3>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditMode(!editMode)}
+              className="h-8"
+            >
+              <Edit2 className="w-4 h-4 mr-2" />
+              {editMode ? 'Done' : 'Edit'}
+            </Button>
+          </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             {/* Flight Number */}
@@ -432,7 +432,7 @@ export function ExtractedDataPreview({
         </div>
 
         {/* Passenger Information */}
-        <div className="space-y-4 pt-4 border-t">
+        <div className="space-y-4 pt-6">
           <h3 className="font-semibold flex items-center gap-2">
             <User className="w-4 h-4" />
             Passenger Information
@@ -523,13 +523,13 @@ export function ExtractedDataPreview({
            )}
          </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-4 border-t">
+        {/* Action Buttons - Stacked vertically on mobile */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
           <Button
             type="button"
             onClick={handleConfirm}
             disabled={isLoading}
-            className="flex-1"
+            className="w-full sm:flex-1 order-1"
           >
             Use This Data
           </Button>
@@ -538,6 +538,7 @@ export function ExtractedDataPreview({
             variant="outline"
             onClick={onRetry}
             disabled={isLoading}
+            className="w-full sm:w-auto order-2"
           >
             Try Another Image
           </Button>

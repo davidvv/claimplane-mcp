@@ -126,12 +126,13 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
       {/* Filters */}
       <Card className="p-4">
         <form onSubmit={handleSearch} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <Input
-                placeholder="Search by customer, email, flight..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="text-sm"
               />
             </div>
             <div>
@@ -142,8 +143,8 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
               >
                 <option value="">All Statuses</option>
                 <option value="submitted">Submitted</option>
-                <option value="pending_review">Pending Review</option>
-                <option value="under_review">Under Review</option>
+                <option value="pending_review">Pending</option>
+                <option value="under_review">Review</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
                 <option value="completed">Completed</option>
@@ -151,16 +152,17 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
             </div>
             <div>
               <Input
-                placeholder="Airline (e.g., Ryanair)"
+                placeholder="Airline..."
                 value={airlineFilter}
                 onChange={(e) => setAirlineFilter(e.target.value)}
+                className="text-sm"
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" className="flex-1">
+              <Button type="submit" size="sm" className="flex-1">
                 Filter
               </Button>
-              <Button type="button" variant="outline" onClick={handleReset}>
+              <Button type="button" variant="outline" size="sm" onClick={handleReset}>
                 Reset
               </Button>
             </div>
@@ -171,83 +173,85 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
       {/* Bulk Assignment Controls */}
       {selectedClaimIds.length > 0 && (
         <Card className="p-4 bg-primary/5 border-primary/20">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="flex-1">
               <p className="text-sm font-medium">
                 {selectedClaimIds.length} claim{selectedClaimIds.length > 1 ? 's' : ''} selected
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <select
-                className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 sm:flex-none"
                 value={selectedAdminId}
                 onChange={(e) => setSelectedAdminId(e.target.value)}
                 disabled={isBulkAssigning}
               >
-                <option value="">Select admin to assign...</option>
+                <option value="">Select admin...</option>
                 {adminUsers.map((user) => (
                   <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name} ({user.email})
+                    {user.first_name}
                   </option>
                 ))}
               </select>
               <Button
+                size="sm"
                 onClick={handleBulkAssign}
                 disabled={isBulkAssigning || !selectedAdminId}
               >
-                {isBulkAssigning ? 'Assigning...' : 'Assign Selected'}
+                {isBulkAssigning ? '...' : 'Assign'}
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setSelectedClaimIds([])}
                 disabled={isBulkAssigning}
               >
-                Clear Selection
+                Clear
               </Button>
             </div>
           </div>
         </Card>
       )}
 
-      {/* Table */}
+      {/* Table - Scrollable on mobile */}
       <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/50 border-b">
-              <tr>
-                <th className="px-4 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300"
-                    checked={selectedClaimIds.length === claims.length && claims.length > 0}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    disabled={isLoading || claims.length === 0}
-                  />
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Customer</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Flight</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Route</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Incident</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Assigned To</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Compensation</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Submitted</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Age (days)</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Last Update</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Files</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
+        <div className="overflow-x-auto -mx-4 md:mx-0 md:overflow-visible">
+          <div className="min-w-full inline-block align-middle md:block">
+            <table className="w-full min-w-[900px] md:min-w-full">
+              <thead className="bg-muted/50 border-b">
+                <tr>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300"
+                      checked={selectedClaimIds.length === claims.length && claims.length > 0}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      disabled={isLoading || claims.length === 0}
+                    />
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Customer</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Flight</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Route</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Incident</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Assigned</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Comp</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Submitted</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Age</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Files</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
               {isLoading ? (
                 <tr>
-                  <td colSpan={13} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground text-sm">
                     Loading claims...
                   </td>
                 </tr>
               ) : claims.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground text-sm">
                     No claims found
                   </td>
                 </tr>
@@ -258,7 +262,7 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
                     className="hover:bg-muted/50 cursor-pointer transition-colors"
                     onClick={() => navigate(`/panel/claims/${claim.id}`)}
                   >
-                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         className="rounded border-gray-300"
@@ -266,78 +270,67 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
                         onChange={(e) => handleSelectClaim(claim.id, e.target.checked)}
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <div className="flex flex-col">
-                        <span className="font-medium text-sm">
+                        <span className="font-medium text-sm truncate max-w-[120px]">
                           {claim.customer.first_name} {claim.customer.last_name}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground truncate max-w-[120px]">
                           {claim.customer.email}
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <div className="flex flex-col">
                         <span className="font-medium text-sm">{claim.flight_number}</span>
-                        <span className="text-xs text-muted-foreground">{claim.airline}</span>
+                        <span className="text-xs text-muted-foreground truncate max-w-[80px]">{claim.airline}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <div className="text-sm">
                         {claim.departure_airport} → {claim.arrival_airport}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm capitalize">
+                    <td className="px-3 py-3">
+                      <span className="text-sm capitalize truncate max-w-[100px] block">
                         {claim.incident_type.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       {claim.assignee ? (
                         <div className="flex flex-col">
-                          <span className="font-medium text-sm">
-                            {claim.assignee.first_name} {claim.assignee.last_name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {claim.assignee.email}
+                          <span className="font-medium text-sm truncate max-w-[100px]">
+                            {claim.assignee.first_name}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-muted-foreground italic">Unassigned</span>
+                        <span className="text-sm text-muted-foreground italic">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <StatusBadge status={claim.status} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <span className="font-medium text-sm">
                         {formatCurrency(claim.calculated_compensation)}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <span className="text-sm text-muted-foreground">
-                        {format(new Date(claim.submitted_at), 'MMM d, yyyy')}
+                        {format(new Date(claim.submitted_at), 'MMM d')}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <span className="text-sm font-medium">
                         {calculateDaysSince(claim.submitted_at)}d
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-muted-foreground">
-                        {calculateDaysSince(claim.updated_at)}d ago
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground">{claim.file_count} files</span>
-                        {claim.note_count > 0 && (
-                          <span className="text-muted-foreground">· {claim.note_count} notes</span>
-                        )}
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-1 text-sm">
+                        <span className="text-muted-foreground">{claim.file_count}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                       <Button
                         variant="outline"
                         size="sm"
@@ -354,6 +347,7 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
               )}
             </tbody>
           </table>
+        </div>
         </div>
 
         {/* Pagination info */}

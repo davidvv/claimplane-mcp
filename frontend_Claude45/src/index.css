@@ -150,3 +150,14 @@
 .animate-scan {
   animation: scan 2s ease-in-out infinite;
 }
+
+/* Extra small breakpoint for very narrow phones */
+@media (max-width: 380px) {
+  .hidden\.xs\:hidden {
+    display: none;
+  }
+  .hidden\.xs\:inline {
+    display: inline;
+  }
+}
+

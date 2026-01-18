@@ -84,28 +84,28 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto py-6 md:py-8 space-y-6 px-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Manage flight compensation claims</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
+          <p className="text-muted-foreground mt-1 text-sm">Manage flight compensation claims</p>
         </div>
-        <Button variant="outline" onClick={() => loadClaims()}>
+        <Button variant="outline" size="sm" onClick={() => loadClaims()}>
           Refresh
         </Button>
       </div>
 
       {/* Error Display */}
       {error && (
-        <Card className="p-6 border-destructive bg-destructive/10">
+        <Card className="p-4 border-destructive bg-destructive/10">
           <div className="flex items-start gap-3">
-            <div className="text-destructive font-bold text-lg">⚠</div>
+            <div className="text-destructive font-bold text-lg">!</div>
             <div className="flex-1">
-              <h3 className="font-semibold text-destructive mb-1">Error Loading Dashboard</h3>
+              <h3 className="font-semibold text-destructive mb-1">Error</h3>
               <p className="text-sm text-muted-foreground">{error}</p>
               <p className="text-sm text-muted-foreground mt-2">
-                Make sure you're logged in as an admin user. Check the browser console for more details.
+                Make sure you're logged in as an admin.
               </p>
             </div>
           </div>
@@ -114,22 +114,22 @@ export function AdminDashboard() {
 
       {/* Analytics Summary */}
       {analytics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-6">
-            <div className="text-sm text-muted-foreground mb-1">Total Claims</div>
-            <div className="text-3xl font-bold">{analytics.total_claims || 0}</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <Card className="p-4">
+            <div className="text-xs text-muted-foreground mb-1">Total</div>
+            <div className="text-2xl md:text-3xl font-bold">{analytics.total_claims || 0}</div>
           </Card>
-          <Card className="p-6">
-            <div className="text-sm text-muted-foreground mb-1">Pending Review</div>
-            <div className="text-3xl font-bold text-yellow-600">{analytics.pending_review || 0}</div>
+          <Card className="p-4">
+            <div className="text-xs text-muted-foreground mb-1">Pending</div>
+            <div className="text-2xl md:text-3xl font-bold text-yellow-600">{analytics.pending_review || 0}</div>
           </Card>
-          <Card className="p-6">
-            <div className="text-sm text-muted-foreground mb-1">Approved</div>
-            <div className="text-3xl font-bold text-green-600">{analytics.approved || 0}</div>
+          <Card className="p-4">
+            <div className="text-xs text-muted-foreground mb-1">Approved</div>
+            <div className="text-2xl md:text-3xl font-bold text-green-600">{analytics.approved || 0}</div>
           </Card>
-          <Card className="p-6">
-            <div className="text-sm text-muted-foreground mb-1">Total Compensation</div>
-            <div className="text-3xl font-bold">€{(analytics.total_compensation || 0).toFixed(0)}</div>
+          <Card className="p-4">
+            <div className="text-xs text-muted-foreground mb-1">Total Comp</div>
+            <div className="text-2xl md:text-3xl font-bold">€{(analytics.total_compensation || 0).toFixed(0)}</div>
           </Card>
         </div>
       )}

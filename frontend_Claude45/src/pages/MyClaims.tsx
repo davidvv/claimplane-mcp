@@ -111,23 +111,23 @@ export function MyClaims() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-8 md:py-12">
       <div className="container mx-auto px-4 max-w-6xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Claims</h1>
-          <p className="text-muted-foreground">
-            View and manage all your flight compensation claims
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">My Claims</h1>
+          <p className="text-muted-foreground text-sm">
+            View and manage your flight compensation claims
           </p>
         </div>
 
         {claims.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center">
-              <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">
+            <CardContent className="py-8 md:py-12 text-center">
+              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg md:text-xl font-semibold mb-2">
                 No claims yet
               </h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-muted-foreground mb-6 text-sm">
                 You haven't submitted any flight compensation claims yet.
               </p>
               <Button onClick={() => navigate('/claim')}>
@@ -136,18 +136,18 @@ export function MyClaims() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-4 md:gap-6 grid-cols-1">
             {claims.map((claim) => (
               <Card
                 key={claim.id}
                 className="hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => handleViewClaim(claim.id!)}
               >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <Plane className="w-5 h-5 text-primary" />
-                      <CardTitle className="text-lg">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Plane className="w-5 h-5 text-primary flex-shrink-0" />
+                      <CardTitle className="text-lg truncate">
                         {claim.flightInfo.airline} {claim.flightInfo.flightNumber}
                       </CardTitle>
                     </div>
@@ -155,15 +155,15 @@ export function MyClaims() {
                       {getStatusLabel(claim.status || 'draft')}
                     </Badge>
                   </div>
-                  <CardDescription>
+                  <CardDescription className="truncate">
                     {claim.flightInfo.departureAirport} → {claim.flightInfo.arrivalAirport}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   {/* Flight Date */}
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-4 h-4 flex-shrink-0" />
                     <span>{formatDateTime(claim.flightInfo.departureDate)}</span>
                   </div>
 
@@ -180,7 +180,7 @@ export function MyClaims() {
                   {/* Compensation Amount */}
                   {claim.compensationAmount && (
                     <div className="flex items-center gap-2 bg-primary/10 p-3 rounded-lg">
-                      <Euro className="w-5 h-5 text-primary" />
+                      <Euro className="w-5 h-5 text-primary flex-shrink-0" />
                       <div>
                         <p className="text-xs text-muted-foreground">
                           Eligible Amount
@@ -194,14 +194,15 @@ export function MyClaims() {
 
                   {/* Submission Date */}
                   {claim.submittedAt && (
-                    <div className="pt-3 border-t text-xs text-muted-foreground">
+                    <div className="pt-2 border-t text-xs text-muted-foreground">
                       Submitted {formatDateTime(claim.submittedAt)}
                     </div>
                   )}
 
                   {/* View Details Button */}
                   <Button
-                    className="w-full"
+                    className="w-full mt-2"
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleViewClaim(claim.id!);

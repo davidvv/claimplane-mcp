@@ -330,24 +330,26 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
               </div>
 
               {/* Manual Entry Options */}
-              <div className="flex gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => handleModeSwitch('flight-number')}
-                  className="flex-1"
+                  className="w-full"
                 >
-                  <Plane className="w-4 h-4 mr-2" />
-                  Flight Number
+                  <Plane className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Flight Number</span>
+                  <span className="xs:hidden">Flight</span>
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => handleModeSwitch('route-search')}
-                  className="flex-1"
+                  className="w-full"
                 >
-                  <Search className="w-4 h-4 mr-2" />
-                  Route Search
+                  <Search className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Route Search</span>
+                  <span className="xs:hidden">Route</span>
                 </Button>
               </div>
             </div>

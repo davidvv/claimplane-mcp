@@ -206,77 +206,102 @@ export function ClaimDetailPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto py-6 md:py-8 space-y-6 px-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate('/panel/dashboard')}>
-            ← Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Claim #{claim.id.slice(0, 8)}</h1>
-            <p className="text-muted-foreground mt-1">
-              {claim.customer.first_name} {claim.customer.last_name} · {claim.customer.email}
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+        <Button variant="outline" size="sm" onClick={() => navigate('/panel/dashboard')}>
+          ← Back
+        </Button>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl sm:text-3xl font-bold truncate">
+            Claim #{claim.id.slice(0, 8)}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 truncate">
+            {claim.customer.first_name} {claim.customer.last_name}
+          </p>
         </div>
-        <StatusBadge status={claim.status} className="text-lg px-4 py-2" />
+        <StatusBadge status={claim.status} className="text-sm px-3 py-1" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column - Main details */}
         <div className="lg:col-span-2 space-y-6">
           {/* Flight Information */}
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Flight Information</h2>
-            <div className="grid grid-cols-2 gap-4">
+          <Card className="p-4 md:p-6">
+            <h2 className="text-lg font-semibold mb-4">Flight Information</h2>
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div>
-                <Label className="text-muted-foreground">Flight Number</Label>
+                <Label className="text-muted-foreground text-xs">Flight</Label>
                 <p className="font-medium">{claim.flight_number}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Airline</Label>
+                <Label className="text-muted-foreground text-xs">Airline</Label>
                 <p className="font-medium">{claim.airline}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Route</Label>
+                <Label className="text-muted-foreground text-xs">Route</Label>
                 <p className="font-medium">
                   {claim.departure_airport} → {claim.arrival_airport}
                 </p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Incident Type</Label>
+                <Label className="text-muted-foreground text-xs">Incident</Label>
                 <p className="font-medium capitalize">
                   {claim.incident_type.replace(/_/g, ' ')}
                 </p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Departure Date</Label>
+                <Label className="text-muted-foreground text-xs">Date</Label>
                 <p className="font-medium">
                   {formatDate(claim.departure_date, 'PPP')}
                 </p>
               </div>
               {claim.delay_hours !== null && (
                 <div>
-                  <Label className="text-muted-foreground">Delay Duration</Label>
-                  <p className="font-medium">{claim.delay_hours} hours</p>
+                  <Label className="text-muted-foreground text-xs">Delay</Label>
+                  <p className="font-medium">{claim.delay_hours}h</p>
                 </div>
               )}
-              <div>
-                <Label className="text-muted-foreground">Compensation</Label>
+              <div className="col-span-2">
+                <Label className="text-muted-foreground text-xs">Compensation</Label>
                 <p className="font-medium text-lg">
                   {claim.calculated_compensation
                     ? `€${parseFloat(claim.calculated_compensation).toFixed(0)}`
-                    : 'Not calculated'}
+                    : '—'}
                 </p>
               </div>
             </div>
-            {claim.incident_description && (
-              <div className="mt-4">
-                <Label className="text-muted-foreground">Description</Label>
-                <p className="mt-1">{claim.incident_description}</p>
+          </Card>
+
+          {/* Customer Information */}
+          <Card className="p-4 md:p-6">
+            <h2 className="text-lg font-semibold mb-4">Customer</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+              <div>
+                <Label className="text-muted-foreground text-xs">Name</Label>
+                <p className="font-medium">
+                  {claim.customer.first_name} {claim.customer.last_name}
+                </p>
               </div>
-            )}
+              <div>
+                <Label className="text-muted-foreground text-xs">Email</Label>
+                <p className="font-medium truncate">{claim.customer.email}</p>
+              </div>
+              {claim.customer.phone && (
+                <div>
+                  <Label className="text-muted-foreground text-xs">Phone</Label>
+                  <p className="font-medium">{claim.customer.phone}</p>
+                </div>
+              )}
+              {claim.customer.street && (
+                <div className="sm:col-span-2">
+                  <Label className="text-muted-foreground text-xs">Address</Label>
+                  <p className="font-medium text-sm">
+                    {claim.customer.street}, {claim.customer.city} {claim.customer.postal_code}, {claim.customer.country}
+                  </p>
+                </div>
+              )}
+            </div>
           </Card>
 
           {/* Customer Information */}
@@ -314,26 +339,24 @@ export function ClaimDetailPage() {
           </Card>
 
           {/* Documents */}
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Documents ({claim.files?.length || 0})</h2>
+          <Card className="p-4 md:p-6">
+            <h2 className="text-lg font-semibold mb-4">Documents ({claim.files?.length || 0})</h2>
             {!claim.files || claim.files.length === 0 ? (
-              <p className="text-muted-foreground">No documents uploaded</p>
+              <p className="text-muted-foreground text-sm">No documents</p>
             ) : (
               <div className="space-y-2">
                 {claim.files.map((file) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
+                    className="flex items-center justify-between p-3 border rounded-lg gap-2"
                   >
-                    <div className="flex-1">
-                      <p className="font-medium">{file.original_filename || 'Unknown file'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {file.document_type.replace(/_/g, ' ')} ·{' '}
-                        {(file.file_size / 1024).toFixed(1)} KB ·{' '}
-                        {formatDate(file.uploaded_at, 'MMM d, yyyy')}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{file.original_filename || 'Unknown'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {file.document_type.replace(/_/g, ' ')} · {(file.file_size / 1024).toFixed(1)} KB
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <StatusBadge status={file.status} />
                       <Button variant="outline" size="sm">
                         View
@@ -346,23 +369,23 @@ export function ClaimDetailPage() {
           </Card>
 
           {/* Notes */}
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Notes ({claim.claim_notes?.length || 0})</h2>
+          <Card className="p-4 md:p-6">
+            <h2 className="text-lg font-semibold mb-4">Notes ({claim.claim_notes?.length || 0})</h2>
 
             {/* Add Note Form */}
-            <form onSubmit={handleAddNote} className="space-y-4 mb-6 pb-6 border-b">
+            <form onSubmit={handleAddNote} className="space-y-3 mb-4 pb-4 border-b">
               <div>
-                <Label htmlFor="note">Add Note</Label>
+                <Label htmlFor="note" className="text-xs">Add Note</Label>
                 <textarea
                   id="note"
-                  className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
                   placeholder="Write a note..."
                   value={noteText}
                   onChange={(e) => setNoteText(e.target.value)}
                   disabled={isAddingNote}
                 />
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -370,10 +393,10 @@ export function ClaimDetailPage() {
                     onChange={(e) => setIsInternalNote(e.target.checked)}
                     className="rounded border-gray-300"
                   />
-                  <span className="text-sm">Internal note (not visible to customer)</span>
+                  <span className="text-xs">Internal</span>
                 </label>
-                <Button type="submit" disabled={isAddingNote || !noteText.trim()}>
-                  {isAddingNote ? 'Adding...' : 'Add Note'}
+                <Button type="submit" size="sm" disabled={isAddingNote || !noteText.trim()}>
+                  {isAddingNote ? '...' : 'Add'}
                 </Button>
               </div>
             </form>
@@ -619,11 +642,11 @@ export function ClaimDetailPage() {
         {/* Right column - Status & History */}
         <div className="space-y-6">
           {/* Update Status */}
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Update Status</h2>
+          <Card className="p-4 md:p-6">
+            <h2 className="text-lg font-semibold mb-4">Update Status</h2>
             <form onSubmit={handleStatusUpdate} className="space-y-4">
               <div>
-                <Label htmlFor="status">New Status</Label>
+                <Label htmlFor="status" className="text-xs">New Status</Label>
                 <select
                   id="status"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -640,13 +663,12 @@ export function ClaimDetailPage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="reason">
+                <Label htmlFor="reason" className="text-xs">
                   Reason {selectedStatus === 'rejected' && <span className="text-destructive">*</span>}
-                  {selectedStatus === 'rejected' ? ' (required)' : ' (optional)'}
                 </Label>
                 <Input
                   id="reason"
-                  placeholder={selectedStatus === 'rejected' ? 'Why is this claim being rejected?' : 'Reason for status change...'}
+                  placeholder={selectedStatus === 'rejected' ? 'Required...' : 'Optional...'}
                   value={changeReason}
                   onChange={(e) => setChangeReason(e.target.value)}
                   disabled={isUpdatingStatus}
@@ -658,23 +680,21 @@ export function ClaimDetailPage() {
                 className="w-full"
                 disabled={isUpdatingStatus || selectedStatus === claim.status}
               >
-                {isUpdatingStatus ? 'Updating...' : 'Update Status'}
+                {isUpdatingStatus ? '...' : 'Update'}
               </Button>
             </form>
           </Card>
 
           {/* Assign Claim */}
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Assign Claim</h2>
+          <Card className="p-4 md:p-6">
+            <h2 className="text-lg font-semibold mb-4">Assign</h2>
 
             {/* Current assignment */}
-            <div className="mb-4 p-3 bg-muted/30 rounded-lg">
-              <Label className="text-xs text-muted-foreground">Currently Assigned To</Label>
+            <div className="mb-3 p-2 bg-muted/30 rounded-lg">
+              <Label className="text-xs text-muted-foreground">Current</Label>
               {claim.assignee ? (
-                <p className="font-medium text-sm mt-1">
+                <p className="font-medium text-sm mt-1 truncate">
                   {claim.assignee.first_name} {claim.assignee.last_name}
-                  <br />
-                  <span className="text-xs text-muted-foreground">{claim.assignee.email}</span>
                 </p>
               ) : (
                 <p className="text-sm text-muted-foreground italic mt-1">Unassigned</p>
@@ -685,16 +705,17 @@ export function ClaimDetailPage() {
             <Button
               onClick={handleAssignToMe}
               disabled={isAssigning}
-              className="w-full mb-4"
+              className="w-full mb-3"
               variant="outline"
+              size="sm"
             >
-              {isAssigning ? 'Assigning...' : 'Assign to Me'}
+              {isAssigning ? '...' : 'Assign to Me'}
             </Button>
 
             {/* Assign to specific admin */}
             <form onSubmit={handleAssignToAdmin} className="space-y-4">
               <div>
-                <Label htmlFor="assignTo">Or Assign To</Label>
+                <Label htmlFor="assignTo" className="text-xs">Or assign to</Label>
                 <select
                   id="assignTo"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -702,10 +723,10 @@ export function ClaimDetailPage() {
                   onChange={(e) => setSelectedAdmin(e.target.value)}
                   disabled={isAssigning}
                 >
-                  <option value="">Select admin...</option>
+                  <option value="">Select...</option>
                   {adminUsers.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {user.first_name} {user.last_name} ({user.email})
+                      {user.first_name} {user.last_name}
                     </option>
                   ))}
                 </select>
@@ -715,31 +736,25 @@ export function ClaimDetailPage() {
                 className="w-full"
                 disabled={isAssigning || !selectedAdmin}
               >
-                {isAssigning ? 'Assigning...' : 'Assign to Selected'}
+                {isAssigning ? '...' : 'Assign'}
               </Button>
             </form>
           </Card>
 
           {/* Status History */}
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Status History</h2>
+          <Card className="p-4 md:p-6">
+            <h2 className="text-lg font-semibold mb-4">History</h2>
             {!claim.status_history || claim.status_history.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No status changes yet</p>
+              <p className="text-muted-foreground text-sm">No changes yet</p>
             ) : (
               <div className="space-y-3">
-                {claim.status_history.map((history) => (
-                  <div key={history.id} className="pb-3 border-b last:border-0">
+                {claim.status_history.slice(0, 5).map((history) => (
+                  <div key={history.id} className="pb-2 border-b last:border-0">
                     <div className="flex items-center gap-2 mb-1">
                       <StatusBadge status={history.new_status} />
                     </div>
-                    {history.changed_by_user && (
-                      <p className="text-xs text-muted-foreground">
-                        by {history.changed_by_user.first_name}{' '}
-                        {history.changed_by_user.last_name}
-                      </p>
-                    )}
                     <p className="text-xs text-muted-foreground">
-                      {formatDate(history.changed_at)}
+                      {formatDate(history.changed_at, 'MMM d, HH:mm')}
                     </p>
                     {history.change_reason && (
                       <p className="text-sm mt-1">{history.change_reason}</p>
@@ -751,33 +766,21 @@ export function ClaimDetailPage() {
           </Card>
 
           {/* Quick Info */}
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Quick Info</h2>
-            <div className="space-y-3 text-sm">
+          <Card className="p-4 md:p-6">
+            <h2 className="text-lg font-semibold mb-4">Info</h2>
+            <div className="space-y-2 text-sm">
               <div>
-                <Label className="text-muted-foreground">Claim ID</Label>
-                <p className="font-mono text-xs">{claim.id}</p>
+                <Label className="text-muted-foreground text-xs">Claim ID</Label>
+                <p className="font-mono text-xs truncate">{claim.id}</p>
               </div>
-              <div>
-                <Label className="text-muted-foreground">Submitted</Label>
-                <p>{formatDate(claim.submitted_at)}</p>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground text-xs">Submitted</span>
+                <span className="text-xs">{formatDate(claim.submitted_at, 'MMM d, yyyy')}</span>
               </div>
-              <div>
-                <Label className="text-muted-foreground">Last Updated</Label>
-                <p>{formatDate(claim.updated_at)}</p>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground text-xs">Updated</span>
+                <span className="text-xs">{formatDate(claim.updated_at, 'MMM d')}</span>
               </div>
-              {claim.flight_distance_km && (
-                <div>
-                  <Label className="text-muted-foreground">Flight Distance</Label>
-                  <p className="font-medium">{claim.flight_distance_km} km</p>
-                </div>
-              )}
-              {claim.extraordinary_circumstances && (
-                <div>
-                  <Label className="text-muted-foreground">Extraordinary Circumstances</Label>
-                  <p className="text-yellow-600 font-medium text-xs">{claim.extraordinary_circumstances}</p>
-                </div>
-              )}
             </div>
           </Card>
         </div>

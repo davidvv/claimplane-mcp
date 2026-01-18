@@ -39,6 +39,7 @@ interface Step2Props {
   initialData: EligibilityResponse | null;
   draftClaimId: string | null;
   boardingPassFile?: File | null;
+  ocrFileId?: string | null;
   onComplete: (data: EligibilityResponse, email: string, draftData?: DraftClaimData) => void;
   onBack: () => void;
   onDraftCancelled: () => void;
@@ -49,6 +50,7 @@ export function Step2_Eligibility({
   initialData,
   draftClaimId,
   boardingPassFile,
+  ocrFileId,
   onComplete,
   onBack,
   onDraftCancelled,
@@ -158,16 +160,36 @@ export function Step2_Eligibility({
 
       console.log('Draft claim created:', draftData.claimId);
 
-      // Upload boarding pass file immediately if available
-      if (boardingPassFile) {
+      // Link or upload boarding pass file
+      if (ocrFileId) {
+        // File was already uploaded during OCR - just link it to the claim
         try {
-          console.log('Uploading boarding pass to draft claim...');
+          console.log('[Step2] Linking OCR file to draft claim:', ocrFileId);
+          const { linkFileToClaim } = await import('@/services/documents');
+          await linkFileToClaim(ocrFileId, draftData.claimId);
+          console.log('[Step2] Boarding pass linked successfully');
+        } catch (linkError) {
+          console.error('[Step2] Failed to link boarding pass:', linkError);
+          // Fallback: try re-uploading if we have the file
+          if (boardingPassFile) {
+            try {
+              console.log('[Step2] Fallback: Re-uploading boarding pass...');
+              await uploadDocument(draftData.claimId, boardingPassFile, 'boarding_pass');
+              console.log('[Step2] Boarding pass re-uploaded successfully');
+            } catch (uploadError) {
+              console.error('[Step2] Fallback upload also failed:', uploadError);
+              toast.error('Note: Boarding pass upload failed. You can re-upload in the next step.');
+            }
+          }
+        }
+      } else if (boardingPassFile) {
+        // No OCR file ID - upload normally (shouldn't happen in normal flow)
+        try {
+          console.log('[Step2] Uploading boarding pass to draft claim...');
           await uploadDocument(draftData.claimId, boardingPassFile, 'boarding_pass');
-          console.log('Boarding pass uploaded successfully');
+          console.log('[Step2] Boarding pass uploaded successfully');
         } catch (uploadError) {
-          // Non-blocking: log error but allow user to continue
-          // They can re-upload in Step 3 if needed
-          console.error('Failed to upload boarding pass:', uploadError);
+          console.error('[Step2] Failed to upload boarding pass:', uploadError);
           toast.error('Note: Boarding pass upload failed. You can re-upload in the next step.');
         }
       }

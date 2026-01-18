@@ -91,6 +91,7 @@ class OCRResponseSchema(BaseModel):
     errors: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
     processing_time_ms: Optional[int] = Field(None, alias="processingTimeMs")
+    uploaded_file_id: Optional[str] = Field(None, alias="uploadedFileId")  # ID of saved file for later linking
 
     model_config = ConfigDict(
         populate_by_name=True,

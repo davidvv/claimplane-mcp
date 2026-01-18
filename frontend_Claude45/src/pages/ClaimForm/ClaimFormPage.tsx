@@ -64,6 +64,8 @@ export function ClaimFormPage() {
   const [rawOcrResponse, setRawOcrResponse] = useState<OCRResponse | null>(null);
   // Boarding pass file to persist across steps (for upload in Step 2)
   const [savedBoardingPassFile, setSavedBoardingPassFile] = useState<File | null>(null);
+  // OCR file ID for linking to claim (avoids re-upload)
+  const [ocrFileId, setOcrFileId] = useState<string | null>(null);
 
   // Draft claim state (Workflow v2)
   const [draftClaimId, setDraftClaimId] = useState<string | null>(null);
@@ -348,6 +350,7 @@ export function ClaimFormPage() {
               setSavedOcrResult={setRawOcrResponse}
               savedBoardingPassFile={savedBoardingPassFile}
               setSavedBoardingPassFile={setSavedBoardingPassFile}
+              setOcrFileId={setOcrFileId}
             />
           )}
 
@@ -357,6 +360,7 @@ export function ClaimFormPage() {
               initialData={eligibilityData}
               draftClaimId={draftClaimId}
               boardingPassFile={savedBoardingPassFile}
+              ocrFileId={ocrFileId}
               onComplete={handleEligibilityComplete}
               onBack={handleBack}
               onDraftCancelled={handleDraftCancelled}

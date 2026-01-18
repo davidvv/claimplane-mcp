@@ -2,12 +2,73 @@
 # ClaimPlane Project - Complete Commit History Analysis
 
 ## Summary Statistics
-- **Total Commits**: 166
+- **Total Commits**: 167
 - **Date Range**: 2025-09-04 to 2026-01-18
-- **Estimated Total Time**: ~484.0-552.6 hours
+- **Estimated Total Time**: ~488.0-558.6 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
-## Latest Work (2026-01-18) - Boarding Pass File Persistence
+## Latest Work (2026-01-18) - OCR File Upload Optimization
+
+### Optimize Boarding Pass File Upload - 1 Commit
+**Estimated Time**: 4.0-6.0 hours
+**Work Packages Needed**: #169 (to be created)
+
+#### Key Task:
+
+##### Optimize OCR File Upload to Avoid Duplicate Upload (commit: TBD)
+**Estimated Time**: 4.0-6.0 hours
+
+**Problem**: Boarding pass file was uploaded twice:
+1. Once to Gemini for OCR processing (Step 1)
+2. Again to Nextcloud for storage (Step 2)
+
+**Solution - Single Upload Architecture**:
+
+**Backend Changes (6 phases)**:
+1. **Database Schema**: Made `claim_id` and `customer_id` nullable in `claim_files` table
+2. **OCR Response**: Added `uploadedFileId` field to OCR response schema
+3. **File Service**: 
+   - Added `upload_orphan_file()` - saves files to `temp_uploads/` without claim_id
+   - Added `link_file_to_claim()` - moves file to `flight_claims/{claim_id}/` and updates claim_id
+4. **OCR Endpoint**: Modified to save file during OCR and return file ID
+5. **Link Endpoint**: Created `POST /files/link-to-claim` for linking orphan files to claims
+6. **Cleanup Task**: Added Celery task to delete orphan files older than 24 hours (runs hourly)
+
+**Frontend Changes (5 files)**:
+1. **api.ts**: Added `uploadedFileId` to OCRResponse type
+2. **ClaimFormPage.tsx**: Added `ocrFileId` state, passed to Step1 and Step2
+3. **Step1_Flight.tsx**: Captures `uploadedFileId` from OCR response
+4. **Step2_Eligibility.tsx**: Links existing file instead of re-uploading
+5. **documents.ts**: Added `linkFileToClaim()` service function
+
+**Files Modified** (14 total):
+- Backend (9 files):
+  - `app/models.py` - Made FK nullable
+  - `app/schemas/ocr_schemas.py` - Added uploadedFileId field
+  - `app/services/file_service.py` - Added orphan file methods
+  - `app/services/nextcloud_service.py` - Added move_file method
+  - `app/routers/claims.py` - Save file during OCR
+  - `app/routers/files.py` - Link endpoint
+  - `app/tasks/file_cleanup_tasks.py` (NEW) - Cleanup task
+  - `app/tasks/__init__.py` - Register task
+  - `app/celery_app.py` - Add to beat schedule
+- Frontend (5 files):
+  - `frontend_Claude45/src/types/api.ts`
+  - `frontend_Claude45/src/pages/ClaimForm/ClaimFormPage.tsx`
+  - `frontend_Claude45/src/pages/ClaimForm/Step1_Flight.tsx`
+  - `frontend_Claude45/src/pages/ClaimForm/Step2_Eligibility.tsx`
+  - `frontend_Claude45/src/services/documents.ts`
+
+**Impact**:
+- ✅ Boarding pass uploaded only once (during OCR)
+- ✅ File automatically linked when draft claim created
+- ✅ Saves bandwidth and improves performance
+- ✅ Orphan files cleaned up after 24 hours
+- ✅ Fallback to re-upload if linking fails (graceful degradation)
+
+---
+
+## Previous Work (2026-01-18) - Boarding Pass File Persistence
 
 ### Boarding Pass File Persistence Fix - 1 Commit
 **Estimated Time**: 2.0-3.0 hours

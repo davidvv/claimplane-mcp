@@ -80,3 +80,30 @@ export const downloadDocument = async (documentId: string): Promise<Blob> => {
 export const deleteDocument = async (documentId: string): Promise<void> => {
   await apiClient.delete(`/documents/${documentId}`);
 };
+
+/**
+ * Link an orphan file (from OCR) to a claim
+ * POST /files/link-to-claim
+ */
+export const linkFileToClaim = async (fileId: string, claimId: string): Promise<Document> => {
+  const formData = createFormData({
+    file_id: fileId,
+    claim_id: claimId,
+  });
+
+  const response = await apiClient.post<Document>(
+    '/files/link-to-claim',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+
+  if (!response.data) {
+    throw new Error('Failed to link file to claim');
+  }
+
+  return response.data;
+};

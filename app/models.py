@@ -335,8 +335,8 @@ class ClaimFile(Base):
     ]
     
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False)
-    customer_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=True)  # Nullable for temp files from OCR
+    customer_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=True)  # Nullable for anonymous OCR
     
     # File metadata
     filename = Column(String(255), nullable=False)

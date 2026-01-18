@@ -760,6 +760,103 @@ class NextcloudService:
         """Compare files using only metadata (size and basic properties)."""
         return len(original) == len(downloaded)
 
+    async def move_file(self, source_path: str, dest_path: str) -> Dict[str, Any]:
+        """
+        Move/rename a file in Nextcloud via WebDAV MOVE method.
+        
+        Args:
+            source_path: Current path of the file (relative to user root)
+            dest_path: New path for the file (relative to user root)
+            
+        Returns:
+            Dictionary with move operation result
+            
+        Raises:
+            NextcloudError: If move operation fails
+        """
+        try:
+            # Construct full WebDAV URLs
+            source_full_path = f"{self.username}/{source_path.lstrip('/')}"
+            dest_full_path = f"{self.username}/{dest_path.lstrip('/')}"
+            
+            source_url = urljoin(self.webdav_url, source_full_path)
+            dest_url = urljoin(self.webdav_url, dest_full_path)
+            
+            # Ensure destination directory exists
+            dest_dir = "/".join(dest_path.split("/")[:-1])
+            if dest_dir:
+                await self._ensure_directory_exists(dest_dir)
+            
+            # Move file using WebDAV MOVE method
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.request(
+                    method="MOVE",
+                    url=source_url,
+                    auth=self.auth,
+                    headers={
+                        "Destination": dest_url,
+                        "Overwrite": "F"  # Don't overwrite if destination exists
+                    }
+                )
+                
+                if response.status_code == 404:
+                    classified_error = NextcloudFileNotFoundError(
+                        message=f"Source file not found: {source_path}",
+                        file_path=source_path,
+                        context="move_file",
+                        details={
+                            "source_path": source_path,
+                            "dest_path": dest_path,
+                            "source_url": source_url
+                        }
+                    )
+                    raise classified_error
+                elif response.status_code == 412:  # Precondition Failed - destination exists
+                    classified_error = NextcloudPermanentError(
+                        message=f"Destination file already exists: {dest_path}",
+                        status_code=412,
+                        context="move_file",
+                        details={
+                            "source_path": source_path,
+                            "dest_path": dest_path,
+                            "reason": "destination_exists"
+                        }
+                    )
+                    raise classified_error
+                elif response.status_code not in [201, 204]:  # 201 Created or 204 No Content
+                    classified_error = self._classify_http_error(
+                        response,
+                        context=f"move_file:{source_path}",
+                        operation="file_move"
+                    )
+                    classified_error.details.update({
+                        "source_path": source_path,
+                        "dest_path": dest_path,
+                        "source_url": source_url,
+                        "dest_url": dest_url
+                    })
+                    raise classified_error
+                
+                return {
+                    "success": True,
+                    "source_path": source_path,
+                    "dest_path": dest_path,
+                    "status_code": response.status_code
+                }
+                
+        except Exception as e:
+            # Use enhanced error classification for all exceptions
+            classified_error = self._classify_error(
+                e,
+                context=f"move_file:{source_path}",
+                operation="file_move"
+            )
+            classified_error.details.update({
+                "source_path": source_path,
+                "dest_path": dest_path
+            })
+            raise classified_error
+
     async def delete_file(self, remote_path: str) -> bool:
         """Delete file from Nextcloud via WebDAV."""
         try:

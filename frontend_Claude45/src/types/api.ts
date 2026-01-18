@@ -285,10 +285,11 @@ export interface FieldConfidenceScores {
 export interface OCRResponse {
   success: boolean;
   data: BoardingPassData;
-  fieldConfidence: FieldConfidenceScores; // Backend uses fieldConfidence
-  confidenceScore: number; // Backend uses confidenceScore (not overallConfidence)
+  fieldConfidence: FieldConfidenceScores;
+  confidenceScore: number;
   rawText?: string;
   errors?: string[];
   warnings?: string[];
   processingTimeMs?: number;
+  uploadedFileId?: string;  // ID of saved file for later linking to claim
 }

@@ -129,6 +129,75 @@ async def upload_file(
         )
 
 
+@router.post("/link-to-claim", response_model=FileResponseSchema, status_code=status.HTTP_200_OK)
+async def link_file_to_claim(
+    file_id: str = Form(...),
+    claim_id: str = Form(...),
+    current_user: Customer = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Link an orphan file (from OCR) to a claim.
+    
+    This endpoint is used to link files that were uploaded during OCR processing
+    (temp_uploads/) to a specific claim. The file will be moved from temp storage
+    to the claim's permanent storage location.
+    
+    Requires authentication. Customers can only link files to their own claims.
+    
+    Args:
+        file_id: ID of the orphan file to link
+        claim_id: ID of the claim to link the file to
+        current_user: Currently authenticated user
+        db: Database session
+        
+    Returns:
+        FileResponseSchema: Information about the linked file
+        
+    Raises:
+        HTTPException: If file not found, claim not found, or access denied
+    """
+    try:
+        # Verify claim ownership
+        claim_repo = ClaimRepository(db)
+        claim = await claim_repo.get_by_id(uuid.UUID(claim_id))
+        
+        if not claim:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Claim with id {claim_id} not found"
+            )
+        
+        # Customers can only link files to their own claims
+        if current_user.role not in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
+            if claim.customer_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied: You can only link files to your own claims"
+                )
+        
+        # Get file service and link the file
+        file_service = get_file_service(db)
+        
+        linked_file = await file_service.link_file_to_claim(
+            file_id=uuid.UUID(file_id),
+            claim_id=uuid.UUID(claim_id),
+            customer_id=current_user.id
+        )
+        
+        await db.commit()
+        
+        return FileResponseSchema.model_validate(linked_file)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to link file to claim: {str(e)}"
+        )
+
+
 @router.get("/{file_id}", response_model=FileResponseSchema)
 async def get_file_info(
     file_id: str,

@@ -2,17 +2,17 @@
 
 ## Project Overview
 - **Project Duration**: 2025-09-04 to 2026-01-18 (4+ months)
-- **Total Commits**: 183 (166 by David, 17 by Florian)
-- **Estimated Total Time**: ~551.75-638.75 hours
+- **Total Commits**: 184 (167 by David, 17 by Florian)
+- **Estimated Total Time**: ~555.75-644.75 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 166 (90.7%)
-- **Estimated Time**: 484.0-552.6 hours
-- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness & De-Cramping, File Persistence
-- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction, multi-passenger support, UX optimization, multi-language name handling, mobile UI fixes, mobile layout de-cramping, frontend state management, boarding pass file persistence
+- **Commits**: 167 (90.8%)
+- **Estimated Time**: 488.0-558.6 hours
+- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness & De-Cramping, File Persistence, Upload Optimization
+- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction, multi-passenger support, UX optimization, multi-language name handling, mobile UI fixes, mobile layout de-cramping, frontend state management, boarding pass file persistence, OCR file upload optimization
 
 ### Florian's Contributions (12-15% of total time)
 - **Commits**: 17 (9.6%)
@@ -20,7 +20,28 @@
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
-## Latest Update (2026-01-18) - Boarding Pass File Persistence
+## Latest Update (2026-01-18) - OCR File Upload Optimization
+
+### OCR File Upload Optimization - 1 Commit
+**Estimated Time**: 4.0-6.0 hours
+**Work Packages**: #169 (to be created in OpenProject)
+
+#### Summary:
+Eliminated duplicate file upload by implementing single-upload architecture:
+- **Problem**: Boarding pass was uploaded twice (once for OCR, again for storage)
+- **Solution**: File uploaded once during OCR, then linked to claim during draft creation
+- **Backend**: Orphan file support, file linking endpoint, 24h cleanup task
+- **Frontend**: Capture file ID from OCR response, link instead of re-upload
+
+#### Files Modified (14 total):
+Backend (9): models.py, ocr_schemas.py, file_service.py, nextcloud_service.py, claims.py, files.py, file_cleanup_tasks.py (NEW), tasks/__init__.py, celery_app.py
+Frontend (5): api.ts, ClaimFormPage.tsx, Step1_Flight.tsx, Step2_Eligibility.tsx, documents.ts
+
+**Time Added**: 4.0-6.0 hours
+
+---
+
+## Previous Update (2026-01-18) - Boarding Pass File Persistence
 
 ### Boarding Pass File Persistence Fix - 1 Commit
 **Estimated Time**: 2.0-3.0 hours

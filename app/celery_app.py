@@ -80,6 +80,11 @@ celery_app.conf.update(
             'task': 'send_final_reminder',
             'schedule': crontab(hour=10, minute=30),  # Daily at 10:30
         },
+        # Cleanup orphan files (24h+) every hour
+        'cleanup-orphan-files': {
+            'task': 'cleanup_orphan_files',
+            'schedule': crontab(minute=0),  # Every hour at :00
+        },
     },
 )
 

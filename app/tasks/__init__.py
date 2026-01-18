@@ -20,6 +20,8 @@ from app.tasks.draft_tasks import (
     send_final_reminder,
 )
 
+from app.tasks.file_cleanup_tasks import cleanup_orphan_files
+
 __all__ = [
     # Claim notification tasks
     "send_claim_submitted_email",
@@ -31,4 +33,6 @@ __all__ = [
     "send_draft_reminder_day8",
     "cleanup_expired_drafts",
     "send_final_reminder",
+    # File cleanup tasks (Celery Beat)
+    "cleanup_orphan_files",
 ]

@@ -36,6 +36,7 @@ interface Step1Props {
   setSavedOcrResult?: (result: OCRResponse | null) => void;
   savedBoardingPassFile?: File | null;
   setSavedBoardingPassFile?: (file: File | null) => void;
+  setOcrFileId?: (fileId: string | null) => void;
 }
 
 // OCR data to pass to next steps
@@ -54,7 +55,7 @@ export interface OCRData {
 
 type InputMode = 'boarding-pass' | 'flight-number' | 'route-search';
 
-export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSavedOcrResult, savedBoardingPassFile, setSavedBoardingPassFile }: Step1Props) {
+export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSavedOcrResult, savedBoardingPassFile, setSavedBoardingPassFile, setOcrFileId }: Step1Props) {
   const [inputMode, setInputMode] = useState<InputMode>('boarding-pass');
   const [isLoading, setIsLoading] = useState(false);
   const [flightResult, setFlightResult] = useState<FlightStatus | null>(initialData);
@@ -108,6 +109,11 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
       setOcrResult(result);
       if (setSavedOcrResult) {
         setSavedOcrResult(result);
+      }
+      // Capture file ID from OCR response for later linking to claim
+      if (result.uploadedFileId && setOcrFileId) {
+        setOcrFileId(result.uploadedFileId);
+        console.log('[OCR] File saved with ID:', result.uploadedFileId);
       }
       toast.success('Boarding pass data extracted successfully!');
     } catch (error: any) {

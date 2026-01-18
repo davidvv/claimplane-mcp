@@ -1053,9 +1053,35 @@ async def extract_boarding_pass_data(
             processing_time_ms=result.get("processing_time_ms")
         )
 
+        # Save file to temp storage for later linking to claim
+        uploaded_file_id = None
+        try:
+            from app.services.file_service import get_file_service
+            file_service = get_file_service(db)
+            
+            file_record = await file_service.upload_orphan_file(
+                file_content=file_content,
+                filename=file.filename,
+                mime_type=content_type,
+                document_type="boarding_pass",
+                customer_id=str(current_user.id) if current_user else None
+            )
+            await db.commit()
+            uploaded_file_id = str(file_record.id)
+            
+            logger.info(f"[ocr-boarding-pass] File saved to temp storage: {uploaded_file_id}")
+        except Exception as save_error:
+            logger.warning(f"[ocr-boarding-pass] Failed to save file to temp storage: {str(save_error)}")
+            # Continue - OCR data is still valuable even if file save fails
+            # User can manually upload boarding pass in Step 3 if needed
+
+        # Add file ID to response
+        response.uploaded_file_id = uploaded_file_id
+
         logger.info(
             f"[ocr-boarding-pass] Extraction complete: success={response.success}, "
-            f"confidence={response.confidence_score}, time={response.processing_time_ms}ms"
+            f"confidence={response.confidence_score}, time={response.processing_time_ms}ms, "
+            f"file_id={uploaded_file_id}"
         )
 
         return response

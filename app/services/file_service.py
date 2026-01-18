@@ -756,6 +756,168 @@ class FileService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to get access logs: {str(e)}"
             )
+    
+    async def upload_orphan_file(
+        self,
+        file_content: bytes,
+        filename: str,
+        mime_type: str,
+        document_type: str,
+        customer_id: Optional[str] = None
+    ) -> ClaimFile:
+        """
+        Upload a file without associating it to a claim (for OCR pre-upload).
+        
+        Files uploaded via this method are stored in temp_uploads/ and have a 24-hour expiry.
+        They should be linked to a claim via link_file_to_claim() within 24 hours,
+        otherwise they will be cleaned up by the orphan file cleanup task.
+        
+        Args:
+            file_content: Raw file bytes
+            filename: Original filename
+            mime_type: MIME type of the file
+            document_type: Type of document (boarding_pass, etc.)
+            customer_id: Optional customer ID if user is authenticated
+            
+        Returns:
+            ClaimFile record with claim_id=None
+        """
+        try:
+            # Validate file
+            validation_result = await file_validation_service.validate_file(
+                file_content=file_content,
+                filename=filename,
+                document_type=document_type,
+                declared_mime_type=mime_type,
+                file_size=len(file_content)
+            )
+            
+            if not validation_result["valid"]:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"File validation failed: {'; '.join(validation_result['errors'])}"
+                )
+            
+            # Generate secure filename and storage path for temp uploads
+            secure_filename = encryption_service.generate_secure_filename(filename)
+            storage_path = f"temp_uploads/{secure_filename}"
+            
+            # Encrypt file content
+            encrypted_content = encryption_service.encrypt_file_content(file_content)
+            
+            # Verify encryption/decryption integrity using original data
+            if not encryption_service.verify_integrity(encrypted_content, validation_result["file_hash"], original_data=file_content):
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="File encryption/decryption integrity check failed"
+                )
+            
+            # Upload to Nextcloud
+            upload_result = await nextcloud_service.upload_file(
+                file_content=encrypted_content,
+                remote_path=storage_path
+            )
+            
+            # Create file record WITHOUT claim_id
+            file_record = ClaimFile(
+                id=uuid.uuid4(),
+                claim_id=None,  # NULL - will be linked later
+                customer_id=uuid.UUID(customer_id) if customer_id else None,
+                filename=secure_filename,
+                original_filename=filename,
+                file_size=len(file_content),
+                mime_type=validation_result["mime_type"],
+                file_hash=validation_result["file_hash"],
+                document_type=document_type,
+                storage_provider="nextcloud",
+                storage_path=storage_path,
+                nextcloud_file_id=upload_result.get("file_id"),
+                access_level="private",
+                status="uploaded",
+                validation_status="pending",
+                uploaded_by=uuid.UUID(customer_id) if customer_id else None,
+                expires_at=datetime.utcnow() + timedelta(hours=24)  # 24 hour expiry for orphans
+            )
+            
+            self.db.add(file_record)
+            await self.db.flush()
+            
+            return file_record
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Orphan file upload failed: {str(e)}"
+            )
+    
+    async def link_file_to_claim(
+        self,
+        file_id: uuid.UUID,
+        claim_id: uuid.UUID,
+        customer_id: uuid.UUID
+    ) -> ClaimFile:
+        """
+        Link an orphan file (from OCR) to a claim.
+        
+        This method:
+        1. Retrieves the orphan file record
+        2. Moves the file from temp_uploads/ to flight_claims/{claim_id}/
+        3. Updates the file record with claim_id and customer_id
+        4. Extends expiry to 1 year
+        
+        Args:
+            file_id: ID of the orphan file to link
+            claim_id: ID of the claim to link to
+            customer_id: ID of the customer who owns the claim
+            
+        Returns:
+            Updated ClaimFile record
+            
+        Raises:
+            HTTPException: If file not found, already linked, or move operation fails
+        """
+        try:
+            # Get the orphan file
+            file_record = await self.file_repo.get_by_id(file_id)
+            
+            if not file_record:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="File not found"
+                )
+            
+            if file_record.claim_id is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="File already linked to a claim"
+                )
+            
+            # Move file from temp path to claim path
+            old_path = file_record.storage_path
+            new_path = f"flight_claims/{claim_id}/{file_record.filename}"
+            
+            await nextcloud_service.move_file(old_path, new_path)
+            
+            # Update file record
+            file_record.claim_id = claim_id
+            file_record.customer_id = customer_id
+            file_record.storage_path = new_path
+            file_record.expires_at = datetime.utcnow() + timedelta(days=365)  # Extend to 1 year
+            file_record.updated_at = datetime.utcnow()
+            
+            await self.db.flush()
+            
+            return file_record
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to link file to claim: {str(e)}"
+            )
 
 
 # Global file service factory

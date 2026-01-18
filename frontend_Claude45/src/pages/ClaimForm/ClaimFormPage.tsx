@@ -5,7 +5,7 @@
  * This enables progressive file uploads and abandoned cart recovery.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Stepper } from '@/components/Stepper';
 import { useClaimFormPersistence } from '@/hooks/useLocalStorageForm';
@@ -68,11 +68,14 @@ export function ClaimFormPage() {
 
   // Track if we're resuming from magic link (to skip localStorage prompt)
   const [isResumingFromMagicLink, setIsResumingFromMagicLink] = useState(false);
+  const processedResumeId = useRef<string | null>(null);
 
   // Check for resume parameter (coming from reminder email)
   useEffect(() => {
     const resumeClaimId = searchParams.get('resume');
-    if (resumeClaimId) {
+    if (resumeClaimId && resumeClaimId !== processedResumeId.current) {
+      processedResumeId.current = resumeClaimId;
+
       // Set flag to skip localStorage prompt
       setIsResumingFromMagicLink(true);
 

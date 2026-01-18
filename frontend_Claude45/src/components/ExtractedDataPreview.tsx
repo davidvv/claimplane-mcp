@@ -12,7 +12,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle2, AlertTriangle, Edit2, Plane, User, ArrowLeftRight } from 'lucide-react';
 
-import { Card, CardContent } from '@/components/ui/Card';
+// Removed Card import - component no longer wraps in Card to reduce nesting
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -210,26 +210,25 @@ export function ExtractedDataPreview({
   const hasLowConfidenceFields = confidenceScore < 0.6;
 
   return (
-    <Card>
-      <CardContent className="pt-6 space-y-6">
-        {/* Header Section - No inner border, just content */}
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold flex items-center gap-2 mb-1">
-                <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
-                Data Extracted Successfully
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Review the extracted information and make corrections if needed
-              </p>
-            </div>
-            <div className="text-left sm:text-right shrink-0">
-              <p className="text-sm text-muted-foreground mb-1">Overall Confidence</p>
-              <ConfidenceBadge confidence={confidenceScore} />
-            </div>
+    <div className="space-y-6">
+      {/* Header Section - Flat design without Card wrapper */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+              Data Extracted Successfully
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Review the extracted information and make corrections if needed
+            </p>
+          </div>
+          <div className="text-left sm:text-right shrink-0">
+            <p className="text-sm text-muted-foreground mb-1">Overall Confidence</p>
+            <ConfidenceBadge confidence={confidenceScore} />
           </div>
         </div>
+      </div>
 
         {/* Warning for low confidence */}
         {hasLowConfidenceFields && (
@@ -543,7 +542,6 @@ export function ExtractedDataPreview({
             Try Another Image
           </Button>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

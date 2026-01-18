@@ -144,7 +144,7 @@ export function BoardingPassUploadZone({
         >
           <input {...getInputProps()} />
 
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3 sm:gap-4">
             <div className="rounded-full bg-blue-100 dark:bg-blue-900 p-4">
               {isProcessing ? (
                 <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" />

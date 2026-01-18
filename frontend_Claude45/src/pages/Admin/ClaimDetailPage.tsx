@@ -229,7 +229,7 @@ export function ClaimDetailPage() {
           {/* Flight Information */}
           <Card className="p-4 md:p-6">
             <h2 className="text-lg font-semibold mb-4">Flight Information</h2>
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 md:gap-4">
               <div>
                 <Label className="text-muted-foreground text-xs">Flight</Label>
                 <p className="font-medium">{claim.flight_number}</p>
@@ -307,7 +307,7 @@ export function ClaimDetailPage() {
           {/* Customer Information */}
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-muted-foreground">Name</Label>
                 <p className="font-medium">

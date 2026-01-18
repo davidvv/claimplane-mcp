@@ -330,7 +330,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
               </div>
 
               {/* Manual Entry Options */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -551,7 +551,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
                 onClick={() => handleSelectFlight(flight)}
                 className="p-4 border rounded-lg cursor-pointer transition-all hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-gray-800 hover:shadow-md"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <p className="font-semibold text-lg">{flight.flightNumber}</p>

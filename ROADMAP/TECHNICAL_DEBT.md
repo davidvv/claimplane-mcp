@@ -47,6 +47,14 @@ These should be addressed alongside feature development:
 - [ ] Developer onboarding guide
 - [ ] Deployment guide
 
+### Frontend & UX
+- [x] ✅ Mobile responsiveness fixes (2026-01-18)
+  - Fixed ExtractedDataPreview component layout issues
+  - Fixed Stepper component on narrow screens
+  - Fixed claim card headers in My Claims page
+  - Added responsive gaps across all pages
+  - Fixed grid layouts to stack properly on mobile
+
 ---
 
 ## Notes for Future Claude Sessions

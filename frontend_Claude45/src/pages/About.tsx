@@ -37,7 +37,7 @@ export function About() {
         <section className="mb-20">
           <h2 className="text-3xl font-bold text-center mb-12">Why Choose ClaimPlane?</h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {/* Easy */}
             <div className="bg-card p-6 rounded-lg border shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
@@ -119,7 +119,7 @@ export function About() {
             Simple, transparent pricing. Just 20% commission (includes Taxes & VAT) on successful claims.
           </p>
 
-          <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto items-center">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 max-w-5xl mx-auto items-center">
             {/* Pie Chart */}
             <div className="flex flex-col items-center">
               <div className="relative w-64 h-64">

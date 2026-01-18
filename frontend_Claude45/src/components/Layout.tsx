@@ -193,7 +193,7 @@ export function Layout({ children }: LayoutProps) {
               <span>&copy; 2025 ClaimPlane. All rights reserved.</span>
             </div>
 
-            <div className="flex gap-6 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-4 sm:gap-6 text-sm text-muted-foreground">
               <Link to="/privacy" className="hover:text-foreground transition-colors">
                 Privacy Policy
               </Link>

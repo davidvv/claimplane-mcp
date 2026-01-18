@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
+import { cn } from '@/lib/utils';
 import type { BoardingPassData, FieldConfidenceScores, FlightSegment } from '@/types/api';
 
 interface ExtractedDataPreviewProps {
@@ -85,17 +86,17 @@ function ConfidenceBadge({ confidence, fallback }: { confidence?: number | null;
   const effectiveConfidence = confidence ?? fallback ?? 0;
   
   if (effectiveConfidence >= 0.8) {
-    return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800">
+    return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800 shrink-0">
       <CheckCircle2 className="w-3 h-3 mr-1" />
       High confidence
     </Badge>;
   } else if (effectiveConfidence >= 0.5) {
-    return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300 dark:border-yellow-800">
+    return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300 dark:border-yellow-800 shrink-0">
       <AlertTriangle className="w-3 h-3 mr-1" />
       Medium confidence
     </Badge>;
   } else {
-    return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800">
+    return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800 shrink-0">
       <AlertTriangle className="w-3 h-3 mr-1" />
       Low confidence
     </Badge>;
@@ -211,17 +212,17 @@ export function ExtractedDataPreview({
   return (
     <Card className="border-2 border-blue-500">
       <CardHeader>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
               Data Extracted Successfully
             </CardTitle>
             <CardDescription>
               Review the extracted information and make corrections if needed
             </CardDescription>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right shrink-0">
             <p className="text-sm text-muted-foreground mb-1">Overall Confidence</p>
             <ConfidenceBadge confidence={confidenceScore} />
           </div>
@@ -266,10 +267,10 @@ export function ExtractedDataPreview({
 
         {/* Multi-trip flight selector (round-trip / multi-city) */}
         {hasMultipleTrips && (
-          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-4">
+          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-4 h-auto">
             <div className="flex gap-2">
-              <ArrowLeftRight className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
+              <ArrowLeftRight className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
                 <p className="font-medium text-amber-900 dark:text-amber-200 mb-2">
                   Multiple trips detected - Select the flight to claim
                 </p>
@@ -288,25 +289,26 @@ export function ExtractedDataPreview({
                           : 'border-gray-200 dark:border-gray-700 hover:border-amber-300'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+                          <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
                             {trip.mainFlight?.flightNumber}
                           </span>
-                          <span className="mx-2 text-gray-500">|</span>
+                          <span className="text-gray-500 hidden xs:inline">|</span>
                           <span className="text-gray-700 dark:text-gray-300">
                             {trip.mainFlight?.departureAirport} → {trip.mainFlight?.arrivalAirport}
                           </span>
-                          <span className="mx-2 text-gray-500">|</span>
-                          <span className="text-gray-600 dark:text-gray-400">
+                          <span className="text-gray-500 hidden xs:inline">|</span>
+                          <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
                             {trip.mainFlight?.departureDate}
                           </span>
                         </div>
-                        <Badge variant="outline" className={
+                        <Badge variant="outline" className={cn(
+                          "shrink-0 w-fit mt-1 sm:mt-0",
                           trip.mainFlight?.legType?.includes('return')
                             ? 'bg-purple-50 text-purple-700 border-purple-200'
                             : 'bg-green-50 text-green-700 border-green-200'
-                        }>
+                        )}>
                           {trip.label}
                         </Badge>
                       </div>
@@ -347,17 +349,19 @@ export function ExtractedDataPreview({
             {/* Flight Number */}
             <div>
               <Label htmlFor="edit-flight-number">Flight Number</Label>
-              <div className="flex items-center gap-2">
-                {editMode ? (
-                  <Input
-                    id="edit-flight-number"
-                    value={editedData.flightNumber}
-                    onChange={(e) => setEditedData({ ...editedData, flightNumber: e.target.value.toUpperCase() })}
-                    className="flex-1"
-                  />
-                ) : (
-                  <p className="text-lg font-medium">{editedData.flightNumber || '-'}</p>
-                )}
+              <div className="flex flex-col xs:flex-row xs:items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  {editMode ? (
+                    <Input
+                      id="edit-flight-number"
+                      value={editedData.flightNumber}
+                      onChange={(e) => setEditedData({ ...editedData, flightNumber: e.target.value.toUpperCase() })}
+                      className="w-full"
+                    />
+                  ) : (
+                    <p className="text-lg font-medium truncate">{editedData.flightNumber || '-'}</p>
+                  )}
+                </div>
                 <ConfidenceBadge confidence={fieldConfidence.flightNumber} fallback={confidenceScore} />
               </div>
             </div>
@@ -365,18 +369,20 @@ export function ExtractedDataPreview({
             {/* Flight Date */}
             <div>
               <Label htmlFor="edit-flight-date">Flight Date</Label>
-              <div className="flex items-center gap-2">
-                {editMode ? (
-                  <Input
-                    id="edit-flight-date"
-                    type="date"
-                    value={editedData.flightDate}
-                    onChange={(e) => setEditedData({ ...editedData, flightDate: e.target.value })}
-                    className="flex-1"
-                  />
-                ) : (
-                  <p className="text-lg font-medium">{editedData.flightDate || '-'}</p>
-                )}
+              <div className="flex flex-col xs:flex-row xs:items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  {editMode ? (
+                    <Input
+                      id="edit-flight-date"
+                      type="date"
+                      value={editedData.flightDate}
+                      onChange={(e) => setEditedData({ ...editedData, flightDate: e.target.value })}
+                      className="w-full"
+                    />
+                  ) : (
+                    <p className="text-lg font-medium truncate">{editedData.flightDate || '-'}</p>
+                  )}
+                </div>
                 <ConfidenceBadge confidence={fieldConfidence.flightDate} fallback={confidenceScore} />
               </div>
             </div>
@@ -384,18 +390,20 @@ export function ExtractedDataPreview({
             {/* Departure Airport */}
             <div>
               <Label htmlFor="edit-departure">Departure Airport</Label>
-              <div className="flex items-center gap-2">
-                {editMode ? (
-                  <Input
-                    id="edit-departure"
-                    value={editedData.departureAirport}
-                    onChange={(e) => setEditedData({ ...editedData, departureAirport: e.target.value.toUpperCase() })}
-                    className="flex-1"
-                    maxLength={3}
-                  />
-                ) : (
-                  <p className="text-lg font-medium">{editedData.departureAirport || '-'}</p>
-                )}
+              <div className="flex flex-col xs:flex-row xs:items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  {editMode ? (
+                    <Input
+                      id="edit-departure"
+                      value={editedData.departureAirport}
+                      onChange={(e) => setEditedData({ ...editedData, departureAirport: e.target.value.toUpperCase() })}
+                      className="w-full"
+                      maxLength={3}
+                    />
+                  ) : (
+                    <p className="text-lg font-medium truncate">{editedData.departureAirport || '-'}</p>
+                  )}
+                </div>
                 <ConfidenceBadge confidence={fieldConfidence.departureAirport} fallback={confidenceScore} />
               </div>
             </div>
@@ -403,18 +411,20 @@ export function ExtractedDataPreview({
             {/* Arrival Airport */}
             <div>
               <Label htmlFor="edit-arrival">Arrival Airport</Label>
-              <div className="flex items-center gap-2">
-                {editMode ? (
-                  <Input
-                    id="edit-arrival"
-                    value={editedData.arrivalAirport}
-                    onChange={(e) => setEditedData({ ...editedData, arrivalAirport: e.target.value.toUpperCase() })}
-                    className="flex-1"
-                    maxLength={3}
-                  />
-                ) : (
-                  <p className="text-lg font-medium">{editedData.arrivalAirport || '-'}</p>
-                )}
+              <div className="flex flex-col xs:flex-row xs:items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  {editMode ? (
+                    <Input
+                      id="edit-arrival"
+                      value={editedData.arrivalAirport}
+                      onChange={(e) => setEditedData({ ...editedData, arrivalAirport: e.target.value.toUpperCase() })}
+                      className="w-full"
+                      maxLength={3}
+                    />
+                  ) : (
+                    <p className="text-lg font-medium truncate">{editedData.arrivalAirport || '-'}</p>
+                  )}
+                </div>
                 <ConfidenceBadge confidence={fieldConfidence.arrivalAirport} fallback={confidenceScore} />
               </div>
             </div>
@@ -432,17 +442,19 @@ export function ExtractedDataPreview({
             {/* First Name */}
             <div>
               <Label htmlFor="edit-first-name">First Name</Label>
-              <div className="flex items-center gap-2">
-                {editMode ? (
-                  <Input
-                    id="edit-first-name"
-                    value={editedData.firstName}
-                    onChange={(e) => setEditedData({ ...editedData, firstName: e.target.value })}
-                    className="flex-1"
-                  />
-                ) : (
-                  <p className="text-lg font-medium">{editedData.firstName || '-'}</p>
-                )}
+              <div className="flex flex-col xs:flex-row xs:items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  {editMode ? (
+                    <Input
+                      id="edit-first-name"
+                      value={editedData.firstName}
+                      onChange={(e) => setEditedData({ ...editedData, firstName: e.target.value })}
+                      className="w-full"
+                    />
+                  ) : (
+                    <p className="text-lg font-medium truncate">{editedData.firstName || '-'}</p>
+                  )}
+                </div>
                 <ConfidenceBadge confidence={fieldConfidence.passengerName} fallback={confidenceScore} />
               </div>
             </div>
@@ -450,17 +462,19 @@ export function ExtractedDataPreview({
             {/* Last Name */}
             <div>
               <Label htmlFor="edit-last-name">Last Name</Label>
-              <div className="flex items-center gap-2">
-                {editMode ? (
-                  <Input
-                    id="edit-last-name"
-                    value={editedData.lastName}
-                    onChange={(e) => setEditedData({ ...editedData, lastName: e.target.value })}
-                    className="flex-1"
-                  />
-                ) : (
-                  <p className="text-lg font-medium">{editedData.lastName || '-'}</p>
-                )}
+              <div className="flex flex-col xs:flex-row xs:items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  {editMode ? (
+                    <Input
+                      id="edit-last-name"
+                      value={editedData.lastName}
+                      onChange={(e) => setEditedData({ ...editedData, lastName: e.target.value })}
+                      className="w-full"
+                    />
+                  ) : (
+                    <p className="text-lg font-medium truncate">{editedData.lastName || '-'}</p>
+                  )}
+                </div>
               </div>
               {data.passengerName && (
                 <p className="text-xs text-muted-foreground mt-1">
@@ -472,17 +486,19 @@ export function ExtractedDataPreview({
             {/* Booking Reference */}
              <div>
                <Label htmlFor="edit-booking-ref">Booking Reference (PNR)</Label>
-               <div className="flex items-center gap-2">
-                 {editMode ? (
-                   <Input
-                     id="edit-booking-ref"
-                     value={editedData.bookingReference}
-                     onChange={(e) => setEditedData({ ...editedData, bookingReference: e.target.value.toUpperCase() })}
-                     className="flex-1"
-                   />
-                 ) : (
-                   <p className="text-lg font-medium">{editedData.bookingReference || '-'}</p>
-                 )}
+               <div className="flex flex-col xs:flex-row xs:items-center gap-2">
+                 <div className="flex-1 min-w-0">
+                   {editMode ? (
+                     <Input
+                       id="edit-booking-ref"
+                       value={editedData.bookingReference}
+                       onChange={(e) => setEditedData({ ...editedData, bookingReference: e.target.value.toUpperCase() })}
+                       className="w-full"
+                     />
+                   ) : (
+                     <p className="text-lg font-medium truncate">{editedData.bookingReference || '-'}</p>
+                   )}
+                 </div>
                  <ConfidenceBadge confidence={fieldConfidence.bookingReference} fallback={confidenceScore} />
                </div>
              </div>

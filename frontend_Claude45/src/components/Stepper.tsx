@@ -19,7 +19,7 @@ interface StepperProps {
 export function Stepper({ steps, currentStep }: StepperProps) {
   return (
     <nav aria-label="Progress" className="mb-8">
-      <ol className="flex items-center justify-between w-full">
+      <ol className="flex items-center justify-between w-full gap-1 xs:gap-2">
         {steps.map((step, index) => {
           const isCompleted = currentStep > step.number;
           const isCurrent = currentStep === step.number;
@@ -46,7 +46,7 @@ export function Stepper({ steps, currentStep }: StepperProps) {
               {/* Step circle */}
               <div
                 className={cn(
-                  'relative flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all z-10',
+                  'relative flex items-center justify-center w-8 h-8 xs:w-10 xs:h-10 rounded-full border-2 transition-all z-10',
                   isCompleted &&
                     'bg-primary border-primary text-white',
                   isCurrent &&

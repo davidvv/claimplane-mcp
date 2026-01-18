@@ -144,7 +144,7 @@ export function MyClaims() {
                 onClick={() => handleViewClaim(claim.id!)}
               >
                 <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <Plane className="w-5 h-5 text-primary flex-shrink-0" />
                       <CardTitle className="text-lg truncate">

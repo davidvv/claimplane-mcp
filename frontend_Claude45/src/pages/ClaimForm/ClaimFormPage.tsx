@@ -17,7 +17,7 @@ import { Step1_Flight, type OCRData } from './Step1_Flight';
 import { Step2_Eligibility } from './Step2_Eligibility';
 import { Step3_Passenger } from './Step3_Passenger';
 import { Step4_Review } from './Step4_Review';
-import type { FlightStatus, EligibilityResponse } from '@/types/api';
+import type { FlightStatus, EligibilityResponse, OCRResponse } from '@/types/api';
 
 const STEPS = [
   { number: 1, title: 'Flight', description: 'Flight details' },
@@ -59,6 +59,8 @@ export function ClaimFormPage() {
   
   // OCR data from boarding pass upload
   const [ocrData, setOcrData] = useState<OCRData | null>(null);
+  // Raw OCR response to persist extraction results (flight list) across steps
+  const [rawOcrResponse, setRawOcrResponse] = useState<OCRResponse | null>(null);
 
   // Draft claim state (Workflow v2)
   const [draftClaimId, setDraftClaimId] = useState<string | null>(null);
@@ -276,6 +278,7 @@ export function ClaimFormPage() {
       setDocuments([]);
       setDraftClaimId(null);
       setOcrData(null); // Clear OCR data
+      setRawOcrResponse(null); // Clear raw OCR response
     }
   };
 
@@ -310,6 +313,8 @@ export function ClaimFormPage() {
             <Step1_Flight
               initialData={flightData}
               onComplete={handleFlightComplete}
+              savedOcrResult={rawOcrResponse}
+              setSavedOcrResult={setRawOcrResponse}
             />
           )}
 

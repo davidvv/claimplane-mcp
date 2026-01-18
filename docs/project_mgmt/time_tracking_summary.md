@@ -2,25 +2,41 @@
 
 ## Project Overview
 - **Project Duration**: 2025-09-04 to 2026-01-18 (4+ months)
-- **Total Commits**: 176 (159 by David, 17 by Florian)
-- **Estimated Total Time**: ~542.25-626.75 hours
+- **Total Commits**: 177 (160 by David, 17 by Florian)
+- **Estimated Total Time**: ~543.25-628.25 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 159 (90.3%)
-- **Estimated Time**: 474.5-541.5 hours
-- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness
-- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction, multi-passenger support, UX optimization, multi-language name handling, mobile UI fixes
+- **Commits**: 160 (90.4%)
+- **Estimated Time**: 475.5-543.1 hours
+- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness & De-Cramping
+- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction, multi-passenger support, UX optimization, multi-language name handling, mobile UI fixes, mobile layout de-cramping
 
 ### Florian's Contributions (12-15% of total time)
-- **Commits**: 17 (9.7%)
+- **Commits**: 17 (9.6%)
 - **Estimated Time**: 68-85 hours
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
-## Latest Update (2026-01-18) - Mobile Responsiveness Fixes
+## Latest Update (2026-01-18) - OCR State Persistence
+- **OCR State Persistence & UI Fixes**: Fixed data loss issue and UI glitch in claim form
+  - Lifted OCR state to parent component to persist data across steps
+  - Added "Change Flight" button to allow re-selection without re-upload
+  - Prevents unnecessary API calls (cost saving) and improves UX
+- **Time Added**: 0.5 hours
+
+## Previous Update (2026-01-18) - Mobile UX De-Cramping (Phase 2)
+- **Mobile Layout De-Cramping**: Addressed "boxed-in" Matryoshka doll effect on mobile
+  - Removed inner blue border frame (CardHeader wrapper) - saves 40-60px horizontal space
+  - Implemented responsive button stacking (flex-col sm:flex-row) for mobile
+  - Relocated Edit Mode button to section header (inline positioning)
+  - Increased section spacing (pt-6) for visual breathing room
+  - Flattened container structure while maintaining desktop layout
+- **Time Added**: 1.0 hour
+
+## Previous Update (2026-01-18) - Mobile Responsiveness Fixes (Phase 1)
 - **Comprehensive Mobile UI Bug Fixes**: Fixed 22 responsiveness issues across 9 files
   - Analyzed user screenshots showing element overlapping, text clipping, and layout issues
   - Conducted codebase audit identifying 29 issues across 8 patterns

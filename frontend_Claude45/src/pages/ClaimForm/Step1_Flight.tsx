@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plane, Calendar, Search, MapPin, ArrowUpDown, FileUp } from 'lucide-react';
+import { Plane, Calendar, Search, MapPin, ArrowUpDown, FileUp, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { flightLookupSchema, type FlightLookupForm } from '@/schemas/validation';
@@ -32,6 +32,8 @@ import { formatDateTime, getStatusLabel } from '@/lib/utils';
 interface Step1Props {
   initialData: FlightStatus | null;
   onComplete: (data: FlightStatus, ocrData?: OCRData) => void;
+  savedOcrResult?: OCRResponse | null;
+  setSavedOcrResult?: (result: OCRResponse | null) => void;
 }
 
 // OCR data to pass to next steps
@@ -50,14 +52,14 @@ export interface OCRData {
 
 type InputMode = 'boarding-pass' | 'flight-number' | 'route-search';
 
-export function Step1_Flight({ initialData, onComplete }: Step1Props) {
+export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSavedOcrResult }: Step1Props) {
   const [inputMode, setInputMode] = useState<InputMode>('boarding-pass');
   const [isLoading, setIsLoading] = useState(false);
   const [flightResult, setFlightResult] = useState<FlightStatus | null>(initialData);
 
   // OCR state
   const [boardingPassFile, setBoardingPassFile] = useState<File | null>(null);
-  const [ocrResult, setOcrResult] = useState<OCRResponse | null>(null);
+  const [ocrResult, setOcrResult] = useState<OCRResponse | null>(savedOcrResult || null);
   // const [ocrError, setOcrError] = useState<string | null>(null); // Unused for now
 
   // Route search state
@@ -98,6 +100,9 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
       }
 
       setOcrResult(result);
+      if (setSavedOcrResult) {
+        setSavedOcrResult(result);
+      }
       toast.success('Boarding pass data extracted successfully!');
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.message || 'Failed to extract data from boarding pass';
@@ -140,7 +145,8 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
       };
 
       setFlightResult(result);
-      setOcrResult(null); // Clear OCR preview
+      // Don't clear OCR result to allow going back/changing selection
+      // setOcrResult(null); 
       toast.success('Flight verified!');
       
       // Complete step with OCR data
@@ -156,7 +162,18 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
   const handleOCRRetry = () => {
     setBoardingPassFile(null);
     setOcrResult(null);
+    if (setSavedOcrResult) {
+      setSavedOcrResult(null);
+    }
     // setOcrError(null);
+  };
+
+  const handleChangeFlight = () => {
+    setFlightResult(null);
+    // If we have OCR data, ensure it's visible
+    if (savedOcrResult) {
+      setOcrResult(savedOcrResult);
+    }
   };
 
   // ==================== Flight Number Handlers ====================
@@ -309,7 +326,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
 
         <CardContent>
           {/* ==================== Boarding Pass Mode (Primary) ==================== */}
-          {inputMode === 'boarding-pass' && !ocrResult && (
+          {inputMode === 'boarding-pass' && !ocrResult && !flightResult && (
             <div className="space-y-6">
               <BoardingPassUploadZone
                 onFileSelect={handleFileSelect}
@@ -356,7 +373,7 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
           )}
 
           {/* ==================== OCR Result Preview ==================== */}
-          {inputMode === 'boarding-pass' && ocrResult && (
+          {inputMode === 'boarding-pass' && ocrResult && !flightResult && (
             <ExtractedDataPreview
               data={ocrResult.data}
               fieldConfidence={ocrResult.fieldConfidence}
@@ -609,8 +626,22 @@ export function Step1_Flight({ initialData, onComplete }: Step1Props) {
       {flightResult && (
         <Card className="fade-in">
           <CardHeader>
-            <CardTitle>Flight Found</CardTitle>
-            <CardDescription>Review the flight details below</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Flight Found</CardTitle>
+                <CardDescription>Review the flight details below</CardDescription>
+              </div>
+              {/* Change Flight Button */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleChangeFlight}
+                className="gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Change Flight
+              </Button>
+            </div>
           </CardHeader>
 
           <CardContent className="space-y-4">

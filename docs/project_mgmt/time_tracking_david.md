@@ -2,14 +2,77 @@
 # ClaimPlane Project - Complete Commit History Analysis
 
 ## Summary Statistics
-- **Total Commits**: 159
+- **Total Commits**: 160
 - **Date Range**: 2025-09-04 to 2026-01-18
-- **Estimated Total Time**: ~472.6-537.6 hours
+- **Estimated Total Time**: ~473.6-539.1 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
-## Latest Work (2026-01-18) - Mobile Responsiveness Fixes
+## Latest Work (2026-01-18) - OCR State Persistence
 
-### Comprehensive Mobile UI Bug Fixes
+### OCR State Persistence & UI Fixes
+**Estimated Time**: 0.5 hours
+
+#### Key Tasks:
+1. **OCR Data Persistence** (0.25 hour)
+   - Lifted OCR state to parent component (`ClaimFormPage`)
+   - Passed persisted state to `Step1_Flight`
+   - Prevents data loss when switching between flight selection and extraction results
+   - Reduces unnecessary API calls (cost saving)
+   - Files: `ClaimFormPage.tsx`, `Step1_Flight.tsx`
+
+2. **UX Improvements** (0.25 hour)
+   - Added "Change Flight" button to flight result card
+   - Improved navigation flow between selection and extraction views
+   - Files: `Step1_Flight.tsx`
+
+### Updated Summary Statistics
+- **Total Commits**: 161 (added 1 new commit)
+- **Estimated Total Time**: ~474.1-539.6 hours (added 0.5 hour)
+
+## Previous Work (2026-01-18) - Mobile UX De-Cramping
+
+### Mobile Layout De-Cramping (Phase 2)
+**Estimated Time**: 1.0 hour
+
+#### Key Tasks:
+1. **Removed Nested Container Frames** (0.25 hour)
+   - Removed inner blue border frame (CardHeader wrapper) from ExtractedDataPreview
+   - Changed from `<Card><CardHeader><CardTitle>` to `<Card><CardContent><h2>`
+   - Saves ~40-60px horizontal space by eliminating double padding/borders
+   - Files: frontend_Claude45/src/components/ExtractedDataPreview.tsx
+
+2. **Responsive Button Stacking** (0.25 hour)
+   - Changed action buttons from `flex gap-3` to `flex flex-col sm:flex-row gap-3`
+   - Primary "Use This Data" button full-width on mobile, appears first
+   - Secondary "Try Another Image" button full-width on mobile, appears below
+   - Side-by-side layout preserved on tablet/desktop (sm breakpoint)
+
+3. **Edit Button Repositioning** (0.25 hour)
+   - Moved Edit Mode toggle from standalone section to Flight Information header
+   - Changed from `variant="outline"` to `variant="ghost"` for lighter appearance
+   - Pattern: `<div className="flex items-center justify-between"><h3>Section</h3><Button>Edit</Button></div>`
+   - Saves vertical space and improves visual hierarchy
+
+4. **Increased Section Spacing** (0.25 hour)
+   - Changed section spacing from `space-y-4` to `space-y-6` between major sections
+   - Added `pt-6` (padding-top) to Flight Information and Passenger Information
+   - Provides visual breathing room without needing border separators
+   - Clearer content grouping on mobile devices
+
+#### Impact:
+- ✅ Reduced "Matryoshka doll effect" by flattening container structure
+- ✅ Improved mobile button UX with vertical stacking
+- ✅ More intuitive Edit button placement
+- ✅ Better visual hierarchy with generous spacing
+- ✅ Maintains desktop layout while enhancing mobile experience
+
+### Updated Summary Statistics
+- **Total Commits**: 160 (added 1 new commit c13d7f8)
+- **Estimated Total Time**: ~473.6-539.1 hours (added 1.0 hour)
+
+## Previous Work (2026-01-18) - Mobile Responsiveness Fixes
+
+### Comprehensive Mobile UI Bug Fixes (Phase 1)
 **Estimated Time**: 2.0-2.5 hours
 
 #### Key Tasks:

@@ -34,6 +34,8 @@ interface Step1Props {
   onComplete: (data: FlightStatus, ocrData?: OCRData) => void;
   savedOcrResult?: OCRResponse | null;
   setSavedOcrResult?: (result: OCRResponse | null) => void;
+  savedBoardingPassFile?: File | null;
+  setSavedBoardingPassFile?: (file: File | null) => void;
 }
 
 // OCR data to pass to next steps
@@ -52,13 +54,13 @@ export interface OCRData {
 
 type InputMode = 'boarding-pass' | 'flight-number' | 'route-search';
 
-export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSavedOcrResult }: Step1Props) {
+export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSavedOcrResult, savedBoardingPassFile, setSavedBoardingPassFile }: Step1Props) {
   const [inputMode, setInputMode] = useState<InputMode>('boarding-pass');
   const [isLoading, setIsLoading] = useState(false);
   const [flightResult, setFlightResult] = useState<FlightStatus | null>(initialData);
 
   // OCR state
-  const [boardingPassFile, setBoardingPassFile] = useState<File | null>(null);
+  const [boardingPassFile, setBoardingPassFile] = useState<File | null>(savedBoardingPassFile || null);
   const [ocrResult, setOcrResult] = useState<OCRResponse | null>(savedOcrResult || null);
   // const [ocrError, setOcrError] = useState<string | null>(null); // Unused for now
 
@@ -88,6 +90,10 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
 
   const handleFileSelect = async (file: File) => {
     setBoardingPassFile(file);
+    // Also save to parent state for persistence across steps
+    if (setSavedBoardingPassFile) {
+      setSavedBoardingPassFile(file);
+    }
     // setOcrError(null);
     setIsLoading(true);
 
@@ -164,6 +170,9 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
     setOcrResult(null);
     if (setSavedOcrResult) {
       setSavedOcrResult(null);
+    }
+    if (setSavedBoardingPassFile) {
+      setSavedBoardingPassFile(null);
     }
     // setOcrError(null);
   };

@@ -14,13 +14,15 @@ import { Button } from './ui/Button';
 import { uploadDocument } from '@/services/documents';
 import type { DocumentType } from '@/types/api';
 
-interface UploadedFile {
-  file: File;
+export interface UploadedFile {
+  file?: File | null;  // Optional for already-uploaded documents (restored from server)
+  name?: string;  // Fallback name when file object is not available
   documentType: DocumentType;
   status: 'pending' | 'uploading' | 'success' | 'error';
   progress?: number;
   error?: string;
   uploadedId?: string;  // Server-side file ID after successful upload
+  alreadyUploaded?: boolean;  // True for documents restored from server (no need to re-upload)
 }
 
 interface FileUploadZoneProps {
@@ -55,6 +57,9 @@ export function FileUploadZone({
     // currentFiles argument removed as we rely on state setter
   ) => {
     if (!claimId) return;
+    
+    // Skip files that are already uploaded to server (e.g., restored from magic link)
+    if (fileEntry.alreadyUploaded || !fileEntry.file) return;
 
     // Update status to uploading
     setUploadedFiles((prevFiles) => {
@@ -71,7 +76,7 @@ export function FileUploadZone({
     try {
       const result = await uploadDocument(
         claimId,
-        fileEntry.file,
+        fileEntry.file!,  // We already checked that file exists above
         fileEntry.documentType,
         (progressEvent: any) => {
           // Calculate upload percentage
@@ -262,10 +267,10 @@ export function FileUploadZone({
 
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {uploadedFile.file.name}
+                    {uploadedFile.file?.name || uploadedFile.name || 'Uploaded document'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {formatFileSize(uploadedFile.file.size)}
+                    {uploadedFile.file ? formatFileSize(uploadedFile.file.size) : (uploadedFile.alreadyUploaded ? 'Already uploaded' : '')}
                   </p>
                 </div>
 

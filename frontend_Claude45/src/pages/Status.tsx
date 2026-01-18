@@ -21,7 +21,7 @@ import { claimStatusLookupSchema, type ClaimStatusLookupForm } from '@/schemas/v
 import { getClaim } from '@/services/claims';
 import { listClaimDocuments, downloadDocument, uploadDocument } from '@/services/documents';
 import { isAuthenticated } from '@/services/auth';
-import type { Claim, Document, DocumentType } from '@/types/api';
+import type { Claim, Document } from '@/types/api';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { FileUploadZone } from '@/components/FileUploadZone';
+import { FileUploadZone, type UploadedFile } from '@/components/FileUploadZone';
 import {
   formatCurrency,
   formatDateTime,
@@ -48,7 +48,7 @@ export function Status() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [hasAutoLoaded, setHasAutoLoaded] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [pendingUploads, setPendingUploads] = useState<Array<{file: File; documentType: DocumentType; status: string}>>([]);
+  const [pendingUploads, setPendingUploads] = useState<UploadedFile[]>([]);
 
   const {
     register,
@@ -226,7 +226,7 @@ export function Status() {
     }
   };
 
-  const handleFilesChange = (files: Array<{file: File; documentType: DocumentType; status: string}>) => {
+  const handleFilesChange = (files: UploadedFile[]) => {
     setPendingUploads(files);
   };
 
@@ -238,6 +238,12 @@ export function Status() {
     let failCount = 0;
 
     for (const pending of pendingUploads) {
+      // Skip already-uploaded files or files without a File object
+      if (pending.alreadyUploaded || !pending.file) {
+        console.log('[UPLOAD] Skipping already-uploaded or missing file:', pending.name);
+        continue;
+      }
+      
       try {
         console.log('[UPLOAD] Uploading document:', pending.file.name);
         const uploadedDoc = await uploadDocument(claim.id, pending.file, pending.documentType);

@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { eligibilityFormSchema, type EligibilityForm } from '@/schemas/validation';
 import { checkEligibility } from '@/services/eligibility';
 import { deleteClaim } from '@/services/claims';
+import { uploadDocument } from '@/services/documents';
 import apiClient from '@/services/api';
 import type { FlightStatus, EligibilityResponse } from '@/types/api';
 
@@ -37,6 +38,7 @@ interface Step2Props {
   flightData: FlightStatus;
   initialData: EligibilityResponse | null;
   draftClaimId: string | null;
+  boardingPassFile?: File | null;
   onComplete: (data: EligibilityResponse, email: string, draftData?: DraftClaimData) => void;
   onBack: () => void;
   onDraftCancelled: () => void;
@@ -46,6 +48,7 @@ export function Step2_Eligibility({
   flightData,
   initialData,
   draftClaimId,
+  boardingPassFile,
   onComplete,
   onBack,
   onDraftCancelled,
@@ -154,6 +157,21 @@ export function Step2_Eligibility({
       };
 
       console.log('Draft claim created:', draftData.claimId);
+
+      // Upload boarding pass file immediately if available
+      if (boardingPassFile) {
+        try {
+          console.log('Uploading boarding pass to draft claim...');
+          await uploadDocument(draftData.claimId, boardingPassFile, 'boarding_pass');
+          console.log('Boarding pass uploaded successfully');
+        } catch (uploadError) {
+          // Non-blocking: log error but allow user to continue
+          // They can re-upload in Step 3 if needed
+          console.error('Failed to upload boarding pass:', uploadError);
+          toast.error('Note: Boarding pass upload failed. You can re-upload in the next step.');
+        }
+      }
+
       onComplete(eligibilityResult, submittedEmail, draftData);
 
     } catch (error: any) {

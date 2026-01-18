@@ -12,6 +12,7 @@ import { useClaimFormPersistence } from '@/hooks/useLocalStorageForm';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { isAuthenticated, getCurrentUser, type UserProfile, setAuthToken } from '@/services/auth';
 import { getClaim } from '@/services/claims';
+import { listClaimDocuments } from '@/services/documents';
 import { toast } from 'sonner';
 import { Step1_Flight, type OCRData } from './Step1_Flight';
 import { Step2_Eligibility } from './Step2_Eligibility';
@@ -61,6 +62,8 @@ export function ClaimFormPage() {
   const [ocrData, setOcrData] = useState<OCRData | null>(null);
   // Raw OCR response to persist extraction results (flight list) across steps
   const [rawOcrResponse, setRawOcrResponse] = useState<OCRResponse | null>(null);
+  // Boarding pass file to persist across steps (for upload in Step 2)
+  const [savedBoardingPassFile, setSavedBoardingPassFile] = useState<File | null>(null);
 
   // Draft claim state (Workflow v2)
   const [draftClaimId, setDraftClaimId] = useState<string | null>(null);
@@ -122,6 +125,30 @@ export function ClaimFormPage() {
           };
           setEligibilityData(restoredEligibility);
           updateEligibilityData(restoredEligibility);
+
+          // Fetch and restore any existing documents (e.g., boarding pass uploaded earlier)
+          try {
+            const existingDocs = await listClaimDocuments(resumeClaimId);
+            if (existingDocs && existingDocs.length > 0) {
+              // Transform backend documents to the format expected by Step3
+              const restoredDocs = existingDocs.map(doc => ({
+                id: doc.id,
+                file: null, // Original file not available, but document is already uploaded
+                name: doc.originalFilename || doc.filename || 'Uploaded document',
+                type: doc.documentType,
+                status: 'success' as const,
+                progress: 100,
+                documentId: doc.id,
+                alreadyUploaded: true, // Flag to indicate this is already on server
+              }));
+              setDocuments(restoredDocs);
+              updateDocuments(restoredDocs);
+              console.log(`Restored ${existingDocs.length} document(s) from draft claim`);
+            }
+          } catch (docError) {
+            console.error('Failed to fetch existing documents:', docError);
+            // Non-blocking - user can still proceed
+          }
 
           // Restore Step
           setCurrentStep(3);
@@ -282,6 +309,7 @@ export function ClaimFormPage() {
       setDraftClaimId(null);
       setOcrData(null); // Clear OCR data
       setRawOcrResponse(null); // Clear raw OCR response
+      setSavedBoardingPassFile(null); // Clear boarding pass file
     }
   };
 
@@ -318,6 +346,8 @@ export function ClaimFormPage() {
               onComplete={handleFlightComplete}
               savedOcrResult={rawOcrResponse}
               setSavedOcrResult={setRawOcrResponse}
+              savedBoardingPassFile={savedBoardingPassFile}
+              setSavedBoardingPassFile={setSavedBoardingPassFile}
             />
           )}
 
@@ -326,6 +356,7 @@ export function ClaimFormPage() {
               flightData={flightData}
               initialData={eligibilityData}
               draftClaimId={draftClaimId}
+              boardingPassFile={savedBoardingPassFile}
               onComplete={handleEligibilityComplete}
               onBack={handleBack}
               onDraftCancelled={handleDraftCancelled}

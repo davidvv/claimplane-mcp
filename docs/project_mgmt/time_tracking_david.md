@@ -2,111 +2,200 @@
 # ClaimPlane Project - Complete Commit History Analysis
 
 ## Summary Statistics
-- **Total Commits**: 160
+- **Total Commits**: 166
 - **Date Range**: 2025-09-04 to 2026-01-18
-- **Estimated Total Time**: ~473.6-539.1 hours
+- **Estimated Total Time**: ~484.0-552.6 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
-## Latest Work (2026-01-18) - OCR State Persistence
+## Latest Work (2026-01-18) - Boarding Pass File Persistence
 
-### OCR State Persistence & UI Fixes
+### Boarding Pass File Persistence Fix - 1 Commit
+**Estimated Time**: 2.0-3.0 hours
+**Work Packages Needed**: #168 (to be created)
+
+#### Key Task:
+
+##### 6. Persist Boarding Pass File Across Steps & Draft Resume (commit: TBD)
+**Estimated Time**: 2.0-3.0 hours
+
+**Issue**: Boarding pass file was lost in two scenarios:
+1. User uploads boarding pass, selects wrong flight, goes back to select correct flight -> file lost
+2. User uploads boarding pass, creates draft claim, leaves -> when resuming via magic link email, file not restored
+
+**Solution - Phase 1 (Step Navigation Persistence)**:
+- Added `savedBoardingPassFile` state to `ClaimFormPage.tsx`
+- Passed as props to `Step1_Flight.tsx`
+- `Step1_Flight` initializes `boardingPassFile` from parent state
+- File persists when user navigates back/forth between steps
+
+**Solution - Phase 2 (Auto-Upload & Restore)**:
+- **Step2_Eligibility.tsx**: After draft claim created, immediately uploads boarding pass via `uploadDocument()`
+- **ClaimFormPage.tsx**: In `loadDraft()`, fetches existing documents and transforms them to UI format
+- **FileUploadZone.tsx**: Made `file` property optional in `UploadedFile` interface, added `alreadyUploaded` flag
+- **Status.tsx**: Updated to use exported `UploadedFile` type, added skip logic for already-uploaded files
+
+**Files Modified**:
+- `frontend_Claude45/src/pages/ClaimForm/ClaimFormPage.tsx` - Added file state, pass to children, restore on resume
+- `frontend_Claude45/src/pages/ClaimForm/Step1_Flight.tsx` - Accept and use saved file props
+- `frontend_Claude45/src/pages/ClaimForm/Step2_Eligibility.tsx` - Upload file after draft creation
+- `frontend_Claude45/src/components/FileUploadZone.tsx` - Handle already-uploaded files, export interface
+- `frontend_Claude45/src/pages/Status.tsx` - Fix TypeScript error with UploadedFile type
+
+**Impact**:
+- ✅ Boarding pass persists across step navigation
+- ✅ Boarding pass auto-uploaded when draft claim created
+- ✅ Boarding pass restored when resuming via magic link
+- ✅ Improved user experience (no re-upload needed)
+- ✅ TypeScript type safety maintained
+
+---
+
+## Previous Work (2026-01-18) - Frontend UX Sprint
+
+### Frontend Mobile UX Sprint - 5 Commits
+**Estimated Time**: 6.5-7.5 hours
+**Work Packages Needed**: #163, #164, #165, #166, #167 (to be created)
+
+#### Key Tasks:
+
+##### 1. Prevent Double Execution of Resume Claim Logic (commit: ed9b17a)
+**Estimated Time**: 1.5 hours
+
+**Issue**: Resume claim logic was executing multiple times, causing redundant API calls and potential data issues.
+
+**Solution**:
+- Added useCallback hooks to memoize the resume effect
+- Implemented a ref-based flag to track if resume has already been executed
+- Added early return if claimId or accessToken is missing
+- Prevents race conditions and duplicate API requests
+
+**Files Modified**:
+- `frontend_Claude45/src/pages/ClaimForm/ClaimFormPage.tsx`
+
+**Impact**:
+- ✅ Eliminates redundant API calls (cost saving)
+- ✅ Prevents potential data conflicts
+- ✅ Smoother user experience during claim resumption
+
+---
+
+##### 2. OCR State Persistence & Flight Selection UI (commit: 8b8392e)
+**Estimated Time**: 2.0 hours
+
+**Issue**: OCR data was lost when navigating between steps, and users couldn't change flight selection after OCR.
+
+**Solution**:
+- Lifted OCR state to parent component (`ClaimFormPage`) using useState
+- Passed persisted state down to `Step1_Flight` as props
+- Added "Change Flight" button to allow re-selection without re-uploading
+- Implemented proper state flow: OCR -> Parent State -> Child Components
+
+**Files Modified**:
+- `frontend_Claude45/src/pages/ClaimForm/ClaimFormPage.tsx`
+- `frontend_Claude45/src/pages/ClaimForm/Step1_Flight.tsx`
+
+**Impact**:
+- ✅ OCR data persists across step navigation
+- ✅ Users can change flight selection without re-upload
+- ✅ Reduces unnecessary API calls
+
+---
+
+##### 3. Remove Card Wrapper from ExtractedDataPreview (commit: 26ee4ce)
 **Estimated Time**: 0.5 hours
 
-#### Key Tasks:
-1. **OCR Data Persistence** (0.25 hour)
-   - Lifted OCR state to parent component (`ClaimFormPage`)
-   - Passed persisted state to `Step1_Flight`
-   - Prevents data loss when switching between flight selection and extraction results
-   - Reduces unnecessary API calls (cost saving)
-   - Files: `ClaimFormPage.tsx`, `Step1_Flight.tsx`
+**Issue**: Nested Card wrappers created visual clutter and excessive padding.
 
-2. **UX Improvements** (0.25 hour)
-   - Added "Change Flight" button to flight result card
-   - Improved navigation flow between selection and extraction views
-   - Files: `Step1_Flight.tsx`
+**Solution**:
+- Removed `<Card><CardHeader><CardTitle>` wrapper pattern
+- Changed to `<Card><CardContent><h2>` structure
+- Saves ~40-60px horizontal space by eliminating double padding/borders
 
-### Updated Summary Statistics
-- **Total Commits**: 161 (added 1 new commit)
-- **Estimated Total Time**: ~474.1-539.6 hours (added 0.5 hour)
+**Files Modified**:
+- `frontend_Claude45/src/components/ExtractedDataPreview.tsx`
 
-## Previous Work (2026-01-18) - Mobile UX De-Cramping
+**Impact**:
+- ✅ Reduced visual clutter
+- ✅ More horizontal space for content
+- ✅ Cleaner UI hierarchy
 
-### Mobile Layout De-Cramping (Phase 2)
-**Estimated Time**: 1.0 hour
+---
 
-#### Key Tasks:
-1. **Removed Nested Container Frames** (0.25 hour)
-   - Removed inner blue border frame (CardHeader wrapper) from ExtractedDataPreview
-   - Changed from `<Card><CardHeader><CardTitle>` to `<Card><CardContent><h2>`
-   - Saves ~40-60px horizontal space by eliminating double padding/borders
-   - Files: frontend_Claude45/src/components/ExtractedDataPreview.tsx
+##### 4. Mobile UX De-Cramping - Phase 2 (commit: c13d7f8)
+**Estimated Time**: 1.5 hours
 
-2. **Responsive Button Stacking** (0.25 hour)
-   - Changed action buttons from `flex gap-3` to `flex flex-col sm:flex-row gap-3`
-   - Primary "Use This Data" button full-width on mobile, appears first
-   - Secondary "Try Another Image" button full-width on mobile, appears below
-   - Side-by-side layout preserved on tablet/desktop (sm breakpoint)
+**Issue**: Mobile layout had "boxed-in" Matryoshka doll effect from nested containers.
 
-3. **Edit Button Repositioning** (0.25 hour)
-   - Moved Edit Mode toggle from standalone section to Flight Information header
-   - Changed from `variant="outline"` to `variant="ghost"` for lighter appearance
-   - Pattern: `<div className="flex items-center justify-between"><h3>Section</h3><Button>Edit</Button></div>`
-   - Saves vertical space and improves visual hierarchy
+**Solution**:
+- **Removed Nested Container Frames**: Eliminated inner blue border frame
+- **Responsive Button Stacking**: Changed to `flex flex-col sm:flex-row` for mobile-first buttons
+- **Edit Button Repositioning**: Moved Edit Mode toggle to section header
+- **Increased Section Spacing**: Changed `space-y-4` to `space-y-6` for breathing room
 
-4. **Increased Section Spacing** (0.25 hour)
-   - Changed section spacing from `space-y-4` to `space-y-6` between major sections
-   - Added `pt-6` (padding-top) to Flight Information and Passenger Information
-   - Provides visual breathing room without needing border separators
-   - Clearer content grouping on mobile devices
+**Files Modified**:
+- `frontend_Claude45/src/components/ExtractedDataPreview.tsx`
+- `frontend_Claude45/src/pages/ClaimForm/Step1_Flight.tsx`
 
-#### Impact:
-- ✅ Reduced "Matryoshka doll effect" by flattening container structure
-- ✅ Improved mobile button UX with vertical stacking
-- ✅ More intuitive Edit button placement
-- ✅ Better visual hierarchy with generous spacing
-- ✅ Maintains desktop layout while enhancing mobile experience
+**Impact**:
+- ✅ Flattened container structure
+- ✅ Better mobile button UX
+- ✅ Improved visual hierarchy
+- ✅ Maintains desktop layout
 
-### Updated Summary Statistics
-- **Total Commits**: 160 (added 1 new commit c13d7f8)
-- **Estimated Total Time**: ~473.6-539.1 hours (added 1.0 hour)
+---
 
-## Previous Work (2026-01-18) - Mobile Responsiveness Fixes
-
-### Comprehensive Mobile UI Bug Fixes (Phase 1)
+##### 5. Comprehensive Mobile Responsiveness Fixes (commit: bffadbc)
 **Estimated Time**: 2.0-2.5 hours
 
-#### Key Tasks:
-1. **Investigation & Planning** (0.5 hour)
-   - Analyzed 3 screenshots showing mobile UI issues
-   - Conducted comprehensive audit of frontend codebase
-   - Identified 29 responsiveness issues across 8 patterns
-   - Created detailed fix plan with 22 specific changes
+**Issue**: Multiple mobile UI issues across the application (overlapping elements, text clipping, layout breaks).
 
-2. **ExtractedDataPreview.tsx - High Priority** (0.75 hour)
-   - Added `cn` utility import for dynamic class handling
-   - Fixed card header layout (flex-wrap, responsive stacking)
-   - Fixed trip selection buttons (flex-wrap, badge positioning)
-   - Fixed all 7 field input rows (responsive stacking on mobile)
-   - Added `shrink-0` to all confidence badges
-   - Fixed "Multiple trips" alert box truncation
-   - Total: 10 changes addressing screenshot issues #1-4
+**Solution**:
+- **Phase 1 Investigation**: Analyzed user screenshots, identified 29 issues across 8 patterns
+- **ExtractedDataPreview.tsx (10 changes)**:
+  - Card header layout with flex-wrap
+  - Trip selection buttons with flex-wrap
+  - All 7 field input rows with responsive stacking
+  - Added `shrink-0` to confidence badges
+  - Fixed alert box truncation
+- **Medium Priority (6 files)**: Stepper.tsx, MyClaims.tsx, Step1_Flight.tsx, ClaimDetailPage.tsx, Layout.tsx
+- **Low Priority Polish (3 files)**: About.tsx, Home.tsx, BoardingPassUploadZone.tsx
 
-3. **Medium Priority Components** (0.5 hour)
-   - Stepper.tsx: Responsive gaps and circle sizes (2 changes)
-   - MyClaims.tsx: Added flex-wrap to claim card headers (1 change)
-   - Step1_Flight.tsx: Responsive grid and gaps (2 changes)
-   - ClaimDetailPage.tsx: Responsive grids for flight/customer info (2 changes)
-   - Layout.tsx: Responsive footer link gaps (1 change)
+**Files Modified**:
+- `frontend_Claude45/src/components/ExtractedDataPreview.tsx`
+- `frontend_Claude45/src/components/stepper/Stepper.tsx`
+- `frontend_Claude45/src/pages/MyClaims.tsx`
+- `frontend_Claude45/src/pages/ClaimForm/Step1_Flight.tsx`
+- `frontend_Claude45/src/pages/ClaimDetailPage.tsx`
+- `frontend_Claude45/src/components/layout/Layout.tsx`
+- `frontend_Claude45/src/pages/About.tsx`
+- `frontend_Claude45/src/pages/Home.tsx`
+- `frontend_Claude45/src/components/BoardingPassUploadZone.tsx`
 
-4. **Low Priority Polish** (0.25 hour)
-   - About.tsx: Responsive gaps for feature cards and fee section (2 changes)
-   - Home.tsx: Responsive gap for trust indicators (1 change)
-   - BoardingPassUploadZone.tsx: Responsive upload zone gap (1 change)
+**Impact**:
+- ✅ Fixed 22+ responsiveness issues
+- ✅ Better mobile experience across all views
+- ✅ No overlapping or clipping elements
+- ✅ Consistent layout across screen sizes
 
-5. **Documentation & Commit** (0.25 hour)
-   - Updated TECHNICAL_DEBT.md with completed mobile fixes
-   - Updated time_tracking_david.md
-   - Prepared commit following commit-workflow skill
+#### Updated Summary Statistics
+- **Total Commits**: 166 (added 5 new commits ed9b17a, 8b8392e, 26ee4ce, c13d7f8, bffadbc)
+- **Date Range**: 2025-09-04 to 2026-01-18
+- **Estimated Total Time**: ~479.6-545.1 hours (added 6.5-7.5 hours)
+- **OpenProject Tasks to Create**: 5 (WP #163-167)
+
+#### OpenProject Work Packages to Create
+
+| WP # | Subject | Hours | Status |
+|------|---------|-------|--------|
+| #163 | Prevent double execution of resume claim logic | 1.5 | To be created |
+| #164 | OCR state persistence & flight selection UI fix | 2.0 | To be created |
+| #165 | Remove Card wrapper from ExtractedDataPreview | 0.5 | To be created |
+| #166 | Mobile UX de-cramping Phase 2 | 1.5 | To be created |
+| #167 | Comprehensive mobile responsiveness fixes | 2.5 | To be created |
+
+**Note**: These work packages should be created in the "Web app frontend" project (id: 4) and closed with time entries logged.
+
+---
 
 ## Latest Work (2026-01-17) - Multi-Word Name Handling in OCR
 

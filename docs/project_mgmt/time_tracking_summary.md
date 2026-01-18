@@ -2,17 +2,17 @@
 
 ## Project Overview
 - **Project Duration**: 2025-09-04 to 2026-01-18 (4+ months)
-- **Total Commits**: 177 (160 by David, 17 by Florian)
-- **Estimated Total Time**: ~543.25-628.25 hours
+- **Total Commits**: 183 (166 by David, 17 by Florian)
+- **Estimated Total Time**: ~551.75-638.75 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 160 (90.4%)
-- **Estimated Time**: 475.5-543.1 hours
-- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness & De-Cramping
-- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction, multi-passenger support, UX optimization, multi-language name handling, mobile UI fixes, mobile layout de-cramping
+- **Commits**: 166 (90.7%)
+- **Estimated Time**: 484.0-552.6 hours
+- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness & De-Cramping, File Persistence
+- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction, multi-passenger support, UX optimization, multi-language name handling, mobile UI fixes, mobile layout de-cramping, frontend state management, boarding pass file persistence
 
 ### Florian's Contributions (12-15% of total time)
 - **Commits**: 17 (9.6%)
@@ -20,12 +20,58 @@
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
-## Latest Update (2026-01-18) - OCR State Persistence
-- **OCR State Persistence & UI Fixes**: Fixed data loss issue and UI glitch in claim form
-  - Lifted OCR state to parent component to persist data across steps
-  - Added "Change Flight" button to allow re-selection without re-upload
-  - Prevents unnecessary API calls (cost saving) and improves UX
-- **Time Added**: 0.5 hours
+## Latest Update (2026-01-18) - Boarding Pass File Persistence
+
+### Boarding Pass File Persistence Fix - 1 Commit
+**Estimated Time**: 2.0-3.0 hours
+**Work Packages**: #168 (to be created in OpenProject)
+
+#### Summary:
+Fixed two critical issues where boarding pass file was lost:
+1. **Step Navigation**: File now persists when user navigates back/forth between claim form steps
+2. **Magic Link Resume**: File auto-uploads at draft creation and restores when resuming via email link
+
+#### Files Modified:
+- ClaimFormPage.tsx - State management for file persistence
+- Step1_Flight.tsx - Accept saved file props
+- Step2_Eligibility.tsx - Auto-upload at draft creation
+- FileUploadZone.tsx - Handle already-uploaded files
+- Status.tsx - TypeScript fix for UploadedFile type
+
+**Time Added**: 2.0-3.0 hours
+
+---
+
+## Previous Update (2026-01-18) - Frontend Mobile UX Sprint
+
+### Frontend Mobile UX Sprint - 5 Commits
+**Estimated Time**: 6.5-7.5 hours
+**Work Packages**: #163-167 (to be created in OpenProject)
+
+#### Commits and Changes:
+
+| Commit | Message | Hours | Description |
+|--------|---------|-------|-------------|
+| ed9b17a | fix(frontend): prevent double execution of resume claim logic | 1.5 | Added useCallback/ref flags to prevent duplicate API calls |
+| 8b8392e | fix(frontend): persist OCR state and fix flight selection UI | 2.0 | Lifted OCR state to parent, added "Change Flight" button |
+| 26ee4ce | fix(frontend): remove Card wrapper from ExtractedDataPreview | 0.5 | Removed nested Card wrappers for cleaner layout |
+| c13d7f8 | refactor(frontend): improve mobile UX with de-cramped layout | 1.5 | Flattened containers, responsive buttons, increased spacing |
+| bffadbc | fix(frontend): comprehensive mobile responsiveness fixes | 2.5 | Fixed 22+ issues across 9 files |
+
+#### Key Improvements:
+- **State Management**: Fixed resume logic race conditions and OCR data persistence
+- **UI/UX**: Removed "Matryoshka doll" container nesting
+- **Mobile**: Responsive fixes for all components (buttons, cards, inputs, headers)
+- **Cost Savings**: Eliminated redundant API calls
+
+#### Work Packages to Create:
+- #163: Prevent double execution of resume claim logic (1.5h)
+- #164: OCR state persistence & flight selection UI fix (2.0h)
+- #165: Remove Card wrapper from ExtractedDataPreview (0.5h)
+- #166: Mobile UX de-cramping Phase 2 (1.5h)
+- #167: Comprehensive mobile responsiveness fixes (2.5h)
+
+**Time Added**: 6.5-7.5 hours
 
 ## Previous Update (2026-01-18) - Mobile UX De-Cramping (Phase 2)
 - **Mobile Layout De-Cramping**: Addressed "boxed-in" Matryoshka doll effect on mobile

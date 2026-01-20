@@ -69,11 +69,7 @@ export function MyClaims() {
         }
 
         console.log('[MyClaims] Fetching claims...');
-        const response = await listClaims({ limit: 100 }); // Get all user's claims
-        console.log('[MyClaims] Claims response:', response);
-
-        // Backend returns plain array, not paginated response
-        const claimsArray = Array.isArray(response) ? response : (response.data || []);
+        const claimsArray = await listClaims({ limit: 100, includeDrafts: true }); // Get all user's claims including drafts
         console.log('[MyClaims] Claims count:', claimsArray.length);
 
         setClaims(claimsArray);
@@ -98,8 +94,12 @@ export function MyClaims() {
     fetchClaims();
   }, [navigate]);
 
-  const handleViewClaim = (claimId: string) => {
-    navigate(`/status?claimId=${claimId}`);
+  const handleViewClaim = (claim: Claim) => {
+    if (claim.status === 'draft') {
+      navigate(`/claim/new?resume=${claim.id}`);
+    } else {
+      navigate(`/status?claimId=${claim.id}`);
+    }
   };
 
   if (isLoading) {
@@ -140,18 +140,22 @@ export function MyClaims() {
             {claims.map((claim) => (
               <Card
                 key={claim.id}
-                className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => handleViewClaim(claim.id!)}
+                className={`transition-all duration-200 cursor-pointer ${
+                  claim.status === 'draft' 
+                    ? 'border-dashed bg-muted/20 hover:bg-muted/30' 
+                    : 'hover:shadow-lg'
+                }`}
+                onClick={() => handleViewClaim(claim)}
               >
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Plane className="w-5 h-5 text-primary flex-shrink-0" />
-                      <CardTitle className="text-lg truncate">
+                      <Plane className={`w-5 h-5 flex-shrink-0 ${claim.status === 'draft' ? 'text-muted-foreground' : 'text-primary'}`} />
+                      <CardTitle className={`text-lg truncate ${claim.status === 'draft' ? 'text-muted-foreground' : ''}`}>
                         {claim.flightInfo.airline} {claim.flightInfo.flightNumber}
                       </CardTitle>
                     </div>
-                    <Badge className={getStatusColor(claim.status || 'draft')}>
+                    <Badge className={getStatusColor(claim.status || 'draft')} variant={claim.status === 'draft' ? 'outline' : 'default'}>
                       {getStatusLabel(claim.status || 'draft')}
                     </Badge>
                   </div>
@@ -179,36 +183,41 @@ export function MyClaims() {
 
                   {/* Compensation Amount */}
                   {claim.compensationAmount && (
-                    <div className="flex items-center gap-2 bg-primary/10 p-3 rounded-lg">
-                      <Euro className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div className={`flex items-center gap-2 p-3 rounded-lg ${claim.status === 'draft' ? 'bg-muted/50' : 'bg-primary/10'}`}>
+                      <Euro className={`w-5 h-5 flex-shrink-0 ${claim.status === 'draft' ? 'text-muted-foreground' : 'text-primary'}`} />
                       <div>
                         <p className="text-xs text-muted-foreground">
-                          Eligible Amount
+                          Estimated Amount
                         </p>
-                        <p className="text-lg font-bold text-primary">
-                          {formatCurrency(claim.compensationAmount, claim.currency)}
+                        <p className={`text-lg font-bold ${claim.status === 'draft' ? 'text-muted-foreground' : 'text-primary'}`}>
+                          {formatCurrency(Number(claim.compensationAmount), claim.currency)}
                         </p>
                       </div>
                     </div>
                   )}
 
                   {/* Submission Date */}
-                  {claim.submittedAt && (
+                  {claim.submittedAt && claim.status !== 'draft' ? (
                     <div className="pt-2 border-t text-xs text-muted-foreground">
                       Submitted {formatDateTime(claim.submittedAt)}
                     </div>
+                  ) : claim.updatedAt && (
+                    <div className="pt-2 border-t text-xs text-muted-foreground italic">
+                      Last updated {formatDateTime(claim.updatedAt)}
+                    </div>
                   )}
 
-                  {/* View Details Button */}
+                  {/* Action Button */}
                   <Button
                     className="w-full mt-2"
                     size="sm"
+                    variant={claim.status === 'draft' ? 'outline' : 'default'}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleViewClaim(claim.id!);
+                      handleViewClaim(claim);
                     }}
                   >
-                    View Details
+                    {claim.status === 'draft' ? 'Resume Draft' : 'View Details'}
                   </Button>
                 </CardContent>
               </Card>

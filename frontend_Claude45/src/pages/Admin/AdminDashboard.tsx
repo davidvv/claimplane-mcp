@@ -114,19 +114,41 @@ export function AdminDashboard() {
 
       {/* Analytics Summary */}
       {analytics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <Card className="p-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+          <Card 
+            className={`p-4 cursor-pointer transition-all hover:ring-2 hover:ring-primary/20 ${!filters.status ? 'ring-2 ring-primary/40 bg-primary/5' : ''}`}
+            onClick={() => handleFiltersChange({ status: undefined })}
+          >
             <div className="text-xs text-muted-foreground mb-1">Total</div>
             <div className="text-2xl md:text-3xl font-bold">{analytics.total_claims || 0}</div>
           </Card>
-          <Card className="p-4">
+          
+          <Card 
+            className={`p-4 cursor-pointer transition-all hover:ring-2 hover:ring-primary/20 ${filters.status === 'draft' ? 'ring-2 ring-primary/40 bg-primary/5' : ''}`}
+            onClick={() => handleFiltersChange({ status: 'draft' })}
+          >
+            <div className="text-xs text-muted-foreground mb-1">Drafts</div>
+            <div className="text-2xl md:text-3xl font-bold text-gray-500">
+              {analytics.claims_by_status?.draft || 0}
+            </div>
+          </Card>
+
+          <Card 
+            className={`p-4 cursor-pointer transition-all hover:ring-2 hover:ring-primary/20 ${filters.status === 'pending_review' ? 'ring-2 ring-primary/40 bg-primary/5' : ''}`}
+            onClick={() => handleFiltersChange({ status: 'pending_review' })}
+          >
             <div className="text-xs text-muted-foreground mb-1">Pending</div>
             <div className="text-2xl md:text-3xl font-bold text-yellow-600">{analytics.pending_review || 0}</div>
           </Card>
-          <Card className="p-4">
+          
+          <Card 
+            className={`p-4 cursor-pointer transition-all hover:ring-2 hover:ring-primary/20 ${filters.status === 'approved' ? 'ring-2 ring-primary/40 bg-primary/5' : ''}`}
+            onClick={() => handleFiltersChange({ status: 'approved' })}
+          >
             <div className="text-xs text-muted-foreground mb-1">Approved</div>
             <div className="text-2xl md:text-3xl font-bold text-green-600">{analytics.approved || 0}</div>
           </Card>
+          
           <Card className="p-4">
             <div className="text-xs text-muted-foreground mb-1">Total Comp</div>
             <div className="text-2xl md:text-3xl font-bold">€{(analytics.total_compensation || 0).toFixed(0)}</div>
@@ -138,6 +160,7 @@ export function AdminDashboard() {
       <ClaimsTable
         claims={claims}
         total={total}
+        filters={filters}
         onFiltersChange={handleFiltersChange}
         isLoading={isLoading}
       />

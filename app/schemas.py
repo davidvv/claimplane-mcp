@@ -305,6 +305,33 @@ class ClaimDraftResponseSchema(BaseModel):
         populate_by_name = True
 
 
+class PassengerDraftSchema(BaseModel):
+    """Schema for a passenger in a draft claim."""
+    first_name: str = Field(..., alias="firstName", max_length=100)
+    last_name: str = Field(..., alias="lastName", max_length=100)
+    ticket_number: Optional[str] = Field(None, alias="ticketNumber", max_length=50)
+
+    class Config:
+        populate_by_name = True
+
+
+class ClaimDraftUpdateSchema(BaseModel):
+    """Schema for updating a draft claim (auto-save)."""
+    passengers: Optional[List[PassengerDraftSchema]] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    street: Optional[str] = None
+    city: Optional[str] = None
+    postal_code: Optional[str] = Field(None, alias="postalCode")
+    country: Optional[str] = None
+    booking_reference: Optional[str] = Field(None, alias="bookingReference")
+    incident_type: Optional[str] = Field(None, alias="incidentType")
+    notes: Optional[str] = None
+
+    class Config:
+        populate_by_name = True
+
+
 class ClaimRequestSchema(BaseModel):
     """Schema for claim request with customer info.
 

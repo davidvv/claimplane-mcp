@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '@/services/api';
 import { buildDisplayName } from '@/services/auth';
@@ -8,9 +8,17 @@ export function MagicLinkPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMessage, setErrorMessage] = useState('');
+  
+  // Prevent double verification in React Strict Mode (development)
+  const hasVerified = useRef(false);
 
   useEffect(() => {
     const verifyToken = async () => {
+      // Prevent double execution
+      if (hasVerified.current) {
+        return;
+      }
+      hasVerified.current = true;
       const token = searchParams.get('token');
       const claimId = searchParams.get('claim_id');
 
@@ -24,6 +32,10 @@ export function MagicLinkPage() {
         console.log('Verifying magic link token...');
         console.log('Token:', token);
         console.log('Claim ID:', claimId);
+
+        // Read pending redirect BEFORE verification (in case of errors clearing it)
+        const pendingRedirect = sessionStorage.getItem('postLoginRedirect');
+        console.log('Pending redirect from sessionStorage:', pendingRedirect);
 
         // Verify magic link token
         const response = await apiClient.post(`/auth/magic-link/verify/${token}`);
@@ -57,10 +69,27 @@ export function MagicLinkPage() {
 
         setStatus('success');
 
+        // Clear the redirect from sessionStorage (we already read it above)
+        if (pendingRedirect) {
+          sessionStorage.removeItem('postLoginRedirect');
+        }
+
         // Ensure cookies are set before redirecting
         setTimeout(() => {
           // Check user role and redirect accordingly
           const userRole = response.data.user.role;
+          
+          // Check for pending redirect from interrupted flow (e.g., draft resume link)
+          if (pendingRedirect) {
+            // Validate redirect is safe (must start with /) to prevent open redirect attacks
+            if (pendingRedirect.startsWith('/')) {
+              console.log('Resuming interrupted flow:', pendingRedirect);
+              navigate(pendingRedirect);
+              return;
+            } else {
+              console.warn('Invalid redirect URL detected, ignoring:', pendingRedirect);
+            }
+          }
 
           if (userRole === 'admin' || userRole === 'superadmin') {
             // Admin users go to admin panel

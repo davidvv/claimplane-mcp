@@ -137,6 +137,7 @@ class Config:
     
     # File Retention
     FILE_RETENTION_DAYS = int(os.getenv("FILE_RETENTION_DAYS", "365"))
+    DRAFT_RETENTION_DAYS = int(os.getenv("DRAFT_RETENTION_DAYS", "11"))
     
     # Nextcloud Settings
     NEXTCLOUD_TIMEOUT = int(os.getenv("NEXTCLOUD_TIMEOUT", "30"))

@@ -28,6 +28,10 @@ export function Auth() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Check if user was redirected here due to authentication requirement
+  const pendingRedirect = sessionStorage.getItem('postLoginRedirect');
+  const isReturningToDraft = pendingRedirect?.includes('resume=');
+
   const form = useForm<MagicLinkForm>({
     resolver: zodResolver(magicLinkSchema),
   });
@@ -63,6 +67,26 @@ export function Auth() {
             We use magic links for secure, password-free access. No passwords to remember, no passwords to forget.
           </p>
         </div>
+
+        {/* Contextual banner for returning users */}
+        {isReturningToDraft && (
+          <Card className="mb-6 border-primary/40 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Mail className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">Welcome back!</h3>
+                  <p className="text-sm text-muted-foreground">
+                    You'll be returned to your draft claim after logging in. 
+                    Enter your email below to receive a secure magic link.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Login Form */}
         <Card className="mb-12 border-primary/20 shadow-lg">

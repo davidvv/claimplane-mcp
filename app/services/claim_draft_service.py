@@ -393,6 +393,57 @@ class ClaimDraftService:
             session_id=session_id
         )
 
+    async def update_draft(
+        self,
+        claim_id: UUID,
+        update_data: dict,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        session_id: Optional[str] = None
+    ) -> Claim:
+        """Partially update a draft claim (auto-save)."""
+        # Get the draft claim
+        claim = await self.claim_repo.get_by_id(claim_id)
+        if not claim:
+            raise ValueError(f"Claim {claim_id} not found")
+
+        if claim.status != Claim.STATUS_DRAFT:
+            raise ValueError(f"Claim {claim_id} is not a draft (status: {claim.status})")
+
+        # Update customer if contact info provided
+        customer = await self.customer_repo.get_by_id(claim.customer_id)
+        if not customer:
+            raise ValueError(f"Customer not found for claim {claim_id}")
+
+        customer_updates = {}
+        for field in ['email', 'first_name', 'last_name', 'phone', 'street', 'city', 'postal_code', 'country']:
+            if field in update_data and update_data[field] is not None:
+                customer_updates[field] = update_data[field]
+        
+        if customer_updates:
+            await self.customer_repo.update_customer(customer.id, **customer_updates)
+
+        # Update claim info
+        claim_updates = {}
+        for field in ['booking_reference', 'incident_type', 'notes']:
+            if field in update_data and update_data[field] is not None:
+                claim_updates[field] = update_data[field]
+        
+        if claim_updates:
+            await self.claim_repo.update_claim(claim.id, **claim_updates)
+
+        # Update passengers if provided
+        if 'passengers' in update_data and update_data['passengers'] is not None:
+            await self.claim_repo.update_passengers(claim.id, update_data['passengers'])
+
+        # Update activity timestamp
+        await self.update_activity(claim_id, ip_address=ip_address, user_agent=user_agent, session_id=session_id)
+
+        await self.session.commit()
+        await self.session.refresh(claim)
+        
+        return claim
+
     async def get_draft_for_resume(
         self,
         claim_id: UUID,

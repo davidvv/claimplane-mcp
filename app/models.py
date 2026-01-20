@@ -133,6 +133,7 @@ class Claim(Base):
     STATUS_REJECTED = "rejected"
     STATUS_PAID = "paid"
     STATUS_CLOSED = "closed"
+    STATUS_ABANDONED = "abandoned"
     
     STATUS_TYPES = [
         STATUS_DRAFT,
@@ -141,7 +142,8 @@ class Claim(Base):
         STATUS_APPROVED,
         STATUS_REJECTED,
         STATUS_PAID,
-        STATUS_CLOSED
+        STATUS_CLOSED,
+        STATUS_ABANDONED
     ]
     
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -282,6 +284,7 @@ class ClaimFile(Base):
     DOCUMENT_FLIGHT_TICKET = "flight_ticket"
     DOCUMENT_DELAY_CERTIFICATE = "delay_certificate"
     DOCUMENT_CANCELLATION_NOTICE = "cancellation_notice"
+    DOCUMENT_POWER_OF_ATTORNEY = "power_of_attorney"
     DOCUMENT_OTHER = "other"
     
     DOCUMENT_TYPES = [
@@ -292,6 +295,7 @@ class ClaimFile(Base):
         DOCUMENT_FLIGHT_TICKET,
         DOCUMENT_DELAY_CERTIFICATE,
         DOCUMENT_CANCELLATION_NOTICE,
+        DOCUMENT_POWER_OF_ATTORNEY,
         DOCUMENT_OTHER
     ]
     

@@ -216,6 +216,7 @@ export interface CustomerListParams extends PaginationParams {
 export interface ClaimListParams extends PaginationParams {
   status?: ClaimStatus;
   customerId?: string;
+  includeDrafts?: boolean;
 }
 
 export interface DocumentUploadRequest {

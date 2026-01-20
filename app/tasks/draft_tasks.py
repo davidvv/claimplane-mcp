@@ -195,9 +195,10 @@ async def _send_draft_reminder_day(days: int, reminder_number: int):
 
 
 async def _cleanup_expired_drafts():
-    """Delete drafts older than 11 days (with special handling for multi-claim users)."""
-    from app.repositories import ClaimRepository, CustomerRepository, ClaimEventRepository
+    """Delete drafts older than configured retention (default 11 days)."""
+    from app.repositories import ClaimRepository, CustomerRepository, ClaimEventRepository, FileRepository
     from app.models import ClaimEvent, Claim
+    from app.services.nextcloud_service import nextcloud_service
     from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
     from sqlalchemy.orm import sessionmaker
     import os
@@ -214,9 +215,11 @@ async def _cleanup_expired_drafts():
         claim_repo = ClaimRepository(session)
         customer_repo = CustomerRepository(session)
         event_repo = ClaimEventRepository(session)
+        file_repo = FileRepository(session)
 
-        # Get drafts older than 11 days
-        expired_drafts = await claim_repo.get_expired_drafts(days_old=11)
+        # Get drafts older than configured retention period
+        retention_days = config.DRAFT_RETENTION_DAYS
+        expired_drafts = await claim_repo.get_expired_drafts(days_old=retention_days)
 
         deleted_count = 0
         notified_count = 0
@@ -238,11 +241,21 @@ async def _cleanup_expired_drafts():
                 if has_other_claims or has_accepted_terms:
                     # Don't delete customer - just mark claim as abandoned and notify
                     claim.status = "abandoned"  # Custom status for abandoned drafts
+                    
+                    # Delete files from Nextcloud to reclaim storage
+                    claim_files = await file_repo.get_by_claim_id(claim.id)
+                    for file in claim_files:
+                        try:
+                            if file.storage_path:
+                                await nextcloud_service.delete_file(file.storage_path)
+                        except Exception as file_err:
+                            logger.error(f"Failed to delete Nextcloud file {file.id} for abandoned draft {claim.id}: {file_err}")
+
                     await event_repo.log_event(
                         event_type=ClaimEvent.EVENT_CLAIM_ABANDONED,
                         claim_id=claim.id,
                         customer_id=customer.id,
-                        event_data={"has_other_claims": has_other_claims, "action": "marked_abandoned"}
+                        event_data={"has_other_claims": has_other_claims, "action": "marked_abandoned", "files_deleted": len(claim_files)}
                     )
 
                     # Send notification that we won't bother them anymore
@@ -263,7 +276,7 @@ async def _cleanup_expired_drafts():
                         event_type=ClaimEvent.EVENT_CLAIM_DELETED,
                         claim_id=claim.id,
                         customer_id=customer.id,
-                        event_data={"reason": "expired_draft", "days_old": 11}
+                        event_data={"reason": "expired_draft", "days_old": retention_days}
                     )
 
                     # Send goodbye email
@@ -274,6 +287,20 @@ async def _cleanup_expired_drafts():
                         flight_number=claim.flight_number,
                         can_still_submit=True
                     )
+
+                    # Delete files from Nextcloud before deleting claim
+                    claim_files = await file_repo.get_by_claim_id(claim.id)
+                    files_deleted = 0
+                    for file in claim_files:
+                        try:
+                            if file.storage_path:
+                                await nextcloud_service.delete_file(file.storage_path)
+                                files_deleted += 1
+                        except Exception as file_err:
+                            logger.error(f"Failed to delete Nextcloud file {file.id} for draft {claim.id}: {file_err}")
+
+                    if files_deleted > 0:
+                        logger.info(f"Deleted {files_deleted} files from Nextcloud for draft {claim.id}")
 
                     # Delete claim
                     await claim_repo.delete(claim)

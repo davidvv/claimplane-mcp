@@ -7,7 +7,6 @@ import type {
   Claim,
   ClaimRequest,
   ClaimListParams,
-  PaginatedResponse,
   ApiResponse,
   OCRResponse,
 } from '@/types/api';
@@ -18,9 +17,16 @@ import type {
  */
 export const listClaims = async (
   params?: ClaimListParams
-): Promise<PaginatedResponse<Claim>> => {
-  const response = await apiClient.get<PaginatedResponse<Claim>>('/claims/', {
-    params,
+): Promise<Claim[]> => {
+  // Convert camelCase params to snake_case for backend
+  const apiParams: any = { ...params };
+  if (params?.includeDrafts !== undefined) {
+    apiParams.include_drafts = params.includeDrafts;
+    delete apiParams.includeDrafts;
+  }
+
+  const response = await apiClient.get<Claim[]>('/claims/', {
+    params: apiParams,
   });
 
   return response.data;

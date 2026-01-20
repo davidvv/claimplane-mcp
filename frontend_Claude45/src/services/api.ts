@@ -105,7 +105,10 @@ apiClient.interceptors.response.use(
         case 401:
           toast.error('Unauthorized. Please log in.');
           // Redirect to login (cookies will be cleared by logout endpoint)
-          if (window.location.pathname !== '/auth') {
+          if (window.location.pathname !== '/auth' && window.location.pathname !== '/auth/magic-link') {
+            // Preserve current URL for post-login redirect (e.g., draft resume links)
+            const currentUrl = window.location.pathname + window.location.search;
+            sessionStorage.setItem('postLoginRedirect', currentUrl);
             window.location.href = '/auth';
           }
           break;

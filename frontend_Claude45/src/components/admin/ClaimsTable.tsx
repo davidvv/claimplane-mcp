@@ -17,15 +17,23 @@ import { bulkAssignClaims, getAdminUsers } from '../../services/admin';
 interface ClaimsTableProps {
   claims: ClaimListItem[];
   total: number;
+  filters: any;
   onFiltersChange: (filters: any) => void;
   isLoading?: boolean;
 }
 
-export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: ClaimsTableProps) {
+export function ClaimsTable({ claims, total, filters, onFiltersChange, isLoading }: ClaimsTableProps) {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [airlineFilter, setAirlineFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState(filters.search || '');
+  const [statusFilter, setStatusFilter] = useState(filters.status || '');
+  const [airlineFilter, setAirlineFilter] = useState(filters.airline || '');
+
+  // Sync internal state with props when they change (e.g. from dashboard cards)
+  useEffect(() => {
+    setSearchQuery(filters.search || '');
+    setStatusFilter(filters.status || '');
+    setAirlineFilter(filters.airline || '');
+  }, [filters.search, filters.status, filters.airline]);
 
   // Bulk assignment state
   const [selectedClaimIds, setSelectedClaimIds] = useState<string[]>([]);
@@ -142,6 +150,7 @@ export function ClaimsTable({ claims, total, onFiltersChange, isLoading }: Claim
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="">All Statuses</option>
+                <option value="draft">Draft</option>
                 <option value="submitted">Submitted</option>
                 <option value="pending_review">Pending</option>
                 <option value="under_review">Review</option>

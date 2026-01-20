@@ -10,12 +10,15 @@
 import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User, Mail, Phone, FileText, Sparkles, Plus, Trash2, Users } from 'lucide-react';
+import { User, Mail, Phone, FileText, Sparkles, Plus, Trash2, Users, Save, Check, AlertCircle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 import { passengerInfoSchema, type PassengerInfoForm } from '@/schemas/validation';
 import type { FlightStatus, EligibilityResponse } from '@/types/api';
 import type { UserProfile } from '@/services/auth';
 import type { OCRData } from './Step1_Flight';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import apiClient from '@/services/api';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -33,6 +36,7 @@ interface Step3Props {
   userProfile?: UserProfile | null;
   draftClaimId?: string | null;  // Workflow v2: Draft claim ID for progressive upload
   ocrData?: OCRData | null;  // OCR-extracted data from boarding pass
+  onUpdate: (data: PassengerInfoForm) => void;
   onComplete: (data: PassengerInfoForm, documents: any[]) => void;
   onBack: () => void;
 }
@@ -45,6 +49,7 @@ export function Step3_Passenger({
   userProfile,
   draftClaimId,
   ocrData,
+  onUpdate,
   onComplete,
   onBack,
 }: Step3Props) {
@@ -144,6 +149,7 @@ export function Step3_Passenger({
     control,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<PassengerInfoForm>({
     resolver: zodResolver(passengerInfoSchema),
@@ -154,6 +160,25 @@ export function Step3_Passenger({
     control,
     name: "passengers"
   });
+
+  // Auto-save logic
+  const { triggerSave, isSaving, lastSaved, error: saveError } = useAutoSave({
+    onSave: async (data: PassengerInfoForm) => {
+      // 1. Update parent state (localStorage) - fallback always active
+      onUpdate(data);
+      
+      // 2. Update backend if draftClaimId exists
+      if (draftClaimId) {
+        await apiClient.patch(`/claims/${draftClaimId}/draft`, data);
+      }
+    }
+  });
+
+  // Watch form changes to trigger auto-save
+  const watchedValues = watch();
+  useEffect(() => {
+    triggerSave(watchedValues);
+  }, [watchedValues, triggerSave]);
 
   // Initialize phone number
   useEffect(() => {
@@ -177,6 +202,33 @@ export function Step3_Passenger({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      
+      {/* Auto-save Indicator */}
+      <div className="flex justify-end h-4">
+        <div className="text-[10px] uppercase tracking-wider font-medium flex items-center gap-1.5 transition-opacity duration-300">
+          {isSaving ? (
+            <span className="flex items-center gap-1.5 text-primary animate-pulse">
+              <Save className="w-3 h-3" />
+              Saving...
+            </span>
+          ) : saveError ? (
+            <span className="flex items-center gap-1.5 text-destructive">
+              <AlertCircle className="w-3 h-3" />
+              Auto-save failed
+            </span>
+          ) : lastSaved ? (
+            <span className="flex items-center gap-1.5 text-muted-foreground/60">
+              <Check className="w-3 h-3" />
+              Saved {formatDistanceToNow(lastSaved, { addSuffix: true })}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-muted-foreground/40">
+              <Check className="w-3 h-3" />
+              Draft active
+            </span>
+          )}
+        </div>
+      </div>
       
       {/* Contact Information (Account Holder) */}
       <Card>

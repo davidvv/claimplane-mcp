@@ -273,6 +273,30 @@ class ClaimRepository(BaseRepository[Claim]):
         await self.session.refresh(claim)
         return claim
 
+    async def update_passengers(self, claim_id: UUID, passengers_data: List[dict]) -> None:
+        """Update the list of passengers for a claim (replaces existing list)."""
+        from app.models import Passenger
+        
+        # Delete existing passengers
+        stmt = select(Passenger).where(Passenger.claim_id == claim_id)
+        result = await self.session.execute(stmt)
+        existing_passengers = result.scalars().all()
+        for p in existing_passengers:
+            await self.session.delete(p)
+        
+        # Add new passengers
+        for p_data in passengers_data:
+            new_p = Passenger(
+                claim_id=claim_id,
+                first_name=p_data.get('first_name'),
+                last_name=p_data.get('last_name'),
+                ticket_number=p_data.get('ticket_number'),
+                email=p_data.get('email')
+            )
+            self.session.add(new_p)
+        
+        await self.session.flush()
+
     async def finalize_draft(
         self,
         claim_id: UUID,

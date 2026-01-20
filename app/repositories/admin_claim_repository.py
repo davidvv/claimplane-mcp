@@ -65,7 +65,11 @@ class AdminClaimRepository(BaseRepository[Claim]):
         filters = []
 
         if status:
-            filters.append(Claim.status == status)
+            if status == "pending_review":
+                # Special case for dashboard aggregation
+                filters.append(Claim.status.in_(["submitted", "under_review"]))
+            else:
+                filters.append(Claim.status == status)
 
         if airline:
             # Using bindparam to prevent SQL injection

@@ -286,6 +286,11 @@ export function ClaimFormPage() {
     navigate(`/claim/success?claimId=${claimId}`);
   };
 
+  const handlePassengerDataChange = (data: any) => {
+    setPassengerData(data);
+    updatePassengerData(data);
+  };
+
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
@@ -377,6 +382,7 @@ export function ClaimFormPage() {
               userProfile={userProfile}
               draftClaimId={draftClaimId}
               ocrData={ocrData} // Pass OCR data for pre-filling
+              onUpdate={handlePassengerDataChange}
               onComplete={handlePassengerComplete}
               onBack={handleBack}
             />

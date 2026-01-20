@@ -1,5 +1,5 @@
 """Claims API endpoints."""
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File, Form
@@ -18,6 +18,7 @@ from app.schemas import (
     ClaimPatchSchema,
     ClaimDraftSchema,
     ClaimDraftResponseSchema,
+    ClaimDraftUpdateSchema,
     FileResponseSchema
 )
 from app.services.auth_service import AuthService
@@ -436,6 +437,64 @@ async def submit_claim_with_customer(
     )
 
 
+@router.patch("/{claim_id}/draft", response_model=ClaimResponseSchema)
+async def update_draft_claim(
+    claim_id: UUID,
+    update_data: ClaimDraftUpdateSchema,
+    request: Request,
+    user_data: tuple = Depends(get_current_user_with_claim_access),
+    db: AsyncSession = Depends(get_db)
+) -> ClaimResponseSchema:
+    """
+    Partially update a draft claim (auto-save).
+    
+    Requires authentication (JWT or draft token).
+    """
+    current_user, token_claim_id = user_data
+    
+    try:
+        ip_address, user_agent = get_client_info(request)
+        session_id = request.headers.get("x-session-id")
+        
+        draft_service = ClaimDraftService(db)
+        
+        # Verify access
+        claim_repo = ClaimRepository(db)
+        claim = await claim_repo.get_by_id(claim_id)
+        if not claim:
+            raise HTTPException(status_code=404, detail="Claim not found")
+        
+        verify_claim_access(claim, current_user, token_claim_id)
+        
+        # Convert schema to dict for service
+        data_dict = update_data.model_dump(exclude_unset=True)
+        
+        # Handle aliases and nested objects if any
+        if 'postalCode' in data_dict:
+            data_dict['postal_code'] = data_dict.pop('postalCode')
+        
+        if 'passengers' in data_dict and data_dict['passengers']:
+            # passengers are already in snake_case because of model_dump()
+            pass
+
+        updated_claim = await draft_service.update_draft(
+            claim_id=claim_id,
+            update_data=data_dict,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            session_id=session_id
+        )
+        
+        return ClaimResponseSchema.from_orm(updated_claim)
+
+    except ValueError as e:
+        logger.error(f"Validation error in draft claim update: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Unexpected error in draft claim update: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An error occurred while updating draft claim")
+
+
 @router.get("/{claim_id}", response_model=ClaimResponseSchema)
 async def get_claim(
     claim_id: UUID,
@@ -483,12 +542,49 @@ async def get_claim(
     return ClaimResponseSchema.from_orm(claim)
 
 
+@router.get("/{claim_id}/verification", response_model=Dict[str, Any])
+async def get_claim_verification(
+    claim_id: UUID,
+    user_data: tuple = Depends(get_current_user_with_claim_access),
+    db: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get claim verification status (completeness check).
+    
+    This checks if the claim has all necessary data and documents 
+    based on industry standards and legal requirements.
+    """
+    current_user, token_claim_id = user_data
+    
+    repo = ClaimRepository(db)
+    claim = await repo.get_by_id(claim_id)
+
+    if not claim:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Claim with id {claim_id} not found"
+        )
+
+    # Verify access
+    verify_claim_access(claim, current_user, token_claim_id)
+
+    customer_repo = CustomerRepository(db)
+    customer = await customer_repo.get_by_id(claim.customer_id)
+    
+    file_repo = FileRepository(db)
+    files = await file_repo.get_by_claim_id(claim_id, include_deleted=False)
+    
+    from app.services.claim_verification_service import ClaimVerificationService
+    return ClaimVerificationService.verify_claim(claim, customer, files)
+
+
 @router.get("/", response_model=List[ClaimResponseSchema])
 async def list_claims(
     skip: int = 0,
     limit: int = 100,
     status: str = None,
     customer_id: UUID = None,
+    include_drafts: bool = Query(False, description="Include draft claims"),
     current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> List[ClaimResponseSchema]:
@@ -497,17 +593,6 @@ async def list_claims(
 
     Requires authentication. Customers see only their own claims.
     Admins and superadmins can see all claims or filter by customer_id.
-
-    Args:
-        skip: Number of records to skip
-        limit: Maximum number of records to return
-        status: Filter by claim status
-        customer_id: Filter by customer ID (admin only)
-        current_user: Currently authenticated user
-        db: Database session
-
-    Returns:
-        List of claims accessible to the user
     """
     repo = ClaimRepository(db)
 
@@ -521,13 +606,27 @@ async def list_claims(
         if customer_id:
             claims = [c for c in claims if c.customer_id == customer_id]
     elif customer_id:
-        claims = await repo.get_by_customer_id(customer_id, skip=skip, limit=limit)
-    else:
-        # Customers: get their own claims; Admins: get all claims
-        if current_user.role in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
-            claims = await repo.get_all(skip=skip, limit=limit)
+        if include_drafts:
+            claims = await repo.get_by_customer_id(customer_id, skip=skip, limit=limit)
         else:
-            claims = await repo.get_by_customer_id(current_user.id, skip=skip, limit=limit)
+            # Modified to exclude drafts by default for customers if not requested
+            all_claims = await repo.get_by_customer_id(customer_id, skip=skip, limit=limit)
+            claims = [c for c in all_claims if c.status != Claim.STATUS_DRAFT]
+    else:
+        # Admins: get all claims
+        if current_user.role in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
+            if include_drafts:
+                claims = await repo.get_all(skip=skip, limit=limit)
+            else:
+                all_claims = await repo.get_all(skip=skip, limit=limit)
+                claims = [c for c in all_claims if c.status != Claim.STATUS_DRAFT]
+        else:
+            # Should not happen given above logic, but for safety:
+            if include_drafts:
+                claims = await repo.get_by_customer_id(current_user.id, skip=skip, limit=limit)
+            else:
+                all_claims = await repo.get_by_customer_id(current_user.id, skip=skip, limit=limit)
+                claims = [c for c in all_claims if c.status != Claim.STATUS_DRAFT]
 
     # Debug logging to verify claim IDs
     logger.info(f"[list_claims] Returning {len(claims)} claims for user {current_user.id}")

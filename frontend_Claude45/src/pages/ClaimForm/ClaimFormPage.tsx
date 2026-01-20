@@ -17,14 +17,16 @@ import { toast } from 'sonner';
 import { Step1_Flight, type OCRData } from './Step1_Flight';
 import { Step2_Eligibility } from './Step2_Eligibility';
 import { Step3_Passenger } from './Step3_Passenger';
-import { Step4_Review } from './Step4_Review';
+import { Step4_Authorization } from './Step4_Authorization';
+import { Step5_Review } from './Step5_Review';
 import type { FlightStatus, EligibilityResponse, OCRResponse } from '@/types/api';
 
 const STEPS = [
   { number: 1, title: 'Flight', description: 'Flight details' },
   { number: 2, title: 'Eligibility', description: 'Check eligibility' },
   { number: 3, title: 'Information', description: 'Your details' },
-  { number: 4, title: 'Review', description: 'Review & submit' },
+  { number: 4, title: 'Authorization', description: 'Sign POA' },
+  { number: 5, title: 'Review', description: 'Review & submit' },
 ];
 
 // Draft claim data returned from /claims/draft endpoint
@@ -277,6 +279,10 @@ export function ClaimFormPage() {
     setCurrentStep(4);
   };
 
+  const handleAuthorizationComplete = () => {
+    setCurrentStep(5);
+  };
+
   const handleSubmitComplete = (claimId: string) => {
     // Clear form data and draft claim data
     clearFormData();
@@ -388,8 +394,18 @@ export function ClaimFormPage() {
             />
           )}
 
-          {currentStep === 4 && flightData && eligibilityData && passengerData && (
-            <Step4_Review
+          {currentStep === 4 && flightData && passengerData && (
+            <Step4_Authorization
+              flightData={flightData}
+              passengerData={passengerData}
+              claimId={draftClaimId}
+              onComplete={handleAuthorizationComplete}
+              onBack={handleBack}
+            />
+          )}
+
+          {currentStep === 5 && flightData && eligibilityData && passengerData && (
+            <Step5_Review
               flightData={flightData}
               eligibilityData={eligibilityData}
               passengerData={passengerData}

@@ -851,6 +851,91 @@ class FileService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Orphan file upload failed: {str(e)}"
             )
+
+    async def upload_generated_document(
+        self,
+        file_content: bytes,
+        filename: str,
+        claim_id: str,
+        customer_id: str,
+        document_type: str,
+        mime_type: str = "application/pdf",
+        description: Optional[str] = None
+    ) -> ClaimFile:
+        """
+        Upload a system-generated document (e.g., signed POA).
+        
+        Args:
+            file_content: Raw bytes of the generated file
+            filename: Desired filename
+            claim_id: Claim ID to link to
+            customer_id: Customer ID who owns the claim
+            document_type: Type of document
+            mime_type: MIME type (default application/pdf)
+            description: Optional description
+            
+        Returns:
+            Created ClaimFile record
+        """
+        try:
+            # Generate secure filename
+            secure_filename = encryption_service.generate_secure_filename(filename)
+            storage_path = f"flight_claims/{claim_id}/{secure_filename}"
+            
+            # Calculate hash
+            file_hash = hashlib.sha256(file_content).hexdigest()
+            
+            # Encrypt content
+            encrypted_content = encryption_service.encrypt_file_content(file_content)
+            
+            # Upload to Nextcloud
+            upload_result = await nextcloud_service.upload_file(
+                file_content=encrypted_content,
+                remote_path=storage_path
+            )
+            
+            # Create file record
+            file_record = ClaimFile(
+                id=uuid.uuid4(),
+                claim_id=uuid.UUID(claim_id),
+                customer_id=uuid.UUID(customer_id),
+                filename=secure_filename,
+                original_filename=filename,
+                file_size=len(file_content),
+                mime_type=mime_type,
+                file_hash=file_hash,
+                document_type=document_type,
+                storage_provider="nextcloud",
+                storage_path=storage_path,
+                nextcloud_file_id=upload_result.get("file_id"),
+                access_level="private",
+                status="uploaded",
+                validation_status="validated",  # System generated files are auto-validated
+                description=description or "System generated document",
+                uploaded_by=uuid.UUID(customer_id),
+                expires_at=datetime.utcnow() + timedelta(days=3650)  # 10 years retention
+            )
+            
+            self.db.add(file_record)
+            await self.db.flush()
+            
+            # Log access
+            await self.access_log_repo.log_access(
+                file_id=file_record.id,
+                user_id=uuid.UUID(customer_id),
+                access_type="upload",
+                ip_address=None,
+                user_agent="System",
+                access_status="success"
+            )
+            
+            return file_record
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Generated document upload failed: {str(e)}"
+            )
     
     async def link_file_to_claim(
         self,

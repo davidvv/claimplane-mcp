@@ -578,6 +578,103 @@ async def get_claim_verification(
     return ClaimVerificationService.verify_claim(claim, customer, files)
 
 
+@router.post("/{claim_id}/sign-poa", response_model=FileResponseSchema)
+async def sign_power_of_attorney(
+    claim_id: UUID,
+    signature_data: SignatureRequest,
+    request: Request,
+    current_user: Customer = Depends(get_current_user_with_claim_access),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Sign the Power of Attorney for a claim.
+    
+    Generates a PDF with the user's digital signature and audit trail.
+    """
+    import base64
+    from datetime import datetime, timezone
+    from app.schemas.poa_schemas import SignatureRequest
+    from app.services.poa_service import POAService
+    
+    # 1. Validate ownership & state
+    current_user_obj, token_claim_id = current_user
+    
+    repo = ClaimRepository(db)
+    claim = await repo.get_by_id(claim_id)
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+        
+    verify_claim_access(claim, current_user_obj, token_claim_id)
+    
+    # 2. Get Customer Details (Address needed for POA)
+    customer_repo = CustomerRepository(db)
+    customer = await customer_repo.get_by_id(claim.customer_id)
+    
+    # 3. Decode Signature
+    try:
+        # Expected format: "data:image/png;base64,iVBOR..."
+        if "," in signature_data.signature_image:
+            header, encoded = signature_data.signature_image.split(",", 1)
+        else:
+            encoded = signature_data.signature_image
+            
+        signature_bytes = base64.b64decode(encoded)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid signature image data")
+
+    # 4. Generate PDF
+    ip_address = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+    signed_at = datetime.now(timezone.utc)
+    
+    try:
+        # Format address
+        address_str = f"{customer.street}, {customer.postal_code} {customer.city}, {customer.country}"
+        
+        pdf_bytes = POAService.generate_signed_poa(
+            flight_number=claim.flight_number,
+            flight_date=claim.departure_date.isoformat(),
+            departure_airport=claim.departure_airport,
+            arrival_airport=claim.arrival_airport,
+            booking_reference=claim.booking_reference or "N/A",
+            primary_passenger_name=f"{customer.first_name} {customer.last_name}",
+            additional_passengers="",  # TODO: Handle multiple passengers
+            address=address_str,
+            signer_name=signature_data.signer_name,
+            signature_image_bytes=signature_bytes,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            signed_at=signed_at
+        )
+    except Exception as e:
+        logger.error(f"POA Generation failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate POA document")
+
+    # 5. Upload to FileService
+    file_service = get_file_service(db)
+    filename = f"POA_{claim.flight_number}_{claim.id}.pdf"
+    
+    try:
+        file_record = await file_service.upload_generated_document(
+            file_content=pdf_bytes,
+            filename=filename,
+            claim_id=str(claim.id),
+            customer_id=str(customer.id),
+            document_type=ClaimFile.DOCUMENT_POWER_OF_ATTORNEY,
+            description="Digitally signed Power of Attorney"
+        )
+        
+        # Commit transaction
+        await db.commit()
+        
+        return FileResponseSchema.model_validate(file_record)
+        
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"POA Upload failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save signed POA")
+
+
 @router.get("/", response_model=List[ClaimResponseSchema])
 async def list_claims(
     skip: int = 0,

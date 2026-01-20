@@ -37,7 +37,7 @@ export function Stepper({ steps, currentStep }: StepperProps) {
               {index !== steps.length - 1 && (
                 <div
                   className={cn(
-                    'absolute top-5 left-1/2 h-0.5 w-full transition-colors',
+                    'absolute top-4 sm:top-5 left-1/2 h-0.5 w-full transition-colors', // Adjusted top for better alignment
                     isCompleted ? 'bg-primary' : 'bg-border'
                   )}
                 />
@@ -46,34 +46,34 @@ export function Stepper({ steps, currentStep }: StepperProps) {
               {/* Step circle */}
               <div
                 className={cn(
-                  'relative flex items-center justify-center w-8 h-8 xs:w-10 xs:h-10 rounded-full border-2 transition-all z-10',
+                  'relative flex items-center justify-center w-8 h-8 xs:w-10 xs:h-10 rounded-full border-2 transition-all z-10 bg-background', // Added bg-background
                   isCompleted &&
                     'bg-primary border-primary text-white',
                   isCurrent &&
-                    'border-primary bg-background text-primary',
+                    'border-primary text-primary',
                   isUpcoming &&
-                    'border-border bg-background text-muted-foreground'
+                    'border-border text-muted-foreground'
                 )}
               >
                 {isCompleted ? (
-                  <Check className="w-5 h-5" />
+                  <Check className="w-4 h-4 xs:w-5 xs:h-5" /> // Adjusted size
                 ) : (
-                  <span className="text-sm font-semibold">{step.number}</span>
+                  <span className="text-xs xs:text-sm font-semibold">{step.number}</span>
                 )}
               </div>
 
               {/* Step label */}
-              <div className="mt-3 text-center">
+              <div className="mt-2 sm:mt-3 text-center">
                 <p
                   className={cn(
-                    'text-sm font-medium transition-colors',
+                    'text-xs sm:text-sm font-medium transition-colors line-clamp-1', // Added line-clamp
                     (isCurrent || isCompleted) && 'text-foreground',
                     isUpcoming && 'text-muted-foreground'
                   )}
                 >
                   {step.title}
                 </p>
-                <p className="text-xs text-muted-foreground hidden sm:block">
+                <p className="text-[10px] sm:text-xs text-muted-foreground hidden md:block line-clamp-1"> {/* Adjusted visibility */}
                   {step.description}
                 </p>
               </div>

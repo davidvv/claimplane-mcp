@@ -1,5 +1,5 @@
 /**
- * Step 4: Review & Submit
+ * Step 5: Review & Submit
  *
  * Workflow v2: If draftClaimId is provided, we finalize the existing
  * draft claim instead of creating a new one. Files are already uploaded.
@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/Badge';
 import { LoadingOverlay } from '@/components/LoadingSpinner';
 import { formatCurrency, getIncidentLabel } from '@/lib/utils';
 
-interface Step4Props {
+interface Step5Props {
   flightData: FlightStatus;
   eligibilityData: EligibilityResponse;
   passengerData: any;
@@ -29,7 +29,7 @@ interface Step4Props {
   onBack: () => void;
 }
 
-export function Step4_Review({
+export function Step5_Review({
   flightData,
   eligibilityData,
   passengerData,
@@ -37,11 +37,11 @@ export function Step4_Review({
   draftClaimId,
   onComplete,
   onBack,
-}: Step4Props) {
+}: Step5Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentUploadFile, setCurrentUploadFile] = useState<string>('');
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  // const [termsAccepted, setTermsAccepted] = useState(false); // Terms accepted in Step 4
 
   // Extract primary passenger for display (support both multi-passenger and legacy formats)
   const primaryPassenger = passengerData.passengers?.[0] || {
@@ -51,11 +51,11 @@ export function Step4_Review({
   const allPassengers = passengerData.passengers || [primaryPassenger];
 
   const handleSubmit = async () => {
-    // Validate terms acceptance
-    if (!termsAccepted) {
-      toast.error('Please accept the terms and conditions to continue');
-      return;
-    }
+    // Validate terms acceptance (Moved to Step 4)
+    // if (!termsAccepted) {
+    //   toast.error('Please accept the terms and conditions to continue');
+    //   return;
+    // }
 
     setIsSubmitting(true);
     setUploadProgress(0);
@@ -415,62 +415,15 @@ export function Step4_Review({
           </CardContent>
         </Card>
 
-        {/* Terms & Conditions */}
-        <Card>
+        {/* Terms & Conditions (Already accepted in Step 4) */}
+        {/* <Card>
           <CardContent className="pt-6">
             <div className="bg-muted rounded-lg p-4 text-sm">
               <p className="font-semibold mb-2">Terms & Conditions</p>
-              <p className="text-muted-foreground mb-2">
-                By submitting this claim, you agree to our{' '}
-                <a
-                  href="/terms"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline hover:no-underline"
-                >
-                  terms and conditions
-                </a>{' '}
-                and authorize ClaimPlane to act on your behalf in pursuing compensation
-                from the airline.
-              </p>
-              <p className="text-muted-foreground mb-4">
-                We operate on a "no win, no fee" basis. Our commission is 20% (+ VAT)
-                of the compensation amount, deducted only upon successful claim.
-              </p>
-
-              <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
-                <input
-                  type="checkbox"
-                  id="terms-checkbox"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  disabled={isSubmitting}
-                />
-                <label
-                  htmlFor="terms-checkbox"
-                  className="text-sm cursor-pointer select-none"
-                >
-                  <span className="font-medium">I accept the terms and conditions</span>
-                  <span className="text-muted-foreground">
-                    {' '}
-                    and authorize ClaimPlane to process my claim and personal data in
-                    accordance with the{' '}
-                    <a
-                      href="/terms"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary underline hover:no-underline"
-                    >
-                      terms and conditions
-                    </a>
-                    .
-                  </span>
-                </label>
-              </div>
+              ...
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Actions */}
         <div className="flex gap-2">
@@ -484,7 +437,8 @@ export function Step4_Review({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !termsAccepted}
+            // disabled={isSubmitting || !termsAccepted} // Terms check removed
+            disabled={isSubmitting}
             className="flex-1"
           >
             {isSubmitting ? 'Submitting...' : 'Submit Claim'}

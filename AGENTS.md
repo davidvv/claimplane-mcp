@@ -8,7 +8,12 @@
 **Important**: Always use `./start-dev.sh` to start the system. This script starts:
 1. Nextcloud services (required for file uploads)
 2. Main application services (API, workers, nginx)
-3. Vite development server
+3. Vite development server on **Port 3000** (Connected to Cloudflare Tunnel)
+
+**CRITICAL: Development Workflow**
+- **ALWAYS** use `./start-dev.sh`.
+- **Frontend**: Running on **Port 3000** via Vite.
+- **NO MANUAL BUILDS**: Do not run `npm run build` or manually restart Nginx for UI changes. Vite handles automatic builds/updates. This prevents frequent environment breakages.
 
 Starting individual containers with `docker-compose up` without Nextcloud will cause upload failures that appear successful to users.
 

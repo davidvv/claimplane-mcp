@@ -51,11 +51,18 @@ export function Step5_Review({
   const allPassengers = passengerData.passengers || [primaryPassenger];
 
   const handleSubmit = async () => {
-    // Validate terms acceptance (Moved to Step 4)
-    // if (!termsAccepted) {
-    //   toast.error('Please accept the terms and conditions to continue');
-    //   return;
-    // }
+    // #204: Optimization - Check if document upload is mandatory
+    // Submission is allowed if (PNR is present AND POA is signed)
+    // POA is signed in Step 4, so we check for PNR here.
+    const hasPNR = !!passengerData.bookingReference;
+    const hasDocuments = documents.length > 0;
+
+    if (!hasPNR && !hasDocuments) {
+      toast.error('Please upload at least one document (Boarding Pass or Booking Confirmation) since no Booking Reference (PNR) was provided.', {
+        duration: 5000,
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     setUploadProgress(0);

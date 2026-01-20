@@ -50,21 +50,29 @@ export function SignaturePad({
   };
 
   const handleEnd = () => {
-    if (sigPadRef.current?.isEmpty()) {
-      onSignatureChange(null);
-    } else {
-      // Get PNG data URL
-      // trim() removes whitespace around the signature
-      const dataUrl = sigPadRef.current?.getTrimmedCanvas().toDataURL('image/png');
-      onSignatureChange(dataUrl || null);
+    if (sigPadRef.current) {
+      if (sigPadRef.current.isEmpty()) {
+        onSignatureChange(null);
+      } else {
+        // Get PNG data URL
+        const canvas = sigPadRef.current.getTrimmedCanvas();
+        const dataUrl = canvas.toDataURL('image/png');
+        console.log('Signature captured, length:', dataUrl.length);
+        onSignatureChange(dataUrl);
+      }
     }
+  };
+
+  // Also trigger on stroke begin to ensure we capture initial state
+  const handleBegin = () => {
+    // We could potentially set a 'dirty' state here
   };
 
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       <div 
         ref={containerRef}
-        className="border-2 border-dashed border-input rounded-md bg-white hover:border-primary/50 transition-colors cursor-crosshair touch-none"
+        className="border-2 border-dashed border-input rounded-md bg-white hover:border-primary/50 transition-colors"
         style={{ height: canvasDimensions.height }}
       >
         <SignatureCanvas
@@ -76,6 +84,7 @@ export function SignaturePad({
             height: canvasDimensions.height,
             className: 'signature-canvas w-full h-full rounded-md'
           }}
+          onBegin={handleBegin}
           onEnd={handleEnd}
         />
       </div>

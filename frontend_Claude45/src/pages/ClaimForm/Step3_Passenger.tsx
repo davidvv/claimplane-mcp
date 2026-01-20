@@ -193,13 +193,8 @@ export function Step3_Passenger({
   }, []);
 
   const onSubmit = (data: PassengerInfoForm) => {
-    // Optional documents - removed mandatory check
-    /*
-    if (documents.length === 0) {
-      alert('Please upload at least one document (boarding pass or ID).');
-      return;
-    }
-    */
+    // Ensure parent state/localStorage is updated immediately before completing step
+    onUpdate(data);
     onComplete(data, documents);
   };
 

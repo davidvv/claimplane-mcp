@@ -11,32 +11,62 @@ echo "=================================================="
 
 # Start Nextcloud services first (file storage infrastructure)
 echo ""
-echo "[1/3] Starting Nextcloud services..."
+echo "[1/4] Starting Nextcloud services..."
 docker compose -f docker-compose.nextcloud.yml up -d
 
-# Wait a bit for Nextcloud DB to be ready
-echo "Waiting for Nextcloud database to be healthy..."
-sleep 10
+# Wait for Nextcloud to be healthy
+echo "Waiting for Nextcloud to be healthy..."
+until [ "`docker inspect -f {{.State.Health.Status}} nextcloud`"=="healthy" ]; do
+    echo "Still waiting for Nextcloud... (this might take a minute on first run)"
+    sleep 5
+    if [ "$(docker inspect -f {{.State.Status}} nextcloud)" != "running" ]; then
+        echo "❌ Nextcloud failed to start!"
+        exit 1
+    fi
+    # Timeout after 2 minutes
+    ((c++)) && ((c==24)) && break
+done
 
 # Start main application services
 echo ""
-echo "[2/3] Starting Flight Claim application services..."
+echo "[2/4] Starting Flight Claim application services..."
 docker compose up -d
 
 # Wait for services to be healthy
 echo "Waiting for application services to be ready..."
-sleep 15
+sleep 5
+until [ "`docker inspect -f {{.State.Health.Status}} flight_claim_db`"=="healthy" ]; do
+    echo "Waiting for Database..."
+    sleep 2
+done
 
 # Start Vite development server
-# NOTE: In production, use nginx (already configured in docker-compose.yml)
-#       The nginx container serves the built frontend from frontend_Claude45/dist
-#       For production deployment, run: npm run build && docker compose restart nginx
 echo ""
-echo "[3/3] Starting Vite development server..."
+echo "[3/4] Starting Vite development server (Port 3000)..."
 cd frontend_Claude45
-npm run dev &
+if [ ! -d "node_modules" ]; then
+    echo "Installing frontend dependencies..."
+    npm install
+fi
+
+# We use --host to make it accessible to the Cloudflare Tunnel
+npm run dev -- --host &
 VITE_PID=$!
 cd ..
+
+# NOTE: Production mode uses nginx on Port 80
+# To use the pre-built production frontend instead:
+# 1. Comment out the Vite section above
+# 2. Ensure nginx is running in docker-compose.yml
+# 3. Update Cloudflare Tunnel to point to Port 80 instead of 3000
+
+
+# Show current logs briefly
+echo ""
+echo "[4/4] Tailening logs to check for errors..."
+sleep 5
+docker compose logs --tail=20 api
+
 
 echo ""
 echo "=================================================="

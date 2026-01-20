@@ -178,7 +178,7 @@ export const claimRequestSchema = z.object({
 export const flightLookupSchema = z.object({
   flightNumber: z.string()
     .min(2, 'Flight number is required')
-    .regex(/^[A-Z0-9]{2,3}\d{1,4}$/i, 'Invalid flight number format (e.g., LH1234)'),
+    .regex(/^[A-Z0-9]{2,3}\s?\d{1,4}$/i, 'Invalid flight number format (e.g., LH1234)'),
   departureDate: z.string()
     .min(1, 'Departure date is required')
     .refine((val) => val !== '' && val !== undefined && val !== null, {

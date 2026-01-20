@@ -606,15 +606,15 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
 
                     <div className="mt-2 flex items-center gap-2">
                       <Badge variant={
-                        flight.status === 'cancelled' || flight.delayMinutes && flight.delayMinutes >= 180
+                        flight.status === 'cancelled' || (flight.delayMinutes !== undefined && flight.delayMinutes !== null && flight.delayMinutes >= 180)
                           ? 'destructive'
-                          : flight.delayMinutes && flight.delayMinutes > 0
+                          : flight.delayMinutes !== undefined && flight.delayMinutes !== null && flight.delayMinutes > 0
                           ? 'default'
                           : 'outline'
                       }>
                         {flight.status === 'cancelled'
                           ? 'Cancelled'
-                          : flight.delayMinutes && flight.delayMinutes > 0
+                          : flight.delayMinutes !== undefined && flight.delayMinutes !== null && flight.delayMinutes > 0
                           ? `Delayed ${flight.delayMinutes} min`
                           : (flight.status === 'scheduled' || flight.status === 'unknown' || !flight.status)
                           ? 'Scheduled'
@@ -686,8 +686,19 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
 
             <div>
               <p className="text-sm text-muted-foreground mb-2">Status</p>
-              <Badge variant={flightResult.status === 'delayed' || flightResult.status === 'cancelled' ? 'destructive' : 'default'}>
-                {getStatusLabel(flightResult.status || 'unknown')}
+              <Badge variant={
+                flightResult.status === 'cancelled' || (flightResult.delayMinutes !== undefined && flightResult.delayMinutes !== null && flightResult.delayMinutes >= 180)
+                  ? 'destructive'
+                  : flightResult.delayMinutes !== undefined && flightResult.delayMinutes !== null && flightResult.delayMinutes > 0
+                  ? 'default'
+                  : 'outline'
+              }>
+                {flightResult.status === 'cancelled'
+                  ? 'Cancelled'
+                  : flightResult.delayMinutes !== undefined && flightResult.delayMinutes !== null && flightResult.delayMinutes > 0
+                  ? `Delayed ${flightResult.delayMinutes} min`
+                  : getStatusLabel(flightResult.status || 'unknown')
+                }
               </Badge>
             </div>
 

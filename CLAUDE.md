@@ -1,6 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to agents when working with code in this repository.
+
+## ⚠️ SOURCE OF TRUTH ⚠️
+
+**ALL agents must read and adhere to `AGENTS.md` as the primary source of truth for startup, development, and workflow commands.**
 
 ## ⚠️ CRITICAL - READ FIRST ⚠️
 

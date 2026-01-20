@@ -44,3 +44,9 @@ Refer to skills: `.claude/skills/commit-workflow/SKILL.md` and `.claude/skills/o
 - **Error handling**: Service layer raises domain exceptions, routers return HTTPException
 - **Patterns**: Repository pattern (never query models directly), service orchestration, dependency injection
 - **Formatting**: 88 char line limit, single quotes, trailing commas, async def everywhere
+
+## Agent-Browser tool
+- Use `agent-browser` for web interactions
+- Start calling the --help: `agent-browser --help`
+- Always use `agent-browser` for web interactions
+- Never use `browser` directly

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFi
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Claim, Customer
+from app.models import Claim, Customer, ClaimFile
 from app.repositories import ClaimRepository, CustomerRepository
 from app.repositories.file_repository import FileRepository
 from app.schemas import (

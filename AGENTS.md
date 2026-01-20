@@ -15,6 +15,14 @@
 - **Frontend**: Running on **Port 3000** via Vite.
 - **NO MANUAL BUILDS**: Do not run `npm run build` or manually restart Nginx for UI changes. Vite handles automatic builds/updates. This prevents frequent environment breakages.
 
+**⚠️ Troubleshooting 502 Bad Gateway**
+If you encounter **502 Bad Gateway** errors on `eac.dvvcloud.work`:
+1. **CHECK VITE FIRST**: The frontend server (`npm run dev`) runs directly on the host, NOT in Docker.
+   - Run `ps aux | grep vite` to see if it's running.
+   - If not, start it manually: `cd frontend_Claude45 && npm run dev -- --host &`
+2. Check Cloudflare Tunnel: `docker logs unruffled_johnson`
+3. Check API: `docker logs flight_claim_api`
+
 Starting individual containers with `docker-compose up` without Nextcloud will cause upload failures that appear successful to users.
 
 ## Build/Test Commands

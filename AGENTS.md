@@ -30,6 +30,7 @@ celery -A app.celery_app worker --loglevel=info  # Background tasks
 
 **CRITICAL**: For any significant work or feature implementation:
 1. **Always use the built-in todo list tool (`todowrite`)** to structure and track your immediate sub-tasks during the session.
+    1.1 make sure to use it as the process advances, both to mark tasks as done and to add new tasks as needed.
 2. **Always create an OpenProject work package FIRST** before starting implementation.
 3. Use the `openproject-task-manager` skill for full task lifecycle.
 4. Log time entries when work is complete.

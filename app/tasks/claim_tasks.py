@@ -80,17 +80,64 @@ def send_claim_submitted_email(
     logger.info(f"Task started: Sending claim submitted email to {customer_email}")
 
     try:
-        # Call the async EmailService method
-        success = run_async(
-            EmailService.send_claim_submitted_email(
+        # Attach POA if it exists
+        attachments = []
+        
+        # We need to fetch the POA file from storage/db.
+        # Since this is a synchronous function calling run_async, we need to do the fetching inside an async block
+        # OR we can do it here if we had synchronous access.
+        # Let's delegate the fetching to a helper function that runs inside run_async.
+        
+        async def fetch_poa_and_send():
+            from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+            from sqlalchemy.orm import sessionmaker
+            from app.config import config
+            from app.repositories.file_repository import FileRepository
+            from app.services.file_service import FileService
+            from app.models import ClaimFile
+            from uuid import UUID
+
+            # Create session to find POA
+            engine = create_async_engine(config.DATABASE_URL, echo=False)
+            async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+            
+            poa_attachment = None
+            
+            async with async_session() as session:
+                try:
+                    file_repo = FileRepository(session)
+                    # Find POA file for this claim
+                    files = await file_repo.get_by_claim_id(UUID(claim_id))
+                    poa_file = next((f for f in files if f.document_type == ClaimFile.DOCUMENT_POWER_OF_ATTORNEY), None)
+                    
+                    if poa_file:
+                        # Fetch content
+                        file_service = FileService(session)
+                        # We need a user_id to download, but as a system task we might need to bypass or use the owner's ID
+                        # Let's use the owner's ID (poa_file.customer_id)
+                        content, _ = await file_service.download_file(str(poa_file.id), str(poa_file.customer_id))
+                        
+                        poa_attachment = {
+                            "filename": poa_file.original_filename or "Power_of_Attorney.pdf",
+                            "content": content,
+                            "mime_type": "application/pdf"
+                        }
+                        logger.info(f"Found POA for claim {claim_id}, attaching to email")
+                except Exception as e:
+                    logger.warning(f"Failed to fetch POA for email: {e}")
+                
+            # Send email
+            return await EmailService.send_claim_submitted_email(
                 customer_email=customer_email,
                 customer_name=customer_name,
                 claim_id=claim_id,
                 flight_number=flight_number,
                 airline=airline,
-                magic_link_token=magic_link_token
+                magic_link_token=magic_link_token,
+                attachments=[poa_attachment] if poa_attachment else None
             )
-        )
+
+        success = run_async(fetch_poa_and_send())
 
         if success:
             logger.info(f"Task completed: Email sent successfully to {customer_email}")

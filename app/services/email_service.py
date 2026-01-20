@@ -34,7 +34,8 @@ class EmailService:
         to_email: str,
         subject: str,
         html_content: str,
-        text_content: Optional[str] = None
+        text_content: Optional[str] = None,
+        attachments: Optional[list] = None
     ) -> bool:
         """
         Send an email using SMTP.
@@ -44,6 +45,7 @@ class EmailService:
             subject: Email subject line
             html_content: HTML version of the email
             text_content: Plain text version (optional, falls back to stripped HTML)
+            attachments: List of dictionaries with 'filename', 'content' (bytes), and 'mime_type'
 
         Returns:
             True if email sent successfully, False otherwise
@@ -66,14 +68,21 @@ class EmailService:
             message["Subject"] = subject
 
             # Set both HTML and plain text content
-            # Email clients that don't support HTML will show the plain text version
             if text_content:
                 message.set_content(text_content)  # Plain text version
             message.add_alternative(html_content, subtype='html')  # HTML version
 
+            # Add attachments
+            if attachments:
+                for attachment in attachments:
+                    message.add_attachment(
+                        attachment['content'],
+                        maintype=attachment.get('maintype', 'application'),
+                        subtype=attachment.get('subtype', 'octet-stream'),
+                        filename=attachment['filename']
+                    )
+
             # Connect to SMTP server and send
-            # aiosmtplib is the async version of smtplib
-            # Gmail port 587 requires STARTTLS (not implicit TLS)
             await aiosmtplib.send(
                 message,
                 hostname=config.SMTP_HOST,
@@ -117,7 +126,8 @@ class EmailService:
         claim_id: str,
         flight_number: str,
         airline: str,
-        magic_link_token: Optional[str] = None
+        magic_link_token: Optional[str] = None,
+        attachments: Optional[list] = None
     ) -> bool:
         """
         Send confirmation email when a claim is submitted.
@@ -129,6 +139,7 @@ class EmailService:
             flight_number: Flight number (e.g., "LH123")
             airline: Airline name
             magic_link_token: Optional magic link token for passwordless access
+            attachments: Optional list of attachments (e.g. signed POA)
 
         Returns:
             True if sent successfully
@@ -148,6 +159,7 @@ class EmailService:
                 "flight_number": flight_number,
                 "airline": airline,
                 "magic_link_url": magic_link_url,
+                "has_poa": attachments is not None and len(attachments) > 0
             }
 
             # Render HTML template
@@ -165,6 +177,8 @@ Claim Details:
 
 We have received your claim and will review it shortly. You will receive email updates as your claim progresses.
 
+{'A copy of your signed Power of Attorney is attached for your records.' if attachments else ''}
+
 Best regards,
 {config.SMTP_FROM_NAME}
             """.strip()
@@ -174,7 +188,8 @@ Best regards,
                 to_email=customer_email,
                 subject=f"Claim Submitted - {airline} {flight_number}",
                 html_content=html_content,
-                text_content=text_content
+                text_content=text_content,
+                attachments=attachments
             )
 
         except Exception as e:

@@ -65,6 +65,7 @@ class ClaimVerificationService:
             "missing_documents": missing_documents,
             "has_pnr": has_pnr,
             "has_poa": has_poa,
+            "poa_signed": has_poa,
             "can_submit": can_submit_without_more_uploads,
             "recommendation": "Ready for submission" if is_complete else "Needs more information"
         }

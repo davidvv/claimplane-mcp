@@ -20,28 +20,29 @@
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
-## Latest Update (2026-01-18) - OCR File Upload Optimization
+## Latest Update (2026-01-20) - Digital POA Signature System
 
-### OCR File Upload Optimization - 1 Commit
-**Estimated Time**: 4.0-6.0 hours
-**Work Packages**: #169 (to be created in OpenProject)
+### Digital POA Signature Implementation
+**Estimated Time**: 12.0-16.0 hours
+**Work Packages**: #204, #206-216 (Closed in OpenProject)
 
 #### Summary:
-Eliminated duplicate file upload by implementing single-upload architecture:
-- **Problem**: Boarding pass was uploaded twice (once for OCR, again for storage)
-- **Solution**: File uploaded once during OCR, then linked to claim during draft creation
-- **Backend**: Orphan file support, file linking endpoint, 24h cleanup task
-- **Frontend**: Capture file ID from OCR response, link instead of re-upload
+Implemented a legally compliant, "no-scan" digital signature system for Power of Attorney:
+- **Research**: Investigated 10 airlines and 5 competitors to establish data requirements.
+- **Backend**: Dynamic PDF generation using PyMuPDF with signature overlay and audit trail.
+- **Frontend**: Mobile-responsive `SignaturePad` and new "Step 4: Authorization" wizard page.
+- **Email**: Auto-attachment of signed POA to confirmation emails.
+- **Verification**: Updated completeness logic to recognize digital POA.
 
-#### Files Modified (14 total):
-Backend (9): models.py, ocr_schemas.py, file_service.py, nextcloud_service.py, claims.py, files.py, file_cleanup_tasks.py (NEW), tasks/__init__.py, celery_app.py
-Frontend (5): api.ts, ClaimFormPage.tsx, Step1_Flight.tsx, Step2_Eligibility.tsx, documents.ts
+#### Files Modified (12 total):
+Backend: models.py, email_service.py, claim_tasks.py, poa_service.py (NEW), poa_schemas.py (NEW), claims.py, verification_service.py (NEW)
+Frontend: SignaturePad.tsx (NEW), Step4_Authorization.tsx (NEW), ClaimFormPage.tsx, Stepper.tsx, Step5_Review.tsx (Renamed)
 
-**Time Added**: 4.0-6.0 hours
+**Time Added**: 12.0-16.0 hours
 
 ---
 
-## Previous Update (2026-01-18) - Boarding Pass File Persistence
+## Previous Update (2026-01-18) - OCR File Upload Optimization
 
 ### Boarding Pass File Persistence Fix - 1 Commit
 **Estimated Time**: 2.0-3.0 hours

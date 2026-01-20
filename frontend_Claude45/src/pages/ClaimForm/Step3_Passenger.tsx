@@ -277,12 +277,13 @@ export function Step3_Passenger({
                   className="w-[140px] flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="">Select...</option>
+                  <option value="+1">🇺🇸 +1</option>
+                  {/* Temporarily restricted to US only for initial launch
                   <option value="+49">🇩🇪 +49</option>
                   <option value="+44">🇬🇧 +44</option>
-                  <option value="+1">🇺🇸 +1</option>
-                  {/* Add more as needed, keeping it brief for render */}
                   <option value="+33">🇫🇷 +33</option>
                   <option value="+34">🇪🇸 +34</option>
+                  */}
                 </select>
                 <div className="relative flex-1">
                   <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />

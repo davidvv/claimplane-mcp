@@ -197,8 +197,11 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
     setIsLoading(true);
 
     try {
+      // Strip spaces and uppercase
+      const cleanFlightNumber = data.flightNumber.replace(/\s+/g, '').toUpperCase();
+      
       const result = await getFlightStatus({
-        flightNumber: data.flightNumber.toUpperCase(),
+        flightNumber: cleanFlightNumber,
         date: data.departureDate,
       });
 

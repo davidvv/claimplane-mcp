@@ -1,34 +1,26 @@
-# Phase 5: Multi-Passenger Claims (Family/Group Claims)
-
-[← Back to Roadmap](README.md)
-
----
-
-**Priority**: MEDIUM
-**Status**: 📋 **PLANNED**
-**Estimated Effort**: 2 weeks
-**Business Value**: Increases claim value and customer satisfaction
-**Target Version**: v0.5.0
-
----
-
+## Phase 5: Multi-Passenger Claims (Family/Group Claims)
 
 **Priority**: HIGH - Major UX improvement and revenue opportunity
-**Status**: 🚀 **IN PROGRESS** (Foundation Implemented 2026-01-17)
+**Status**: 🚀 **IN PROGRESS** - ~40% Complete
 **Estimated Effort**: 3.5-5 weeks (18-27 days)
 **Business Value**: HIGH - Increases average order value and customer satisfaction
 **📄 Detailed Planning**: See [docs/MULTI_PASSENGER_CLAIMS.md](docs/MULTI_PASSENGER_CLAIMS.md)
 
-### Overview
-...
+### Latest Major Progress (2026-01-20)
+- ✅ **Digital POA Signature System**: Implemented "no-scan" authorization flow.
+- ✅ **Signature Pad Component**: Reusable React component for drawing signatures.
+- ✅ **Dynamic PDF Generation**: Backend service to "stamp" signatures onto legal templates.
+- ✅ **Email Integration**: Auto-attach signed documents to confirmation emails.
+
 ### Implementation Phases
 
 1. **Backend Foundation** (3-5 days): Database models, repositories, services ✅
-2. **Single Claim Group API** (2-3 days): Core API endpoints ⏳
-3. **Frontend Multi-Passenger Form** (5-7 days): Wizard with passenger addition ✅ (Step 3 Refactored)
-4. **Customer Dashboard** (2-3 days): View grouped claims
-5. **Admin Interface** (4-6 days): Manage and process grouped claims
-6. **Notifications & Polish** (2-3 days): Email templates, testing
+2. **Legal & Authorization Flow** (3-4 days): Digital POA signature, PDF generation, Email attachments ✅
+3. **Single Claim Group API** (2-3 days): Core API endpoints ⏳
+4. **Frontend Multi-Passenger Form** (5-7 days): Wizard with passenger addition ✅ (Step 3 Refactored)
+5. **Customer Dashboard** (2-3 days): View grouped claims ⏳
+6. **Admin Interface** (4-6 days): Manage and process grouped claims ⏳
+7. **Notifications & Polish** (2-3 days): Email templates, testing ⏳
 
 ### GDPR & Compliance
 

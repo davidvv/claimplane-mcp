@@ -8,16 +8,29 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { FileText, Check, AlertCircle, PenTool } from 'lucide-react';
+import { Check, PenTool } from 'lucide-react';
 import { toast } from 'sonner';
 
 import apiClient from '@/services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Checkbox } from '@/components/ui/Checkbox';
 import { Label } from '@/components/ui/Label';
 import { SignaturePad } from '@/components/SignaturePad';
 import { LoadingOverlay } from '@/components/LoadingSpinner';
+
+// Checkbox Component (inline fallback since UI lib is missing it)
+function Checkbox({ id, checked, onCheckedChange, disabled }: { id: string, checked: boolean, onCheckedChange: (checked: boolean) => void, disabled?: boolean }) {
+  return (
+    <input
+      type="checkbox"
+      id={id}
+      checked={checked}
+      onChange={(e) => onCheckedChange(e.target.checked)}
+      disabled={disabled}
+      className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+    />
+  );
+}
 
 // Schema for the authorization form
 const authorizationSchema = z.object({
@@ -46,7 +59,7 @@ export function Step4_Authorization({
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<AuthorizationForm>({
+  const { handleSubmit, formState: { errors }, watch, setValue } = useForm<AuthorizationForm>({
     resolver: zodResolver(authorizationSchema),
     defaultValues: {
       consentTerms: false,
@@ -159,7 +172,7 @@ export function Step4_Authorization({
               <div className="flex items-start space-x-2">
                 <Checkbox 
                   id="consentTerms" 
-                  checked={watch('consentTerms')}
+                  checked={!!watch('consentTerms')}
                   onCheckedChange={(checked) => setValue('consentTerms', checked as boolean)}
                 />
                 <div className="grid gap-1.5 leading-none">
@@ -175,7 +188,7 @@ export function Step4_Authorization({
               <div className="flex items-start space-x-2">
                 <Checkbox 
                   id="consentElectronicSignature" 
-                  checked={watch('consentElectronicSignature')}
+                  checked={!!watch('consentElectronicSignature')}
                   onCheckedChange={(checked) => setValue('consentElectronicSignature', checked as boolean)}
                 />
                 <div className="grid gap-1.5 leading-none">
@@ -192,7 +205,7 @@ export function Step4_Authorization({
                 <div className="flex items-start space-x-2">
                   <Checkbox 
                     id="consentRepresentAll" 
-                    checked={watch('consentRepresentAll')}
+                    checked={!!watch('consentRepresentAll')}
                     onCheckedChange={(checked) => setValue('consentRepresentAll', checked as boolean)}
                   />
                   <div className="grid gap-1.5 leading-none">

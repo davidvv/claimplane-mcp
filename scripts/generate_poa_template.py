@@ -1,0 +1,129 @@
+import os
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from datetime import datetime
+
+OUTPUT_DIR = "app/templates/legal"
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "poa_template.pdf")
+LOGO_PATH = os.path.join(OUTPUT_DIR, "logo_placeholder.svg")
+
+def create_poa_template():
+    # Ensure directory exists
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    
+    c = canvas.Canvas(OUTPUT_FILE, pagesize=A4)
+    width, height = A4
+    
+    # --- Header ---
+    # Placeholder for logo (we'll just draw a box or text if svg support isn't easy in reportlab standard)
+    c.setFillColor(colors.darkblue)
+    c.setFont("Helvetica-Bold", 24)
+    c.drawString(1 * inch, height - 1 * inch, "EasyAirClaim")
+    
+    c.setFont("Helvetica", 10)
+    c.setFillColor(colors.black)
+    c.drawString(1 * inch, height - 1.3 * inch, "Flight Compensation Specialists")
+    
+    # --- Title ---
+    c.setFont("Helvetica-Bold", 18)
+    c.drawCentredString(width / 2, height - 2 * inch, "POWER OF ATTORNEY / ASSIGNMENT AGREEMENT")
+    
+    # --- Body Text ---
+    c.setFont("Helvetica", 11)
+    text_y = height - 2.5 * inch
+    line_height = 14
+    
+    lines = [
+        "I, the undersigned (the 'Assignor'), hereby authorize EasyAirClaim (the 'Assignee') to act as my",
+        "legal representative for the purpose of claiming compensation for flight irregularities pursuant to",
+        "Regulation (EC) No 261/2004 or other applicable laws.",
+        "",
+        "1. AUTHORIZATION",
+        "The Assignor grants the Assignee full power of attorney to negotiate with airlines, submit claims,",
+        "receive payments, and initiate legal proceedings if necessary on their behalf.",
+        "",
+        "2. ASSIGNMENT",
+        "The Assignor assigns all rights, title, and interest in any compensation claim arising from the",
+        "flight described below to the Assignee.",
+        "",
+        "3. MULTI-PASSENGER CONSENT",
+        "If signing on behalf of other passengers, the Assignor warrants that they have obtained explicit",
+        "consent/authorization from all passengers listed in the claim to act on their behalf.",
+        "",
+        "4. ELECTRONIC SIGNATURE",
+        "The parties agree that this agreement may be signed electronically and that such electronic",
+        "signatures shall have the same legal force and effect as handwritten signatures."
+    ]
+    
+    for line in lines:
+        if line.startswith(("1.", "2.", "3.", "4.")):
+            c.setFont("Helvetica-Bold", 11)
+        else:
+            c.setFont("Helvetica", 11)
+        c.drawString(1 * inch, text_y, line)
+        text_y -= line_height
+    
+    # --- Flight Details Section ---
+    text_y -= 0.5 * inch
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(1 * inch, text_y, "FLIGHT DETAILS")
+    text_y -= 0.3 * inch
+    
+    # Draw a box for flight details
+    c.setStrokeColor(colors.grey)
+    c.rect(1 * inch, text_y - 1 * inch, width - 2 * inch, 1.2 * inch, fill=0)
+    
+    c.setFont("Helvetica", 10)
+    c.drawString(1.2 * inch, text_y - 0.3 * inch, "Flight Number: {{flight_number}}")
+    c.drawString(4 * inch, text_y - 0.3 * inch, "Date: {{flight_date}}")
+    c.drawString(1.2 * inch, text_y - 0.7 * inch, "Route: {{departure_airport}} to {{arrival_airport}}")
+    c.drawString(4 * inch, text_y - 0.7 * inch, "Booking Ref: {{booking_reference}}")
+    
+    # --- Passenger Details Section ---
+    text_y -= 1.5 * inch
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(1 * inch, text_y, "PASSENGER(S)")
+    text_y -= 0.3 * inch
+    
+    # Draw box for passenger list
+    c.rect(1 * inch, text_y - 1 * inch, width - 2 * inch, 1.2 * inch, fill=0)
+    c.setFont("Helvetica", 10)
+    c.drawString(1.2 * inch, text_y - 0.2 * inch, "Primary Passenger: {{primary_passenger_name}}")
+    c.drawString(1.2 * inch, text_y - 0.5 * inch, "Additional Passengers: {{additional_passengers}}")
+    c.drawString(1.2 * inch, text_y - 0.8 * inch, "Address: {{address}}")
+    
+    # --- Signature Section ---
+    text_y -= 1.5 * inch
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(1 * inch, text_y, "SIGNATURE")
+    
+    # Signature Box
+    sig_y = text_y - 1.5 * inch
+    c.setStrokeColor(colors.black)
+    c.setDash([2, 2])
+    c.rect(1 * inch, sig_y, width - 2 * inch, 1.2 * inch, fill=0)
+    c.setDash([])
+    
+    c.setFont("Helvetica-Oblique", 9)
+    c.setFillColor(colors.grey)
+    c.drawString(1.2 * inch, sig_y + 0.6 * inch, "[Electronic Signature Will Be Placed Here]")
+    
+    # Signature line text
+    c.setFillColor(colors.black)
+    c.setFont("Helvetica", 10)
+    c.drawString(1 * inch, sig_y - 0.2 * inch, "Signed by: {{signer_name}}")
+    c.drawString(4.5 * inch, sig_y - 0.2 * inch, "Date: {{signed_date}}")
+    
+    # --- Footer / Audit Trail ---
+    c.setFont("Helvetica", 7)
+    c.setFillColor(colors.grey)
+    footer_text = "Generated by EasyAirClaim Platform | Audit Trail: {{audit_trail_id}}"
+    c.drawCentredString(width / 2, 0.5 * inch, footer_text)
+    
+    c.save()
+    print(f"Template created at {OUTPUT_FILE}")
+
+if __name__ == "__main__":
+    create_poa_template()

@@ -35,5 +35,9 @@ pillow==10.4.0
 pyzbar==0.1.9  # Barcode/QR code reading for boarding passes
 numpy>=1.24.0
 
+# PDF Generation & Manipulation (Digital POA)
+PyMuPDF>=1.24.0
+reportlab>=4.0.0  # For generating initial PDF templates
+
 # Webhook deployment receiver
 flask==3.0.0

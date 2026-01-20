@@ -2,7 +2,7 @@
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File, Form, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db

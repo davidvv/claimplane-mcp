@@ -51,6 +51,9 @@ from app.schemas.ocr_schemas import (
     OCRResponseSchema,
 )
 
+# Import POA schemas
+from app.schemas.poa_schemas import SignatureRequest
+
 __all__ = [
     "AddressSchema",
     "CustomerCreateSchema",
@@ -80,4 +83,5 @@ __all__ = [
     "BoardingPassDataSchema",
     "FieldConfidenceSchema",
     "OCRResponseSchema",
+    "SignatureRequest",
 ]

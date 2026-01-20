@@ -616,6 +616,8 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
                           ? 'Cancelled'
                           : flight.delayMinutes && flight.delayMinutes > 0
                           ? `Delayed ${flight.delayMinutes} min`
+                          : (flight.status === 'scheduled' || flight.status === 'unknown' || !flight.status)
+                          ? 'Scheduled'
                           : 'On Time'
                         }
                       </Badge>

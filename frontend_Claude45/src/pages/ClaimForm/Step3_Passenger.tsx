@@ -193,10 +193,13 @@ export function Step3_Passenger({
   }, []);
 
   const onSubmit = (data: PassengerInfoForm) => {
+    // Optional documents - removed mandatory check
+    /*
     if (documents.length === 0) {
       alert('Please upload at least one document (boarding pass or ID).');
       return;
     }
+    */
     onComplete(data, documents);
   };
 
@@ -485,7 +488,7 @@ export function Step3_Passenger({
         <CardHeader>
           <CardTitle>Upload Documents</CardTitle>
           <CardDescription>
-            Upload documents for ALL passengers
+            Upload documents for passengers (Optional)
           </CardDescription>
         </CardHeader>
 

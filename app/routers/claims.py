@@ -19,7 +19,8 @@ from app.schemas import (
     ClaimDraftSchema,
     ClaimDraftResponseSchema,
     ClaimDraftUpdateSchema,
-    FileResponseSchema
+    FileResponseSchema,
+    SignatureRequest
 )
 from app.services.auth_service import AuthService
 from app.services.file_service import FileService, get_file_service

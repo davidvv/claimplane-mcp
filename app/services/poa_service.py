@@ -40,11 +40,11 @@ class POAService:
             doc = fitz.open(POAService.TEMPLATE_PATH)
             page = doc[0]  # Assuming single page
             
-            # --- 1. Clean up Template (Blank out placeholders and boxes) ---
+            # 1. Clean up Template (Blank out placeholders and boxes)
             
             # A. Identify and blank out the large signature box (Drawing [2] from inspection)
-            # It's at Rect(72.0, 762.8, 523.3, 849.2). This is the "red/gray box".
-            signature_box_rect = fitz.Rect(72, 760, 525, 850)
+            # It's at Rect(72.0, 762.8, 523.3, 849.2). 
+            signature_box_rect = fitz.Rect(70, 750, 530, 850)
             page.draw_rect(signature_box_rect, color=(1, 1, 1), fill=(1, 1, 1))
 
             # B. Blank out specific UI text placeholders
@@ -53,6 +53,14 @@ class POAService:
                 hits = page.search_for(ui_p)
                 for rect in hits:
                     page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
+
+            # C. Look for any red-ish drawings and cover them
+            drawings = page.get_drawings()
+            for d in drawings:
+                c = d.get("color") or d.get("fill")
+                if c and c[0] > 0.6 and c[1] < 0.4 and c[2] < 0.4:
+                    logger.info(f"Covering red drawing at {d['rect']}")
+                    page.draw_rect(d["rect"], color=(1, 1, 1), fill=(1, 1, 1))
 
             # --- 2. Data Preparation ---
             
@@ -80,22 +88,44 @@ class POAService:
                 hits = page.search_for(placeholder)
                 if not hits:
                     logger.warning(f"Placeholder not found in POA template: {placeholder}")
+                    continue
+                    
                 for rect in hits:
-                    # Draw small white box just over the placeholder text to erase it
-                    page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
-                    # Insert new text
-                    # Use y1 - 2 to place text baseline correctly. 
-                    # Ensure color is black.
-                    page.insert_text((rect.x0, rect.y1 - 2), str(value), fontsize=10, fontname="helv", color=(0, 0, 0))
+                    # Erase placeholder with a slightly larger white box to be safe
+                    # Rect is (x0, y0, x1, y1)
+                    erase_rect = fitz.Rect(rect.x0 - 1, rect.y0 - 1, rect.x1 + 1, rect.y1 + 1)
+                    page.draw_rect(erase_rect, color=(1, 1, 1), fill=(1, 1, 1))
+                    
+                    # Insert value
+                    # Using Helvetica for maximum compatibility.
+                    # PyMuPDF's insert_text uses (x, y) as the baseline start.
+                    # rect.y1 is the bottom of the bounding box.
+                    text_pos = fitz.Point(rect.x0, rect.y1 - 2)
+                    
+                    val_str = str(value)
+                    fontsize = 10
+                    if len(val_str) > 40:
+                        fontsize = 7
+                    elif len(val_str) > 25:
+                        fontsize = 8
+                    
+                    page.insert_text(
+                        text_pos, 
+                        val_str, 
+                        fontsize=fontsize, 
+                        fontname="helv", 
+                        color=(0, 0, 0)
+                    )
+                    logger.info(f"Populated {placeholder} with '{val_str}' at {text_pos}")
             
             # --- 4. Signature Overlay ---
-            if signature_image_bytes and len(signature_image_bytes) > 100:
+            if signature_image_bytes:
                 logger.info(f"Inserting signature image: {len(signature_image_bytes)} bytes")
-                # Position it in the cleared signature area, slightly higher to not hit audit trail
-                SIGNATURE_BOX = fitz.Rect(100, 765, 500, 825)
+                # Using a safe area that avoids the very edges and footer
+                SIGNATURE_BOX = fitz.Rect(100, 755, 480, 825)
                 page.insert_image(SIGNATURE_BOX, stream=signature_image_bytes)
             else:
-                logger.warning(f"Signature image too small or missing ({len(signature_image_bytes) if signature_image_bytes else 0} bytes)")
+                logger.warning("No signature image bytes provided")
             
             # --- 5. Audit Trail ---
             audit_text = (
@@ -104,7 +134,7 @@ class POAService:
                 f"Device: {user_agent[:40]}..."
             )
             
-            # Place audit trail at the absolute bottom
+            # Absolute bottom
             page.insert_text(
                 (86, 835), 
                 audit_text,
@@ -112,8 +142,8 @@ class POAService:
                 color=(0.3, 0.3, 0.3)
             )
 
-            # Return bytes
-            return doc.tobytes()
+            # Return bytes with garbage collection and linear configuration for better web viewing
+            return doc.tobytes(garbage=3, deflate=True)
             
         except Exception as e:
             logger.error(f"Failed to generate POA PDF: {str(e)}", exc_info=True)

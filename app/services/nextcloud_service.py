@@ -434,7 +434,7 @@ class NextcloudService:
             """Internal upload operation that can be retried."""
             # Ensure parent directory exists
             logger.info(f"Ensuring directory exists for path: {remote_path}")
-            dir_created = await self.ensure_directory_exists(remote_path)
+            dir_created = await self.ensure_directory_exists(remote_path, is_file_path=True)
             if not dir_created:
                 logger.warning(f"Failed to ensure directory exists for: {remote_path}")
 
@@ -1060,29 +1060,38 @@ class NextcloudService:
             logger.error(f"Nextcloud directory creation error: {str(e)}", exc_info=True)
             return False
 
-    async def ensure_directory_exists(self, remote_path: str) -> bool:
-        """Ensure the directory exists, creating all parent directories recursively."""
+    async def ensure_directory_exists(self, remote_path: str, is_file_path: bool = False) -> bool:
+        """Ensure the directory exists, creating all parent directories recursively.
+        
+        Args:
+            remote_path: Path to ensure
+            is_file_path: If True, the last component is treated as a filename and ignored
+        """
         if not remote_path:
             return True
 
-        logger.info(f"Ensuring directory exists: {remote_path}")
+        path_to_ensure = remote_path
+        if is_file_path:
+            path_parts = remote_path.rstrip("/").split("/")
+            if len(path_parts) > 1:
+                path_to_ensure = "/".join(path_parts[:-1])
+            else:
+                return True # Root
+
+        logger.info(f"Ensuring directory exists: {path_to_ensure}")
 
         # Split path into components and create each level
-        path_parts = remote_path.strip("/").split("/")
+        parts = path_to_ensure.strip("/").split("/")
         current_path = ""
 
-        for part in path_parts:
+        for part in parts:
             if not part:
                 continue
 
             current_path = f"{current_path}/{part}" if current_path else part
-            logger.info(f"Ensuring directory exists level: {current_path}")
-
+            
             # Try to create the directory (405 means it already exists)
-            result = await self.create_directory(current_path)
-            if not result:
-                logger.warning(f"Failed to ensure directory exists level: {current_path}")
-                # Continue anyway - the directory might already exist
+            await self.create_directory(current_path)
 
         return True
 

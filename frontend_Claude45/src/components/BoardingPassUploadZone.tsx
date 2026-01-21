@@ -11,7 +11,7 @@
  * - Error handling with retry
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, X, AlertCircle, Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
@@ -47,9 +47,36 @@ export function BoardingPassUploadZone({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLocalProcessing, setIsLocalProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   // Combine local and external processing states
   const isProcessing = isLocalProcessing || externalProcessing;
+
+  // Simulated progress logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (isProcessing) {
+      setProgress(0);
+      // Start slow crawl to ~95%
+      interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 95) return prev;
+          // Progress slows down as it gets higher
+          const remaining = 100 - prev;
+          const increment = Math.max(0.1, remaining * 0.02);
+          return Math.min(95, prev + increment);
+        });
+      }, 100);
+    } else {
+      // Functional update to ensure we use the latest progress value
+      setProgress(prev => (prev > 0 ? 100 : 0));
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isProcessing]);
 
   const processFile = useCallback(
     async (file: File) => {
@@ -225,7 +252,10 @@ export function BoardingPassUploadZone({
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full animate-pulse" style={{ width: '75%' }} />
+                    <div 
+                      className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-out" 
+                      style={{ width: `${progress}%` }} 
+                    />
                   </div>
                   <p className="text-xs text-muted-foreground">
                     AI is reading your boarding pass. This usually takes 3-5 seconds.

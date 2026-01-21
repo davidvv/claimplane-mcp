@@ -441,7 +441,7 @@ async def submit_claim_with_customer(
 @router.patch("/{claim_id}/draft", response_model=ClaimResponseSchema)
 async def update_draft_claim(
     claim_id: UUID,
-    update_data: ClaimDraftUpdateSchema,
+    update_data: Dict[str, Any],
     request: Request,
     user_data: tuple = Depends(get_current_user_with_claim_access),
     db: AsyncSession = Depends(get_db)
@@ -457,6 +457,8 @@ async def update_draft_claim(
         ip_address, user_agent = get_client_info(request)
         session_id = request.headers.get("x-session-id")
         
+        logger.info(f"[update_draft_claim] Updating claim {claim_id}")
+        
         draft_service = ClaimDraftService(db)
         
         # Verify access
@@ -467,16 +469,43 @@ async def update_draft_claim(
         
         verify_claim_access(claim, current_user, token_claim_id)
         
-        # Convert schema to dict for service
-        data_dict = update_data.model_dump(exclude_unset=True)
+        # Manually validate and transform data
+        data_dict = update_data.copy()
         
-        # Handle aliases and nested objects if any
+        # Handle aliases and nested objects
         if 'postalCode' in data_dict:
             data_dict['postal_code'] = data_dict.pop('postalCode')
         
-        if 'passengers' in data_dict and data_dict['passengers']:
-            # passengers are already in snake_case because of model_dump()
-            pass
+        if 'incidentType' in data_dict:
+            data_dict['incident_type'] = data_dict.pop('incidentType')
+
+        if 'bookingReference' in data_dict:
+            data_dict['booking_reference'] = data_dict.pop('bookingReference')
+
+        # Robust passenger transformation
+        if 'passengers' in data_dict and isinstance(data_dict['passengers'], list):
+            valid_passengers = []
+            for p in data_dict['passengers']:
+                if not isinstance(p, dict):
+                    continue
+                
+                # Transform aliases
+                p_transformed = p.copy()
+                if 'firstName' in p_transformed:
+                    p_transformed['first_name'] = p_transformed.pop('firstName')
+                if 'lastName' in p_transformed:
+                    p_transformed['last_name'] = p_transformed.pop('lastName')
+                if 'ticketNumber' in p_transformed:
+                    p_transformed['ticket_number'] = p_transformed.pop('ticketNumber')
+                
+                # Skip if essential fields are missing to prevent DB errors
+                if not p_transformed.get('first_name') or not p_transformed.get('last_name'):
+                    logger.warning(f"[update_draft_claim] Skipping invalid passenger record: {p}")
+                    continue
+                    
+                valid_passengers.append(p_transformed)
+            
+            data_dict['passengers'] = valid_passengers
 
         updated_claim = await draft_service.update_draft(
             claim_id=claim_id,
@@ -489,10 +518,13 @@ async def update_draft_claim(
         return ClaimResponseSchema.from_orm(updated_claim)
 
     except ValueError as e:
-        logger.error(f"Validation error in draft claim update: {str(e)}")
+        logger.error(f"Validation error in draft claim update for {claim_id}: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException as e:
+        # Re-raise HTTP exceptions (like 404, 403)
+        raise e
     except Exception as e:
-        logger.error(f"Unexpected error in draft claim update: {str(e)}", exc_info=True)
+        logger.error(f"Unexpected error in draft claim update for {claim_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="An error occurred while updating draft claim")
 
 

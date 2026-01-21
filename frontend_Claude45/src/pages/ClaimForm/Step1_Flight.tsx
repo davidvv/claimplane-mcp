@@ -124,6 +124,14 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
         setOcrFileId(result.uploadedFileId);
         console.log('[OCR] File saved with ID:', result.uploadedFileId);
       }
+      
+      // Small delay to allow progress bar to reach 100% visually
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      setOcrResult(result);
+      if (setSavedOcrResult) {
+        setSavedOcrResult(result);
+      }
       toast.success('Boarding pass data extracted successfully!');
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.message || 'Failed to extract data from boarding pass';

@@ -785,7 +785,7 @@ class NextcloudService:
             # Ensure destination directory exists
             dest_dir = "/".join(dest_path.split("/")[:-1])
             if dest_dir:
-                await self._ensure_directory_exists(dest_dir)
+                await self.ensure_directory_exists(dest_dir)
             
             # Move file using WebDAV MOVE method
             async with httpx.AsyncClient(timeout=self.timeout) as client:

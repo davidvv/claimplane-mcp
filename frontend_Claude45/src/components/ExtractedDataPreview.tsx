@@ -349,13 +349,13 @@ export function ExtractedDataPreview({
             <div>
               <Label htmlFor="edit-flight-number">Flight Number</Label>
               <div className="flex flex-col xs:flex-row xs:items-center gap-2">
-                <div className="flex-1 min-w-0 max-w-xs">
+                <div className="flex-1 min-w-0 max-w-[280px]">
                   {editMode ? (
                     <Input
                       id="edit-flight-number"
                       value={editedData.flightNumber}
                       onChange={(e) => setEditedData({ ...editedData, flightNumber: e.target.value.toUpperCase() })}
-                      className="w-full"
+                      className="w-full h-10"
                     />
                   ) : (
                     <p className="text-lg font-medium truncate">{editedData.flightNumber || '-'}</p>
@@ -369,14 +369,14 @@ export function ExtractedDataPreview({
             <div>
               <Label htmlFor="edit-flight-date">Flight Date</Label>
               <div className="flex flex-col xs:flex-row xs:items-center gap-2">
-                <div className="flex-1 min-w-0 max-w-xs">
+                <div className="flex-1 min-w-0 max-w-[280px]">
                   {editMode ? (
                     <Input
                       id="edit-flight-date"
                       type="date"
                       value={editedData.flightDate}
                       onChange={(e) => setEditedData({ ...editedData, flightDate: e.target.value })}
-                      className="w-full"
+                      className="w-full h-10"
                     />
                   ) : (
                     <p className="text-lg font-medium truncate">{editedData.flightDate || '-'}</p>

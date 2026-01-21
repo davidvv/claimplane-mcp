@@ -148,6 +148,7 @@ export function Step2_Eligibility({
         incidentType: flightData.status === 'cancelled' ? 'cancellation' : 'delay',
         compensationAmount: eligibilityResult.compensationAmount,
         currency: eligibilityResult.currency || 'EUR',
+        boardingPassFileId: ocrFileId,
       });
 
       const draftData: DraftClaimData = {

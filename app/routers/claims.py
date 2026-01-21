@@ -666,16 +666,31 @@ async def sign_power_of_attorney(
     
     try:
         # Format address
-        address_str = f"{customer.street}, {customer.postal_code} {customer.city}, {customer.country}"
+        address_str = f"{customer.street or '-'}, {customer.postal_code or ''} {customer.city or ''}, {customer.country or ''}"
+        
+        # Get additional passengers to include in POA
+        from app.models import Passenger
+        from sqlalchemy import select
+        stmt = select(Passenger).where(Passenger.claim_id == claim.id)
+        result = await db.execute(stmt)
+        all_passengers = result.scalars().all()
+        
+        # Format additional passengers string
+        additional_pax_list = [
+            f"{p.first_name} {p.last_name}" 
+            for p in all_passengers 
+            if f"{p.first_name} {p.last_name}".lower() != f"{customer.first_name} {customer.last_name}".lower()
+        ]
+        additional_pax_str = ", ".join(additional_pax_list) if additional_pax_list else "None"
         
         pdf_bytes = POAService.generate_signed_poa(
             flight_number=claim.flight_number,
-            flight_date=claim.departure_date.isoformat(),
-            departure_airport=claim.departure_airport,
-            arrival_airport=claim.arrival_airport,
+            flight_date=claim.departure_date.isoformat() if claim.departure_date else "-",
+            departure_airport=claim.departure_airport or "-",
+            arrival_airport=claim.arrival_airport or "-",
             booking_reference=claim.booking_reference or "N/A",
             primary_passenger_name=f"{customer.first_name} {customer.last_name}",
-            additional_passengers="",  # TODO: Handle multiple passengers
+            additional_passengers=additional_pax_str,
             address=address_str,
             signer_name=signature_data.signer_name,
             signature_image_bytes=signature_bytes,
@@ -1304,7 +1319,7 @@ async def extract_boarding_pass_data(
             
             logger.info(f"[ocr-boarding-pass] File saved to temp storage: {uploaded_file_id}")
         except Exception as save_error:
-            logger.warning(f"[ocr-boarding-pass] Failed to save file to temp storage: {str(save_error)}")
+            logger.error(f"[ocr-boarding-pass] Failed to save file to temp storage for {file.filename}: {str(save_error)}", exc_info=True)
             # Continue - OCR data is still valuable even if file save fails
             # User can manually upload boarding pass in Step 3 if needed
 

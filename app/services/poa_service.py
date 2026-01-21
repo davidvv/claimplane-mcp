@@ -83,8 +83,20 @@ class POAService:
                 for rect in hits:
                     page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
 
+            # 3. Aggressively remove any large rectangles/boxes in the signature area
+            # The template has gray/red boxes that we want to clear
+            drawings = page.get_drawings()
+            for d in drawings:
+                r = d["rect"]
+                # If it's a wide box in the bottom half of the page, cover it
+                if r.width > 300 and r.y0 > 450:
+                    page.draw_rect(r, color=(1, 1, 1), fill=(1, 1, 1))
+
             # --- Signature Overlay ---
-            page.insert_image(POAService.SIGNATURE_RECT, stream=signature_image_bytes)
+            # Center the signature in the area formerly occupied by the bottom box (y ~ 762-840)
+            # We'll place it slightly above the audit trail
+            SIGNATURE_BOX = fitz.Rect(86, 755, 510, 805)
+            page.insert_image(SIGNATURE_BOX, stream=signature_image_bytes)
             
             # --- Audit Trail ---
             audit_text = (
@@ -93,9 +105,9 @@ class POAService:
                 f"Device: {user_agent[:40]}..."
             )
             
-            # Place audit trail nicely at the bottom
+            # Place audit trail at the very bottom
             page.insert_text(
-                (86, 810), 
+                (86, 825), 
                 audit_text,
                 fontsize=7,
                 color=(0.4, 0.4, 0.4)

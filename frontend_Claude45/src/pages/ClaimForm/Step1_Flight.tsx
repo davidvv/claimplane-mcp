@@ -363,6 +363,7 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
     setSearchResults([]);
     setOcrResult(null);
     setBoardingPassFile(null);
+    setShowManualEntry(false);
     // setOcrError(null);
   };
 

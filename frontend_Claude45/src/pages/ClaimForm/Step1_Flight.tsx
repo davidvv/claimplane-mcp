@@ -10,10 +10,10 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plane, Calendar, Search, MapPin, ArrowUpDown, FileUp, ArrowLeft } from 'lucide-react';
+import { Plane, Calendar, Search, MapPin, ArrowUpDown, FileUp, ArrowLeft, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { flightLookupSchema, type FlightLookupForm } from '@/schemas/validation';
+import { flightLookupSchema, type FlightLookupForm, flightManualEntrySchema, type FlightManualEntryForm } from '@/schemas/validation';
 import { getFlightStatus, searchFlightsByRoute } from '@/services/flights';
 import { ocrBoardingPass } from '@/services/claims';
 import type { FlightStatus, FlightSearchResult, Airport, OCRResponse } from '@/types/api';
@@ -73,6 +73,11 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
   const [searchResults, setSearchResults] = useState<FlightSearchResult[]>([]);
   const [swapKey, setSwapKey] = useState<number>(0);
 
+  // Manual Entry State
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualDepartureAirport, setManualDepartureAirport] = useState<Airport | null>(null);
+  const [manualArrivalAirport, setManualArrivalAirport] = useState<Airport | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -85,6 +90,10 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
           departureDate: initialData.departureDate,
         }
       : undefined,
+  });
+
+  const manualForm = useForm<FlightManualEntryForm>({
+    resolver: zodResolver(flightManualEntrySchema),
   });
 
   // ==================== OCR Handlers ====================
@@ -195,6 +204,7 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
 
   const onSubmitFlightNumber = async (data: FlightLookupForm) => {
     setIsLoading(true);
+    setShowManualEntry(false); // Reset on new search
 
     try {
       // Strip spaces and uppercase
@@ -211,11 +221,45 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
     } catch (error: any) {
       setFlightResult(null);
       setSearchResults([]);
-      toast.error(error.response?.data?.error?.message || 'Flight not found. Please check your details.');
+      
+      // Enable manual entry fallback
+      setShowManualEntry(true);
+      manualForm.setValue('flightNumber', data.flightNumber.toUpperCase());
+      
+      // toast.error(error.response?.data?.error?.message || 'Flight not found. Please check your details.');
       console.error('Flight lookup error:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const onSubmitManualEntry = (data: FlightManualEntryForm) => {
+    if (!manualDepartureAirport || !manualArrivalAirport) {
+      toast.error('Please select departure and arrival airports');
+      return;
+    }
+
+    const manualFlight: FlightStatus = {
+      id: `manual-${Date.now()}`,
+      flightNumber: data.flightNumber,
+      airline: data.airline,
+      departureAirport: manualDepartureAirport.iata,
+      arrivalAirport: manualArrivalAirport.iata,
+      departureDate: data.scheduledDeparture.split('T')[0],
+      scheduledDeparture: new Date(data.scheduledDeparture).toISOString(),
+      scheduledArrival: new Date(data.scheduledArrival).toISOString(),
+      actualDeparture: null,
+      actualArrival: null,
+      status: 'scheduled',
+      delay: 0,
+      delayMinutes: 0,
+      distanceKm: 0,
+      lastUpdated: new Date().toISOString(),
+      dataSource: 'manual',
+      requiresManualVerification: true,
+    };
+
+    onComplete(manualFlight);
   };
 
   // ==================== Route Search Handlers ====================
@@ -469,6 +513,92 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
                   )}
                 </Button>
               </form>
+
+              {/* Manual Entry Fallback */}
+              {showManualEntry && (
+                <div className="mt-8 pt-8 border-t fade-in">
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 mb-6">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-amber-900 dark:text-amber-200">Flight not found</h4>
+                        <p className="text-sm text-amber-800 dark:text-amber-300 mt-1">
+                          We couldn't find this flight in our live database. This happens sometimes with recent flights or charter airlines.
+                          <br /><br />
+                          <strong>No problem!</strong> Please enter the details manually below to continue your claim.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <form onSubmit={manualForm.handleSubmit(onSubmitManualEntry)} className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Airline</Label>
+                        <Input 
+                          placeholder="e.g. Lufthansa" 
+                          {...manualForm.register('airline')}
+                        />
+                         {manualForm.formState.errors.airline && (
+                           <p className="text-sm text-destructive">{manualForm.formState.errors.airline.message}</p>
+                         )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Flight Number</Label>
+                        <Input 
+                          placeholder="e.g. LH1234" 
+                          {...manualForm.register('flightNumber')}
+                        />
+                         {manualForm.formState.errors.flightNumber && (
+                           <p className="text-sm text-destructive">{manualForm.formState.errors.flightNumber.message}</p>
+                         )}
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                       <AirportAutocomplete
+                         value={manualDepartureAirport}
+                         onChange={setManualDepartureAirport}
+                         label="Departure Airport *"
+                         placeholder="e.g. Munich"
+                       />
+                       <AirportAutocomplete
+                         value={manualArrivalAirport}
+                         onChange={setManualArrivalAirport}
+                         label="Arrival Airport *"
+                         placeholder="e.g. New York"
+                       />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                         <Label>Scheduled Departure</Label>
+                         <Input 
+                           type="datetime-local" 
+                           {...manualForm.register('scheduledDeparture')} 
+                         />
+                         {manualForm.formState.errors.scheduledDeparture && (
+                           <p className="text-sm text-destructive">{manualForm.formState.errors.scheduledDeparture.message}</p>
+                         )}
+                       </div>
+                       <div className="space-y-2">
+                         <Label>Scheduled Arrival</Label>
+                         <Input 
+                           type="datetime-local" 
+                           {...manualForm.register('scheduledArrival')} 
+                         />
+                         {manualForm.formState.errors.scheduledArrival && (
+                           <p className="text-sm text-destructive">{manualForm.formState.errors.scheduledArrival.message}</p>
+                         )}
+                       </div>
+                    </div>
+
+                    <Button type="submit" className="w-full">
+                      Continue with Manual Entry
+                    </Button>
+                  </form>
+                </div>
+              )}
             </>
           )}
 

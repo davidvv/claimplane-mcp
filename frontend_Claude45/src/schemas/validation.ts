@@ -189,6 +189,13 @@ export const flightLookupSchema = z.object({
     }),
 });
 
+export const flightManualEntrySchema = z.object({
+  airline: z.string().min(2, 'Airline name is required'),
+  flightNumber: z.string().min(2, 'Flight number is required'),
+  scheduledDeparture: z.string().min(1, 'Departure time is required'),
+  scheduledArrival: z.string().min(1, 'Arrival time is required'),
+});
+
 // Step 2: Eligibility (auto-populated, minimal validation)
 export const eligibilityFormSchema = z.object({
   email: emailSchema,
@@ -251,6 +258,7 @@ export const loginSchema = z.object({
 
 // ==================== Type Inference ====================
 export type FlightLookupForm = z.infer<typeof flightLookupSchema>;
+export type FlightManualEntryForm = z.infer<typeof flightManualEntrySchema>;
 export type EligibilityForm = z.infer<typeof eligibilityFormSchema>;
 export type PassengerInfoForm = z.infer<typeof passengerInfoSchema>;
 export type ClaimStatusLookupForm = z.infer<typeof claimStatusLookupSchema>;

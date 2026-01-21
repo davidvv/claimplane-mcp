@@ -25,6 +25,7 @@ export interface FlightStatus extends FlightInfo {
   id: string; // UUID
   lastUpdated: string; // ISO datetime
   dataSource: string;
+  requiresManualVerification?: boolean;
 }
 
 // ==================== Customer Types ====================

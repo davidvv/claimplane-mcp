@@ -78,7 +78,7 @@ export function SignaturePad({
         <SignatureCanvas
           ref={sigPadRef}
           penColor="black"
-          backgroundColor="rgba(0,0,0,0)"
+          backgroundColor="white"
           canvasProps={{
             width: canvasDimensions.width,
             height: canvasDimensions.height,

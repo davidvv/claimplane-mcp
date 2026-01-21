@@ -656,7 +656,14 @@ async def sign_power_of_attorney(
             encoded = signature_data.signature_image
             
         signature_bytes = base64.b64decode(encoded)
+        logger.info(f"Decoded signature image: {len(signature_bytes)} bytes")
+        
+        # DEBUG: Save signature for inspection
+        # with open(f"/tmp/sig_{claim_id}.png", "wb") as f:
+        #     f.write(signature_bytes)
+            
     except Exception as e:
+        logger.error(f"Failed to decode signature image: {e}")
         raise HTTPException(status_code=400, detail="Invalid signature image data")
 
     # 4. Generate PDF

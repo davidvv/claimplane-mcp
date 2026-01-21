@@ -349,7 +349,7 @@ export function ExtractedDataPreview({
             <div>
               <Label htmlFor="edit-flight-number">Flight Number</Label>
               <div className="flex flex-col xs:flex-row xs:items-center gap-2">
-                <div className="flex-1 min-w-0 max-w-[280px]">
+                <div className="flex-1 min-w-0 max-w-[240px]">
                   {editMode ? (
                     <Input
                       id="edit-flight-number"
@@ -369,7 +369,7 @@ export function ExtractedDataPreview({
             <div>
               <Label htmlFor="edit-flight-date">Flight Date</Label>
               <div className="flex flex-col xs:flex-row xs:items-center gap-2">
-                <div className="flex-1 min-w-0 max-w-[280px]">
+                <div className="flex-1 min-w-0 max-w-[240px]">
                   {editMode ? (
                     <Input
                       id="edit-flight-date"

@@ -467,7 +467,7 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="flightNumber">Flight Number</Label>
-                    <div className="relative w-full max-w-[280px]">
+                    <div className="relative w-full max-w-[240px]">
                       <Plane className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="flightNumber"
@@ -483,7 +483,7 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
 
                   <div className="space-y-2">
                     <Label htmlFor="departureDate">Departure Date *</Label>
-                    <div className="relative w-full max-w-[280px]">
+                    <div className="relative w-full max-w-[240px]">
                       <Calendar
                         className="absolute left-3 top-3 w-4 h-4 text-muted-foreground cursor-pointer z-10"
                         onClick={() => (document.getElementById('departureDate') as HTMLInputElement)?.showPicker?.()}
@@ -538,7 +538,7 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
                         <Label>Airline</Label>
                         <Input 
                           placeholder="e.g. Lufthansa" 
-                          className="w-full max-w-[280px] h-10"
+                          className="w-full max-w-[240px] h-10"
                           {...manualForm.register('airline')}
                         />
                          {manualForm.formState.errors.airline && (
@@ -549,7 +549,7 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
                         <Label>Flight Number</Label>
                         <Input 
                           placeholder="e.g. LH1234" 
-                          className="w-full max-w-[280px] h-10"
+                          className="w-full max-w-[240px] h-10"
                           {...manualForm.register('flightNumber')}
                         />
                          {manualForm.formState.errors.flightNumber && (
@@ -578,7 +578,7 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
                          <Label>Scheduled Departure</Label>
                          <Input 
                            type="datetime-local" 
-                           className="w-full max-w-[280px] h-10"
+                           className="w-full max-w-[240px] h-10"
                            {...manualForm.register('scheduledDeparture')} 
                          />
                          {manualForm.formState.errors.scheduledDeparture && (
@@ -589,7 +589,7 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
                          <Label>Scheduled Arrival</Label>
                          <Input 
                            type="datetime-local" 
-                           className="w-full max-w-[280px] h-10"
+                           className="w-full max-w-[240px] h-10"
                            {...manualForm.register('scheduledArrival')} 
                          />
                          {manualForm.formState.errors.scheduledArrival && (
@@ -653,7 +653,7 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
 
                 <div className="space-y-2">
                   <Label htmlFor="routeFlightDate">Flight Date *</Label>
-                  <div className="relative w-full max-w-[280px]">
+                  <div className="relative w-full max-w-[240px]">
                     <Calendar
                       className="absolute left-3 top-3 w-4 h-4 text-muted-foreground cursor-pointer z-10"
                       onClick={() => (document.getElementById('routeFlightDate') as HTMLInputElement)?.showPicker?.()}

@@ -161,3 +161,11 @@
   }
 }
 
+/* Fix iOS Safari date input height and padding */
+input[type="date"],
+input[type="datetime-local"] {
+  -webkit-appearance: none;
+  min-height: 40px;
+  line-height: normal;
+}
+

@@ -22,7 +22,7 @@ class FileValidationService:
                 "max_file_size": 10 * 1024 * 1024,  # 10MB
                 "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp", "message/rfc822", "application/octet-stream"],
                 "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".eml"],
-                "max_pages": 5,
+                "max_pages": 15,
                 "requires_scan": True,
                 "requires_encryption": True
             },
@@ -54,7 +54,7 @@ class FileValidationService:
                 "max_file_size": 5 * 1024 * 1024,  # 5MB
                 "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp", "message/rfc822", "application/octet-stream"],
                 "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".eml"],
-                "max_pages": 3,
+                "max_pages": 15,
                 "requires_scan": True,
                 "requires_encryption": True
             },

@@ -7,6 +7,41 @@
 - **Estimated Total Time**: ~488.0-558.6 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
+## Latest Work (2026-01-21) - UI Glitch Fixes
+
+### Date Input Field Width Optimization
+**Estimated Time**: 1.0 hour
+**Work Package**: #281
+
+#### Key Tasks:
+1. **Layout Investigation** (0.25 hour)
+   - Identified excessively long date/time input fields in Step 1 and OCR preview.
+   - Verified that standard browser date inputs were expanding to full column width (~380px-440px), which looked unbalanced compared to short flight numbers.
+
+2. **Step 1: Flight Details Fix** (0.25 hour)
+   - Added `max-w-xs` (320px) to Flight Number and Departure Date input containers in "Flight Number" mode.
+   - Applied same constraint to "Route Search" and "Manual Entry" forms.
+   - Ensured all date-related fields (date, datetime-local) have consistent, sensible widths.
+
+3. **OCR Preview Fix** (0.25 hour)
+   - Updated `ExtractedDataPreview.tsx` to limit input widths in edit mode.
+   - Prevented potential layout shifts or badge overlaps by constraining the input growth.
+
+4. **Verification & Testing** (0.25 hour)
+   - Verified fixes across mobile and desktop viewports using browser automation.
+   - Confirmed input fields match each other and provide better visual balance in the UI.
+
+#### Files Modified:
+- `frontend_Claude45/src/pages/ClaimForm/Step1_Flight.tsx`
+- `frontend_Claude45/src/components/ExtractedDataPreview.tsx`
+
+### Updated Summary Statistics
+- **Total Commits**: 172 (added 1 new commit)
+- **Date Range**: 2025-09-04 to 2026-01-21
+- **Estimated Total Time**: ~501.0-575.6 hours (added 1.0 hour)
+
+---
+
 ## Latest Work (2026-01-20) - Digital POA Signature System
 
 ### Digital POA Signature Implementation

@@ -278,6 +278,7 @@ class ClaimDraftSchema(BaseModel):
     incident_type: str = Field(..., alias="incidentType")
     compensation_amount: Optional[Decimal] = Field(None, alias="compensationAmount")
     currency: Optional[str] = Field("EUR", max_length=3)
+    boarding_pass_file_id: Optional[str] = Field(None, alias="boardingPassFileId")
 
     @validator('incident_type')
     def validate_incident_type(cls, v):

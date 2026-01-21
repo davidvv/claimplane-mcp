@@ -211,6 +211,7 @@ async def create_draft_claim(
             incident_type=draft_data.incident_type,
             compensation_amount=float(draft_data.compensation_amount) if draft_data.compensation_amount else None,
             currency=draft_data.currency or "EUR",
+            boarding_pass_file_id=draft_data.boarding_pass_file_id,
             ip_address=ip_address,
             user_agent=user_agent,
             session_id=session_id

@@ -42,6 +42,7 @@ class ClaimDraftService:
         incident_type: str,
         compensation_amount: Optional[float] = None,
         currency: str = "EUR",
+        boarding_pass_file_id: Optional[str] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
         session_id: Optional[str] = None
@@ -102,6 +103,20 @@ class ClaimDraftService:
             current_step=2
         )
         logger.info(f"Draft claim created: {claim.id}")
+
+        # Link boarding pass if provided
+        if boarding_pass_file_id:
+            try:
+                from app.services.file_service import get_file_service
+                file_service = get_file_service(self.session)
+                await file_service.link_file_to_claim(
+                    file_id=UUID(boarding_pass_file_id),
+                    claim_id=claim.id,
+                    customer_id=customer.id
+                )
+                logger.info(f"Linked boarding pass {boarding_pass_file_id} to claim {claim.id}")
+            except Exception as e:
+                logger.error(f"Failed to link boarding pass to claim {claim.id}: {str(e)}")
 
         # Commit the draft
         await self.session.commit()

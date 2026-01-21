@@ -15,12 +15,9 @@ class POAService:
     
     # Signature placement coordinates (Page 1)
     # Based on A4 (595 x 842)
-    # These are approximate based on the generation script
-    # x0, y0, x1, y1 (PyMuPDF uses top-left as 0,0 usually? No, PDF is bottom-left 0,0 standard, 
-    # but PyMuPDF rects are usually (x0, y0, x1, y1) where y increases downwards in some contexts, 
-    # but for PDF page.insert_image, it uses PDF coordinates where (0,0) is usually bottom-left.
-    # Wait, PyMuPDF documentation says: Point(0, 0) is top-left corner of the page.
-    SIGNATURE_RECT = fitz.Rect(72, 600, 523, 680) 
+    # Moved to clear the passenger/address section (y=636-693)
+    # Placed between SIGNATURE header (y=728) and footer (y=796)
+    SIGNATURE_RECT = fitz.Rect(86, 735, 510, 790) 
     
     @staticmethod
     def generate_signed_poa(
@@ -50,60 +47,62 @@ class POAService:
             page = doc[0]  # Assuming single page
             
             # --- Text Replacements ---
-            # We'll use page.search_for() to find placeholders and overlay text
-            # Or we can just draw text over the white space if we know coordinates
-            # But search_for is more robust if we used exact placeholders in the template
-            
+            # Clean up passenger names: filter out "None" or junk from OCR
+            if additional_passengers:
+                # Remove common OCR/Backend artifacts
+                additional_passengers = additional_passengers.replace("None", "").strip(", \n\t")
+                if not additional_passengers:
+                    additional_passengers = "None"
+            else:
+                additional_passengers = "None"
+
             replacements = {
-                "{{flight_number}}": flight_number,
-                "{{flight_date}}": flight_date,
-                "{{departure_airport}}": departure_airport,
-                "{{arrival_airport}}": arrival_airport,
-                "{{booking_reference}}": booking_reference,
-                "{{primary_passenger_name}}": primary_passenger_name,
-                "{{additional_passengers}}": additional_passengers or "None",
-                "{{address}}": address,
+                "{{flight_number}}": flight_number or "-",
+                "{{flight_date}}": flight_date or "-",
+                "{{departure_airport}}": departure_airport or "-",
+                "{{arrival_airport}}": arrival_airport or "-",
+                "{{booking_reference}}": booking_reference or "-",
+                "{{primary_passenger_name}}": primary_passenger_name or "-",
+                "{{additional_passengers}}": additional_passengers,
+                "{{address}}": address or "-",
                 "{{signer_name}}": signer_name,
                 "{{signed_date}}": signed_at.strftime("%Y-%m-%d %H:%M:%S UTC")
             }
             
-            # Simple text overlay strategy:
-            # 1. Find the placeholder text
-            # 2. Draw a white rectangle over it to "erase" it (optional, if placeholder is visible)
-            # 3. Insert the new text
-            
+            # 1. Replace data placeholders
             for placeholder, value in replacements.items():
                 hits = page.search_for(placeholder)
                 for rect in hits:
-                    # Draw white box to cover placeholder
                     page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
-                    # Insert new text (fontsize 10 to match template)
                     page.insert_text((rect.x0, rect.y1 - 2), str(value), fontsize=10, fontname="Helvetica")
+            
+            # 2. Clean up specific UI placeholders to prevent "underlay" look
+            ui_placeholders = ["[Electronic Signature Will Be Placed Here]", "{{audit_trail_id}}"]
+            for ui_p in ui_placeholders:
+                hits = page.search_for(ui_p)
+                for rect in hits:
+                    page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
 
             # --- Signature Overlay ---
-            # Insert the signature image
-            # We use the defined constant rect
             page.insert_image(POAService.SIGNATURE_RECT, stream=signature_image_bytes)
             
             # --- Audit Trail ---
             audit_text = (
-                f"Signed by: {signer_name} | IP: {ip_address} | "
-                f"Time: {signed_at.strftime('%Y-%m-%d %H:%M:%S UTC')} | "
-                f"UA: {user_agent[:50]}..."
+                f"Digitally signed by: {signer_name} | IP: {ip_address} | "
+                f"Date: {signed_at.strftime('%Y-%m-%d %H:%M:%S UTC')} | "
+                f"Device: {user_agent[:40]}..."
             )
             
-            # Find the footer placeholder or just write at bottom
-            footer_hits = page.search_for("{{audit_trail_id}}")
-            if footer_hits:
-                rect = footer_hits[0]
-                # Cover the whole footer line ideally, or just the ID part
-                # Let's just write the full audit trail at the bottom center
-                page.insert_text(
-                    (72, 800), # Near bottom
-                    audit_text,
-                    fontsize=6,
-                    color=(0.5, 0.5, 0.5)
-                )
+            # Place audit trail nicely at the bottom
+            page.insert_text(
+                (86, 810), 
+                audit_text,
+                fontsize=7,
+                color=(0.4, 0.4, 0.4)
+            )
+            
+            # Return bytes
+            return doc.tobytes()
             
             # Return bytes
             return doc.tobytes()

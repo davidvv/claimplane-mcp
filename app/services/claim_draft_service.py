@@ -432,6 +432,20 @@ class ClaimDraftService:
         if claim_updates:
             await self.claim_repo.update_claim(claim.id, **claim_updates)
 
+        # Link boarding pass if provided
+        if 'boarding_pass_file_id' in update_data and update_data['boarding_pass_file_id']:
+            try:
+                from app.services.file_service import get_file_service
+                file_service = get_file_service(self.session)
+                await file_service.link_file_to_claim(
+                    file_id=UUID(update_data['boarding_pass_file_id']),
+                    claim_id=claim.id,
+                    customer_id=claim.customer_id
+                )
+                logger.info(f"Linked boarding pass {update_data['boarding_pass_file_id']} to claim {claim_id}")
+            except Exception as e:
+                logger.error(f"Failed to link boarding pass to claim {claim_id}: {str(e)}")
+
         # Update passengers if provided
         if 'passengers' in update_data and update_data['passengers'] is not None:
             await self.claim_repo.update_passengers(claim.id, update_data['passengers'])

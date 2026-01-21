@@ -482,6 +482,9 @@ async def update_draft_claim(
         if 'bookingReference' in data_dict:
             data_dict['booking_reference'] = data_dict.pop('bookingReference')
 
+        if 'boardingPassFileId' in data_dict:
+            data_dict['boarding_pass_file_id'] = data_dict.pop('boardingPassFileId')
+
         # Robust passenger transformation
         if 'passengers' in data_dict and isinstance(data_dict['passengers'], list):
             valid_passengers = []

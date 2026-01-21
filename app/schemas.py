@@ -327,6 +327,7 @@ class ClaimDraftUpdateSchema(BaseModel):
     booking_reference: Optional[str] = Field(None, alias="bookingReference")
     incident_type: Optional[str] = Field(None, alias="incidentType")
     notes: Optional[str] = None
+    boarding_pass_file_id: Optional[str] = Field(None, alias="boardingPassFileId")
 
     class Config:
         populate_by_name = True

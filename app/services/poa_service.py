@@ -84,7 +84,12 @@ class POAService:
                     page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
 
             # 3. Aggressively remove any large rectangles/boxes in the signature area
-            # The template has gray/red boxes that we want to clear
+            # The template has gray/red boxes that we want to clear.
+            # We'll blank out the entire region from below 'SIGNATURE' to the footer.
+            # SIGNATURE header is around y=728. Bottom is y=841.
+            blank_rect = fitz.Rect(50, 745, 545, 815)
+            page.draw_rect(blank_rect, color=(1, 1, 1), fill=(1, 1, 1))
+            
             drawings = page.get_drawings()
             for d in drawings:
                 r = d["rect"]
@@ -94,9 +99,13 @@ class POAService:
 
             # --- Signature Overlay ---
             # Center the signature in the area formerly occupied by the bottom box (y ~ 762-840)
-            # We'll place it slightly above the audit trail
-            SIGNATURE_BOX = fitz.Rect(86, 755, 510, 805)
-            page.insert_image(SIGNATURE_BOX, stream=signature_image_bytes)
+            if signature_image_bytes:
+                logger.info(f"Inserting signature image: {len(signature_image_bytes)} bytes")
+                # Using a slightly larger rect for the signature
+                SIGNATURE_BOX = fitz.Rect(72, 750, 523, 810)
+                page.insert_image(SIGNATURE_BOX, stream=signature_image_bytes)
+            else:
+                logger.warning("No signature image bytes provided for POA generation")
             
             # --- Audit Trail ---
             audit_text = (

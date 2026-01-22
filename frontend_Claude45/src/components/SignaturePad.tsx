@@ -54,9 +54,9 @@ export function SignaturePad({
       if (sigPadRef.current.isEmpty()) {
         onSignatureChange(null);
       } else {
-        // Get PNG data URL
-        const canvas = sigPadRef.current.getTrimmedCanvas();
-        const dataUrl = canvas.toDataURL('image/png');
+        // Get PNG data URL directly from the canvas
+        // Note: We avoid getTrimmedCanvas() due to trim-canvas compatibility issues
+        const dataUrl = sigPadRef.current.toDataURL('image/png');
         console.log('Signature captured, length:', dataUrl.length);
         onSignatureChange(dataUrl);
       }

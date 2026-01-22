@@ -433,6 +433,10 @@ class ClaimDraftService:
         customer_updates = {}
         for field in ['email', 'first_name', 'last_name', 'phone', 'street', 'city', 'postal_code', 'country']:
             if field in update_data and update_data[field] is not None:
+                # Skip empty strings - they shouldn't overwrite existing data
+                # and can cause unique constraint violations (e.g., empty email)
+                if isinstance(update_data[field], str) and update_data[field].strip() == '':
+                    continue
                 customer_updates[field] = update_data[field]
         
         if customer_updates:

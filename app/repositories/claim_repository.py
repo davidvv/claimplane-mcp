@@ -5,8 +5,9 @@ from datetime import date, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func
+from sqlalchemy.orm import selectinload
 
-from app.models import Claim, Customer
+from app.models import Claim, Customer, Passenger
 from app.repositories.base import BaseRepository
 
 
@@ -15,6 +16,15 @@ class ClaimRepository(BaseRepository[Claim]):
     
     def __init__(self, session: AsyncSession):
         super().__init__(Claim, session)
+    
+    async def get_by_id_with_details(self, claim_id: UUID) -> Optional[Claim]:
+        """Get claim by ID with passengers and customer loaded (for draft resume)."""
+        stmt = select(Claim).where(Claim.id == claim_id).options(
+            selectinload(Claim.passengers),
+            selectinload(Claim.customer)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
     
     async def get_by_customer_id(self, customer_id: UUID, skip: int = 0, limit: int = 100) -> List[Claim]:
         """Get all claims for a specific customer."""

@@ -535,6 +535,7 @@ async def update_draft_claim(
 @router.get("/{claim_id}", response_model=ClaimResponseSchema)
 async def get_claim(
     claim_id: UUID,
+    include_details: bool = Query(False, description="Include passengers and contact info (for draft resume)"),
     user_data: tuple = Depends(get_current_user_with_claim_access),
     db: AsyncSession = Depends(get_db)
 ) -> ClaimResponseSchema:
@@ -546,6 +547,7 @@ async def get_claim(
 
     Args:
         claim_id: Claim UUID
+        include_details: If True, include passengers and contact info (useful for draft resume)
         user_data: Tuple of (current_user, token_claim_id) from JWT
         db: Database session
 
@@ -557,10 +559,15 @@ async def get_claim(
     """
     current_user, token_claim_id = user_data
 
-    logger.info(f"[get_claim] Request for claim_id={claim_id}, user={current_user.id}, token_claim_id={token_claim_id}")
+    logger.info(f"[get_claim] Request for claim_id={claim_id}, user={current_user.id}, token_claim_id={token_claim_id}, include_details={include_details}")
 
     repo = ClaimRepository(db)
-    claim = await repo.get_by_id(claim_id)
+    
+    # For draft claims or when details requested, load with relationships
+    if include_details:
+        claim = await repo.get_by_id_with_details(claim_id)
+    else:
+        claim = await repo.get_by_id(claim_id)
 
     if not claim:
         logger.warning(f"[get_claim] Claim {claim_id} not found in database")
@@ -576,7 +583,7 @@ async def get_claim(
 
     logger.info(f"[get_claim] Access verified, returning claim")
 
-    return ClaimResponseSchema.from_orm(claim)
+    return ClaimResponseSchema.from_orm(claim, include_details=include_details)
 
 
 @router.get("/{claim_id}/verification", response_model=Dict[str, Any])

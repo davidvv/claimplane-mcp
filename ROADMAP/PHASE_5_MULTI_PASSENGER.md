@@ -6,21 +6,23 @@
 **Business Value**: HIGH - Increases average order value and customer satisfaction
 **📄 Detailed Planning**: See [docs/MULTI_PASSENGER_CLAIMS.md](docs/MULTI_PASSENGER_CLAIMS.md)
 
-### Latest Major Progress (2026-01-20)
+### Latest Major Progress (2026-01-22)
+- ✅ **Draft Claim Continuation Fix**: Fixed magic link resume flow with full form pre-fill (Task #289).
 - ✅ **Digital POA Signature System**: Implemented "no-scan" authorization flow.
 - ✅ **Signature Pad Component**: Reusable React component for drawing signatures.
 - ✅ **Dynamic PDF Generation**: Backend service to "stamp" signatures onto legal templates.
 - ✅ **Email Integration**: Auto-attach signed documents to confirmation emails.
+- ✅ **Smart Notification Configuration**: Pre-approved path for RocketChat notifications.
 
 ### Implementation Phases
 
 1. **Backend Foundation** (3-5 days): Database models, repositories, services ✅
 2. **Legal & Authorization Flow** (3-4 days): Digital POA signature, PDF generation, Email attachments ✅
-3. **Single Claim Group API** (2-3 days): Core API endpoints ⏳
-4. **Frontend Multi-Passenger Form** (5-7 days): Wizard with passenger addition ✅ (Step 3 Refactored)
+3. **Single Claim Group API** (2-3 days): Core API endpoints ✅ (Enhanced for draft resume)
+4. **Frontend Multi-Passenger Form** (5-7 days): Wizard with passenger addition ✅ (Step 3 Refactored & Draft Resume fixed)
 5. **Customer Dashboard** (2-3 days): View grouped claims ⏳
 6. **Admin Interface** (4-6 days): Manage and process grouped claims ⏳
-7. **Notifications & Polish** (2-3 days): Email templates, testing ⏳
+7. **Notifications & Polish** (2-3 days): Email templates, testing ✅ (Draft resume flow verified)
 
 ### GDPR & Compliance
 

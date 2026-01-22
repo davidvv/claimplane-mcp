@@ -7,40 +7,51 @@
 - **Estimated Total Time**: ~488.0-558.6 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
-## Latest Work (2026-01-21) - UI Glitch Fixes
+## Latest Work (2026-01-22) - Draft Claim Resume Fixes
 
-### Date Input Field Width Optimization
-**Estimated Time**: 1.0 hour
-**Work Package**: #281
+### Draft Continuation Flow Optimization
+**Estimated Time**: 2.5 hours
+**Work Package**: #289
 
 #### Key Tasks:
-1. **Layout Investigation** (0.25 hour)
-   - Identified excessively long date/time input fields in Step 1 and OCR preview.
-   - Verified that standard browser date inputs were expanding to full column width (~380px-440px), which looked unbalanced compared to short flight numbers.
+1. **Magic Link Redirect Fix** (0.5 hour)
+   - Updated `MagicLinkPage.tsx` to handle `resume=true` and `claim_id` parameters.
+   - Fixed incorrect routing to `/status` by redirecting to `/claim/new?resume=<id>`.
+   - Relaxed validation to allow login for users without first/last name (draft state).
 
-2. **Step 1: Flight Details Fix** (0.25 hour)
-   - Added `max-w-xs` (320px) to Flight Number and Departure Date input containers in "Flight Number" mode.
-   - Applied same constraint to "Route Search" and "Manual Entry" forms.
-   - Ensured all date-related fields (date, datetime-local) have consistent, sensible widths.
+2. **Backend Data Hydration** (1.0 hour)
+   - Enhanced `ClaimResponseSchema` to include optional `passengers` and `contactInfo`.
+   - Added `get_by_id_with_details` to `ClaimRepository` for eager relationship loading.
+   - Updated GET `/claims/{id}` endpoint to support `include_details` query parameter.
 
-3. **OCR Preview Fix** (0.25 hour)
-   - Updated `ExtractedDataPreview.tsx` to limit input widths in edit mode.
-   - Prevented potential layout shifts or badge overlaps by constraining the input growth.
+3. **Frontend Form Pre-fill** (0.5 hour)
+   - Updated `ClaimFormPage.tsx` to fetch detailed claim data when resuming.
+   - Implemented logic to restore passenger data, contact info, and booking details into form state.
+   - Verified that saved data correctly populates all form fields in Step 3.
 
-4. **Verification & Testing** (0.25 hour)
-   - Verified fixes across mobile and desktop viewports using browser automation.
-   - Confirmed input fields match each other and provide better visual balance in the UI.
+4. **Auto-Save Robustness** (0.5 hour)
+   - Updated `claim_draft_service.py` to skip empty strings during auto-save.
+   - Prevented 500 errors caused by unique constraint violations on empty email fields.
+   - Conducted full E2E verification of the resume flow.
 
 #### Files Modified:
-- `frontend_Claude45/src/pages/ClaimForm/Step1_Flight.tsx`
-- `frontend_Claude45/src/components/ExtractedDataPreview.tsx`
+- `frontend_Claude45/src/pages/Auth/MagicLinkPage.tsx`
+- `frontend_Claude45/src/pages/ClaimForm/ClaimFormPage.tsx`
+- `frontend_Claude45/src/services/claims.ts`
+- `frontend_Claude45/src/types/api.ts`
+- `app/services/claim_draft_service.py`
+- `app/schemas.py`
+- `app/routers/claims.py`
+- `app/repositories/claim_repository.py`
 
 ### Updated Summary Statistics
-- **Total Commits**: 172 (added 1 new commit)
-- **Date Range**: 2025-09-04 to 2026-01-21
-- **Estimated Total Time**: ~501.0-575.6 hours (added 1.0 hour)
+- **Total Commits**: 173 (added 1 new commit)
+- **Date Range**: 2025-09-04 to 2026-01-22
+- **Estimated Total Time**: ~503.5-578.1 hours (added 2.5 hours)
 
 ---
+
+## Latest Work (2026-01-21) - UI Glitch Fixes
 
 ## Latest Work (2026-01-20) - Digital POA Signature System
 

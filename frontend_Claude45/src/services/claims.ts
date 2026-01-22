@@ -43,9 +43,13 @@ export const deleteClaim = async (claimId: string): Promise<void> => {
 /**
  * Get specific claim details
  * GET /claims/{claimId}
+ * 
+ * @param claimId - The claim UUID
+ * @param includeDetails - If true, include passengers and contact info (for draft resume)
  */
-export const getClaim = async (claimId: string): Promise<Claim> => {
-  const response = await apiClient.get<Claim>(`/claims/${claimId}`);
+export const getClaim = async (claimId: string, includeDetails: boolean = false): Promise<Claim> => {
+  const params = includeDetails ? { include_details: 'true' } : {};
+  const response = await apiClient.get<Claim>(`/claims/${claimId}`, { params });
 
   if (!response.data) {
     throw new Error('Claim not found');

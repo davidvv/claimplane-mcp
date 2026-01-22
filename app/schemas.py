@@ -207,6 +207,30 @@ class ClaimPatchSchema(BaseModel):
         populate_by_name = True
 
 
+class PassengerResponseSchema(BaseModel):
+    """Schema for passenger in claim response."""
+    first_name: str = Field(..., alias="firstName")
+    last_name: str = Field(..., alias="lastName")
+    ticket_number: Optional[str] = Field(None, alias="ticketNumber")
+
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+
+
+class ContactInfoSchema(BaseModel):
+    """Schema for customer contact info in claim response (for draft resume)."""
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    street: Optional[str] = None
+    city: Optional[str] = None
+    postal_code: Optional[str] = Field(None, alias="postalCode")
+    country: Optional[str] = None
+
+    class Config:
+        populate_by_name = True
+
+
 class ClaimResponseSchema(BaseModel):
     """Schema for claim response."""
 
@@ -222,10 +246,41 @@ class ClaimResponseSchema(BaseModel):
     ticket_number: Optional[str] = Field(None, alias="ticketNumber")
     submitted_at: datetime = Field(..., alias="submittedAt")
     updated_at: datetime = Field(..., alias="updatedAt")
+    # Additional fields for draft resume
+    passengers: Optional[List[PassengerResponseSchema]] = None
+    contact_info: Optional[ContactInfoSchema] = Field(None, alias="contactInfo")
 
     @classmethod
-    def from_orm(cls, claim):
-        """Create response from ORM model by constructing flightInfo from flat fields."""
+    def from_orm(cls, claim, include_details: bool = False):
+        """Create response from ORM model by constructing flightInfo from flat fields.
+        
+        Args:
+            claim: Claim ORM model (with passengers relationship loaded if include_details=True)
+            include_details: If True, include passengers and contact info (for draft resume)
+        """
+        passengers_data = None
+        contact_data = None
+        
+        if include_details and hasattr(claim, 'passengers') and claim.passengers:
+            passengers_data = [
+                PassengerResponseSchema(
+                    firstName=p.first_name,
+                    lastName=p.last_name,
+                    ticketNumber=p.ticket_number
+                )
+                for p in claim.passengers
+            ]
+        
+        if include_details and hasattr(claim, 'customer') and claim.customer:
+            contact_data = ContactInfoSchema(
+                email=claim.customer.email,
+                phone=claim.customer.phone,
+                street=claim.customer.street,
+                city=claim.customer.city,
+                postalCode=claim.customer.postal_code,
+                country=claim.customer.country
+            )
+        
         return cls(
             id=claim.id,
             customer_id=claim.customer_id,
@@ -244,7 +299,9 @@ class ClaimResponseSchema(BaseModel):
             bookingReference=claim.booking_reference,
             ticketNumber=claim.ticket_number,
             submittedAt=claim.submitted_at,
-            updatedAt=claim.updated_at
+            updatedAt=claim.updated_at,
+            passengers=passengers_data,
+            contactInfo=contact_data
         )
 
     class Config:

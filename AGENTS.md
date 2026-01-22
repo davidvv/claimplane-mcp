@@ -34,6 +34,13 @@ uvicorn app.main:app --reload                # Dev server
 celery -A app.celery_app worker --loglevel=info  # Background tasks
 ```
 
+## Test Data
+
+### Eligible Flights for E2E Testing
+| Flight | Date | Route | Delay | Compensation |
+|--------|------|-------|-------|--------------|
+| UA988 | 2025-08-18 | EWR → FRA | 3+ hours | Eligible |
+
 ## OpenProject Task Management
 
 **CRITICAL**: For any significant work or feature implementation:
@@ -48,6 +55,19 @@ Refer to skills: `.claude/skills/commit-workflow/SKILL.md`, `.claude/skills/open
 
 ## Notifications
 - **CRITICAL**: If a task takes longer than 10 minutes, or after significant work (bugfixing, testing, new features), send a concise summary to David via RocketChat DM using the `notify-phone` skill.
+- **Pre-approved Path**: The folder `/home/david/rocket-connection` is pre-approved for notification use. Permissions are already configured in `~/.config/opencode/opencode.json`, so you can use it without asking for permission.
+
+**How to notify**:
+```bash
+cd /home/david/rocket-connection && node -e "
+const RocketChatClient = require('./rocketChatClient');
+(async () => {
+  const client = new RocketChatClient();
+  await client.login();
+  await client.sendMessage('@david', 'Your message here');
+})();
+"
+```
 
 
 ## Code Style

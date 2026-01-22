@@ -20,27 +20,34 @@
 - **Focus Areas**: Frontend, UI/UX, Integration
 - **Key Phases**: Frontend development, integration, finalization
 
-## Latest Update (2026-01-20) - Digital POA Signature System
+## Latest Update (2026-01-22) - Draft Claim Resume Fixes
 
-### Digital POA Signature Implementation
-**Estimated Time**: 12.0-16.0 hours
-**Work Packages**: #204, #206-216 (Closed in OpenProject)
+### Draft Continuation Flow Optimization
+**Estimated Time**: 2.5 hours
+**Work Package**: #289
 
 #### Summary:
-Implemented a legally compliant, "no-scan" digital signature system for Power of Attorney:
-- **Research**: Investigated 10 airlines and 5 competitors to establish data requirements.
-- **Backend**: Dynamic PDF generation using PyMuPDF with signature overlay and audit trail.
-- **Frontend**: Mobile-responsive `SignaturePad` and new "Step 4: Authorization" wizard page.
-- **Email**: Auto-attachment of signed POA to confirmation emails.
-- **Verification**: Updated completeness logic to recognize digital POA.
+Fixed the draft claim resumption flow from reminder email links:
+- **Magic Link**: Corrected redirect to `/claim/new?resume=<id>` and relaxed user validation.
+- **Backend**: Enhanced GET `/claims/{id}` to return passenger and contact data with include_details flag.
+- **Frontend**: Implemented form state restoration (passengers, contact info, booking ref) in `loadDraft()`.
+- **Robustness**: Fixed auto-save 500 errors by skipping empty strings in customer updates.
 
-#### Files Modified (12 total):
-Backend: models.py, email_service.py, claim_tasks.py, poa_service.py (NEW), poa_schemas.py (NEW), claims.py, verification_service.py (NEW)
-Frontend: SignaturePad.tsx (NEW), Step4_Authorization.tsx (NEW), ClaimFormPage.tsx, Stepper.tsx, Step5_Review.tsx (Renamed)
+#### Files Modified (8 total):
+Backend: claim_draft_service.py, schemas.py, claims.py, claim_repository.py
+Frontend: MagicLinkPage.tsx, ClaimFormPage.tsx, claims.ts, api.ts
 
-**Time Added**: 12.0-16.0 hours
+**Time Added**: 2.5 hours
 
 ---
+
+## Latest Update (2026-01-21) - UI Glitch Fixes
+- **Date Input Optimization**: Fixed excessively wide date input fields in Step 1 and OCR preview (WP #281).
+- **Time Added**: 1.0 hour
+
+---
+
+## Latest Update (2026-01-20) - Digital POA Signature System
 
 ## Previous Update (2026-01-18) - OCR File Upload Optimization
 

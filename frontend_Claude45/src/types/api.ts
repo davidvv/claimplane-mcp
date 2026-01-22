@@ -91,6 +91,21 @@ export interface Document {
 export type IncidentType = 'delay' | 'cancellation' | 'denied_boarding' | 'baggage_delay';
 export type ClaimStatus = 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'paid' | 'closed';
 
+export interface PassengerInfo {
+  firstName: string;
+  lastName: string;
+  ticketNumber?: string | null;
+}
+
+export interface ContactInfo {
+  email?: string | null;
+  phone?: string | null;
+  street?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+}
+
 export interface Claim {
   id?: string; // UUID (readonly)
   customerId: string; // UUID
@@ -103,6 +118,10 @@ export interface Claim {
   submittedAt?: string; // ISO datetime (readonly)
   updatedAt?: string; // ISO datetime (readonly)
   notes?: string | null;
+  bookingReference?: string | null;
+  // Optional fields for draft resume (returned when include_details=true)
+  passengers?: PassengerInfo[];
+  contactInfo?: ContactInfo;
 }
 
 export interface ClaimRequest {

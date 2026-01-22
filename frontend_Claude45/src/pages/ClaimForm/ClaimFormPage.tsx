@@ -20,6 +20,7 @@ import { Step3_Passenger } from './Step3_Passenger';
 import { Step4_Authorization } from './Step4_Authorization';
 import { Step5_Review } from './Step5_Review';
 import type { FlightStatus, EligibilityResponse, OCRResponse } from '@/types/api';
+import type { PassengerInfoForm } from '@/schemas/validation';
 
 const STEPS = [
   { number: 1, title: 'Flight', description: 'Flight details' },
@@ -96,7 +97,8 @@ export function ClaimFormPage() {
       // Fetch draft data to hydrate form
       const loadDraft = async () => {
         try {
-          const claim = await getClaim(resumeClaimId);
+          // Fetch claim with details (passengers, contact info) for draft resume
+          const claim = await getClaim(resumeClaimId, true);
 
           // Restore Flight Data
           const restoredFlight: FlightStatus = {
@@ -129,6 +131,29 @@ export function ClaimFormPage() {
           };
           setEligibilityData(restoredEligibility);
           updateEligibilityData(restoredEligibility);
+
+          // Restore Passenger Data (contact info + passengers)
+          if (claim.contactInfo || claim.passengers) {
+            const restoredPassengerData: PassengerInfoForm = {
+              email: claim.contactInfo?.email || '',
+              phone: claim.contactInfo?.phone || '',
+              street: claim.contactInfo?.street || '',
+              city: claim.contactInfo?.city || '',
+              postalCode: claim.contactInfo?.postalCode || '',
+              country: claim.contactInfo?.country || '',
+              passengers: claim.passengers?.map(p => ({
+                firstName: p.firstName || '',
+                lastName: p.lastName || '',
+                ticketNumber: p.ticketNumber || '',
+              })) || [{ firstName: '', lastName: '', ticketNumber: '' }],
+              bookingReference: claim.bookingReference || '',
+              incidentType: (claim.incidentType as 'delay' | 'cancellation' | 'denied_boarding' | 'baggage_delay') || 'delay',
+              notes: claim.notes || '',
+            };
+            setPassengerData(restoredPassengerData);
+            updatePassengerData(restoredPassengerData);
+            console.log('Restored passenger data from draft:', restoredPassengerData);
+          }
 
           // Fetch and restore any existing documents (e.g., boarding pass uploaded earlier)
           try {

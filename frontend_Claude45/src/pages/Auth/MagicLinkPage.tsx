@@ -8,6 +8,8 @@ export function MagicLinkPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMessage, setErrorMessage] = useState('');
+  const resume = searchParams.get('resume');
+  const claimId = searchParams.get('claim_id');
   
   // Prevent double verification in React Strict Mode (development)
   const hasVerified = useRef(false);
@@ -20,7 +22,6 @@ export function MagicLinkPage() {
       }
       hasVerified.current = true;
       const token = searchParams.get('token');
-      const claimId = searchParams.get('claim_id');
 
       if (!token) {
         setStatus('error');
@@ -32,6 +33,7 @@ export function MagicLinkPage() {
         console.log('Verifying magic link token...');
         console.log('Token:', token);
         console.log('Claim ID:', claimId);
+        console.log('Resume flag:', resume);
 
         // Read pending redirect BEFORE verification (in case of errors clearing it)
         const pendingRedirect = sessionStorage.getItem('postLoginRedirect');
@@ -42,11 +44,12 @@ export function MagicLinkPage() {
 
         console.log('Magic link verification successful:', response.data);
 
-        // Tokens are automatically stored in HTTP-only cookies by the backend
+        // Tokens are automatically stored in HTTP-only cookies by backend
         // Store user info in localStorage for UI purposes only
         if (response.data.user) {
-          // Validate that we have all required fields
-          if (!response.data.user.email || !response.data.user.first_name || !response.data.user.last_name) {
+          // Validate that we have email (required for all flows)
+          // Note: first_name/last_name may be empty for draft claims where user hasn't filled passenger info yet
+          if (!response.data.user.email) {
             console.error('Backend returned incomplete user data during magic link verification');
             setStatus('error');
             setErrorMessage('Login failed: Incomplete user data received. Please contact support.');
@@ -54,8 +57,8 @@ export function MagicLinkPage() {
           }
 
           const displayName = buildDisplayName(
-            response.data.user.first_name,
-            response.data.user.last_name,
+            response.data.user.first_name || '',
+            response.data.user.last_name || '',
             response.data.user.email
           );
           localStorage.setItem('user_email', response.data.user.email);
@@ -69,7 +72,7 @@ export function MagicLinkPage() {
 
         setStatus('success');
 
-        // Clear the redirect from sessionStorage (we already read it above)
+        // Clear redirect from sessionStorage (we already read it above)
         if (pendingRedirect) {
           sessionStorage.removeItem('postLoginRedirect');
         }
@@ -89,6 +92,13 @@ export function MagicLinkPage() {
             } else {
               console.warn('Invalid redirect URL detected, ignoring:', pendingRedirect);
             }
+          }
+
+          // Check for draft resume (resume=true parameter from email link)
+          if (resume === 'true' && claimId) {
+            console.log('Draft resume detected, redirecting to claim form with resume:', claimId);
+            navigate(`/claim/new?resume=${claimId}`);
+            return;
           }
 
           if (userRole === 'admin' || userRole === 'superadmin') {
@@ -115,7 +125,7 @@ export function MagicLinkPage() {
     };
 
     verifyToken();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, resume, claimId]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -133,9 +143,11 @@ export function MagicLinkPage() {
             <div className="text-6xl mb-4">✓</div>
             <h2 className="text-2xl font-bold text-green-600">Success!</h2>
             <p className="mt-2 text-muted-foreground">
-              {searchParams.get('claim_id')
-                ? 'Redirecting you to your claim...'
-                : 'Redirecting you to your claims dashboard...'}
+              {resume === 'true'
+                ? 'Redirecting to resume your draft claim...'
+                : claimId
+                  ? 'Redirecting you to your claim...'
+                  : 'Redirecting you to your claims dashboard...'}
             </p>
           </div>
         )}

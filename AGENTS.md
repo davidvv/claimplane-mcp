@@ -44,7 +44,11 @@ celery -A app.celery_app worker --loglevel=info  # Background tasks
 4. Log time entries when work is complete.
 5. Update ROADMAP and time_tracking_david.md as per `commit-workflow` skill.
 
-Refer to skills: `.claude/skills/commit-workflow/SKILL.md` and `.claude/skills/openproject-task-manager/SKILL.md`
+Refer to skills: `.claude/skills/commit-workflow/SKILL.md`, `.claude/skills/openproject-task-manager/SKILL.md`, and `.claude/skills/notify-phone/SKILL.md`
+
+## Notifications
+- **CRITICAL**: If a task takes longer than 10 minutes, or after significant work (bugfixing, testing, new features), send a concise summary to David via RocketChat DM using the `notify-phone` skill.
+
 
 ## Code Style
 - **Imports**: Standard lib → 3rd party → local, absolute imports only

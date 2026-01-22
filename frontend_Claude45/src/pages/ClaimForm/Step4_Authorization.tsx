@@ -71,11 +71,21 @@ export function Step4_Authorization({
   // Determine if multi-passenger
   const passengers = passengerData.passengers || [];
   const isMultiPassenger = passengers.length > 1;
-  const primaryPassengerName = passengers[0]?.firstName + ' ' + passengers[0]?.lastName;
+  const primaryPassengerName = passengers[0] 
+    ? `${passengers[0].firstName || ''} ${passengers[0].lastName || ''}`.trim() || 'Primary Passenger'
+    : 'Primary Passenger';
 
   const onSubmit = async (data: AuthorizationForm) => {
     if (!signatureData) {
       toast.error("Please sign the Power of Attorney to continue");
+      return;
+    }
+    
+    // Validate signature is meaningful (not just a dot or tiny mark)
+    // Base64 PNG of a real signature should be at least ~1KB
+    const MIN_SIGNATURE_SIZE = 1000;
+    if (signatureData.length < MIN_SIGNATURE_SIZE) {
+      toast.error("Please provide a more complete signature");
       return;
     }
 
@@ -92,10 +102,10 @@ export function Step4_Authorization({
     setIsSubmitting(true);
 
     try {
-      console.log('Sending signature to backend, length:', finalSignature.length);
+      console.log('Sending signature to backend, length:', signatureData?.length || 0);
       // 1. Send signature to backend
       await apiClient.post(`/claims/${claimId}/sign-poa`, {
-        signature_image: finalSignature,
+        signature_image: signatureData,
         signer_name: primaryPassengerName,
         is_primary_passenger: true,
         consent_terms: data.consentTerms,

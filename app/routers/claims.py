@@ -634,6 +634,7 @@ async def sign_power_of_attorney(
     Sign the Power of Attorney for a claim.
     
     Generates a PDF with the user's digital signature and audit trail.
+    Idempotent: Returns existing POA if one already exists for this claim (Bug #293).
     """
     import base64
     from datetime import datetime, timezone
@@ -649,6 +650,17 @@ async def sign_power_of_attorney(
         raise HTTPException(status_code=404, detail="Claim not found")
         
     verify_claim_access(claim, current_user_obj, token_claim_id)
+    
+    # 1.5 Idempotency check: Return existing POA if already signed (Bug #293)
+    file_repo = FileRepository(db)
+    existing_files = await file_repo.get_by_claim_id(claim_id, include_deleted=False)
+    existing_poa = next(
+        (f for f in existing_files if f.document_type == ClaimFile.DOCUMENT_POWER_OF_ATTORNEY),
+        None
+    )
+    if existing_poa:
+        logger.info(f"POA already exists for claim {claim_id}, returning existing file {existing_poa.id}")
+        return FileResponseSchema.model_validate(existing_poa)
     
     # 2. Get Customer Details (Address needed for POA)
     customer_repo = CustomerRepository(db)

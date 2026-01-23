@@ -403,7 +403,7 @@ export function Step5_Review({
                     <div className="flex items-center gap-3">
                       <FileText className="w-5 h-5 text-muted-foreground" />
                       <div>
-                        <p className="font-medium text-sm">{doc.file.name}</p>
+                        <p className="font-medium text-sm">{doc.file?.name || doc.name || 'Uploaded document'}</p>
                         <p className="text-xs text-muted-foreground">
                           {doc.documentType.replace('_', ' ')}
                         </p>

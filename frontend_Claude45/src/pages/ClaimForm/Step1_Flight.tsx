@@ -761,7 +761,11 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
                           ? `Delayed ${flight.delayMinutes} min`
                           : (flight.status === 'scheduled' || flight.status === 'unknown' || !flight.status)
                           ? 'Scheduled'
-                          : 'On Time'
+                          : flight.status === 'arrived'
+                          ? 'Arrived'
+                          : flight.delayMinutes === 0
+                          ? 'On Time'
+                          : getStatusLabel(flight.status || 'unknown')
                         }
                       </Badge>
 

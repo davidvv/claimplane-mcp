@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
 import { FileUploadZone } from '@/components/FileUploadZone';
+import { toast } from 'sonner';
 
 interface Step3Props {
   flightData: FlightStatus;
@@ -193,6 +194,13 @@ export function Step3_Passenger({
   }, []);
 
   const onSubmit = (data: PassengerInfoForm) => {
+    // Validate: Either PNR (booking reference) or at least one document is required
+    const successfulDocs = documents.filter(d => d.status === 'success' || d.alreadyUploaded);
+    if (!data.bookingReference?.trim() && successfulDocs.length === 0) {
+      toast.error('Please provide a Booking Reference OR upload at least one document (e.g., boarding pass)');
+      return;
+    }
+
     // Ensure parent state/localStorage is updated immediately before completing step
     onUpdate(data);
     onComplete(data, documents);

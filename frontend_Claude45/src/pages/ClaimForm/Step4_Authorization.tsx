@@ -114,11 +114,12 @@ export function Step4_Authorization({
       });
 
       toast.success("Authorization signed successfully");
+      // Clear loading state BEFORE transitioning to ensure smooth UI
+      setIsSubmitting(false);
       onComplete();
     } catch (error) {
       console.error("Failed to sign POA:", error);
       toast.error("Failed to save signature. Please try again.");
-    } finally {
       setIsSubmitting(false);
     }
   };

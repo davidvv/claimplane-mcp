@@ -19,6 +19,7 @@ import {
   getValidStatusTransitions,
   assignClaim,
   getAdminUsers,
+  reviewFile,
   type ClaimDetail,
   type ValidStatusTransitions,
 } from '../../services/admin';
@@ -57,6 +58,12 @@ export function ClaimDetailPage() {
   const [adminUsers, setAdminUsers] = useState<Array<{ id: string; email: string; first_name: string; last_name: string }>>([]);
   const [selectedAdmin, setSelectedAdmin] = useState<string>('');
   const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  // Document review
+  const [reviewingFileId, setReviewingFileId] = useState<string | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [isReviewingFile, setIsReviewingFile] = useState(false);
 
   useEffect(() => {
     if (!claimId) {
@@ -195,6 +202,55 @@ export function ClaimDetailPage() {
     } finally {
       setIsAssigning(false);
     }
+  };
+
+  const handleApproveFile = async (fileId: string) => {
+    setIsReviewingFile(true);
+    try {
+      await reviewFile(fileId, true);
+      toast.success('Document approved successfully');
+      // Reload claim data to get updated file status
+      await loadClaimData();
+    } catch (error: any) {
+      console.error('Failed to approve document:', error);
+      toast.error(error.response?.data?.detail || 'Failed to approve document');
+    } finally {
+      setIsReviewingFile(false);
+    }
+  };
+
+  const handleRejectFile = (fileId: string) => {
+    setReviewingFileId(fileId);
+    setShowRejectModal(true);
+  };
+
+  const handleConfirmReject = async () => {
+    if (!reviewingFileId || !rejectionReason.trim()) {
+      toast.error('Please provide a rejection reason');
+      return;
+    }
+
+    setIsReviewingFile(true);
+    try {
+      await reviewFile(reviewingFileId, false, rejectionReason);
+      toast.success('Document rejected and customer notified');
+      // Reload claim data to get updated file status
+      await loadClaimData();
+      setShowRejectModal(false);
+      setRejectionReason('');
+      setReviewingFileId(null);
+    } catch (error: any) {
+      console.error('Failed to reject document:', error);
+      toast.error(error.response?.data?.detail || 'Failed to reject document');
+    } finally {
+      setIsReviewingFile(false);
+    }
+  };
+
+  const handleCancelReject = () => {
+    setShowRejectModal(false);
+    setRejectionReason('');
+    setReviewingFileId(null);
   };
 
   if (isLoading || !claim) {
@@ -355,9 +411,36 @@ export function ClaimDetailPage() {
                       <p className="text-xs text-muted-foreground">
                         {file.document_type.replace(/_/g, ' ')} · {(file.file_size / 1024).toFixed(1)} KB
                       </p>
+                      {file.rejection_reason && (
+                        <p className="text-xs text-red-600 mt-1">
+                          Rejected: {file.rejection_reason}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <StatusBadge status={file.status} />
+                      {file.status === 'uploaded' && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => handleApproveFile(file.id)}
+                            disabled={isReviewingFile}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleRejectFile(file.id)}
+                            disabled={isReviewingFile}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
                       <Button variant="outline" size="sm">
                         View
                       </Button>
@@ -785,6 +868,48 @@ export function ClaimDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Rejection Reason Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-4">Reject Document</h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="rejectionReason">Rejection Reason</Label>
+                <textarea
+                  id="rejectionReason"
+                  className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm mt-1"
+                  placeholder="Provide a clear reason for rejection..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  disabled={isReviewingFile}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  The customer will receive an email with this reason.
+                </p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleCancelReject}
+                  disabled={isReviewingFile}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={handleConfirmReject}
+                  disabled={isReviewingFile || !rejectionReason.trim()}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {isReviewingFile ? 'Rejecting...' : 'Reject Document'}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

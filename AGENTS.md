@@ -36,6 +36,12 @@ celery -A app.celery_app worker --loglevel=info  # Background tasks
 
 ## Test Data
 
+### Test Accounts
+| Purpose | Email | Notes |
+|---------|-------|-------|
+| Cloudflare Access | idavidvv@gmail.com | Use this to pass Cloudflare tunnel authentication |
+| ClaimPlane Admin | vences.david@icloud.com | Superadmin account for ClaimPlane admin panel |
+
 ### Eligible Flights for E2E Testing
 | Flight | Date | Route | Delay | Compensation |
 |--------|------|-------|-------|--------------|

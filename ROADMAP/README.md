@@ -1,7 +1,7 @@
 # Development Roadmap
 
-**Last Updated**: 2026-01-21
-**Current Version**: v0.5.1 (UI Bug Fix - Date Input Frame)
+**Last Updated**: 2026-01-27
+**Current Version**: v0.5.2 (Critical Fix - Draft Resume Flow)
 **Status**: MVP Phase - GDPR Compliant Account Management Live 🚀
 **Strategy**: Business value first (#2 → #3 → #4 → GDPR)
 **Deployment URL**: https://eac.dvvcloud.work (Cloudflare Tunnel + OAuth)
@@ -60,6 +60,7 @@ Phase 7.6: Smart Email Processing               ██████░░░░�
 25. ✅ **Email File Processing (.eml)** - Direct extraction of flight data from uploaded emails (Task #152)
 26. ✅ **Mobile UI Responsiveness** - Fixed mobile layout issues across admin dashboard, claims table, claim detail, and customer views (Task #163)
 27. ✅ **UI Glitch Fix** - Fixed excessively long date input frames in Step 1 and OCR preview (WP #281)
+28. ✅ **Critical Bug Fix** - Fixed Claim Review crash (`TypeError`) when resuming draft claims from magic links (WP #301)
 
 ### Security Improvements
 

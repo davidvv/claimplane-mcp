@@ -1,26 +1,42 @@
 # ClaimPlane Project - Complete Time Tracking Summary
 
 ## Project Overview
-- **Project Duration**: 2025-09-04 to 2026-01-18 (4+ months)
-- **Total Commits**: 184 (167 by David, 17 by Florian)
-- **Estimated Total Time**: ~555.75-644.75 hours
+- **Project Duration**: 2025-09-04 to 2026-01-27 (4+ months)
+- **Total Commits**: 185 (175 by David, 17 by Florian)
+- **Estimated Total Time**: ~557.25-646.25 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 167 (90.8%)
-- **Estimated Time**: 488.0-558.6 hours
+- **Commits**: 175 (91.1%)
+- **Estimated Time**: 506.0-580.6 hours
 - **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness & De-Cramping, File Persistence, Upload Optimization
-- **Key Phases**: All phases from setup to advanced features including EU261 compensation bug fixes, draft reminder system, email branding, OCR boarding pass extraction, multi-passenger support, UX optimization, multi-language name handling, mobile UI fixes, mobile layout de-cramping, frontend state management, boarding pass file persistence, OCR file upload optimization
 
 ### Florian's Contributions (12-15% of total time)
-- **Commits**: 17 (9.6%)
+- **Commits**: 17 (8.9%)
 - **Estimated Time**: 68-85 hours
 - **Focus Areas**: Frontend, UI/UX, Integration
-- **Key Phases**: Frontend development, integration, finalization
+
+## Latest Update (2026-01-27) - Draft Resume Flow Fix
+
+### Critical Claim Review Crash Fix
+**Estimated Time**: 1.5 hours
+
+#### Summary:
+Fixed a critical crash in the Claim Review step (Step 5) that occurred when resuming a draft claim from a magic link:
+- **Issue**: `TypeError: Cannot read properties of undefined (reading 'replace')` in `Step5_Review.tsx`.
+- **Root Cause**: In `ClaimFormPage.tsx`, restored documents from the backend were incorrectly mapped using the key `type` instead of `documentType`.
+- **Fix**: Corrected the mapping logic to use `documentType`, which is what the Review component expects.
+- **Verification**: Conducted full end-to-end verification using `agent-browser`. Successfully resumed a draft, signed the POA, and submitted the claim without errors.
+
+#### Files Modified:
+- `frontend_Claude45/src/pages/ClaimForm/ClaimFormPage.tsx`
+
+**Time Added**: 1.5 hours
 
 ## Latest Update (2026-01-22) - POA Signing Fix
+
 
 ### Critical POA Signature Bug Fix
 **Estimated Time**: 1.0 hour

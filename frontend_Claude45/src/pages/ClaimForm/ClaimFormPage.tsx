@@ -164,7 +164,7 @@ export function ClaimFormPage() {
                 id: doc.id,
                 file: null, // Original file not available, but document is already uploaded
                 name: doc.originalFilename || doc.filename || 'Uploaded document',
-                type: doc.documentType,
+                documentType: doc.documentType,
                 status: 'success' as const,
                 progress: 100,
                 documentId: doc.id,

@@ -101,12 +101,17 @@ Implement EU Regulation 261/2004 calculation logic:
 
 **File**: `app/routers/admin_files.py` (new)
 
-- [ ] `GET /admin/claims/{claim_id}/documents` - List all documents for a claim
+- [x] `GET /admin/claims/{claim_id}/documents` - List all documents for a claim
   - Group by document type
   - Show validation status
   - Show security scan results
 
-- [ ] `PUT /admin/files/{file_id}/review` - Approve/reject document
+- [x] **Document Viewer Modal (Frontend)** - View PDF/images directly in admin panel (Task #295)
+  - Native browser rendering for PDFs and images
+  - Auto-download for other file types
+  - Integrated into Claim Detail page
+
+- [x] `PUT /admin/files/{file_id}/review` - Approve/reject document
   - Mark as approved/rejected
   - Add rejection reason
   - Require re-upload if rejected

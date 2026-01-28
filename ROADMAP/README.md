@@ -61,6 +61,8 @@ Phase 7.6: Smart Email Processing               ██████░░░░�
 26. ✅ **Mobile UI Responsiveness** - Fixed mobile layout issues across admin dashboard, claims table, claim detail, and customer views (Task #163)
 27. ✅ **UI Glitch Fix** - Fixed excessively long date input frames in Step 1 and OCR preview (WP #281)
 28. ✅ **Critical Bug Fix** - Fixed Claim Review crash (`TypeError`) when resuming draft claims from magic links (WP #301)
+29. ✅ **Admin Document Viewer** - Implemented interactive modal for viewing PDFs and images in admin panel (WP #295)
+30. ⚠️ **Infrastructure Alert** - Identified DB SIGKILL issue causing crash recovery loops; filed WP #296 to fix.
 
 ### Security Improvements
 

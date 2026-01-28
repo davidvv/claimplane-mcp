@@ -1,22 +1,40 @@
 # ClaimPlane Project - Complete Time Tracking Summary
 
 ## Project Overview
-- **Project Duration**: 2025-09-04 to 2026-01-27 (4+ months)
-- **Total Commits**: 185 (175 by David, 17 by Florian)
-- **Estimated Total Time**: ~557.25-646.25 hours
+- **Project Duration**: 2025-09-04 to 2026-01-28 (4+ months)
+- **Total Commits**: 186 (176 by David, 17 by Florian)
+- **Estimated Total Time**: ~559.25-648.25 hours
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
 ### David's Contributions (82-85% of total time)
-- **Commits**: 175 (91.1%)
-- **Estimated Time**: 506.0-580.6 hours
-- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness & De-Cramping, File Persistence, Upload Optimization
+- **Commits**: 176 (91.2%)
+- **Estimated Time**: 508.0-582.6 hours
+- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness & De-Cramping, File Persistence, Upload Optimization, Admin Document Viewer
 
 ### Florian's Contributions (12-15% of total time)
-- **Commits**: 17 (8.9%)
+- **Commits**: 17 (8.8%)
 - **Estimated Time**: 68-85 hours
 - **Focus Areas**: Frontend, UI/UX, Integration
+
+## Latest Update (2026-01-28) - Admin Document Viewer & DB Debugging
+
+### Admin Document Viewer Implementation
+**Estimated Time**: 2.0 hours
+
+#### Summary:
+Implemented a functional document viewer for the admin panel:
+- **Feature**: Added a "View" button to uploaded documents in the Claim Detail page.
+- **Implementation**: Created a `DocumentViewerModal` component using native browser rendering (iframes for PDFs, img tags for images) to minimize dependencies.
+- **UX**: Added loading states, error handling, and support for auto-downloading non-previewable files.
+- **Debugging**: Resolved `agent-browser` environment issues and diagnosed a critical DB shutdown bug (SIGKILL after 10s) causing recurring crash recovery.
+
+#### Files Modified:
+- `frontend_Claude45/src/pages/Admin/ClaimDetailPage.tsx`
+- `frontend_Claude45/src/components/admin/DocumentViewerModal.tsx`
+
+**Time Added**: 2.0 hours
 
 ## Latest Update (2026-01-27) - Draft Resume Flow Fix
 

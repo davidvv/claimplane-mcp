@@ -7,6 +7,33 @@
 - **Estimated Total Time**: ~506.0-580.6 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
+## Latest Work (2026-01-28) - Admin Document Viewer & DB Debugging
+
+### Admin Document Viewer Implementation
+**Estimated Time**: 2.0 hours
+**Work Package**: #295
+
+#### Key Tasks:
+1. **Frontend Implementation** (1.0 hour)
+   - Created `DocumentViewerModal.tsx` for PDF/Image preview.
+   - Integrated modal into `ClaimDetailPage.tsx`.
+   - Connected "View" button to modal logic.
+   - Handled non-viewable file types with auto-download.
+
+2. **Environment & Debugging** (1.0 hour)
+   - Resolved `agent-browser` execution issues (Xvfb setup).
+   - Diagnosed critical database crash/recovery issue (SIGKILL after 10s timeout).
+   - Created OpenProject ticket #296 for DB infrastructure fix.
+
+#### Files Modified:
+- `frontend_Claude45/src/pages/Admin/ClaimDetailPage.tsx`
+- `frontend_Claude45/src/components/admin/DocumentViewerModal.tsx` (created)
+
+### Updated Summary Statistics
+- **Total Commits**: 176 (added 1 new commit)
+- **Date Range**: 2025-09-04 to 2026-01-28
+- **Estimated Total Time**: ~508.0-582.6 hours (added 2.0 hours)
+
 ## Latest Work (2026-01-27) - Draft Resume Flow Fix
 
 ### Critical Claim Review Crash Fix

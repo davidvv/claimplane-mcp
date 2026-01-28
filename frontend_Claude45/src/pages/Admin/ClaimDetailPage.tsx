@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/admin/StatusBadge';
+import { DocumentViewerModal } from '../../components/admin/DocumentViewerModal';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
 import {
@@ -21,6 +22,7 @@ import {
   getAdminUsers,
   reviewFile,
   type ClaimDetail,
+  type ClaimFile,
   type ValidStatusTransitions,
 } from '../../services/admin';
 
@@ -64,6 +66,10 @@ export function ClaimDetailPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isReviewingFile, setIsReviewingFile] = useState(false);
+
+  // Document viewer
+  const [viewingFile, setViewingFile] = useState<ClaimFile | null>(null);
+  const [showViewerModal, setShowViewerModal] = useState(false);
 
   useEffect(() => {
     if (!claimId) {
@@ -251,6 +257,16 @@ export function ClaimDetailPage() {
     setShowRejectModal(false);
     setRejectionReason('');
     setReviewingFileId(null);
+  };
+
+  const handleViewFile = (file: ClaimFile) => {
+    setViewingFile(file);
+    setShowViewerModal(true);
+  };
+
+  const handleCloseViewer = () => {
+    setShowViewerModal(false);
+    setViewingFile(null);
   };
 
   if (isLoading || !claim) {
@@ -441,7 +457,7 @@ export function ClaimDetailPage() {
                           </Button>
                         </>
                       )}
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleViewFile(file)}>
                         View
                       </Button>
                     </div>
@@ -910,6 +926,13 @@ export function ClaimDetailPage() {
           </Card>
         </div>
       )}
+
+      {/* Document Viewer Modal */}
+      <DocumentViewerModal
+        file={viewingFile}
+        isOpen={showViewerModal}
+        onClose={handleCloseViewer}
+      />
     </div>
   );
 }

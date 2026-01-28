@@ -7,6 +7,33 @@
 - **Estimated Total Time**: ~506.0-580.6 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
+## Latest Work (2026-01-28) - DB & MCP Fixes
+
+### Database Infrastructure Fix
+**Estimated Time**: 0.5 hours
+**Work Package**: #296
+
+#### Key Tasks:
+1. **Fix Improper DB Shutdown**
+   - Increased `stop_grace_period` to 60s in `docker-compose.yml`.
+   - Prevents Postgres corruption and recovery loops caused by premature SIGKILL.
+   - Verified with DB restart.
+
+### OpenProject MCP Tooling Fix
+**Estimated Time**: 0.5 hours
+**Work Package**: N/A (Internal Tooling)
+
+#### Key Tasks:
+1. **Fix Work Package Search**
+   - Updated `search_work_packages` tool to handle "#123" format.
+   - Strips "#" prefix to correctly identify ID-based searches.
+   - Enables direct lookup by ID even when user includes "#".
+
+### Updated Summary Statistics
+- **Total Commits**: 178 (added 2 new commits across repos)
+- **Date Range**: 2025-09-04 to 2026-01-28
+- **Estimated Total Time**: ~509.0-583.6 hours (added 1.0 hour)
+
 ## Latest Work (2026-01-28) - Admin Document Viewer & DB Debugging
 
 ### Admin Document Viewer Implementation

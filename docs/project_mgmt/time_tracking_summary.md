@@ -18,6 +18,29 @@
 - **Estimated Time**: 68-85 hours
 - **Focus Areas**: Frontend, UI/UX, Integration
 
+## Latest Update (2026-01-28) - DB & MCP Fixes
+
+### Database Infrastructure Fix
+**Estimated Time**: 0.5 hours
+**Work Package**: #296
+
+#### Summary:
+Fixed a critical database stability issue where Docker was killing the Postgres container before it could shut down cleanly:
+- **Issue**: `stop_grace_period` (default 10s) was too short for Postgres to checkpoint and close.
+- **Fix**: Increased grace period to 60s in `docker-compose.yml`.
+- **Impact**: Prevents data corruption and long startup recovery times.
+
+### OpenProject MCP Tooling Fix
+**Estimated Time**: 0.5 hours
+
+#### Summary:
+Improved the OpenProject MCP agent's ability to find work packages:
+- **Issue**: Searching for "WP #296" failed because it treated "#296" as a text search instead of an ID lookup.
+- **Fix**: Added logic to strip "#" prefix and detect numeric IDs in the search tool.
+- **Impact**: AI agent can now reliably find tickets when users refer to them as "#123".
+
+**Time Added**: 1.0 hour
+
 ## Latest Update (2026-01-28) - Admin Document Viewer & DB Debugging
 
 ### Admin Document Viewer Implementation

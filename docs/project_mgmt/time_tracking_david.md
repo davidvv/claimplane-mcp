@@ -7,6 +7,26 @@
 - **Estimated Total Time**: ~506.0-580.6 hours
 - **Average Weekly Commit Rate**: ~8-10 commits/week
 
+## Latest Work (2026-01-29) - Terms and Conditions Restoration
+
+### Legal Documentation Update
+**Estimated Time**: 0.5 hours
+**Work Package**: N/A (Maintenance)
+
+#### Key Tasks:
+1. **Restore Terms and Conditions**
+   - Reverted working directory to last clean commit.
+   - Preserved and restored updated Terms and Conditions content.
+   - Cleaned up untracked files and development artifacts.
+
+#### Files Modified:
+- `frontend_Claude45/src/pages/TermsAndConditions.tsx`
+
+### Updated Summary Statistics
+- **Total Commits**: 179 (added 1 new commit)
+- **Date Range**: 2025-09-04 to 2026-01-29
+- **Estimated Total Time**: ~509.5-584.1 hours (added 0.5 hours)
+
 ## Latest Work (2026-01-28) - DB & MCP Fixes
 
 ### Database Infrastructure Fix

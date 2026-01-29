@@ -49,18 +49,10 @@ celery -A app.celery_app worker --loglevel=info  # Background tasks
 
 ## OpenProject Task Management
 
-**CRITICAL**: For any significant work or feature implementation:
-1. **Always use the built-in todo list tool (`todowrite`)** to structure and track your immediate sub-tasks during the session.
-    1.1 make sure to use it as the process advances, both to mark tasks as done and to add new tasks as needed.
-2. **Always create an OpenProject work package FIRST** before starting implementation.
-3. Use the `openproject-task-manager` skill for full task lifecycle.
-4. Log time entries when work is complete.
-5. Update ROADMAP and time_tracking_david.md as per `commit-workflow` skill.
-
-Refer to skills: `.claude/skills/commit-workflow/SKILL.md`, `.claude/skills/openproject-task-manager/SKILL.md`, and `.claude/skills/notify-phone/SKILL.md`
+For significant work or feature implementation, you may use the `openproject-task-manager` skill to track progress if needed, but prioritize direct action for straightforward tasks.
 
 ## Notifications
-- **CRITICAL**: If a task takes longer than 10 minutes, or after significant work (bugfixing, testing, new features), send a concise summary to David via RocketChat DM using the `notify-phone` skill.
+- **CRITICAL**: If a task takes longer than 10 minutes, or after significant work (bugfixing, testing, new features), send a concise summary to David via RocketChat DM.
 - **Pre-approved Path**: The folder `/home/david/rocket-connection` is pre-approved for notification use. Permissions are already configured in `~/.config/opencode/opencode.json`, so you can use it without asking for permission.
 
 **How to notify**:

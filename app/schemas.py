@@ -9,6 +9,25 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from app.utils.phone_validator import validate_phone_number
 
 
+def sanitize_html(value: str) -> str:
+    """Remove HTML tags from string input to prevent XSS attacks."""
+    if not value:
+        return value
+    import re
+    # Remove HTML tags
+    clean = re.sub(r'<[^>]+>', '', value)
+    return clean
+
+
+def validate_no_html(value: str) -> str:
+    """Validate that string does not contain HTML tags."""
+    if not value:
+        return value
+    if '<' in value or '>' in value:
+        raise ValueError('HTML tags are not allowed in this field')
+    return value
+
+
 class AddressSchema(BaseModel):
     """Address schema for customer address information."""
     
@@ -37,6 +56,11 @@ class CustomerCreateSchema(BaseModel):
             return validate_phone_number(v)
         return None
 
+    @validator('first_name', 'last_name')
+    def validate_no_html_in_names(cls, v):
+        """Prevent XSS by rejecting HTML tags in name fields."""
+        return validate_no_html(v)
+
     class Config:
         populate_by_name = True
 
@@ -56,6 +80,11 @@ class CustomerUpdateSchema(BaseModel):
         if v:
             return validate_phone_number(v)
         return None
+
+    @validator('first_name', 'last_name')
+    def validate_no_html_in_names(cls, v):
+        """Prevent XSS by rejecting HTML tags in name fields."""
+        return validate_no_html(v)
 
     class Config:
         populate_by_name = True
@@ -93,6 +122,13 @@ class CustomerPatchSchema(BaseModel):
         if v:
             return validate_phone_number(v)
         return None
+
+    @validator('first_name', 'last_name')
+    def validate_no_html_in_names(cls, v):
+        """Prevent XSS by rejecting HTML tags in name fields."""
+        if v is not None:
+            return validate_no_html(v)
+        return v
 
     class Config:
         populate_by_name = True

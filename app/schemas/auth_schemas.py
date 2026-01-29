@@ -39,6 +39,13 @@ class UserRegisterSchema(BaseModel):
             return validate_phone_number(v)
         return None
 
+    @validator('first_name', 'last_name')
+    def validate_no_html_in_names(cls, v):
+        """Prevent XSS by rejecting HTML tags in name fields (Option A - Strict validation)."""
+        if v and ('<' in v or '>' in v):
+            raise ValueError('HTML tags are not allowed in name fields')
+        return v
+
     class Config:
         json_schema_extra = {
             "example": {

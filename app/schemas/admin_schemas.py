@@ -4,7 +4,16 @@ from decimal import Decimal
 from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, validator
+
+
+def validate_no_html(value: str) -> str:
+    """Validate that string does not contain HTML tags."""
+    if not value:
+        return value
+    if '<' in value or '>' in value:
+        raise ValueError('HTML tags are not allowed in this field')
+    return value
 
 
 # Claim Status Update Schemas
@@ -12,6 +21,13 @@ class ClaimStatusUpdateRequest(BaseModel):
     """Request model for updating claim status."""
     new_status: str = Field(..., description="New status for the claim")
     change_reason: Optional[str] = Field(None, description="Reason for status change")
+
+    @validator('change_reason')
+    def validate_no_html_in_reason(cls, v):
+        """Prevent XSS by rejecting HTML tags in change reason."""
+        if v is not None:
+            return validate_no_html(v)
+        return v
 
     class Config:
         json_schema_extra = {
@@ -39,6 +55,13 @@ class ClaimCompensationUpdateRequest(BaseModel):
     compensation_amount: Decimal = Field(..., gt=0, description="Compensation amount in EUR")
     reason: Optional[str] = Field(None, description="Reason for manual compensation adjustment")
 
+    @validator('reason')
+    def validate_no_html_in_reason(cls, v):
+        """Prevent XSS by rejecting HTML tags in reason."""
+        if v is not None:
+            return validate_no_html(v)
+        return v
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -52,6 +75,11 @@ class ClaimNoteRequest(BaseModel):
     """Request model for adding a note to a claim."""
     note_text: str = Field(..., min_length=1, max_length=5000, description="Note content")
     is_internal: bool = Field(True, description="Whether note is internal (not visible to customer)")
+
+    @validator('note_text')
+    def validate_no_html_in_note(cls, v):
+        """Prevent XSS by rejecting HTML tags in note text."""
+        return validate_no_html(v)
 
     class Config:
         json_schema_extra = {

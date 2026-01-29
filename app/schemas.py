@@ -36,6 +36,13 @@ class AddressSchema(BaseModel):
     postal_code: Optional[str] = Field(None, max_length=20, alias="postalCode")
     country: Optional[str] = Field(None, max_length=100)
     
+    @validator('street', 'city', 'country')
+    def validate_no_html_in_address(cls, v):
+        """Prevent XSS by rejecting HTML tags in address fields."""
+        if v is not None:
+            return validate_no_html(v)
+        return v
+    
     class Config:
         populate_by_name = True
 
@@ -198,6 +205,13 @@ class ClaimCreateSchema(BaseModel):
             raise ValueError(f"Incident type must be one of: {', '.join(valid_types)}")
         return v
     
+    @validator('notes')
+    def validate_no_html_in_notes(cls, v):
+        """Prevent XSS by rejecting HTML tags in notes."""
+        if v is not None:
+            return validate_no_html(v)
+        return v
+    
     class Config:
         populate_by_name = True
 
@@ -216,6 +230,13 @@ class ClaimUpdateSchema(BaseModel):
         valid_types = ["delay", "cancellation", "denied_boarding", "baggage_delay"]
         if v not in valid_types:
             raise ValueError(f"Incident type must be one of: {', '.join(valid_types)}")
+        return v
+    
+    @validator('notes')
+    def validate_no_html_in_notes(cls, v):
+        """Prevent XSS by rejecting HTML tags in notes."""
+        if v is not None:
+            return validate_no_html(v)
         return v
     
     class Config:
@@ -237,6 +258,13 @@ class ClaimPatchSchema(BaseModel):
             valid_types = ["delay", "cancellation", "denied_boarding", "baggage_delay"]
             if v not in valid_types:
                 raise ValueError(f"Incident type must be one of: {', '.join(valid_types)}")
+        return v
+    
+    @validator('notes')
+    def validate_no_html_in_notes(cls, v):
+        """Prevent XSS by rejecting HTML tags in notes."""
+        if v is not None:
+            return validate_no_html(v)
         return v
     
     class Config:

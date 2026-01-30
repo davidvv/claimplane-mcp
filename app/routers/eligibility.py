@@ -11,31 +11,35 @@ router = APIRouter(prefix="/eligibility", tags=["eligibility"])
 
 class FlightLegInput(BaseModel):
     """Schema for a single flight leg in a multi-leg journey."""
-    departure_airport: str = Field(..., min_length=3, max_length=3, description="IATA code")
-    arrival_airport: str = Field(..., min_length=3, max_length=3, description="IATA code")
-    flight_number: Optional[str] = Field(None, description="Flight number")
+    departure_airport: str = Field(..., min_length=3, max_length=3, description="IATA code", alias="departureAirport")
+    arrival_airport: str = Field(..., min_length=3, max_length=3, description="IATA code", alias="arrivalAirport")
+    flight_number: Optional[str] = Field(None, description="Flight number", alias="flightNumber")
+    
+    class Config:
+        populate_by_name = True
 
 
 class EligibilityRequestSchema(BaseModel):
     """Request schema for eligibility check."""
-    departure_airport: str = Field(..., min_length=3, max_length=3, description="IATA code")
-    arrival_airport: str = Field(..., min_length=3, max_length=3, description="IATA code")
-    delay_hours: Optional[float] = Field(None, le=72, description="Delay in hours (negative = early arrival)")
-    incident_type: str = Field(..., description="delay, cancellation, denied_boarding, baggage_delay")
-    distance_km: Optional[float] = Field(None, ge=0, description="Great circle distance in km (if known from API)")
+    departure_airport: str = Field(..., min_length=3, max_length=3, description="IATA code", alias="departureAirport")
+    arrival_airport: str = Field(..., min_length=3, max_length=3, description="IATA code", alias="arrivalAirport")
+    delay_hours: Optional[float] = Field(None, le=72, description="Delay in hours (negative = early arrival)", alias="delayHours")
+    incident_type: str = Field(..., description="delay, cancellation, denied_boarding, baggage_delay", alias="incidentType")
+    distance_km: Optional[float] = Field(None, ge=0, description="Great circle distance in km (if known from API)", alias="distanceKm")
     flights: Optional[List[FlightLegInput]] = Field(None, description="List of flight legs for connecting flights")
 
     class Config:
+        populate_by_name = True
         json_schema_extra = {
             "example": {
-                "departure_airport": "MAD",
-                "arrival_airport": "JFK",
-                "delay_hours": 5.0,
-                "incident_type": "delay",
-                "distance_km": 5780.42,
+                "departureAirport": "MAD",
+                "arrivalAirport": "JFK",
+                "delayHours": 5.0,
+                "incidentType": "delay",
+                "distanceKm": 5780.42,
                 "flights": [
-                    {"departure_airport": "MAD", "arrival_airport": "LHR", "flight_number": "IB3166"},
-                    {"departure_airport": "LHR", "arrival_airport": "JFK", "flight_number": "BA173"}
+                    {"departureAirport": "MAD", "arrivalAirport": "LHR", "flightNumber": "IB3166"},
+                    {"departureAirport": "LHR", "arrivalAirport": "JFK", "flightNumber": "BA173"}
                 ]
             }
         }

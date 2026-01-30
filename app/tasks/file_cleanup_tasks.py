@@ -108,6 +108,11 @@ def cleanup_orphan_files(self):
     """
     Task: Clean up orphan files older than 24 hours.
     
+    CRITICAL: This task enforces a 24-hour retention period for orphan files.
+    This allows users sufficient time to complete their claim submission after
+    uploading files (e.g., via OCR). Do NOT reduce this retention period
+    without careful consideration of the user journey.
+    
     This task runs every hour and deletes files that were uploaded during OCR
     processing but never linked to a claim within 24 hours.
     """

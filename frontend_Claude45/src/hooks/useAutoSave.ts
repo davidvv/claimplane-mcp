@@ -31,9 +31,30 @@ export function useAutoSave<T>({ onSave, debounceMs = 2000, enabled = true }: Us
     }
   }, debounceMs);
 
+  // Perform an immediate save without debounce
+  const forceSave = async (data: T) => {
+    if (!enabled) return;
+    
+    setIsSaving(true);
+    setError(null);
+    try {
+      await onSave(data);
+      setLastSaved(new Date());
+      return true;
+    } catch (e: any) {
+      const errorMsg = e.response?.data?.detail || e.message || "Save failed";
+      setError(errorMsg);
+      console.error("Auto-save error:", e);
+      throw e; // Rethrow so caller can handle
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Return trigger function to be used in useEffect or event handlers
   return {
     triggerSave: debouncedSave,
+    forceSave,
     isSaving,
     lastSaved,
     error,

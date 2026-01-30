@@ -163,7 +163,7 @@ export function Step3_Passenger({
   });
 
   // Auto-save logic
-  const { triggerSave, isSaving, lastSaved, error: saveError } = useAutoSave({
+  const { triggerSave, forceSave, isSaving, lastSaved, error: saveError } = useAutoSave({
     onSave: async (data: PassengerInfoForm) => {
       // 1. Update parent state (localStorage) - fallback always active
       onUpdate(data);
@@ -193,7 +193,7 @@ export function Step3_Passenger({
     }
   }, []);
 
-  const onSubmit = (data: PassengerInfoForm) => {
+  const onSubmit = async (data: PassengerInfoForm) => {
     // Validate: Either PNR (booking reference) or at least one document is required
     const successfulDocs = documents.filter(d => d.status === 'success' || d.alreadyUploaded);
     if (!data.bookingReference?.trim() && successfulDocs.length === 0) {
@@ -201,9 +201,22 @@ export function Step3_Passenger({
       return;
     }
 
-    // Ensure parent state/localStorage is updated immediately before completing step
-    onUpdate(data);
-    onComplete(data, documents);
+    try {
+      // WP-306: Force an immediate save and wait for it before proceeding
+      // This ensures backend validation (like XSS) passes
+      if (draftClaimId) {
+        await forceSave(data);
+      } else {
+        onUpdate(data);
+      }
+      onComplete(data, documents);
+    } catch (error: any) {
+      // Error message is already toasted by forceSave if it fails with detail
+      // or we can add a fallback here if needed.
+      console.error('Final save failed before step transition:', error);
+      const errorMsg = error.response?.data?.detail || 'Failed to save your details. Please check for errors.';
+      toast.error(errorMsg);
+    }
   };
 
   return (

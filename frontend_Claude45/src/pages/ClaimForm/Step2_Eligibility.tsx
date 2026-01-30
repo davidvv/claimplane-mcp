@@ -168,10 +168,10 @@ export function Step2_Eligibility({
 
     } catch (error: any) {
       console.error('Failed to create draft claim:', error);
-      // Don't block the user - continue without draft
-      // The claim will be created at final submit instead
-      toast.error('Note: Draft save failed. Your progress will be saved locally.');
-      onComplete(eligibilityResult, submittedEmail);
+      const errorDetail = error.response?.data?.detail;
+      const errorMsg = typeof errorDetail === 'string' ? errorDetail : 'Failed to save draft. Please try again.';
+      toast.error(errorMsg);
+      // WP-306: Block user if backend save fails (prevents XSS etc.)
     } finally {
       setIsCreatingDraft(false);
     }

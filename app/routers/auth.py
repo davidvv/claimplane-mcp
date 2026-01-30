@@ -24,7 +24,7 @@ from app.schemas.auth_schemas import (
 )
 from app.services.auth_service import AuthService
 from app.tasks.claim_tasks import send_magic_link_login_email
-from app.main import limiter
+from app.dependencies.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 

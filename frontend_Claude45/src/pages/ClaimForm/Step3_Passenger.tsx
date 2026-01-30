@@ -109,12 +109,33 @@ export function Step3_Passenger({
 
     // 3. If we have OCR data with multiple passengers, use it
     if (ocrData?.passengers?.length) {
-      return ocrData.passengers.map((p: any) => ({
+      const rawPassengers = ocrData.passengers.map((p: any) => ({
         firstName: p.firstName || '',
         lastName: p.lastName || '',
         ticketNumber: p.ticketNumber || '',
         bookingReference: p.bookingReference || ''
       }));
+
+      // WP-290: Intelligent Primary Passenger Selection
+      // If user is logged in, try to match their name to put them first
+      if (userProfile) {
+        const userFirstName = userProfile.first_name?.toLowerCase();
+        const userLastName = userProfile.last_name?.toLowerCase();
+        
+        const matchIndex = rawPassengers.findIndex(p => 
+          p.firstName.toLowerCase() === userFirstName && 
+          p.lastName.toLowerCase() === userLastName
+        );
+
+        if (matchIndex > 0) {
+          // Move matched passenger to the front
+          const [matched] = rawPassengers.splice(matchIndex, 1);
+          rawPassengers.unshift(matched);
+          console.log("Reordered passengers based on user profile match");
+        }
+      }
+
+      return rawPassengers;
     }
 
     // 4. Default: Single passenger from profile/OCR/email
@@ -157,7 +178,7 @@ export function Step3_Passenger({
     defaultValues: defaultFormValues,
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, move } = useFieldArray({
     control,
     name: "passengers"
   });
@@ -376,10 +397,24 @@ export function Step3_Passenger({
                 <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <User className="w-4 h-4" />
                   Passenger {index + 1}
+                  {index === 0 && <Badge variant="secondary" className="ml-2 text-xs">Primary Claimant</Badge>}
                 </h4>
-                {fields.length > 1 && (
-                  <Button
-                    type="button"
+                <div className="flex items-center gap-2">
+                  {index > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => move(index, 0)}
+                      className="text-primary hover:text-primary/90 hover:bg-primary/10"
+                    >
+                      <User className="w-3 h-3 mr-1" />
+                      Make Primary
+                    </Button>
+                  )}
+                  {fields.length > 1 && (
+                    <Button
+                      type="button"
                     variant="ghost"
                     size="sm"
                     className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
@@ -389,6 +424,7 @@ export function Step3_Passenger({
                     Remove
                   </Button>
                 )}
+                </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4 p-4 border rounded-lg bg-gray-50/50 dark:bg-gray-900/50">

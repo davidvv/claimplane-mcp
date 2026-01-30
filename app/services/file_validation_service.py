@@ -251,6 +251,21 @@ class FileValidationService:
                 if re.search(pattern, content_str, re.IGNORECASE):
                     result["errors"].append(f"Suspicious pattern detected: {pattern}")
             
+            # Virus Scan using ClamAV
+            from app.services.virus_scan_service import virus_scan_service
+            try:
+                is_clean = await virus_scan_service.scan_file(file_content)
+                if not is_clean:
+                    result["errors"].append("Virus detected in file")
+            except Exception as e:
+                # Log error but don't block upload if scan service is down (fail open vs closed)
+                # For this implementation, we report error to let admin know scan failed
+                print(f"Virus scan failed: {str(e)}")
+                # If we want to fail closed (secure):
+                # result["errors"].append("Virus scan failed - file rejected for security")
+                # If we want to fail open (usability):
+                result["warnings"].append(f"Virus scan unavailable: {str(e)}")
+            
             # Check for credit card numbers (basic pattern)
             credit_card_pattern = r'\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b'
             if re.search(credit_card_pattern, content_str):

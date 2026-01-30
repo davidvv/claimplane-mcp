@@ -32,6 +32,28 @@ services:
     networks:
       - nextcloud_network
 
+  clamav:
+    image: clamav/clamav:latest
+    container_name: flight_claim_clamav
+    ports:
+      - "3310:3310"
+    environment:
+      # Keep database updated
+      CLAMAV_NO_FRESHCLAM: "false"
+    healthcheck:
+      test: ["CMD", "clamdscan", "--ping", "127.0.0.1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    # Limit memory usage as ClamAV can be hungry
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    networks:
+      - nextcloud_network
+
   api:
     build: .
     container_name: flight_claim_api
@@ -44,8 +66,8 @@ services:
       NEXTCLOUD_USERNAME: ${NEXTCLOUD_USERNAME:-admin}
       NEXTCLOUD_PASSWORD: ${NEXTCLOUD_PASSWORD:-admin_secure_password_2024}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      VIRUS_SCAN_ENABLED: ${VIRUS_SCAN_ENABLED:-false}
-      CLAMAV_URL: ${CLAMAV_URL:-clamav:3310}
+      VIRUS_SCAN_ENABLED: ${VIRUS_SCAN_ENABLED:-true}
+      CLAMAV_URL: ${CLAMAV_URL:-flight_claim_clamav:3310}
       RATE_LIMIT_UPLOAD: ${RATE_LIMIT_UPLOAD:-100/minute}
       RATE_LIMIT_DOWNLOAD: ${RATE_LIMIT_DOWNLOAD:-1000/minute}
       JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-30}
@@ -87,6 +109,8 @@ services:
       - "8000:8000"
     depends_on:
       db:
+        condition: service_healthy
+      clamav:
         condition: service_healthy
     volumes:
       - ./app:/app/app

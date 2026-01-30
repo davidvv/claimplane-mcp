@@ -19,6 +19,16 @@ from app.services.file_validation_service import file_validation_service
 from app.dependencies.auth import get_current_user
 
 
+def validate_no_html(value: Optional[str]) -> Optional[str]:
+    """Validate that string does not contain HTML tags to prevent XSS."""
+    if value and ('<' in value or '>' in value):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="HTML tags are not allowed in description field"
+        )
+    return value
+
+
 router = APIRouter(prefix="/files", tags=["files"])
 
 
@@ -79,6 +89,9 @@ async def upload_file(
     Raises:
         HTTPException: If validation fails, access denied, or upload errors occur
     """
+    # Validate description for XSS
+    description = validate_no_html(description)
+    
     try:
         # Verify claim ownership (customers can only upload to their own claims)
         claim_repo = ClaimRepository(db)

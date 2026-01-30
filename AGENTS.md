@@ -52,20 +52,7 @@ celery -A app.celery_app worker --loglevel=info  # Background tasks
 For significant work or feature implementation, you may use the `openproject-task-manager` skill to track progress if needed, but prioritize direct action for straightforward tasks.
 
 ## Notifications
-- **CRITICAL**: If a task takes longer than 10 minutes, or after significant work (bugfixing, testing, new features), send a concise summary to David via RocketChat DM.
-- **Pre-approved Path**: The folder `/home/david/rocket-connection` is pre-approved for notification use. Permissions are already configured in `~/.config/opencode/opencode.json`, so you can use it without asking for permission.
-
-**How to notify**:
-```bash
-cd /home/david/rocket-connection && node -e "
-const RocketChatClient = require('./rocketChatClient');
-(async () => {
-  const client = new RocketChatClient();
-  await client.login();
-  await client.sendMessage('@david', 'Your message here');
-})();
-"
-```
+- **CRITICAL**: If a task takes longer than 10 minutes, or after significant work (bugfixing, testing, new features), send a concise summary to David via RocketChat DM using the `rocketchat_send_message` tool.
 
 
 ## Code Style

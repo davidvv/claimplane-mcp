@@ -206,28 +206,26 @@ export function ClaimFormPage() {
     const hasSavedData = formData.currentStep && formData.currentStep > 1;
 
     if (hasSavedData) {
-      const shouldResume = window.confirm(
-        `You have a claim in progress at step ${formData.currentStep}. Would you like to resume where you left off?\n\nClick OK to resume, or Cancel to start a new claim.`
-      );
-
-      if (shouldResume) {
-        // Restore saved data
-        setCurrentStep(formData.currentStep || 1);
-        setFlightData(formData.flightData || null);
-        setEligibilityData(formData.eligibilityData || null);
-        setPassengerData(formData.passengerData || null);
-        setDocuments(formData.documents || []);
-        // Restore draft claim ID if saved
-        if (formData.draftClaimId) {
-          setDraftClaimId(formData.draftClaimId);
-        }
-        if (formData.draftAccessToken) {
-          setAuthToken(formData.draftAccessToken);
-        }
-      } else {
-        // Clear saved data and start fresh
-        clearFormData();
+      // WP-202: Auto-restore session without blocking prompt to prevent accidental data loss
+      // and ensure persistence works reliably across reloads.
+      console.log("Restoring saved claim session at step", formData.currentStep);
+      
+      setCurrentStep(formData.currentStep || 1);
+      setFlightData(formData.flightData || null);
+      setEligibilityData(formData.eligibilityData || null);
+      setPassengerData(formData.passengerData || null);
+      setDocuments(formData.documents || []);
+      
+      // Restore draft claim ID if saved
+      if (formData.draftClaimId) {
+        setDraftClaimId(formData.draftClaimId);
       }
+      if (formData.draftAccessToken) {
+        setAuthToken(formData.draftAccessToken);
+      }
+      
+      // Notify user non-intrusively
+      toast.success("Resumed your claim where you left off");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isResumingFromMagicLink]); // Now depends on magic link flag

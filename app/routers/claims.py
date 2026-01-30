@@ -239,11 +239,11 @@ async def create_draft_claim(
         )
 
     except ValueError as e:
-        logger.error(f"Validation error in draft claim creation: {str(e)}")
+        logger.error(f"Validation error in draft claim creation: {str(e)}", exc_info=True)
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail=str(e) # This is a validation error, usually safe to show
         )
     except Exception as e:
         logger.error(f"Unexpected error in draft claim creation: {str(e)}", exc_info=True)
@@ -392,7 +392,7 @@ async def submit_claim_with_customer(
             logger.error(f"Flight verification failed for claim {claim.id}: {str(e)}")
 
     except ValueError as e:
-        logger.error(f"Validation error in claim submission: {str(e)}")
+        logger.error(f"Validation error in claim submission: {str(e)}", exc_info=True)
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -403,7 +403,7 @@ async def submit_claim_with_customer(
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while submitting your claim"
+            detail="An error occurred while submitting your claim. Please try again."
         )
 
     # Send claim submitted email notification
@@ -533,6 +533,8 @@ async def get_claim(
     Raises:
         HTTPException: If claim not found or access denied
     """
+    current_user_obj, token_claim_id = user_data
+    
     # Verify claim exists
     claim_repo = ClaimRepository(db)
     claim = await claim_repo.get_by_id(claim_id)
@@ -543,15 +545,10 @@ async def get_claim(
             detail=f"Claim with id {claim_id} not found"
         )
 
-    # Verify access
-    verify_claim_access(claim, current_user)
+    # Verify access - Fix WP-308: Use current_user_obj instance not Customer class
+    verify_claim_access(claim, current_user_obj, token_claim_id)
 
-    # Get documents
-    file_repo = FileRepository(db)
-    files = await file_repo.get_by_claim_id(claim_id, include_deleted=False)
-
-    logger.info(f"[list_claim_documents] Found {len(files)} documents for claim {claim_id}")
-    return [FileResponseSchema.model_validate(f) for f in files]
+    return ClaimResponseSchema.from_orm(claim)
 
 
 @router.delete("/{claim_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -659,12 +656,12 @@ async def upload_claim_document(
         return FileResponseSchema.model_validate(file_info)
 
     except Exception as e:
-        logger.error(f"Error uploading file for claim {claim_id}: {str(e)}")
+        logger.error(f"Error uploading file for claim {claim_id}: {str(e)}", exc_info=True)
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to upload file: {str(e)}"
+            detail="Failed to upload file. Please try again or contact support."
         )
 
     # Verify access
@@ -890,7 +887,7 @@ async def extract_boarding_pass_data(
             logger.error(f"[ocr-email] Email processing failed: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to process email file: {str(e)}"
+                detail="Failed to process email file. Please try a different file format or enter details manually."
             )
 
     # Run OCR extraction (Images/PDFs)

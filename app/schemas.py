@@ -564,6 +564,9 @@ class FileListResponseSchema(BaseModel):
     has_next: bool = Field(..., alias="hasNext")
     has_prev: bool = Field(..., alias="hasPrev")
 
+    class Config:
+        populate_by_name = True
+
 
 class FileAccessLogSchema(BaseModel):
     """Schema for file access log."""
@@ -601,6 +604,9 @@ class FileSearchSchema(BaseModel):
         if v < 1 or v > 100:
             raise ValueError("per_page must be between 1 and 100")
         return v
+
+    class Config:
+        populate_by_name = True
 
 
 class FileValidationRuleSchema(BaseModel):

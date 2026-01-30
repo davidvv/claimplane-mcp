@@ -647,15 +647,19 @@ def setup_exception_handlers(app: FastAPI):
     
     @app.exception_handler(Exception)
     async def general_exception_handler(request, exc: Exception):
-        """Handle unexpected exceptions."""
+        """Handle unexpected exceptions - Fix WP-309: Sanitize error output."""
+        import logging
+        logger = logging.getLogger("app.main")
+        logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
+        
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 "success": False,
                 "error": {
                     "code": "INTERNAL_SERVER_ERROR",
-                    "message": "An unexpected error occurred",
-                    "details": [str(exc)]
+                    "message": "An unexpected error occurred. Please try again later or contact support.",
+                    "details": [] # Hide str(exc) in production
                 },
                 "timestamp": datetime.utcnow().isoformat()
             }

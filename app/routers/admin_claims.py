@@ -529,7 +529,7 @@ async def get_api_usage_stats(
         logger.error(f"Failed to get API usage stats: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve API usage statistics: {str(e)}"
+            detail="Failed to retrieve API usage statistics"
         )
 
 
@@ -568,7 +568,7 @@ async def get_quota_status(
         logger.error(f"Failed to get quota status: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve quota status: {str(e)}"
+            detail="Failed to retrieve quota status"
         )
 
 
@@ -669,7 +669,7 @@ async def refresh_flight_data(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to refresh flight data: {str(e)}"
+            detail="Failed to refresh flight data"
         )
 
 
@@ -735,7 +735,7 @@ async def backfill_flight_data(
         logger.error(f"Failed to queue backfill task: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to queue backfill task: {str(e)}"
+            detail="Failed to queue backfill task"
         )
 
 
@@ -784,7 +784,7 @@ async def get_backfill_status(
 
         elif task.status == "FAILURE":
             # Task failed - return error
-            response["error"] = str(task.result)
+            response["error"] = "Task failed internally"
             response["message"] = "Backfill task failed"
 
         elif task.status == "PENDING":
@@ -804,5 +804,5 @@ async def get_backfill_status(
         logger.error(f"Failed to get task status: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve task status: {str(e)}"
+            detail="Failed to retrieve task status"
         )

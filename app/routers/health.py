@@ -36,9 +36,12 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> HealthResponseSche
             version=__version__
         )
     except Exception as e:
+        import logging
+        logger = logging.getLogger("app.health")
+        logger.error(f"Database connection failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Database connection failed: {str(e)}"
+            detail="Database connection failed"
         )
 
 
@@ -71,9 +74,12 @@ async def database_health(db: AsyncSession = Depends(get_db)) -> dict:
             }
         }
     except Exception as e:
+        import logging
+        logger = logging.getLogger("app.health")
+        logger.error(f"Database health check failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Database health check failed: {str(e)}"
+            detail="Database health check failed"
         )
 
 

@@ -95,14 +95,26 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
     is_production = os.getenv("ENVIRONMENT", "development") == "production"
 
     # Access token cookie (short-lived: 30 minutes)
+    # Fix WP-310: Enhanced cookie security (Strict SameSite)
     response.set_cookie(
         key="access_token",
         value=access_token,
-        httponly=True,  # Cannot be accessed by JavaScript
-        secure=is_production,  # HTTPS only in production
-        samesite="lax",  # CSRF protection
+        httponly=True,  # Cannot be accessed by JavaScript (XSS Protection)
+        secure=is_production,  # HTTPS only in production (MITM Protection)
+        samesite="strict",  # Strict CSRF protection
         max_age=config.JWT_EXPIRATION_MINUTES * 60,  # 30 minutes
-        path="/",  # Available for all routes
+        path="/",
+    )
+
+    # Refresh token cookie (long-lived: 7 days)
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=is_production,
+        samesite="strict",
+        max_age=config.JWT_REFRESH_EXPIRATION_DAYS * 24 * 60 * 60,  # 7 days
+        path="/",
     )
 
     # Refresh token cookie (long-lived: 7 days)

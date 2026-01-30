@@ -136,9 +136,10 @@ async def upload_file(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"File upload failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"File upload failed: {str(e)}"
+            detail="File upload failed. Please try again or contact support."
         )
 
 
@@ -205,9 +206,10 @@ async def link_file_to_claim(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to link file to claim: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to link file to claim: {str(e)}"
+            detail="Failed to link file to claim"
         )
 
 
@@ -246,9 +248,10 @@ async def get_file_info(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to get file info: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get file info: {str(e)}"
+            detail="Failed to get file information"
         )
 
 
@@ -299,9 +302,10 @@ async def download_file(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"File download failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"File download failed: {str(e)}"
+            detail="File download failed"
         )
 
 
@@ -349,9 +353,10 @@ async def delete_file(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"File deletion failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"File deletion failed: {str(e)}"
+            detail="File deletion failed"
         )
 
 
@@ -422,34 +427,36 @@ async def get_files_by_claim(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to get claim files: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get claim files: {str(e)}"
+            detail="Failed to retrieve claim files"
         )
 
 
 @router.get("/customer/{customer_id}", response_model=FileListResponseSchema)
 async def get_files_by_customer(
     customer_id: str,
-    request: Request,
     page: int = 1,
     per_page: int = 20,
+    current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Get files for a specific customer.
     
-    Args:
-        customer_id: ID of the customer
-        request: FastAPI request object
-        page: Page number for pagination
-        per_page: Items per page
-        db: Database session
-        
-    Returns:
-        FileListResponseSchema: List of files with pagination info
+    Requires authentication. Customers can only access their own files.
+    Admins can access all files.
     """
     try:
+        # Verify access
+        if current_user.role not in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
+            if str(current_user.id) != customer_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied: You can only access your own files"
+                )
+
         file_service = get_file_service(db)
         files = await file_service.get_files_by_customer(customer_id)
         
@@ -468,105 +475,109 @@ async def get_files_by_customer(
             has_prev=start > 0
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Failed to get customer files: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get customer files: {str(e)}"
+            detail="Failed to retrieve customer files"
         )
 
 
 @router.get("/{file_id}/access-logs", response_model=List[FileAccessLogSchema])
 async def get_file_access_logs(
     file_id: str,
-    request: Request,
     limit: int = 100,
+    current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Get access logs for a specific file.
     
-    Args:
-        file_id: ID of the file
-        request: FastAPI request object
-        limit: Maximum number of logs to return
-        db: Database session
-        
-    Returns:
-        List[FileAccessLogSchema]: List of access logs
-        
-    Raises:
-        HTTPException: If file not found or access denied
+    Requires authentication. Customers can only access logs for their own files.
+    Admins can access all logs.
     """
     try:
-        # Placeholder user ID
-        user_id = "123e4567-e89b-12d3-a456-426614174000"
-        
         file_service = get_file_service(db)
-        access_logs = await file_service.get_access_logs(file_id, user_id, limit)
+        
+        # Get file info first to verify access
+        file_info = await file_service.get_file_info(file_id, str(current_user.id))
+        
+        # Verify access
+        await verify_file_access(file_info, current_user)
+        
+        access_logs = await file_service.get_access_logs(file_id, str(current_user.id), limit)
         
         return [FileAccessLogSchema.model_validate(log) for log in access_logs]
         
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to get access logs: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get access logs: {str(e)}"
+            detail="Failed to retrieve file access logs"
         )
 
 
 @router.get("/summary/{customer_id}", response_model=FileSummarySchema)
 async def get_file_summary(
     customer_id: str,
-    request: Request,
+    current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Get file statistics for a customer.
     
-    Args:
-        customer_id: ID of the customer
-        request: FastAPI request object
-        db: Database session
-        
-    Returns:
-        FileSummarySchema: File statistics
+    Requires authentication. Customers can only access their own summary.
+    Admins can access any customer's summary.
     """
     try:
+        # Verify access
+        if current_user.role not in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
+            if str(current_user.id) != customer_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied: You can only access your own file summary"
+                )
+
         file_service = get_file_service(db)
         summary = await file_service.get_file_summary(customer_id)
         
         return FileSummarySchema.model_validate(summary)
         
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Failed to get file summary: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get file summary: {str(e)}"
+            detail="Failed to retrieve file summary"
         )
 
 
 @router.post("/search", response_model=FileListResponseSchema)
 async def search_files(
     search_params: FileSearchSchema,
-    request: Request,
+    current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Search files with various criteria.
     
-    Args:
-        search_params: Search parameters
-        request: FastAPI request object
-        db: Database session
-        
-    Returns:
-        FileListResponseSchema: Search results with pagination
+    Requires authentication. Customers can only search their own files.
+    Admins can search all files.
     """
     try:
-        # Placeholder user ID
-        user_id = "123e4567-e89b-12d3-a456-426614174000"
-        
         file_service = get_file_service(db)
+        
+        # Determine customer ID to filter by
+        search_customer_id = str(current_user.id)
+        
+        # Admins can override the customer ID to search for
+        if current_user.role in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN] and search_params.customer_id:
+            search_customer_id = str(search_params.customer_id)
         
         # Build search filters
         filters = {
@@ -577,7 +588,7 @@ async def search_files(
         
         files = await file_service.search_files(
             query=search_params.query,
-            customer_id=user_id,
+            customer_id=search_customer_id,
             **filters
         )
         
@@ -597,26 +608,19 @@ async def search_files(
         )
         
     except Exception as e:
+        logger.error(f"Failed to search files: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to search files: {str(e)}"
+            detail="Failed to execute file search"
         )
 
 
 @router.get("/validation-rules", response_model=List[FileValidationRuleSchema])
 async def get_validation_rules(
-    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     """
     Get file validation rules for all document types.
-    
-    Args:
-        request: FastAPI request object
-        db: Database session
-        
-    Returns:
-        List[FileValidationRuleSchema]: Validation rules
     """
     try:
         # This would typically come from the validation rule repository
@@ -627,20 +631,21 @@ async def get_validation_rules(
         for doc_type, rule in default_rules.items():
             rules.append(FileValidationRuleSchema(
                 id=uuid.uuid4(),  # Placeholder ID
-                document_type=doc_type,
-                max_file_size=rule["max_file_size"],
-                allowed_mime_types=rule["allowed_mime_types"],
-                required_file_extensions=rule["required_extensions"],
-                max_pages=rule.get("max_pages"),
-                requires_scan=rule.get("requires_scan", True),
-                requires_encryption=rule.get("requires_encryption", True),
-                retention_days=None
+                documentType=doc_type,
+                maxFileSize=rule["max_file_size"],
+                allowedMimeTypes=rule["allowed_mime_types"],
+                requiredFileExtensions=rule["required_extensions"],
+                maxPages=rule.get("max_pages"),
+                requiresScan=rule.get("requires_scan", True),
+                requiresEncryption=rule.get("requires_encryption", True),
+                retentionDays=None
             ))
         
         return rules
         
     except Exception as e:
+        logger.error(f"Failed to get validation rules: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get validation rules: {str(e)}"
+            detail="Failed to retrieve validation rules"
         )

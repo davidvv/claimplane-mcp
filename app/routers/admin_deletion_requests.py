@@ -163,9 +163,16 @@ async def review_deletion_request(
         return updated_request
 
     except ValueError as e:
+        logger.error(f"Validation error in deletion request review: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in deletion request review: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while processing the review"
         )
 
 

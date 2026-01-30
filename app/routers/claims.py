@@ -452,7 +452,7 @@ async def submit_claim_with_customer(
 @router.patch("/{claim_id}/draft", response_model=ClaimResponseSchema)
 async def update_draft_claim(
     claim_id: UUID,
-    update_data: Dict[str, Any],
+    update_data: ClaimDraftUpdateSchema,
     request: Request,
     user_data: tuple = Depends(get_current_user_with_claim_access),
     db: AsyncSession = Depends(get_db)
@@ -480,46 +480,12 @@ async def update_draft_claim(
         
         verify_claim_access(claim, current_user, token_claim_id)
         
-        # Manually validate and transform data
-        data_dict = update_data.copy()
+        # Transform Pydantic model to dict for service layer
+        # exclude_unset=True ensures we only update fields that were sent
+        data_dict = update_data.model_dump(exclude_unset=True)
         
-        # Handle aliases and nested objects
-        if 'postalCode' in data_dict:
-            data_dict['postal_code'] = data_dict.pop('postalCode')
-        
-        if 'incidentType' in data_dict:
-            data_dict['incident_type'] = data_dict.pop('incidentType')
-
-        if 'bookingReference' in data_dict:
-            data_dict['booking_reference'] = data_dict.pop('bookingReference')
-
-        if 'boardingPassFileId' in data_dict:
-            data_dict['boarding_pass_file_id'] = data_dict.pop('boardingPassFileId')
-
-        # Robust passenger transformation
-        if 'passengers' in data_dict and isinstance(data_dict['passengers'], list):
-            valid_passengers = []
-            for p in data_dict['passengers']:
-                if not isinstance(p, dict):
-                    continue
-                
-                # Transform aliases
-                p_transformed = p.copy()
-                if 'firstName' in p_transformed:
-                    p_transformed['first_name'] = p_transformed.pop('firstName')
-                if 'lastName' in p_transformed:
-                    p_transformed['last_name'] = p_transformed.pop('lastName')
-                if 'ticketNumber' in p_transformed:
-                    p_transformed['ticket_number'] = p_transformed.pop('ticketNumber')
-                
-                # Skip if essential fields are missing to prevent DB errors
-                if not p_transformed.get('first_name') or not p_transformed.get('last_name'):
-                    logger.warning(f"[update_draft_claim] Skipping invalid passenger record: {p}")
-                    continue
-                    
-                valid_passengers.append(p_transformed)
-            
-            data_dict['passengers'] = valid_passengers
+        # The service layer expects snake_case, model_dump() with by_alias=False (default)
+        # provides snake_case keys.
 
         updated_claim = await draft_service.update_draft(
             claim_id=claim_id,
@@ -567,9 +533,6 @@ async def get_claim(
     Raises:
         HTTPException: If claim not found or access denied
     """
-    # Validate description for XSS
-    description = validate_no_html(description)
-    
     # Verify claim exists
     claim_repo = ClaimRepository(db)
     claim = await claim_repo.get_by_id(claim_id)
@@ -578,6 +541,130 @@ async def get_claim(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Claim with id {claim_id} not found"
+        )
+
+    # Verify access
+    verify_claim_access(claim, current_user)
+
+    # Get documents
+    file_repo = FileRepository(db)
+    files = await file_repo.get_by_claim_id(claim_id, include_deleted=False)
+
+    logger.info(f"[list_claim_documents] Found {len(files)} documents for claim {claim_id}")
+    return [FileResponseSchema.model_validate(f) for f in files]
+
+
+@router.delete("/{claim_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_claim(
+    claim_id: UUID,
+    current_user: Customer = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete a claim.
+
+    Customers can only delete their own claims, and ONLY if they are in DRAFT status.
+    Admins can delete any claim.
+
+    Args:
+        claim_id: ID of the claim to delete
+        current_user: Currently authenticated user
+        db: Database session
+
+    Raises:
+        HTTPException: If claim not found, access denied, or cannot be deleted
+    """
+    claim_repo = ClaimRepository(db)
+    claim = await claim_repo.get_by_id(claim_id)
+
+    if not claim:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Claim with id {claim_id} not found"
+        )
+
+    # Verify access
+    verify_claim_access(claim, current_user)
+
+    # Check status
+    if current_user.role not in [Customer.ROLE_ADMIN, Customer.ROLE_SUPERADMIN]:
+        if claim.status != Claim.STATUS_DRAFT:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only draft claims can be deleted by customers"
+            )
+
+    # Delete claim (soft delete)
+    await claim_repo.delete(claim_id)
+    logger.info(f"Deleted claim {claim_id}")
+
+
+@router.post("/{claim_id}/documents", response_model=FileResponseSchema, status_code=status.HTTP_201_CREATED)
+async def upload_claim_document(
+    claim_id: UUID,
+    file: UploadFile = File(...),
+    document_type: str = Form(...),
+    description: Optional[str] = Form(None),
+    current_user: Customer = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Upload a document for a specific claim.
+
+    Customers can only upload documents to their own claims.
+    Admins can upload documents to any claim.
+
+    Args:
+        claim_id: ID of the claim to attach document to
+        file: File to upload
+        document_type: Type of document (boarding_pass, id_document, etc.)
+        description: Optional description
+        current_user: Currently authenticated user
+        db: Database session
+
+    Returns:
+        FileResponseSchema: Uploaded file information
+
+    Raises:
+        HTTPException: If claim not found or access denied
+    """
+    # Validate description for XSS
+    description = validate_no_html(description)
+
+    # Verify claim exists
+    claim_repo = ClaimRepository(db)
+    claim = await claim_repo.get_by_id(claim_id)
+
+    if not claim:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Claim with id {claim_id} not found"
+        )
+
+    # Verify access
+    verify_claim_access(claim, current_user)
+
+    # Upload file
+    try:
+        logger.info(f"[upload_claim_document] Uploading {file.filename} for claim {claim_id}")
+        file_service = get_file_service(db)
+        file_info = await file_service.upload_file(
+            file=file,
+            claim_id=claim_id,
+            document_type=document_type,
+            description=description,
+            customer_id=claim.customer_id
+        )
+
+        return FileResponseSchema.model_validate(file_info)
+
+    except Exception as e:
+        logger.error(f"Error uploading file for claim {claim_id}: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload file: {str(e)}"
         )
 
     # Verify access

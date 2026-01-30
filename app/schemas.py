@@ -433,6 +433,11 @@ class PassengerDraftSchema(BaseModel):
     last_name: str = Field(..., alias="lastName", max_length=100)
     ticket_number: Optional[str] = Field(None, alias="ticketNumber", max_length=50)
 
+    @validator('first_name', 'last_name')
+    def validate_no_html_in_names(cls, v):
+        """Prevent XSS by rejecting HTML tags in name fields."""
+        return validate_no_html(v)
+
     class Config:
         populate_by_name = True
 
@@ -450,6 +455,13 @@ class ClaimDraftUpdateSchema(BaseModel):
     incident_type: Optional[str] = Field(None, alias="incidentType")
     notes: Optional[str] = None
     boarding_pass_file_id: Optional[str] = Field(None, alias="boardingPassFileId")
+
+    @validator('street', 'city', 'country', 'notes')
+    def validate_no_html_fields(cls, v):
+        """Prevent XSS by rejecting HTML tags in text fields."""
+        if v is not None:
+            return validate_no_html(v)
+        return v
 
     class Config:
         populate_by_name = True

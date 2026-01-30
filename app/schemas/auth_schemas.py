@@ -12,8 +12,8 @@ class UserRegisterSchema(BaseModel):
     """Schema for user registration."""
     email: EmailStr
     password: str = Field(..., min_length=12, max_length=128)
-    first_name: str = Field(..., min_length=1, max_length=50)
-    last_name: str = Field(..., min_length=1, max_length=50)
+    first_name: str = Field(..., min_length=1, max_length=50, alias="firstName")
+    last_name: str = Field(..., min_length=1, max_length=50, alias="lastName")
     phone: Optional[str] = Field(None, max_length=20)
 
     @validator('password')
@@ -47,12 +47,13 @@ class UserRegisterSchema(BaseModel):
         return v
 
     class Config:
+        populate_by_name = True
         json_schema_extra = {
             "example": {
                 "email": "user@example.com",
                 "password": "SecureP@ssw0rd!",
-                "first_name": "John",
-                "last_name": "Doe",
+                "firstName": "John",
+                "lastName": "Doe",
                 "phone": "+34612345678"
             }
         }

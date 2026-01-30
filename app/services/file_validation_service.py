@@ -209,7 +209,7 @@ class FileValidationService:
             
             # Look for JavaScript (potential security risk)
             if "JavaScript" in content_str or "/JS" in content_str:
-                result["warnings"].append("PDF contains JavaScript - potential security risk")
+                result["errors"].append("PDF contains JavaScript - security risk, file rejected")
             
             # Look for embedded files
             if "/EmbeddedFile" in content_str:

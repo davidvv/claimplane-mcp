@@ -21,10 +21,13 @@ export function useLocalStorageForm<T>(
   });
 
   // Update localStorage when value changes
-  const setValue = (value: T) => {
+  const setValue = (value: T | ((prev: T) => T)) => {
     try {
-      setStoredValue(value);
-      window.localStorage.setItem(key, JSON.stringify(value));
+      setStoredValue((prev) => {
+        const nextValue = value instanceof Function ? value(prev) : value;
+        window.localStorage.setItem(key, JSON.stringify(nextValue));
+        return nextValue;
+      });
     } catch (error) {
       console.error(`Error saving ${key} to localStorage:`, error);
     }
@@ -63,23 +66,27 @@ export function useClaimFormPersistence() {
   );
 
   const updateStep = (step: number) => {
-    setFormData({ ...formData, currentStep: step });
+    setFormData(prev => ({ ...prev, currentStep: step }));
   };
 
   const updateFlightData = (data: any) => {
-    setFormData({ ...formData, flightData: data });
+    setFormData(prev => ({ ...prev, flightData: data }));
   };
 
   const updateEligibilityData = (data: any) => {
-    setFormData({ ...formData, eligibilityData: data });
+    setFormData(prev => ({ ...prev, eligibilityData: data }));
   };
 
   const updatePassengerData = (data: any) => {
-    setFormData({ ...formData, passengerData: data });
+    setFormData(prev => ({ ...prev, passengerData: data }));
   };
 
   const updateDocuments = (docs: any[]) => {
-    setFormData({ ...formData, documents: docs });
+    setFormData(prev => ({ ...prev, documents: docs }));
+  };
+
+  const updateDraftInfo = (id?: string, token?: string) => {
+    setFormData(prev => ({ ...prev, draftClaimId: id, draftAccessToken: token }));
   };
 
   return {
@@ -89,6 +96,7 @@ export function useClaimFormPersistence() {
     updateEligibilityData,
     updatePassengerData,
     updateDocuments,
+    updateDraftInfo,
     clearFormData,
   };
 }

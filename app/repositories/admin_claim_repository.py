@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models import Claim, Customer, ClaimFile, ClaimNote, ClaimStatusHistory
 from app.repositories.base import BaseRepository
+from app.utils.db_encryption import generate_blind_index
 
 logger = logging.getLogger(__name__)
 
@@ -92,15 +93,24 @@ class AdminClaimRepository(BaseRepository[Claim]):
         if search:
             # Join with Customer for searching customer details
             query = query.join(Customer)
+            
+            search_conditions = []
+            
+            # 1. Exact match on encrypted fields (using blind index)
+            blind_idx = generate_blind_index(search)
+            if blind_idx:
+                search_conditions.append(Customer.email_idx == blind_idx)
+                search_conditions.append(Claim.booking_reference_idx == blind_idx)
+                search_conditions.append(Claim.ticket_number_idx == blind_idx)
+            
+            # 2. Partial match on unencrypted fields
             # Using bindparam to prevent SQL injection
-            search_filters = or_(
-                Claim.flight_number.ilike(bindparam('search_param')),
-                Customer.first_name.ilike(bindparam('search_param')),
-                Customer.last_name.ilike(bindparam('search_param')),
-                Customer.email.ilike(bindparam('search_param')),
-                func.cast(Claim.id, String).ilike(bindparam('search_param'))
-            )
-            filters.append(search_filters)
+            search_conditions.append(Claim.flight_number.ilike(bindparam('search_param')))
+            search_conditions.append(func.cast(Claim.id, String).ilike(bindparam('search_param')))
+            
+            # Note: Name search is disabled due to encryption until phonetic search is implemented
+            
+            filters.append(or_(*search_conditions))
 
         if filters:
             query = query.where(and_(*filters))

@@ -68,15 +68,23 @@ class Config:
         "FILE_ENCRYPTION_KEY",
         SecureConfig.generate_encryption_key()
     )
+    
+    DB_ENCRYPTION_KEY = SecureConfig.get_required_env_var(
+        "DB_ENCRYPTION_KEY",
+        SecureConfig.generate_encryption_key()
+    )
 
     # Streaming Configuration for Large Files
     STREAMING_THRESHOLD = int(os.getenv("STREAMING_THRESHOLD", "52428800"))  # 50MB
     CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "8388608"))  # 8MB
     MAX_MEMORY_BUFFER = int(os.getenv("MAX_MEMORY_BUFFER", "104857600"))  # 100MB
     
-    # Validate encryption key
+    # Validate encryption keys
     if not SecureConfig.validate_encryption_key(FILE_ENCRYPTION_KEY):
         raise ValueError("Invalid FILE_ENCRYPTION_KEY format. Must be a valid Fernet key.")
+        
+    if not SecureConfig.validate_encryption_key(DB_ENCRYPTION_KEY):
+        raise ValueError("Invalid DB_ENCRYPTION_KEY format. Must be a valid Fernet key.")
     
     # Nextcloud Configuration (should be set in production)
     NEXTCLOUD_URL = os.getenv("NEXTCLOUD_URL", "http://localhost:8081")

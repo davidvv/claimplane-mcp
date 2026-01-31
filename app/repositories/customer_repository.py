@@ -7,6 +7,7 @@ from sqlalchemy import select, or_, bindparam
 
 from app.models import Customer
 from app.repositories.base import BaseRepository
+from app.utils.db_encryption import generate_blind_index
 
 
 class CustomerRepository(BaseRepository[Customer]):
@@ -17,30 +18,32 @@ class CustomerRepository(BaseRepository[Customer]):
     
     async def get_by_email(self, email: str) -> Optional[Customer]:
         """Get customer by email address."""
-        return await self.get_by_field('email', email)
+        # Use blind index for exact lookup
+        email_idx = generate_blind_index(email)
+        return await self.get_by_field('email_idx', email_idx)
     
     async def search_by_name(self, name: str, skip: int = 0, limit: int = 100) -> List[Customer]:
-        """Search customers by name (first name or last name)."""
-        # Search in both first_name and last_name
-        # Using bindparam to prevent SQL injection
-        stmt = select(Customer).where(
-            or_(
-                Customer.first_name.ilike(bindparam('name_param')),
-                Customer.last_name.ilike(bindparam('name_param'))
-            )
-        ).offset(skip).limit(limit)
-
-        result = await self.session.execute(stmt, {"name_param": f"%{name}%"})
-        return result.scalars().all()
+        """
+        Search customers by name.
+        NOTE: Due to encryption, partial name search is currently disabled.
+        This will return empty results until phonetic search is implemented.
+        """
+        # Return empty list to prevent confusion (encrypted fields cannot be searched with ILIKE)
+        return []
     
     async def search_by_email(self, email: str, skip: int = 0, limit: int = 100) -> List[Customer]:
-        """Search customers by email address (partial match)."""
-        # Using bindparam to prevent SQL injection
+        """
+        Search customers by email address.
+        NOTE: Due to encryption, only EXACT matches are supported.
+        """
+        # Use blind index for exact lookup
+        email_idx = generate_blind_index(email)
+        
         stmt = select(Customer).where(
-            Customer.email.ilike(bindparam('email_param'))
+            Customer.email_idx == email_idx
         ).offset(skip).limit(limit)
 
-        result = await self.session.execute(stmt, {"email_param": f"%{email}%"})
+        result = await self.session.execute(stmt)
         return result.scalars().all()
     
     async def get_active_customers(self, skip: int = 0, limit: int = 100) -> List[Customer]:
@@ -54,8 +57,10 @@ class CustomerRepository(BaseRepository[Customer]):
                              city: Optional[str] = None, postal_code: Optional[str] = None,
                              country: Optional[str] = None) -> Customer:
         """Create a new customer with all fields."""
+        email_idx = generate_blind_index(email)
         return await self.create(
             email=email,
+            email_idx=email_idx,
             first_name=first_name,
             last_name=last_name,
             phone=phone,
@@ -66,17 +71,15 @@ class CustomerRepository(BaseRepository[Customer]):
         )
     
     async def update_customer(self, customer_id: UUID, allow_null_values: bool = False, **kwargs) -> Optional[Customer]:
-        """Update customer information.
-        
-        Args:
-            customer_id: UUID of the customer to update
-            allow_null_values: If True, None values will be set to null. If False, None values are filtered out.
-            **kwargs: Fields to update
-        """
+        """Update customer information."""
         customer = await self.get_by_id(customer_id)
         if not customer:
             return None
         
+        # Handle index updates for email
+        if 'email' in kwargs and kwargs['email']:
+            kwargs['email_idx'] = generate_blind_index(kwargs['email'])
+            
         if allow_null_values:
             # For PUT operations: allow None values to be set to null
             update_data = kwargs
@@ -96,8 +99,10 @@ class CustomerRepository(BaseRepository[Customer]):
             return None
         
         # Check if email already exists for another customer
+        # Use blind index for lookup
         existing = await self.get_by_email(email)
         if existing and existing.id != customer_id:
             return None
         
-        return await self.update(customer, email=email)
+        email_idx = generate_blind_index(email)
+        return await self.update(customer, email=email, email_idx=email_idx)

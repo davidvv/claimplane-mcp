@@ -286,9 +286,8 @@ export function ClaimFormPage() {
       setDraftClaimId(draftData.claimId);
       // Set auth token for subsequent API calls (file uploads)
       setAuthToken(draftData.accessToken);
-      // Persist to localStorage for page refresh recovery
-      localStorage.setItem('draftClaimId', draftData.claimId);
-      localStorage.setItem('draftAccessToken', draftData.accessToken);
+      // Sync with persistence hook
+      updateDraftInfo(draftData.claimId, draftData.accessToken);
     }
 
     setCurrentStep(3);

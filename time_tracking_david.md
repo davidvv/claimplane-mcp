@@ -3,7 +3,7 @@
 ## Latest Work (2026-01-31) - Security & Privacy Hardening
 
 ### Security Audit Implementation
-**Estimated Time**: 11.5 hours
+**Estimated Time**: 12.0 hours
 
 #### Key Tasks:
 1. **Audit & Analysis** (Architecture, Security, Privacy)
@@ -55,3 +55,9 @@
    - Resolved Schema Validation errors for old/corrupted data.
    - Verified PII decryption in admin views.
    - Estimated: 2.0 hours
+
+9. **UI Optimization & Upload Reliability Fixes**
+   - Made documents and Booking Reference optional (User request).
+   - Fixed "all uploads failed" bug in Step 5 by filtering already-uploaded docs.
+   - Fixed draft state sync to prevent claim ID loss after page refresh.
+   - Estimated: 1.0 hours

@@ -122,10 +122,13 @@ export function Step5_Review({
       // If draftClaimId exists, documents were already uploaded progressively
       let uploadErrors = 0;
       const failedFiles: string[] = [];
+      
+      // Filter for documents that actually need uploading (have a file object and aren't already on server)
+      const docsToUpload = documents.filter(doc => doc.file && !doc.alreadyUploaded);
 
-      if (!draftClaimId && documents.length > 0 && claim.id) {
-        for (let i = 0; i < documents.length; i++) {
-          const doc = documents[i];
+      if (!draftClaimId && docsToUpload.length > 0 && claim.id) {
+        for (let i = 0; i < docsToUpload.length; i++) {
+          const doc = docsToUpload[i];
           setCurrentUploadFile(doc.file.name);
 
           try {
@@ -135,7 +138,7 @@ export function Step5_Review({
               doc.documentType,
               (progressEvent: any) => {
                 const percentCompleted = Math.round(
-                  ((i + progressEvent.loaded / progressEvent.total) / documents.length) * 100
+                  ((i + progressEvent.loaded / progressEvent.total) / docsToUpload.length) * 100
                 );
                 setUploadProgress(percentCompleted);
               }
@@ -161,12 +164,12 @@ export function Step5_Review({
       setUploadProgress(0);
 
       // Show appropriate success/warning message
-      if (documents.length > 0) {
+      if (docsToUpload.length > 0) {
         if (uploadErrors === 0) {
           toast.success('All documents uploaded successfully!');
-        } else if (uploadErrors < documents.length) {
+        } else if (uploadErrors < docsToUpload.length) {
           toast.warning(
-            `${documents.length - uploadErrors} of ${documents.length} documents uploaded. ` +
+            `${docsToUpload.length - uploadErrors} of ${docsToUpload.length} documents uploaded. ` +
             `Failed: ${failedFiles.join(', ')}. You can upload them later from your claim details.`,
             { duration: 8000 }
           );

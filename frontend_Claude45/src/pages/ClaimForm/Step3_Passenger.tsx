@@ -215,13 +215,6 @@ export function Step3_Passenger({
   }, []);
 
   const onSubmit = async (data: PassengerInfoForm) => {
-    // Validate: Either PNR (booking reference) or at least one document is required
-    const successfulDocs = documents.filter(d => d.status === 'success' || d.alreadyUploaded);
-    if (!data.bookingReference?.trim() && successfulDocs.length === 0) {
-      toast.error('Please provide a Booking Reference OR upload at least one document (e.g., boarding pass)');
-      return;
-    }
-
     try {
       // WP-306: Force an immediate save and wait for it before proceeding
       // This ensures backend validation (like XSS) passes

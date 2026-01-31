@@ -20,7 +20,7 @@ class FileValidationService:
         self.default_rules = {
             "boarding_pass": {
                 "max_file_size": 10 * 1024 * 1024,  # 10MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp", "message/rfc822", "application/octet-stream"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp", "message/rfc822"],
                 "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".eml"],
                 "max_pages": 15,
                 "requires_scan": True,
@@ -52,7 +52,7 @@ class FileValidationService:
             },
             "flight_ticket": {
                 "max_file_size": 5 * 1024 * 1024,  # 5MB
-                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp", "message/rfc822", "application/octet-stream"],
+                "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png", "image/webp", "message/rfc822"],
                 "required_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".eml"],
                 "max_pages": 15,
                 "requires_scan": True,
@@ -161,27 +161,33 @@ class FileValidationService:
             return validation_result
     
     def _detect_mime_type(self, file_content: bytes, filename: str) -> str:
-        """Detect MIME type from file content and filename."""
+        """
+        Detect MIME type from file content using libmagic.
+        Strictly enforces content-based detection to prevent extension spoofing.
+        """
         try:
             import magic
             
-            # Try to detect from content first
-            try:
-                mime_type = magic.from_buffer(file_content, mime=True)
-                if mime_type and mime_type != "application/octet-stream":
-                    return mime_type
-            except Exception as e:
-                # Log the error but continue with fallback
-                print(f"Magic library detection failed: {str(e)}")
-                pass
+            # Detect from content (first 2048 bytes are usually enough)
+            mime_type = magic.from_buffer(file_content, mime=True)
             
-        except ImportError as e:
-            # Handle case where libmagic is not available
-            print(f"libmagic not available: {str(e)}")
+            if mime_type:
+                # Normalize common types that magic might return differently
+                if mime_type == "text/x-php": return "text/plain" # Example of normalization if needed
+                return mime_type
+            
+        except ImportError:
+            # This should not happen in production as libmagic is a requirement
+            import logging
+            logging.getLogger(__name__).error("python-magic library not found")
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Magic detection failed: {str(e)}")
         
-        # Fallback to filename-based detection
-        mime_type, _ = mimetypes.guess_type(filename)
-        return mime_type or "application/octet-stream"
+        # If magic fails, we do NOT fall back to extension for security reasons
+        # but we can check if it's a known plain text file for basic usability
+        # while still being cautious.
+        return "application/octet-stream"
     
     def _validate_file_extension(self, filename: str, allowed_extensions: List[str]) -> bool:
         """Validate file extension."""

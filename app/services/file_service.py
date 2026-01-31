@@ -276,24 +276,60 @@ class FileService:
         document_type: str,
         file_size: int
     ) -> Dict[str, Any]:
-        """Validate large file using streaming approach."""
-        # For large files, we'll do basic validation first
+        """
+        Validate large file using streaming approach with 'peek-and-seek' 
+        to detect MIME type without loading the whole file into memory.
+        """
+        # 1. Basic size validation
         if file_size > config.MAX_FILE_SIZE:
             return {
                 "valid": False,
                 "errors": [f"File size {file_size} exceeds maximum allowed size {config.MAX_FILE_SIZE}"],
                 "file_hash": None,
-                "mime_type": file.content_type
+                "mime_type": None
             }
 
-        # For large files, we'll calculate hash during streaming instead of upfront
-        # Just do basic validation for now
-        return {
-            "valid": True,
-            "errors": [],
-            "file_hash": None,  # Will be calculated during streaming
-            "mime_type": file.content_type or "application/octet-stream"
-        }
+        # 2. Peek at the first 2048 bytes to detect MIME type
+        try:
+            # Read first chunk for identification
+            header = await file.read(2048)
+            # Seek back to the beginning so the upload process gets the full file
+            await file.seek(0)
+            
+            # Use the validation service to detect MIME from content
+            detected_mime = file_validation_service._detect_mime_type(header, file.filename)
+            
+            # 3. Perform full rule validation
+            rules = file_validation_service.default_rules.get(document_type)
+            if not rules:
+                return {
+                    "valid": False,
+                    "errors": [f"Unknown document type: {document_type}"],
+                    "file_hash": None,
+                    "mime_type": detected_mime
+                }
+            
+            errors = []
+            if detected_mime not in rules["allowed_mime_types"]:
+                errors.append(f"MIME type {detected_mime} not allowed for {document_type}")
+            
+            if not file_validation_service._validate_file_extension(file.filename, rules["required_extensions"]):
+                errors.append(f"File extension not allowed for {document_type}")
+
+            return {
+                "valid": len(errors) == 0,
+                "errors": errors,
+                "file_hash": None,  # Will be calculated during streaming
+                "mime_type": detected_mime
+            }
+
+        except Exception as e:
+            return {
+                "valid": False,
+                "errors": [f"Streaming validation failed: {str(e)}"],
+                "file_hash": None,
+                "mime_type": None
+            }
     
     async def upload_file(self, file: UploadFile, claim_id: str, customer_id: str,
                            document_type: str, description: Optional[str] = None,

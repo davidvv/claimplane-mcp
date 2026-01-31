@@ -117,17 +117,6 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         path="/",
     )
 
-    # Refresh token cookie (long-lived: 7 days)
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=is_production,
-        samesite="lax",
-        max_age=config.JWT_REFRESH_EXPIRATION_DAYS * 24 * 60 * 60,  # 7 days
-        path="/",
-    )
-
     logger.info("Authentication cookies set successfully")
 
 

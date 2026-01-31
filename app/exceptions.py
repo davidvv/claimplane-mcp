@@ -58,6 +58,16 @@ class AuthorizationException(FlightClaimException):
         super().__init__(message, status_code=403)
 
 
+class AccountLockedException(AuthenticationException):
+    """Exception raised when an account is locked due to too many failed attempts."""
+
+    def __init__(self, locked_until: datetime):
+        self.locked_until = locked_until
+        message = f"Account locked until {locked_until.strftime('%Y-%m-%d %H:%M:%S')} UTC"
+        super().__init__(message)
+        self.status_code = 423  # Locked
+
+
 class NextcloudError(FlightClaimException):
     """Base class for Nextcloud errors with enhanced error information."""
 

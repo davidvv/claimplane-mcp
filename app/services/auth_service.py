@@ -1,4 +1,5 @@
 """Authentication service for JWT token management and user authentication."""
+import asyncio
 import secrets
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
@@ -11,6 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import config
 from app.models import Customer, RefreshToken, PasswordResetToken, MagicLinkToken
 from app.services.password_service import PasswordService
+from app.services.cache_service import CacheService
+from app.exceptions import AccountLockedException
 
 
 class AuthService:
@@ -355,6 +358,7 @@ class AuthService:
     ) -> Optional[Customer]:
         """
         Authenticate a user with email and password.
+        Includes account lockout and exponential backoff security.
 
         Args:
             session: Database session
@@ -364,35 +368,112 @@ class AuthService:
         Returns:
             Customer instance if authentication successful, None otherwise
         """
+        # Get Redis-based failed attempts for backoff
+        failed_count = await AuthService._get_failed_attempts(email)
+        
+        # Exponential backoff (delay response)
+        if failed_count > 0:
+            # Get max stage or specific stage
+            delay = config.AUTH_BACKOFF_STAGES.get(failed_count, 0)
+            if not delay and failed_count > max(config.AUTH_BACKOFF_STAGES.keys()):
+                 delay = config.AUTH_BACKOFF_STAGES[max(config.AUTH_BACKOFF_STAGES.keys())]
+            
+            if delay > 0:
+                await asyncio.sleep(delay)
+
         # Find user by email (case-insensitive)
         stmt = select(Customer).where(func.lower(Customer.email) == email.lower())
         result = await session.execute(stmt)
         customer = result.scalar_one_or_none()
 
         if not customer:
+            # Still track failures for non-existent users to prevent enumeration
+            await AuthService._increment_failed_attempts(email)
             return None
+
+        # Check if account is locked in DB
+        if customer.locked_until and customer.locked_until > datetime.utcnow():
+            raise AccountLockedException(customer.locked_until)
 
         # Check if user has a password (for migration compatibility)
         if not customer.password_hash:
+            await AuthService._handle_login_failure(session, customer)
             return None
 
         # Verify password
         if not PasswordService.verify_password(password, customer.password_hash):
+            await AuthService._handle_login_failure(session, customer)
             return None
 
         # Check if user is active
         if not customer.is_active:
+            await AuthService._handle_login_failure(session, customer)
             return None
 
         # Check if user is blacklisted (security fix: prevent deleted users from logging in)
         if customer.is_blacklisted:
+            await AuthService._handle_login_failure(session, customer)
             return None
 
-        # Update last login timestamp
-        customer.last_login_at = datetime.utcnow()
+        # Success - Reset failure tracking and update last login timestamp
+        await AuthService._handle_login_success(session, customer)
+        return customer
+
+    @staticmethod
+    async def _get_failed_attempts(email: str) -> int:
+        """Get failed login attempts from Redis."""
+        try:
+            client = await CacheService.get_redis_client()
+            if not client:
+                return 0
+            count = await client.get(f"{config.AUTH_REDIS_PREFIX}{email.lower()}")
+            return int(count) if count else 0
+        except Exception:
+            return 0
+
+    @staticmethod
+    async def _increment_failed_attempts(email: str):
+        """Increment failed login attempts in Redis."""
+        try:
+            client = await CacheService.get_redis_client()
+            if not client:
+                return
+            key = f"{config.AUTH_REDIS_PREFIX}{email.lower()}"
+            # Increment and set TTL if not exists
+            pipe = client.pipeline()
+            pipe.incr(key)
+            pipe.expire(key, 3600)  # 1 hour window
+            await pipe.execute()
+        except Exception:
+            pass
+
+    @staticmethod
+    async def _handle_login_failure(session: AsyncSession, customer: Customer):
+        """Handle login failure: track in DB and Redis."""
+        await AuthService._increment_failed_attempts(customer.email)
+        
+        customer.failed_login_attempts += 1
+        if customer.failed_login_attempts >= config.AUTH_LOCKOUT_THRESHOLD:
+            customer.locked_until = datetime.utcnow() + timedelta(hours=config.AUTH_LOCKOUT_DURATION_HOURS)
+        
         await session.flush()
 
-        return customer
+    @staticmethod
+    async def _handle_login_success(session: AsyncSession, customer: Customer):
+        """Handle login success: reset tracking and update last login."""
+        # Reset Redis counter
+        try:
+            client = await CacheService.get_redis_client()
+            if client:
+                await client.delete(f"{config.AUTH_REDIS_PREFIX}{customer.email.lower()}")
+        except Exception:
+            pass
+            
+        # Reset DB counter
+        customer.failed_login_attempts = 0
+        customer.locked_until = None
+        customer.last_login_at = datetime.utcnow()
+        await session.flush()
 
     @staticmethod
     async def change_password(

@@ -4,11 +4,15 @@ from typing import Dict, Any
 from uuid import UUID
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Customer, Claim, ClaimFile, AccountDeletionRequest
+from app.models import (
+    Customer, Claim, ClaimFile, AccountDeletionRequest,
+    Passenger, ClaimNote, ClaimEvent, FlightSearchLog,
+    RefreshToken, PasswordResetToken, MagicLinkToken
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +47,8 @@ class GDPRService:
         claims_query = select(Claim).options(
             selectinload(Claim.files),
             selectinload(Claim.claim_notes),
-            selectinload(Claim.status_history)
+            selectinload(Claim.status_history),
+            selectinload(Claim.passengers)
         ).where(Claim.customer_id == customer_id)
 
         result = await session.execute(claims_query)
@@ -72,22 +77,29 @@ class GDPRService:
                     "departure_airport": claim.departure_airport,
                     "arrival_airport": claim.arrival_airport,
                     "departure_date": claim.departure_date.isoformat() if claim.departure_date else None,
-                    "scheduled_departure_time": claim.scheduled_departure_time.isoformat() if claim.scheduled_departure_time else None,
-                    "actual_departure_time": claim.actual_departure_time.isoformat() if claim.actual_departure_time else None,
-                    "scheduled_arrival_time": claim.scheduled_arrival_time.isoformat() if claim.scheduled_arrival_time else None,
-                    "actual_arrival_time": claim.actual_arrival_time.isoformat() if claim.actual_arrival_time else None,
                     "incident_type": claim.incident_type,
-                    "incident_description": claim.incident_description,
-                    "delay_hours": float(claim.delay_hours) if claim.delay_hours else None,
+                    "notes": claim.notes,
+                    "booking_reference": claim.booking_reference,
+                    "ticket_number": claim.ticket_number,
                     "status": claim.status,
                     "compensation_amount": float(claim.compensation_amount) if claim.compensation_amount else None,
                     "currency": claim.currency,
                     "calculated_compensation": float(claim.calculated_compensation) if claim.calculated_compensation else None,
-                    "flight_distance_km": claim.flight_distance_km,
+                    "flight_distance_km": float(claim.flight_distance_km) if claim.flight_distance_km else None,
+                    "delay_hours": float(claim.delay_hours) if claim.delay_hours else None,
                     "extraordinary_circumstances": claim.extraordinary_circumstances,
                     "rejection_reason": claim.rejection_reason,
                     "submitted_at": claim.submitted_at.isoformat() if claim.submitted_at else None,
                     "updated_at": claim.updated_at.isoformat() if claim.updated_at else None,
+                    "passengers": [
+                        {
+                            "first_name": p.first_name,
+                            "last_name": p.last_name,
+                            "email": p.email,
+                            "ticket_number": p.ticket_number
+                        }
+                        for p in claim.passengers
+                    ],
                     "files": [
                         {
                             "id": str(f.id),
@@ -151,26 +163,13 @@ class GDPRService:
     ) -> Dict[str, Any]:
         """
         Perform GDPR-compliant data deletion (Article 17 - Right to Erasure).
-
+        
         Strategy:
-        - Delete uploaded files from Nextcloud
-        - Anonymize claims (keep for legal retention, remove PII)
+        - Delete physical files from Nextcloud
+        - Deep anonymize claims, passengers, notes and events (remove all PII)
+        - Physically delete all authentication and session tokens
         - Anonymize customer profile
         - Mark deletion request as completed
-
-        NOTE: Claims are retained for 7 years (EU financial law) but anonymized.
-        Files are permanently deleted (no retention requirement).
-
-        Args:
-            session: Database session
-            customer_id: UUID of the customer
-            deletion_request_id: UUID of the deletion request
-
-        Returns:
-            Dictionary with deletion summary and any errors
-
-        Raises:
-            ValueError: If customer not found
         """
         from app.services.nextcloud_service import NextcloudService
 
@@ -184,6 +183,7 @@ class GDPRService:
             "files_deleted": 0,
             "files_failed": 0,
             "claims_anonymized": 0,
+            "tokens_deleted": 0,
             "errors": []
         }
 
@@ -209,19 +209,63 @@ class GDPRService:
         for file in files:
             await session.delete(file)
 
-        # 2. Anonymize claims (keep for legal retention)
-        claims_query = select(Claim).where(Claim.customer_id == customer_id)
+        # 2. Physically delete all authentication tokens
+        for token_model in [RefreshToken, PasswordResetToken, MagicLinkToken]:
+            token_delete_stmt = delete(token_model).where(token_model.user_id == customer_id)
+            result = await session.execute(token_delete_stmt)
+            deletion_summary["tokens_deleted"] += result.rowcount
+
+        # 3. Deep anonymize claims and related entities
+        # Load claims with relationships to ensure they are cleaned up
+        claims_query = select(Claim).options(
+            selectinload(Claim.passengers),
+            selectinload(Claim.claim_notes),
+            selectinload(Claim.status_history)
+        ).where(Claim.customer_id == customer_id)
+        
         result = await session.execute(claims_query)
         claims = result.scalars().all()
 
         for claim in claims:
-            # Remove PII but keep claim data for financial/legal compliance (7-year retention)
-            claim.incident_description = "DELETED - Customer requested account deletion"
+            # Clear high-entropy identifiers
+            claim.booking_reference = None
+            claim.ticket_number = None
+            claim.terms_acceptance_ip = "0.0.0.0"
+            claim.notes = "DELETED - Customer requested account deletion"
+            
+            # Anonymize linked passengers
+            for passenger in claim.passengers:
+                passenger.first_name = "DELETED"
+                passenger.last_name = "USER"
+                passenger.email = f"deleted_p_{passenger.id}@deleted.local"
+                passenger.ticket_number = None
+            
+            # Scrub notes
+            for note in claim.claim_notes:
+                note.note_text = "DELETED - GDPR erasure request"
+            
+            # Scrub status history
+            for history in claim.status_history:
+                history.change_reason = "DELETED"
+
             deletion_summary["claims_anonymized"] += 1
 
-        logger.info(f"Anonymized {len(claims)} claims for customer {customer_id}")
+        # 4. Scrub analytics and logs
+        # Anonymize IPs in claim events
+        await session.execute(
+            update(ClaimEvent)
+            .where(ClaimEvent.customer_id == customer_id)
+            .values(ip_address="0.0.0.0", event_data=None)
+        )
+        
+        # Anonymize IPs in flight search logs
+        await session.execute(
+            update(FlightSearchLog)
+            .where(FlightSearchLog.user_id == customer_id)
+            .values(ip_address="0.0.0.0")
+        )
 
-        # 3. Anonymize customer profile
+        # 5. Anonymize customer profile
         original_email = customer.email
         customer.email = f"deleted_user_{customer.id}@deleted.local"
         customer.first_name = "DELETED"
@@ -234,12 +278,12 @@ class GDPRService:
         customer.password_hash = None
         customer.is_active = False
         customer.is_blacklisted = True
+        customer.failed_login_attempts = 0
+        customer.locked_until = None
 
-        logger.warning(
-            f"Anonymized customer profile: {original_email} -> {customer.email}"
-        )
+        logger.warning(f"Anonymized customer profile: {original_email} -> {customer.email}")
 
-        # 4. Mark deletion request as completed
+        # 6. Mark deletion request as completed
         deletion_request = await session.get(AccountDeletionRequest, deletion_request_id)
         if deletion_request:
             deletion_request.status = AccountDeletionRequest.STATUS_COMPLETED
@@ -252,8 +296,8 @@ class GDPRService:
         logger.warning(
             f"GDPR deletion completed for customer {customer_id}. "
             f"Files deleted: {deletion_summary['files_deleted']}, "
-            f"Files failed: {deletion_summary['files_failed']}, "
-            f"Claims anonymized: {deletion_summary['claims_anonymized']}"
+            f"Claims anonymized: {deletion_summary['claims_anonymized']}, "
+            f"Tokens purged: {deletion_summary['tokens_deleted']}"
         )
 
         return deletion_summary

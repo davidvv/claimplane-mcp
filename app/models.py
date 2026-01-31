@@ -41,6 +41,10 @@ class Customer(Base):
     is_email_verified = Column(Boolean, nullable=False, default=False, server_default="false")
     email_verified_at = Column(DateTime(timezone=True), nullable=True)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Account lockout fields (Security)
+    failed_login_attempts = Column(Integer, nullable=False, default=0, server_default="0")
+    locked_until = Column(DateTime(timezone=True), nullable=True)
 
     # Account deletion fields (Phase 4)
     deletion_requested_at = Column(DateTime(timezone=True), nullable=True)

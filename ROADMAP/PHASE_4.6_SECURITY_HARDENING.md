@@ -86,11 +86,13 @@ Following a comprehensive security and privacy audit, several critical and high-
 
 #### 4.6.8 Optional Documents & Upload Reliability
 **Issue**: Customers were forced to upload documents or provide PNR, even when not strictly required. Persistence issues caused false "upload failed" errors.
-**Status**: ✅ **FIXED** (2026-01-31)
+**Status**: ✅ **FIXED & VERIFIED** (2026-01-31)
 **Tasks**:
 - [x] Make Booking Reference and Documents optional in Step 3
 - [x] Fix Step 5 logic to ignore already-uploaded documents
 - [x] Synchronize draft state with persistence hook to prevent loss after refresh
+- [x] Implement server-side document restoration on page refresh
+- [x] Resolved race condition in session restoration
 
 ---
 

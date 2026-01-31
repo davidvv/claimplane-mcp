@@ -50,6 +50,7 @@ export function ClaimFormPage() {
     updateEligibilityData,
     updatePassengerData,
     updateDocuments,
+    updateDraftInfo,
     clearFormData,
   } = useClaimFormPersistence();
 
@@ -230,6 +231,35 @@ export function ClaimFormPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isResumingFromMagicLink]); // Now depends on magic link flag
 
+  // WP-292: Fetch documents from server if draft exists but local state is empty
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      if (draftClaimId && documents.length === 0) {
+        try {
+          const existingDocs = await listClaimDocuments(draftClaimId);
+          if (existingDocs && existingDocs.length > 0) {
+            const restoredDocs = existingDocs.map(doc => ({
+              id: doc.id,
+              file: null,
+              name: doc.originalFilename || doc.filename || 'Uploaded document',
+              documentType: doc.documentType,
+              status: 'success' as const,
+              progress: 100,
+              documentId: doc.id,
+              alreadyUploaded: true,
+            }));
+            setDocuments(restoredDocs);
+            console.log(`[Persistence] Restored ${existingDocs.length} document(s) from server for draft ${draftClaimId}`);
+          }
+        } catch (error) {
+          console.error('[Persistence] Failed to fetch documents for draft:', error);
+        }
+      }
+    };
+
+    fetchDocuments();
+  }, [draftClaimId, documents.length]);
+
   // Fetch user profile if authenticated
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -252,8 +282,12 @@ export function ClaimFormPage() {
 
   // Sync with localStorage
   useEffect(() => {
-    updateStep(currentStep);
-  }, [currentStep]);
+    // WP-202: Only update if the step is actually different from what's stored
+    // or if we've already initialized.
+    if (formData.currentStep !== currentStep) {
+      updateStep(currentStep);
+    }
+  }, [currentStep, formData.currentStep, updateStep]);
 
   // Scroll to top when step changes
   useEffect(() => {

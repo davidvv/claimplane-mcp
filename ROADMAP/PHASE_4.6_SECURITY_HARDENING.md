@@ -74,6 +74,18 @@ Following a comprehensive security and privacy audit, several critical and high-
 
 ---
 
+### ✅ Post-Verification Fixes (Added 2026-01-31)
+#### 4.6.7 Wizard Step 4 Regression Fix
+**Issue**: "Sign & Continue" button was unresponsive due to localStorage clearing and missing backend endpoint.
+**Status**: ✅ **FIXED & VERIFIED**
+**Tasks**:
+- [x] Fix aggressive localStorage clearing in `getStoredUserInfo`
+- [x] Restore lost `sign-poa` endpoint and clean up router duplicates
+- [x] Implement robust `draftClaimId` persistence in `ClaimFormPage`
+- [x] E2E Verification with `agent-browser` (Reached Step 5)
+
+---
+
 ### Timeline
 - **Start Date**: 2026-01-31
 - **Target Completion**: 2026-02-01

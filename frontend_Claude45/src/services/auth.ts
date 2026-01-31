@@ -284,7 +284,20 @@ export function getStoredUserInfo() {
   const name = localStorage.getItem('user_name');
   const role = localStorage.getItem('user_role');
 
+  // If no auth data exists at all, this is a guest state - return empty and stop here.
+  // We check for email, name, and id to cover all bases of a partial session.
+  // This prevents the "invalid user data" check from triggering incorrectly for guests.
+  if (!email && !name && !id) {
+    return {
+      email: null,
+      id: null,
+      name: null,
+      role: null,
+    };
+  }
+
   // Detect broken names (e.g., "undefined undefined", "null null", "null undefined", etc.)
+  // This helps catch issues where name fields were concatenated incorrectly.
   const isBrokenName = name && (
     name.includes('undefined') ||
     name.includes('null') ||
@@ -292,7 +305,9 @@ export function getStoredUserInfo() {
     name === '[object Object]' // Just in case
   );
 
-  // If we have broken/invalid data, clear everything and force logout
+  // If we have SOME data but it's broken or incomplete (missing required fields),
+  // then we clear it to force a clean login state. 
+  // We only reach here if at least one of (email, name, id) is present.
   if (isBrokenName || !email || !name) {
     console.warn('Detected invalid user data in localStorage, clearing auth state');
     console.warn('Broken data:', { email, id, name, role });

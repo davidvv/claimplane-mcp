@@ -84,7 +84,13 @@ class Config:
     NEXTCLOUD_PASSWORD = os.getenv("NEXTCLOUD_PASSWORD", "admin_secure_password_2024")
     
     # Redis Configuration
-    REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+    REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+    REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+    REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+    
+    # Construct REDIS_URL if not provided, otherwise use the provided one
+    _default_redis_url = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}" if REDIS_PASSWORD else f"redis://{REDIS_HOST}:{REDIS_PORT}"
+    REDIS_URL = os.getenv("REDIS_URL", _default_redis_url)
 
     # Email Configuration (Phase 2)
     SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
@@ -112,6 +118,12 @@ class Config:
     # Security Settings
     VIRUS_SCAN_ENABLED = os.getenv("VIRUS_SCAN_ENABLED", "true").lower() == "true"
     CLAMAV_URL = os.getenv("CLAMAV_URL", "clamav:3310")
+    
+    # Account Lockout
+    AUTH_LOCKOUT_THRESHOLD = int(os.getenv("AUTH_LOCKOUT_THRESHOLD", "10"))
+    AUTH_LOCKOUT_DURATION_HOURS = int(os.getenv("AUTH_LOCKOUT_DURATION_HOURS", "24"))
+    AUTH_BACKOFF_STAGES = {3: 5, 5: 30, 8: 60}  # Attempts: Seconds to delay
+    AUTH_REDIS_PREFIX = "auth:failed:"
     
     # Rate Limiting
     RATE_LIMIT_UPLOAD = os.getenv("RATE_LIMIT_UPLOAD", "10/minute")

@@ -787,7 +787,8 @@ class FlightData(Base):
         STATUS_DELAYED,
         STATUS_CANCELLED,
         STATUS_DIVERTED,
-        STATUS_LANDED
+        STATUS_LANDED,
+        "arrived" # Added for API compatibility
     ]
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

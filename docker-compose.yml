@@ -109,8 +109,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      clamav:
-        condition: service_healthy
     volumes:
       - ./app:/app/app
       - ./google-cloud-key.json:/app/google-cloud-key.json:ro

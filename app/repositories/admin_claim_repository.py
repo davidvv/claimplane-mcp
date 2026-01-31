@@ -92,7 +92,7 @@ class AdminClaimRepository(BaseRepository[Claim]):
         # Search functionality
         if search:
             # Join with Customer for searching customer details
-            query = query.join(Customer)
+            query = query.join(Customer, Claim.customer_id == Customer.id)
             
             search_conditions = []
             

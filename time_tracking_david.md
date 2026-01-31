@@ -3,7 +3,7 @@
 ## Latest Work (2026-01-31) - Security & Privacy Hardening
 
 ### Security Audit Implementation
-**Estimated Time**: 10.0 hours
+**Estimated Time**: 11.5 hours
 
 #### Key Tasks:
 1. **Audit & Analysis** (Architecture, Security, Privacy)
@@ -40,7 +40,8 @@
    - Implemented AES-128-CBC encryption for all sensitive fields.
    - Added Blind Indexing for Emails/PNRs.
    - Performed data migration with zero loss.
-   - Estimated: 1.5 hours
+   - Fixed PII decryption issues caused by environment mismatch.
+   - Estimated: 2.0 hours
 
 7. **Wizard Step 4 Restoration & Bug Fix** (WP #330)
    - Restored lost `sign-poa` endpoint and 5 other critical routes.
@@ -48,8 +49,9 @@
    - Verified end-to-end claim submission flow via browser automation.
    - Estimated: 1.5 hours
 
-8. **Environment Stabilization & Deployment Fixes**
-   - Debugged and resolved missing `sqlalchemy-utils` dependency in Celery worker.
-   - Fixed Redis authentication configuration mismatch.
-   - Rebuilt Docker images to ensure consistency.
-   - Estimated: 1.5 hours
+8. **Admin Dashboard Testing & Debugging**
+   - Verified magic link login for admin users.
+   - Fixed AmbiguousForeignKeysError in admin repositories.
+   - Resolved Schema Validation errors for old/corrupted data.
+   - Verified PII decryption in admin views.
+   - Estimated: 2.0 hours

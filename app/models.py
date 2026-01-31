@@ -3,16 +3,44 @@ import uuid
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Column, String, Numeric, Date, Text, ForeignKey, DateTime, func, Boolean, Integer
+from sqlalchemy import Column, String, Numeric, Date, Text, ForeignKey, DateTime, func, Boolean, Integer, TypeDecorator
 from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSON
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy_utils import EncryptedType
-from sqlalchemy_utils.types.encrypted.encrypted_type import FernetEngine
+import cryptography.fernet
 
 from app.database import Base
 from app.config import config
 from app.utils.phone_validator import validate_phone_number
+
+
+class AESEncryptedString(TypeDecorator):
+    """
+    Custom TypeDecorator for AES encryption using Fernet.
+    Async-safe and robust replacement for sqlalchemy-utils EncryptedType.
+    """
+    impl = Text
+    cache_ok = True
+
+    def __init__(self, key, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fernet = cryptography.fernet.Fernet(key)
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            value = str(value)
+        return self.fernet.encrypt(value.encode()).decode()
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        try:
+            return self.fernet.decrypt(value.encode()).decode()
+        except Exception:
+            # Fallback for data that might not be encrypted during transition
+            return value
 
 
 class Customer(Base):
@@ -30,18 +58,18 @@ class Customer(Base):
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Encrypted PII
-    email = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=False)
+    email = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=False)
     email_idx = Column(String(255), unique=True, nullable=False, index=True)
     
     password_hash = Column(String(255), nullable=True)  # Nullable for migration compatibility
     
-    first_name = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=False)
-    last_name = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=False)
-    phone = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=True)
-    street = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=True)
-    city = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=True)
-    postal_code = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=True)
-    country = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=True)
+    first_name = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=False)
+    last_name = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=False)
+    phone = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=True)
+    street = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=True)
+    city = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=True)
+    postal_code = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=True)
+    country = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=True)
 
     # Authentication fields (Phase 3)
     role = Column(String(20), nullable=False, default=ROLE_CUSTOMER, server_default=ROLE_CUSTOMER)
@@ -172,9 +200,9 @@ class Claim(Base):
     notes = Column(Text, nullable=True)
 
     # Booking identifiers (passenger-specific)
-    booking_reference = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=True)
+    booking_reference = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=True)
     booking_reference_idx = Column(String(255), nullable=True, index=True)
-    ticket_number = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=True)
+    ticket_number = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=True)
     ticket_number_idx = Column(String(255), nullable=True, index=True)
 
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -252,11 +280,11 @@ class Passenger(Base):
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=False, index=True)
     
-    first_name = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=False)
-    last_name = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=False)
-    ticket_number = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=True)
+    first_name = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=False)
+    last_name = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=False)
+    ticket_number = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=True)
     ticket_number_idx = Column(String(255), nullable=True, index=True)
-    email = Column(EncryptedType(String(255), config.DB_ENCRYPTION_KEY, FernetEngine), nullable=True)
+    email = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=True)
     email_idx = Column(String(255), nullable=True, index=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())

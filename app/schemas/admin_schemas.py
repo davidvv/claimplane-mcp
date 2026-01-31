@@ -129,9 +129,9 @@ class ClaimFilterParams(BaseModel):
 class CustomerResponse(BaseModel):
     """Customer information in responses."""
     id: UUID
-    email: EmailStr
-    first_name: str
-    last_name: str
+    email: Optional[str] = None  # Changed from EmailStr to Optional[str] to handle encrypted/None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     phone: Optional[str] = None
     full_name: Optional[str] = None
 

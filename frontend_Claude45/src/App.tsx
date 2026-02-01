@@ -30,7 +30,7 @@ import { DeletionRequests } from './pages/Admin/DeletionRequests';
 
 function App() {
   // Validate authentication state on app load
-  // This prevents stale localStorage from showing user as logged in when cookies expired
+  // This prevents stale sessionStorage from showing user as logged in when cookies expired
   const { isValidating } = useAuthSync();
 
   // Show minimal loading state while validating session

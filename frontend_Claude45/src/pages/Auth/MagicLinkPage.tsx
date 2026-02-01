@@ -45,7 +45,7 @@ export function MagicLinkPage() {
         console.log('Magic link verification successful:', response.data);
 
         // Tokens are automatically stored in HTTP-only cookies by backend
-        // Store user info in localStorage for UI purposes only
+        // Store user info in sessionStorage for UI purposes only
         if (response.data.user) {
           // Validate that we have email (required for all flows)
           // Note: first_name/last_name may be empty for draft claims where user hasn't filled passenger info yet

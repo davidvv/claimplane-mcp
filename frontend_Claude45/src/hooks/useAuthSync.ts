@@ -1,7 +1,7 @@
 /**
  * useAuthSync hook
  *
- * Automatically synchronizes authentication state between localStorage and backend cookies.
+ * Automatically synchronizes authentication state between sessionStorage and backend cookies.
  * Handles session validation on mount and prevents stale UI state.
  */
 import { useEffect, useState } from 'react';
@@ -16,7 +16,7 @@ interface UseAuthSyncResult {
 /**
  * Hook to synchronize authentication state
  *
- * Validates session with backend on mount and updates localStorage accordingly.
+ * Validates session with backend on mount and updates sessionStorage accordingly.
  * This prevents the issue where user name appears in UI but session has expired.
  *
  * @param validateOnMount - Whether to validate session when component mounts (default: true)

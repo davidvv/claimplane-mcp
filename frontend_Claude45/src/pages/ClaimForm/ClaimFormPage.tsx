@@ -73,9 +73,9 @@ export function ClaimFormPage() {
 
   // Draft claim state (Workflow v2)
   const [draftClaimId, setDraftClaimId] = useState<string | null>(null);
-  // Note: draftAccessToken is stored in localStorage via setAuthToken, not in state
+  // Note: draftAccessToken is stored in sessionStorage via setAuthToken, not in state
 
-  // Track if we're resuming from magic link (to skip localStorage prompt)
+  // Track if we're resuming from magic link (to skip sessionStorage prompt)
   const [isResumingFromMagicLink, setIsResumingFromMagicLink] = useState(false);
   const processedResumeId = useRef<string | null>(null);
 
@@ -85,13 +85,13 @@ export function ClaimFormPage() {
     if (resumeClaimId && resumeClaimId !== processedResumeId.current) {
       processedResumeId.current = resumeClaimId;
 
-      // Set flag to skip localStorage prompt
+      // Set flag to skip sessionStorage prompt
       setIsResumingFromMagicLink(true);
 
-      // Clear any conflicting localStorage data
+      // Clear any conflicting sessionStorage data
       clearFormData();
-      localStorage.removeItem('draftClaimId');
-      localStorage.removeItem('draftAccessToken');
+      sessionStorage.removeItem('draftClaimId');
+      sessionStorage.removeItem('draftAccessToken');
 
       setDraftClaimId(resumeClaimId);
 
@@ -188,7 +188,7 @@ export function ClaimFormPage() {
         } catch (error) {
           console.error("Failed to load draft:", error);
           toast.error("Could not load draft claim details.");
-          setIsResumingFromMagicLink(false); // Allow localStorage prompt on error
+          setIsResumingFromMagicLink(false); // Allow sessionStorage prompt on error
         }
       };
 
@@ -198,7 +198,7 @@ export function ClaimFormPage() {
 
   // Check for saved form data on mount (runs only once)
   useEffect(() => {
-    // Skip localStorage prompt if we're resuming from magic link
+    // Skip sessionStorage prompt if we're resuming from magic link
     if (isResumingFromMagicLink) {
       return;
     }
@@ -280,7 +280,7 @@ export function ClaimFormPage() {
     fetchUserProfile();
   }, []);
 
-  // Sync with localStorage
+  // Sync with sessionStorage
   useEffect(() => {
     // WP-202: Only update if the step is actually different from what's stored
     // or if we've already initialized.
@@ -342,8 +342,8 @@ export function ClaimFormPage() {
   const handleSubmitComplete = (claimId: string) => {
     // Clear form data and draft claim data
     clearFormData();
-    localStorage.removeItem('draftClaimId');
-    localStorage.removeItem('draftAccessToken');
+    sessionStorage.removeItem('draftClaimId');
+    sessionStorage.removeItem('draftAccessToken');
     // Navigate to success page
     navigate(`/claim/success?claimId=${claimId}`);
   };
@@ -361,15 +361,15 @@ export function ClaimFormPage() {
 
   const handleDraftCancelled = () => {
     setDraftClaimId(null);
-    localStorage.removeItem('draftClaimId');
-    localStorage.removeItem('draftAccessToken');
+    sessionStorage.removeItem('draftClaimId');
+    sessionStorage.removeItem('draftAccessToken');
   };
 
   const handleStartNewClaim = () => {
     if (confirm('Are you sure you want to start a new claim? This will clear all current form data.')) {
       clearFormData();
-      localStorage.removeItem('draftClaimId');
-      localStorage.removeItem('draftAccessToken');
+      sessionStorage.removeItem('draftClaimId');
+      sessionStorage.removeItem('draftAccessToken');
       setCurrentStep(1);
       setFlightData(null);
       setEligibilityData(null);

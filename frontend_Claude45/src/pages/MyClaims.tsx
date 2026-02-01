@@ -27,8 +27,8 @@ import {
 } from '@/lib/utils';
 
 /**
- * Get user role from localStorage (stored during login)
- * Note: JWT tokens are in HTTP-only cookies, user info is in localStorage for UI
+ * Get user role from sessionStorage (stored during login)
+ * Note: JWT tokens are in HTTP-only cookies, user info is in sessionStorage for UI
  */
 function getUserRole(): string | null {
   return sessionStorage.getItem('user_role');
@@ -43,7 +43,7 @@ export function MyClaims() {
   useEffect(() => {
     const fetchClaims = async () => {
       try {
-        // Check if user is authenticated (user_email is stored in localStorage after login)
+        // Check if user is authenticated (user_email is stored in sessionStorage after login)
         const userEmail = sessionStorage.getItem('user_email');
         console.log('[MyClaims] User authenticated:', !!userEmail);
 
@@ -79,8 +79,8 @@ export function MyClaims() {
 
         if (error.response?.status === 401) {
           toast.error('Session expired. Please log in again');
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('refresh_token');
+          sessionStorage.removeItem('auth_token');
+          sessionStorage.removeItem('refresh_token');
           navigate('/auth');
         } else {
           toast.error('Failed to load your claims');

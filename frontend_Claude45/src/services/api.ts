@@ -37,10 +37,10 @@ apiClient.interceptors.request.use(
     let draftToken = sessionStorage.getItem('draftAuthToken');
     
     // Fallback: Check claim form persistence data if direct token is missing (e.g. after refresh)
-    // Note: We prefer sessionStorage for security, but legacy drafts might be in localStorage
+    // Note: We prefer sessionStorage for security, but legacy drafts might be in sessionStorage
     if (!draftToken) {
       try {
-        const savedData = localStorage.getItem('claimplane_form_data');
+        const savedData = sessionStorage.getItem('claimplane_form_data');
         if (savedData) {
           const parsed = JSON.parse(savedData);
           draftToken = parsed.draftAccessToken;

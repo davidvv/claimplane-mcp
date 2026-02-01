@@ -137,7 +137,7 @@ export function FileUploadZone({
     async (acceptedFiles: File[]) => {
       const newFiles: UploadedFile[] = acceptedFiles.map((file) => ({
         file,
-        name: file.name,  // Store name separately for localStorage persistence (Bug #292)
+        name: file.name,  // Store name separately for sessionStorage persistence (Bug #292)
         documentType: getDocumentType(file.name),
         status: claimId ? 'pending' : 'pending',  // Will be uploaded if claimId exists
       }));

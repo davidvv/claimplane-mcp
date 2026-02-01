@@ -80,7 +80,7 @@ export function ClaimDetailPage() {
     loadClaimData();
     loadAdminUsers();
 
-    // Get current user ID from localStorage (set during login)
+    // Get current user ID from sessionStorage (set during login)
     const userId = sessionStorage.getItem('user_id');
     if (userId) {
       setCurrentUserId(userId);

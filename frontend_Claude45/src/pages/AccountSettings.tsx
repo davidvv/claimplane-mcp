@@ -114,7 +114,7 @@ export function AccountSettings() {
         });
       }
 
-      // Update localStorage with new name to sync UI
+      // Update sessionStorage with new name to sync UI
       const displayName = buildDisplayName(
         updatedProfile.first_name,
         updatedProfile.last_name,

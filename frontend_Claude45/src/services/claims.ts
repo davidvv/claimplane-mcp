@@ -79,7 +79,7 @@ export const submitClaim = async (request: ClaimRequest): Promise<Claim> => {
     throw new Error('Failed to submit claim');
   }
 
-  // Set user info in localStorage to consider them authenticated
+  // Set user info in sessionStorage to consider them authenticated
   // This allows viewing the claim details immediately on the Status page
   const claim = response.data.claim;
   if (claim.contactInfo) {

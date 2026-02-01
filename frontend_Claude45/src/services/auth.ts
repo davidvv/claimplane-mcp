@@ -96,10 +96,10 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
   const response = await apiClient.post<AuthResponse>('/auth/register', data);
 
   // Tokens are automatically stored in HTTP-only cookies by the backend
-  // Store user info in localStorage for UI purposes only (not security-sensitive)
+  // Store user info in sessionStorage for UI purposes only (not security-sensitive)
   if (response.data.user) {
-    // Validate that we have all required fields
-    if (!response.data.user.email || !response.data.user.first_name || !response.data.user.last_name) {
+    // Validate that we have all required fields (email is strictly required)
+    if (!response.data.user.email) {
       console.error('Backend returned incomplete user data during registration');
       throw new Error('Registration failed: Incomplete user data received');
     }
@@ -127,8 +127,8 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
   // Tokens are automatically stored in HTTP-only cookies by the backend
   // Store user info in sessionStorage for UI purposes only (not security-sensitive)
   if (response.data.user) {
-    // Validate that we have all required fields
-    if (!response.data.user.email || !response.data.user.first_name || !response.data.user.last_name) {
+    // Validate that we have all required fields (email is strictly required)
+    if (!response.data.user.email) {
       console.error('Backend returned incomplete user data during login');
       throw new Error('Login failed: Incomplete user data received');
     }
@@ -345,13 +345,13 @@ export function clearLocalAuthState(): void {
  * Validate current session with backend
  *
  * Checks if the HTTP-only cookies are still valid by calling /auth/me
- * If session is invalid, automatically clears localStorage to sync UI state
+ * If session is invalid, automatically clears sessionStorage to sync UI state
  *
  * @returns Promise<boolean> - true if session is valid, false otherwise
  */
 export async function validateSession(): Promise<boolean> {
   try {
-    // If no localStorage data, no need to validate
+    // If no sessionStorage data, no need to validate
     if (!isAuthenticated()) {
       return false;
     }
@@ -369,9 +369,10 @@ export async function validateSession(): Promise<boolean> {
         userData.email
       );
 
-      // If the backend gave us invalid data (no email or broken names), clear session
-      if (!userData.email || !userData.first_name || !userData.last_name) {
-        console.warn('Backend returned invalid user data, clearing session');
+      // If the backend gave us invalid data (no email), clear session
+      // Note: first_name/last_name may be empty for new users or admin accounts
+      if (!userData.email) {
+        console.warn('Backend returned invalid user data (missing email), clearing session');
         console.warn('Invalid data:', {
           email: userData.email,
           first_name: userData.first_name,

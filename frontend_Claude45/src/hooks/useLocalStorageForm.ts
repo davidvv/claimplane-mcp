@@ -1,45 +1,45 @@
 /**
- * Custom hook for persisting form data to localStorage
+ * Custom hook for persisting form data to sessionStorage
  * Allows users to resume their claim form if they refresh the page
  */
 
 import { useState } from 'react';
 
-export function useLocalStorageForm<T>(
+export function useSessionStorageForm<T>(
   key: string,
   initialValue: T
 ): [T, (value: T | ((prev: T) => T)) => void, () => void] {
-  // Get initial value from localStorage or use provided initialValue
+  // Get initial value from sessionStorage or use provided initialValue
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
-      const item = window.localStorage.getItem(key);
+      const item = window.sessionStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.error(`Error loading ${key} from localStorage:`, error);
+      console.error(`Error loading ${key} from sessionStorage:`, error);
       return initialValue;
     }
   });
 
-  // Update localStorage when value changes
+  // Update sessionStorage when value changes
   const setValue = (value: T | ((prev: T) => T)) => {
     try {
       setStoredValue((prev) => {
         const nextValue = value instanceof Function ? value(prev) : value;
-        window.localStorage.setItem(key, JSON.stringify(nextValue));
+        window.sessionStorage.setItem(key, JSON.stringify(nextValue));
         return nextValue;
       });
     } catch (error) {
-      console.error(`Error saving ${key} to localStorage:`, error);
+      console.error(`Error saving ${key} to sessionStorage:`, error);
     }
   };
 
   // Clear the stored value
   const clearValue = () => {
     try {
-      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
       setStoredValue(initialValue);
     } catch (error) {
-      console.error(`Error clearing ${key} from localStorage:`, error);
+      console.error(`Error clearing ${key} from sessionStorage:`, error);
     }
   };
 
@@ -60,7 +60,7 @@ interface ClaimFormData {
 }
 
 export function useClaimFormPersistence() {
-  const [formData, setFormData, clearFormData] = useLocalStorageForm<ClaimFormData>(
+  const [formData, setFormData, clearFormData] = useSessionStorageForm<ClaimFormData>(
     'claimplane_form_data',
     { currentStep: 1 }
   );

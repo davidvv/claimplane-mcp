@@ -151,7 +151,7 @@ export function Status() {
         // Delay slightly to ensure auth state is ready
         setTimeout(() => {
           debugOnSubmit(claimIdFromUrl);
-        }, 500); // Short delay to ensure localStorage is accessible
+        }, 500); // Short delay to ensure sessionStorage is accessible
       } else {
         console.log('User not authenticated, manual submission required');
         // Don't show error toast for missing auth - let user manually enter claim ID

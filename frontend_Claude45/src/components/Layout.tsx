@@ -19,8 +19,8 @@ import { cn } from '@/lib/utils';
 import { isAuthenticated, getStoredUserInfo, logout } from '@/services/auth';
 
 /**
- * Get user role from localStorage (stored during login)
- * Note: JWT tokens are in HTTP-only cookies, user info is in localStorage for UI
+ * Get user role from sessionStorage (stored during login)
+ * Note: JWT tokens are in HTTP-only cookies, user info is in sessionStorage for UI
  */
 function getUserRole(): string | null {
   return sessionStorage.getItem('user_role');

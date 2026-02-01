@@ -186,7 +186,7 @@ export function Step3_Passenger({
   // Auto-save logic
   const { triggerSave, forceSave, isSaving, lastSaved, error: saveError } = useAutoSave({
     onSave: async (data: PassengerInfoForm) => {
-      // 1. Update parent state (localStorage) - fallback always active
+      // 1. Update parent state (sessionStorage) - fallback always active
       onUpdate(data);
       
       // 2. Update backend if draftClaimId exists

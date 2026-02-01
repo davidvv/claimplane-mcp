@@ -51,19 +51,6 @@ export function Step5_Review({
   const allPassengers = passengerData.passengers || [primaryPassenger];
 
   const handleSubmit = async () => {
-    // #204: Optimization - Check if document upload is mandatory
-    // Submission is allowed if (PNR is present AND POA is signed)
-    // POA is signed in Step 4, so we check for PNR here.
-    const hasPNR = !!passengerData.bookingReference;
-    const hasDocuments = documents.length > 0;
-
-    if (!hasPNR && !hasDocuments) {
-      toast.error('Please upload at least one document (Boarding Pass or Booking Confirmation) since no Booking Reference (PNR) was provided.', {
-        duration: 5000,
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     setUploadProgress(0);
 
@@ -417,9 +404,13 @@ export function Step5_Review({
                 ))}
               </ul>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <AlertCircle className="w-12 h-12 mx-auto mb-2" />
-                <p>No documents uploaded</p>
+              <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border border-dashed">
+                <FileText className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                <p className="font-medium">No documents provided yet</p>
+                <p className="text-xs px-6 mt-1">
+                  You can submit your claim now. Our team will contact you if any 
+                  additional documents (like a boarding pass) are required.
+                </p>
               </div>
             )}
           </CardContent>

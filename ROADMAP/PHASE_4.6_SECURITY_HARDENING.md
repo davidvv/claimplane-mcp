@@ -89,6 +89,7 @@ Following a comprehensive security and privacy audit, several critical and high-
 **Status**: ✅ **FIXED & VERIFIED** (2026-01-31)
 **Tasks**:
 - [x] Make Booking Reference and Documents optional in Step 3
+- [x] Make Documents optional in Step 5 (Remove submission block)
 - [x] Fix Step 5 logic to ignore already-uploaded documents
 - [x] Synchronize draft state with persistence hook to prevent loss after refresh
 - [x] Implement server-side document restoration on page refresh

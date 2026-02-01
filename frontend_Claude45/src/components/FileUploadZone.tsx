@@ -105,6 +105,7 @@ export function FileUploadZone({
             status: 'success',
             progress: 100,
             uploadedId: result.id,
+            alreadyUploaded: true, // Mark as already uploaded to prevent redundant attempts in Step 5
           };
           onFilesChange(newFiles);
         }

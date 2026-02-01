@@ -444,8 +444,15 @@ CRITICAL - Flight Classification Rules:
             # Normalize null values to None
             normalized_data = {k: (v if v else None) for k, v in extracted_data.items()}
             
-            logger.info(f"Gemini extracted fields: {list(normalized_data.keys())}")
-            logger.info(f"Gemini response sample: {response.text[:200]}...")
+            # Redact PII from logs (WP-324)
+            log_safe_data = normalized_data.copy()
+            if log_safe_data.get("passenger_name"): log_safe_data["passenger_name"] = "[REDACTED]"
+            if log_safe_data.get("booking_reference"): log_safe_data["booking_reference"] = "[REDACTED]"
+            if log_safe_data.get("passengers"): 
+                log_safe_data["passengers"] = [{"first_name": "[REDACTED]", "last_name": "[REDACTED]", "ticket_number": "[REDACTED]"} for _ in log_safe_data["passengers"]]
+            
+            logger.info(f"Gemini extracted fields: {list(log_safe_data.keys())}")
+            logger.info(f"Gemini response sample: {json.dumps(log_safe_data)[:200]}...")
             
             return normalized_data
             

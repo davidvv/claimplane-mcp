@@ -67,9 +67,9 @@ Following a comprehensive security and privacy audit, several critical and high-
 
 #### 4.6.6 Redact PII from Logs
 **Risk**: Sensitive data leakage into application logs.
-**Status**: 📅 **BACKLOG**
+**Status**: ✅ **FIXED** (2026-01-31)
 **Tasks**:
-- [ ] Sanitize OCR logs
+- [x] Sanitize OCR logs (Redact Name, PNR, Passenger list)
 - [ ] Redact PII from request/response logging
 
 ---
@@ -93,6 +93,7 @@ Following a comprehensive security and privacy audit, several critical and high-
 - [x] Synchronize draft state with persistence hook to prevent loss after refresh
 - [x] Implement server-side document restoration on page refresh
 - [x] Resolved race condition in session restoration
+- [x] E2E Verification with real-world document upload (SUCCESS)
 
 ---
 

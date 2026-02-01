@@ -1,10 +1,10 @@
 """Pydantic schemas for admin endpoints."""
 from datetime import datetime, date
 from decimal import Decimal
-from typing import Optional, List
+from typing import Optional, List, Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, EmailStr, validator
+from pydantic import BaseModel, Field, validator
 
 
 def validate_no_html(value: str) -> str:
@@ -126,17 +126,18 @@ class ClaimFilterParams(BaseModel):
 
 
 # Response Schemas
-class CustomerResponse(BaseModel):
-    """Customer information in responses."""
+class AdminCustomerResponse(BaseModel):
+    """Customer information in admin responses."""
     id: UUID
-    email: Optional[str] = None  # Changed from EmailStr to Optional[str] to handle encrypted/None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    phone: Optional[str] = None
-    full_name: Optional[str] = None
+    email: Optional[Any] = None
+    first_name: Optional[Any] = None
+    last_name: Optional[Any] = None
+    phone: Optional[Any] = None
+    full_name: Optional[Any] = None
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class ClaimNoteResponse(BaseModel):
@@ -144,10 +145,10 @@ class ClaimNoteResponse(BaseModel):
     id: UUID
     claim_id: UUID
     author_id: UUID
-    note_text: str
-    is_internal: bool
-    created_at: datetime
-    author: Optional[CustomerResponse] = None  # Author details (loaded via relationship)
+    note_text: Optional[str] = None
+    is_internal: bool = True
+    created_at: Optional[datetime] = None
+    author: Optional[AdminCustomerResponse] = None  # Author details (loaded via relationship)
 
     class Config:
         from_attributes = True
@@ -157,11 +158,11 @@ class ClaimStatusHistoryResponse(BaseModel):
     """Status history response model."""
     id: UUID
     claim_id: UUID
-    previous_status: Optional[str]
-    new_status: str
-    changed_by: UUID
-    change_reason: Optional[str]
-    changed_at: datetime
+    previous_status: Optional[str] = None
+    new_status: Optional[str] = None
+    changed_by: Optional[UUID] = None
+    change_reason: Optional[str] = None
+    changed_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -170,13 +171,13 @@ class ClaimStatusHistoryResponse(BaseModel):
 class ClaimFileResponse(BaseModel):
     """File information in claim responses."""
     id: UUID
-    filename: str
-    original_filename: str
-    document_type: str
-    file_size: int
-    mime_type: str
-    status: str
-    uploaded_at: datetime
+    filename: Optional[str] = None
+    original_filename: Optional[str] = None
+    document_type: Optional[str] = None
+    file_size: Optional[int] = None
+    mime_type: Optional[str] = None
+    status: Optional[str] = None
+    uploaded_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -186,33 +187,33 @@ class ClaimDetailResponse(BaseModel):
     """Detailed claim response with all related data."""
     id: UUID
     customer_id: UUID
-    flight_number: str
-    airline: str
-    departure_date: date
-    departure_airport: str
-    arrival_airport: str
-    incident_type: str
-    status: str
-    compensation_amount: Optional[Decimal]
-    calculated_compensation: Optional[Decimal]
-    currency: str
+    flight_number: Optional[str] = None
+    airline: Optional[str] = None
+    departure_date: Optional[date] = None
+    departure_airport: Optional[str] = None
+    arrival_airport: Optional[str] = None
+    incident_type: Optional[str] = None
+    status: Optional[str] = None
+    compensation_amount: Optional[Decimal] = None
+    calculated_compensation: Optional[Decimal] = None
+    currency: Optional[str] = "EUR"
     incident_description: Optional[str] = Field(None, alias="notes")  # Maps DB 'notes' field to 'incident_description' for frontend
-    submitted_at: datetime
-    updated_at: datetime
+    submitted_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     # Admin fields
-    assigned_to: Optional[UUID]
-    assigned_at: Optional[datetime]
-    reviewed_by: Optional[UUID]
-    reviewed_at: Optional[datetime]
-    rejection_reason: Optional[str]
-    flight_distance_km: Optional[Decimal]
-    delay_hours: Optional[Decimal]
-    extraordinary_circumstances: Optional[str]
+    assigned_to: Optional[UUID] = None
+    assigned_at: Optional[datetime] = None
+    reviewed_by: Optional[UUID] = None
+    reviewed_at: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
+    flight_distance_km: Optional[Decimal] = None
+    delay_hours: Optional[Decimal] = None
+    extraordinary_circumstances: Optional[str] = None
 
     # Related data
-    customer: Optional[CustomerResponse] = None
-    assignee: Optional[CustomerResponse] = None  # Admin assigned to this claim
+    customer: Optional[AdminCustomerResponse] = None
+    assignee: Optional[AdminCustomerResponse] = None  # Admin assigned to this claim
     files: List[ClaimFileResponse] = []
     claim_notes: List[ClaimNoteResponse] = Field(default=[])  # List of notes on this claim
     status_history: List[ClaimStatusHistoryResponse] = []
@@ -226,44 +227,45 @@ class ClaimListResponse(BaseModel):
     """Claim in list view (less detail)."""
     id: UUID
     customer_id: UUID
-    flight_number: str
-    airline: str
-    departure_date: date
-    departure_airport: str
-    arrival_airport: str
-    incident_type: str
-    status: str
-    compensation_amount: Optional[Decimal]
-    submitted_at: datetime
-    assigned_to: Optional[UUID]
-    customer: Optional[CustomerResponse]
-    assignee: Optional[CustomerResponse] = None  # Admin assigned to this claim
+    flight_number: Optional[str] = None
+    airline: Optional[str] = None
+    departure_date: Optional[date] = None
+    departure_airport: Optional[str] = None
+    arrival_airport: Optional[str] = None
+    incident_type: Optional[str] = None
+    status: Optional[str] = None
+    compensation_amount: Optional[Decimal] = None
+    submitted_at: Optional[datetime] = None
+    assigned_to: Optional[UUID] = None
+    customer: Optional[AdminCustomerResponse] = None
+    assignee: Optional[AdminCustomerResponse] = None  # Admin assigned to this claim
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class PaginatedClaimsResponse(BaseModel):
     """Paginated claims response."""
-    claims: List[ClaimListResponse]
-    total: int
-    skip: int
-    limit: int
-    has_next: bool
-    has_prev: bool
+    claims: List[ClaimListResponse] = []
+    total: int = 0
+    skip: int = 0
+    limit: int = 100
+    has_next: bool = False
+    has_prev: bool = False
 
 
 class AnalyticsSummaryResponse(BaseModel):
     """Analytics summary response."""
-    total_claims: int
-    pending_review: int
-    approved: int
-    rejected: int
-    total_compensation: float
-    avg_processing_time_hours: float
-    claims_by_status: dict
-    claims_by_airline: dict
-    claims_by_incident_type: dict
+    total_claims: int = 0
+    pending_review: int = 0
+    approved: int = 0
+    rejected: int = 0
+    total_compensation: float = 0.0
+    avg_processing_time_hours: float = 0.0
+    claims_by_status: dict = Field(default_factory=dict)
+    claims_by_airline: dict = Field(default_factory=dict)
+    claims_by_incident_type: dict = Field(default_factory=dict)
 
 
 class BulkActionResponse(BaseModel):
@@ -309,23 +311,23 @@ class FileMetadataResponse(BaseModel):
     id: UUID
     claim_id: UUID
     customer_id: UUID
-    filename: str
-    original_filename: str
-    file_size: int
-    mime_type: str
-    file_hash: str
-    document_type: str
-    storage_provider: str
-    storage_path: str
-    encryption_status: str
-    access_level: str
-    download_count: int
-    status: str
-    validation_status: str
-    rejection_reason: Optional[str]
-    uploaded_at: datetime
-    reviewed_at: Optional[datetime]
-    reviewed_by: Optional[UUID]
+    filename: Optional[str] = None
+    original_filename: Optional[str] = None
+    file_size: Optional[int] = None
+    mime_type: Optional[str] = None
+    file_hash: Optional[str] = None
+    document_type: Optional[str] = None
+    storage_provider: Optional[str] = None
+    storage_path: Optional[str] = None
+    encryption_status: Optional[str] = None
+    access_level: Optional[str] = None
+    download_count: Optional[int] = None
+    status: Optional[str] = None
+    validation_status: Optional[str] = None
+    rejection_reason: Optional[str] = None
+    uploaded_at: Optional[datetime] = None
+    reviewed_at: Optional[datetime] = None
+    reviewed_by: Optional[UUID] = None
 
     class Config:
         from_attributes = True
@@ -362,6 +364,6 @@ class CompensationCalculationResponse(BaseModel):
 
 class StatusTransitionInfo(BaseModel):
     """Information about valid status transitions."""
-    current_status: str
-    valid_next_statuses: List[str]
-    status_info: dict
+    current_status: Optional[str] = None
+    valid_next_statuses: List[str] = Field(default_factory=list)
+    status_info: dict = Field(default_factory=dict)

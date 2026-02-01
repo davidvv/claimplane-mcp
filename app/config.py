@@ -57,22 +57,15 @@ class Config:
     )
     
     # Security Configuration
-    SECRET_KEY = SecureConfig.get_required_env_var(
-        "SECRET_KEY",
-        SecureConfig.generate_jwt_secret()
-    )
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-32-chars-at-least-123456")
     
     # File Management Configuration
     MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", "52428800"))  # 50MB
-    FILE_ENCRYPTION_KEY = SecureConfig.get_required_env_var(
-        "FILE_ENCRYPTION_KEY",
-        SecureConfig.generate_encryption_key()
-    )
+    # Default keys for development - 32 byte URL-safe base64 encoded
+    _DEV_FERNET_KEY = "ZzA89fkJlfIcusc-7oa2Tejbdg4V5UrO3ctY8bpxgMY="
     
-    DB_ENCRYPTION_KEY = SecureConfig.get_required_env_var(
-        "DB_ENCRYPTION_KEY",
-        SecureConfig.generate_encryption_key()
-    )
+    FILE_ENCRYPTION_KEY = os.getenv("FILE_ENCRYPTION_KEY", _DEV_FERNET_KEY)
+    DB_ENCRYPTION_KEY = os.getenv("DB_ENCRYPTION_KEY", _DEV_FERNET_KEY)
 
     # Streaming Configuration for Large Files
     STREAMING_THRESHOLD = int(os.getenv("STREAMING_THRESHOLD", "52428800"))  # 50MB

@@ -32,10 +32,10 @@ class AccountDeletionRequestSchema(BaseModel):
 class AccountInfoResponse(BaseModel):
     """Account information response."""
     id: str
-    email: str
-    first_name: str
-    last_name: str
-    phone: Optional[str]
+    email: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
     created_at: datetime
     last_login_at: Optional[datetime]
     is_email_verified: bool

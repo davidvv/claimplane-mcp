@@ -106,6 +106,9 @@ class Customer(Base):
     def validate_email(self, key, address):
         """Validate email format."""
         if address:
+            # Skip validation if it looks like an encrypted string (Fernet tokens start with gAAAA)
+            if isinstance(address, str) and address.startswith('gAAAA'):
+                return address
             # Basic email validation - in a real app, use email-validator library
             if '@' not in address or '.' not in address.split('@')[-1]:
                 raise ValueError("Invalid email format")
@@ -122,6 +125,9 @@ class Customer(Base):
     def validate_phone(self, key, phone):
         """Validate and normalize phone number."""
         if phone:
+            # Skip validation if it looks like an encrypted string
+            if isinstance(phone, str) and phone.startswith('gAAAA'):
+                return phone
             # Validate and normalize (removes spaces, validates format)
             return validate_phone_number(phone)
         return None

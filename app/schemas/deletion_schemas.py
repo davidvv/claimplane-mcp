@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field, EmailStr
 
 class CustomerSummary(BaseModel):
     """Customer summary for deletion request views."""
-    first_name: str
-    last_name: str
-    email: EmailStr
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None  # Changed to Optional[str] to handle encrypted/None
     created_at: Optional[datetime] = None
 
     class Config:
@@ -19,9 +19,9 @@ class CustomerSummary(BaseModel):
 
 class ReviewerSummary(BaseModel):
     """Reviewer summary for deletion request views."""
-    first_name: str
-    last_name: str
-    email: EmailStr
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None  # Changed to Optional[str] to handle encrypted/None
 
     class Config:
         from_attributes = True
@@ -31,7 +31,7 @@ class DeletionRequestListItem(BaseModel):
     """Deletion request in list view."""
     id: UUID
     customer_id: UUID
-    email: EmailStr
+    email: Optional[str] = None  # Changed to Optional[str] to handle encrypted/None
     reason: Optional[str] = None
     requested_at: datetime
     status: str
@@ -88,7 +88,7 @@ class DeletionRequestDetailResponse(BaseModel):
     """Detailed deletion request information."""
     id: UUID
     customer_id: UUID
-    email: EmailStr
+    email: Optional[str] = None  # Changed to Optional[str] to handle encrypted/None
     reason: Optional[str] = None
     requested_at: datetime
     status: str

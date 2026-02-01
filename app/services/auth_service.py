@@ -333,9 +333,11 @@ class AuthService:
         # Hash password
         password_hash = PasswordService.hash_password(password)
 
-        # Create customer
+        # Create customer with blind index for email searching
+        from app.utils.db_encryption import generate_blind_index
         customer = Customer(
             email=email,
+            email_idx=generate_blind_index(email),
             password_hash=password_hash,
             first_name=first_name,
             last_name=last_name,

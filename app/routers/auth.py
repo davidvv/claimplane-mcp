@@ -457,9 +457,10 @@ async def request_magic_link(
 
     # Always return success to prevent email enumeration
     # But only send email if user exists
-    # Use case-insensitive email lookup
-    from sqlalchemy import func
-    stmt = select(Customer).where(func.lower(Customer.email) == data.email.lower())
+    # Use blind index for encrypted email lookup (fixes encrypted data comparison issue)
+    from app.utils.db_encryption import generate_blind_index
+    email_idx = generate_blind_index(data.email)
+    stmt = select(Customer).where(Customer.email_idx == email_idx)
     result = await session.execute(stmt)
     customer = result.scalar_one_or_none()
 

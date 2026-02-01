@@ -28,7 +28,7 @@ from app.schemas.admin_schemas import (
     CompensationCalculationResponse,
     StatusTransitionInfo,
     ClaimStatusHistoryResponse,
-    CustomerResponse
+    AdminCustomerResponse
 )
 from app.tasks.claim_tasks import send_status_update_email
 from app.config import config
@@ -471,7 +471,7 @@ async def get_valid_transitions(
     )
 
 
-@router.get("/users/admins", response_model=List[CustomerResponse])
+@router.get("/users/admins", response_model=List[AdminCustomerResponse])
 async def get_admin_users(
     session: AsyncSession = Depends(get_db),
     admin: Customer = Depends(get_current_admin)

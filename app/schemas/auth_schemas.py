@@ -176,10 +176,10 @@ class PasswordChangeSchema(BaseModel):
 class UserResponseSchema(BaseModel):
     """Schema for user response."""
     id: UUID
-    email: EmailStr
-    first_name: str
-    last_name: str
-    phone: Optional[str]
+    email: Optional[str] = None  # Changed from str to Optional[str] to handle encrypted/None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
     role: str
     is_active: bool
     is_email_verified: bool

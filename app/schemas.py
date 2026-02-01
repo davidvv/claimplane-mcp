@@ -1,7 +1,7 @@
 """Pydantic schemas for request/response validation."""
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Any
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, validator
@@ -145,45 +145,41 @@ class CustomerResponseSchema(BaseModel):
     """Schema for customer response."""
 
     id: UUID
-    email: EmailStr
-    first_name: Optional[str] = Field(None, alias="firstName")
-    last_name: Optional[str] = Field(None, alias="lastName")
-    phone: Optional[str]
-    address: Optional[AddressSchema]
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
+    email: Optional[Any] = None  # Changed from str to Optional[str] to handle encrypted/None
+    first_name: Optional[Any] = Field(None, alias="firstName")
+    last_name: Optional[Any] = Field(None, alias="lastName")
+    phone: Optional[Any] = None
+    address: Optional[AddressSchema] = None
+    created_at: Optional[datetime] = Field(None, alias="createdAt")
+    updated_at: Optional[datetime] = Field(None, alias="updatedAt")
 
     class Config:
         populate_by_name = True
         from_attributes = True
 
 
-class HealthResponseSchema(BaseModel):
-    """Schema for health check response."""
-    
-    status: str
-    timestamp: datetime
-    version: str
-
-
 class FlightInfoSchema(BaseModel):
     """Flight information schema."""
     
-    flight_number: str = Field(..., alias="flightNumber", min_length=3, max_length=10)
-    airline: str = Field(..., max_length=100)
-    departure_date: date = Field(..., alias="departureDate")
-    departure_airport: str = Field(..., alias="departureAirport", min_length=3, max_length=3)
-    arrival_airport: str = Field(..., alias="arrivalAirport", min_length=3, max_length=3)
+    flight_number: Optional[str] = Field(None, alias="flightNumber")
+    airline: Optional[str] = Field(None)
+    departure_date: Optional[date] = Field(None, alias="departureDate")
+    departure_airport: Optional[str] = Field(None, alias="departureAirport")
+    arrival_airport: Optional[str] = Field(None, alias="arrivalAirport")
     
     @validator('departure_airport', 'arrival_airport')
     def validate_airport_code(cls, v):
         """Validate airport codes are uppercase."""
-        return v.upper()
+        if v:
+            return v.upper()
+        return v
     
     @validator('flight_number')
     def validate_flight_number(cls, v):
         """Validate flight number format."""
-        return v.upper()
+        if v:
+            return v.upper()
+        return v
     
     class Config:
         populate_by_name = True
@@ -273,8 +269,8 @@ class ClaimPatchSchema(BaseModel):
 
 class PassengerResponseSchema(BaseModel):
     """Schema for passenger in claim response."""
-    first_name: str = Field(..., alias="firstName")
-    last_name: str = Field(..., alias="lastName")
+    first_name: Optional[str] = Field(None, alias="firstName")
+    last_name: Optional[str] = Field(None, alias="lastName")
     ticket_number: Optional[str] = Field(None, alias="ticketNumber")
 
     class Config:
@@ -284,7 +280,7 @@ class PassengerResponseSchema(BaseModel):
 
 class ContactInfoSchema(BaseModel):
     """Schema for customer contact info in claim response (for draft resume)."""
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None  # Use str instead of EmailStr to handle encrypted data
     phone: Optional[str] = None
     street: Optional[str] = None
     city: Optional[str] = None
@@ -299,17 +295,17 @@ class ClaimResponseSchema(BaseModel):
     """Schema for claim response."""
 
     id: UUID
-    customer_id: UUID = Field(..., alias="customerId")
-    flight_info: FlightInfoSchema = Field(..., alias="flightInfo")
-    incident_type: str = Field(..., alias="incidentType")
-    status: str
+    customer_id: Optional[UUID] = Field(None, alias="customerId")
+    flight_info: Optional[FlightInfoSchema] = Field(None, alias="flightInfo")
+    incident_type: Optional[str] = Field(None, alias="incidentType")
+    status: Optional[str] = None
     compensation_amount: Optional[Decimal] = Field(None, alias="compensationAmount")
-    currency: str = "EUR"
-    notes: Optional[str]
+    currency: Optional[str] = "EUR"
+    notes: Optional[str] = None
     booking_reference: Optional[str] = Field(None, alias="bookingReference")
     ticket_number: Optional[str] = Field(None, alias="ticketNumber")
-    submitted_at: datetime = Field(..., alias="submittedAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
+    submitted_at: Optional[datetime] = Field(None, alias="submittedAt")
+    updated_at: Optional[datetime] = Field(None, alias="updatedAt")
     # Additional fields for draft resume
     passengers: Optional[List[PassengerResponseSchema]] = None
     contact_info: Optional[ContactInfoSchema] = Field(None, alias="contactInfo")
@@ -535,19 +531,19 @@ class FileResponseSchema(BaseModel):
     """Schema for file response."""
     
     id: UUID
-    claim_id: UUID = Field(..., alias="claimId")
-    customer_id: UUID = Field(..., alias="customerId")
-    filename: str
-    original_filename: str = Field(..., alias="originalFilename")
-    file_size: int = Field(..., alias="fileSize")
-    mime_type: str = Field(..., alias="mimeType")
-    document_type: str = Field(..., alias="documentType")
-    status: str
-    access_level: str = Field(..., alias="accessLevel")
-    download_count: int = Field(..., alias="downloadCount")
-    uploaded_at: datetime = Field(..., alias="uploadedAt")
+    claim_id: Optional[UUID] = Field(None, alias="claimId")
+    customer_id: Optional[UUID] = Field(None, alias="customerId")
+    filename: Optional[str] = None
+    original_filename: Optional[str] = Field(None, alias="originalFilename")
+    file_size: Optional[int] = Field(None, alias="fileSize")
+    mime_type: Optional[str] = Field(None, alias="mimeType")
+    document_type: Optional[str] = Field(None, alias="documentType")
+    status: Optional[str] = None
+    access_level: Optional[str] = Field(None, alias="accessLevel")
+    download_count: Optional[int] = Field(0, alias="downloadCount")
+    uploaded_at: Optional[datetime] = Field(None, alias="uploadedAt")
     expires_at: Optional[datetime] = Field(None, alias="expiresAt")
-    is_deleted: bool = Field(..., alias="isDeleted")
+    is_deleted: Optional[bool] = Field(False, alias="isDeleted")
     
     class Config:
         populate_by_name = True

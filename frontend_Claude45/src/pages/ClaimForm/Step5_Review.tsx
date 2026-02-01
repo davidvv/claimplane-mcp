@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { CheckCircle, User, Plane, Euro, FileText, AlertCircle } from 'lucide-react';
+import { CheckCircle, User, Plane, Euro, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { submitClaim } from '@/services/claims';

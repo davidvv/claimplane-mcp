@@ -61,10 +61,10 @@ export function MagicLinkPage() {
             response.data.user.last_name || '',
             response.data.user.email
           );
-          localStorage.setItem('user_email', response.data.user.email);
-          localStorage.setItem('user_id', response.data.user.id);
-          localStorage.setItem('user_name', displayName);
-          localStorage.setItem('user_role', response.data.user.role);
+          sessionStorage.setItem('user_email', response.data.user.email);
+          sessionStorage.setItem('user_id', response.data.user.id);
+          sessionStorage.setItem('user_name', displayName);
+          sessionStorage.setItem('user_role', response.data.user.role);
         }
 
         console.log('Authentication cookies set by backend');

@@ -14,6 +14,10 @@ import {
   Download,
   Upload,
   LogIn,
+  Users,
+  MapPin,
+  Phone,
+  Mail,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -84,12 +88,9 @@ export function Status() {
       console.log('=== STATUS PAGE DEBUGGING ===');
       console.log('Claim ID from URL:', claimIdFromUrl);
       console.log('Current URL:', window.location.href);
-      console.log('LocalStorage user_email:', localStorage.getItem('user_email'));
-      console.log('LocalStorage user_id:', localStorage.getItem('user_id'));
-      console.log('LocalStorage user_role:', localStorage.getItem('user_role'));
 
-      // Check if user is authenticated (user info stored in localStorage after login)
-      const userEmail = localStorage.getItem('user_email');
+      // Check if user is authenticated (user info stored in sessionStorage after login)
+      const userEmail = sessionStorage.getItem('user_email');
       if (userEmail) {
         console.log('User authenticated, proceeding with auto-load');
         setHasAutoLoaded(true);  // Mark as auto-loaded to prevent duplicate execution
@@ -99,7 +100,7 @@ export function Status() {
         const debugOnSubmit = async (claimId: string) => {
           console.log('Starting claim lookup for:', claimId);
           try {
-            const claimData = await getClaim(claimId);
+            const claimData = await getClaim(claimId, true);
             console.log('Claim lookup successful:', claimData);
             setClaim(claimData);
 
@@ -129,10 +130,10 @@ export function Status() {
             if (error.response?.status === 401) {
               toast.error('Authentication expired. Please log in again.');
               // Clear user info (tokens are in HTTP-only cookies, cleared by backend)
-              localStorage.removeItem('user_email');
-              localStorage.removeItem('user_id');
-              localStorage.removeItem('user_name');
-              localStorage.removeItem('user_role');
+              sessionStorage.removeItem('user_email');
+              sessionStorage.removeItem('user_id');
+              sessionStorage.removeItem('user_name');
+              sessionStorage.removeItem('user_role');
             } else if (error.response?.status === 403) {
               toast.error('Access denied. This claim may belong to another user.');
             } else if (error.response?.status === 404) {
@@ -162,7 +163,7 @@ export function Status() {
     setIsLoading(true);
 
     try {
-      const claimData = await getClaim(data.claimId);
+      const claimData = await getClaim(data.claimId, true);
       setClaim(claimData);
 
       // Fetch documents (optional - don't fail if not available)
@@ -188,10 +189,10 @@ export function Status() {
       if (error.response?.status === 401) {
         toast.error('Authentication expired. Please log in again.');
         // Clear user info (tokens are in HTTP-only cookies, cleared by backend)
-        localStorage.removeItem('user_email');
-        localStorage.removeItem('user_id');
-        localStorage.removeItem('user_name');
-        localStorage.removeItem('user_role');
+        sessionStorage.removeItem('user_email');
+        sessionStorage.removeItem('user_id');
+        sessionStorage.removeItem('user_name');
+        sessionStorage.removeItem('user_role');
       } else if (error.response?.status === 403) {
         toast.error('Access denied. This claim may belong to another user.');
       } else if (error.response?.status === 404) {
@@ -547,6 +548,18 @@ export function Status() {
                       {getIncidentLabel(claim.incidentType)}
                     </p>
                   </div>
+                  {claim.bookingReference && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Booking Reference</p>
+                      <p className="font-semibold">{claim.bookingReference}</p>
+                    </div>
+                  )}
+                  {claim.ticketNumber && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Ticket Number</p>
+                      <p className="font-semibold">{claim.ticketNumber}</p>
+                    </div>
+                  )}
                 </div>
 
                 {claim.notes && (
@@ -557,6 +570,94 @@ export function Status() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Passenger Details */}
+            {claim.passengers && claim.passengers.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Passengers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {claim.passengers.map((passenger, index) => (
+                      <div key={index} className={`flex items-start justify-between ${index > 0 ? 'pt-4 border-t' : ''}`}>
+                        <div>
+                          <p className="font-semibold">
+                            {passenger.firstName} {passenger.lastName}
+                          </p>
+                          {passenger.ticketNumber && (
+                            <p className="text-sm text-muted-foreground">
+                              Ticket: {passenger.ticketNumber}
+                            </p>
+                          )}
+                        </div>
+                        {index === 0 && (
+                          <Badge variant="outline" className="text-[10px] uppercase">
+                            Primary
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Contact Information */}
+            {claim.contactInfo && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5" />
+                    Contact Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {claim.contactInfo.email && (
+                      <div className="flex items-center gap-3">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Email</p>
+                          <p className="text-sm font-medium">{claim.contactInfo.email}</p>
+                        </div>
+                      </div>
+                    )}
+                    {claim.contactInfo.phone && (
+                      <div className="flex items-center gap-3">
+                        <Phone className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Phone</p>
+                          <p className="text-sm font-medium">{claim.contactInfo.phone}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {(claim.contactInfo.street || claim.contactInfo.city) && (
+                    <div className="pt-4 border-t">
+                      <div className="flex items-start gap-3">
+                        <MapPin className="w-4 h-4 text-muted-foreground mt-1" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Address</p>
+                          <p className="text-sm font-medium">
+                            {[
+                              claim.contactInfo.street,
+                              claim.contactInfo.postalCode,
+                              claim.contactInfo.city,
+                              claim.contactInfo.country
+                            ].filter(Boolean).join(', ')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Documents */}
             <Card>

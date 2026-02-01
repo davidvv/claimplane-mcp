@@ -120,7 +120,7 @@ export function AccountSettings() {
         updatedProfile.last_name,
         updatedProfile.email
       );
-      localStorage.setItem('user_name', displayName);
+      sessionStorage.setItem('user_name', displayName);
 
       toast.success('Profile updated successfully');
     } catch (error: any) {

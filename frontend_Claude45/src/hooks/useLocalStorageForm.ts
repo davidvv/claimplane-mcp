@@ -8,7 +8,7 @@ import { useState } from 'react';
 export function useLocalStorageForm<T>(
   key: string,
   initialValue: T
-): [T, (value: T) => void, () => void] {
+): [T, (value: T | ((prev: T) => T)) => void, () => void] {
   // Get initial value from localStorage or use provided initialValue
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
@@ -66,27 +66,27 @@ export function useClaimFormPersistence() {
   );
 
   const updateStep = (step: number) => {
-    setFormData(prev => ({ ...prev, currentStep: step }));
+    setFormData((prev: ClaimFormData) => ({ ...prev, currentStep: step }));
   };
 
   const updateFlightData = (data: any) => {
-    setFormData(prev => ({ ...prev, flightData: data }));
+    setFormData((prev: ClaimFormData) => ({ ...prev, flightData: data }));
   };
 
   const updateEligibilityData = (data: any) => {
-    setFormData(prev => ({ ...prev, eligibilityData: data }));
+    setFormData((prev: ClaimFormData) => ({ ...prev, eligibilityData: data }));
   };
 
   const updatePassengerData = (data: any) => {
-    setFormData(prev => ({ ...prev, passengerData: data }));
+    setFormData((prev: ClaimFormData) => ({ ...prev, passengerData: data }));
   };
 
   const updateDocuments = (docs: any[]) => {
-    setFormData(prev => ({ ...prev, documents: docs }));
+    setFormData((prev: ClaimFormData) => ({ ...prev, documents: docs }));
   };
 
   const updateDraftInfo = (id?: string, token?: string) => {
-    setFormData(prev => ({ ...prev, draftClaimId: id, draftAccessToken: token }));
+    setFormData((prev: ClaimFormData) => ({ ...prev, draftClaimId: id, draftAccessToken: token }));
   };
 
   return {

@@ -23,7 +23,7 @@ import { isAuthenticated, getStoredUserInfo, logout } from '@/services/auth';
  * Note: JWT tokens are in HTTP-only cookies, user info is in localStorage for UI
  */
 function getUserRole(): string | null {
-  return localStorage.getItem('user_role');
+  return sessionStorage.getItem('user_role');
 }
 
 interface LayoutProps {

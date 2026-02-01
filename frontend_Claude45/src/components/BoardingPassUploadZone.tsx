@@ -54,7 +54,7 @@ export function BoardingPassUploadZone({
 
   // Simulated progress logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
 
     if (isProcessing) {
       setProgress(0);

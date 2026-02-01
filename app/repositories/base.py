@@ -44,13 +44,26 @@ class BaseRepository(Generic[ModelType]):
     async def update(self, instance: ModelType, **kwargs) -> ModelType:
         """Update an existing record."""
         logger.info(f"Updating {self.model.__name__} with ID {instance.id}")
-        logger.info(f"Update data: {kwargs}")
+        
+        # Sanitize log data
+        sensitive_keys = {'password', 'email', 'phone', 'token', 'key', 'secret', 
+                          'first_name', 'last_name', 'street', 'city', 'postal_code', 
+                          'country', 'booking_reference', 'ticket_number'}
+                          
+        def is_sensitive(key):
+            return any(s in key.lower() for s in sensitive_keys)
+
+        sanitized_kwargs = {k: "***" if is_sensitive(k) else v for k, v in kwargs.items()}
+        logger.info(f"Update data: {sanitized_kwargs}")
         
         for key, value in kwargs.items():
             if hasattr(instance, key):
                 old_value = getattr(instance, key)
                 setattr(instance, key, value)
-                logger.info(f"Updated {key}: {old_value} -> {value}")
+                
+                log_val_old = "***" if is_sensitive(key) else old_value
+                log_val_new = "***" if is_sensitive(key) else value
+                logger.info(f"Updated {key}: {log_val_old} -> {log_val_new}")
         
         self.session.add(instance)
         await self.session.flush()

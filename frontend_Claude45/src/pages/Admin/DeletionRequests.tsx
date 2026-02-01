@@ -63,7 +63,7 @@ export function DeletionRequests() {
 
   useEffect(() => {
     // Check authentication
-    const userEmail = localStorage.getItem('user_email');
+    const userEmail = sessionStorage.getItem('user_email');
     if (!userEmail) {
       navigate('/auth');
       return;

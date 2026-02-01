@@ -31,7 +31,7 @@ import {
  * Note: JWT tokens are in HTTP-only cookies, user info is in localStorage for UI
  */
 function getUserRole(): string | null {
-  return localStorage.getItem('user_role');
+  return sessionStorage.getItem('user_role');
 }
 
 export function MyClaims() {
@@ -44,7 +44,7 @@ export function MyClaims() {
     const fetchClaims = async () => {
       try {
         // Check if user is authenticated (user_email is stored in localStorage after login)
-        const userEmail = localStorage.getItem('user_email');
+        const userEmail = sessionStorage.getItem('user_email');
         console.log('[MyClaims] User authenticated:', !!userEmail);
 
         if (!userEmail) {

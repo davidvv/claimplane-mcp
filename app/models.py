@@ -98,7 +98,9 @@ class Customer(Base):
     magic_link_tokens = relationship("MagicLinkToken", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
-        return f"<Customer(id={self.id}, email={self.email}, name={self.first_name} {self.last_name})>"
+        # Mask PII in logs
+        email_masked = self.email[:2] + "***" if self.email and len(self.email) > 2 else "***"
+        return f"<Customer(id={self.id}, email={email_masked}, role={self.role})>"
     
     @validates('email')
     def validate_email(self, key, address):
@@ -293,7 +295,7 @@ class Passenger(Base):
     claim = relationship("Claim", back_populates="passengers")
 
     def __repr__(self):
-        return f"<Passenger(id={self.id}, name={self.first_name} {self.last_name})>"
+        return f"<Passenger(id={self.id}, claim_id={self.claim_id})>"
 
 
 class FlightSegment(Base):
@@ -438,7 +440,7 @@ class ClaimFile(Base):
     access_logs = relationship("FileAccessLog", back_populates="file", cascade="all, delete-orphan")
     
     def __repr__(self):
-        return f"<ClaimFile(id={self.id}, filename={self.filename}, claim_id={self.claim_id}, status={self.status})>"
+        return f"<ClaimFile(id={self.id}, claim_id={self.claim_id}, type={self.document_type}, status={self.status})>"
     
     @validates('document_type')
     def validate_document_type(self, key, document_type):

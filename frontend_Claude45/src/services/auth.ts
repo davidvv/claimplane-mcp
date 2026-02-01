@@ -109,10 +109,10 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
       response.data.user.last_name,
       response.data.user.email
     );
-    localStorage.setItem('user_email', response.data.user.email);
-    localStorage.setItem('user_id', response.data.user.id);
-    localStorage.setItem('user_name', displayName);
-    localStorage.setItem('user_role', response.data.user.role);
+    sessionStorage.setItem('user_email', response.data.user.email);
+    sessionStorage.setItem('user_id', response.data.user.id);
+    sessionStorage.setItem('user_name', displayName);
+    sessionStorage.setItem('user_role', response.data.user.role);
   }
 
   return response.data;
@@ -125,7 +125,7 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
   const response = await apiClient.post<AuthResponse>('/auth/login', data);
 
   // Tokens are automatically stored in HTTP-only cookies by the backend
-  // Store user info in localStorage for UI purposes only (not security-sensitive)
+  // Store user info in sessionStorage for UI purposes only (not security-sensitive)
   if (response.data.user) {
     // Validate that we have all required fields
     if (!response.data.user.email || !response.data.user.first_name || !response.data.user.last_name) {
@@ -138,10 +138,10 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
       response.data.user.last_name,
       response.data.user.email
     );
-    localStorage.setItem('user_email', response.data.user.email);
-    localStorage.setItem('user_id', response.data.user.id);
-    localStorage.setItem('user_name', displayName);
-    localStorage.setItem('user_role', response.data.user.role);
+    sessionStorage.setItem('user_email', response.data.user.email);
+    sessionStorage.setItem('user_id', response.data.user.id);
+    sessionStorage.setItem('user_name', displayName);
+    sessionStorage.setItem('user_role', response.data.user.role);
   }
 
   return response.data;
@@ -159,7 +159,7 @@ export async function logout(): Promise<void> {
     console.error('Logout API call failed:', error);
   }
 
-  // Clear user info from localStorage (UI state only, tokens are in cookies)
+  // Clear user info from sessionStorage (UI state only, tokens are in cookies)
   clearLocalAuthState();
 
   // Cookies are cleared by the backend
@@ -256,7 +256,7 @@ export async function confirmPasswordReset(token: string, newPassword: string): 
  * Check if user is authenticated
  *
  * Note: With HTTP-only cookies, we can't check the actual tokens from JavaScript.
- * This checks if we have VALID user info in localStorage (set after successful login).
+ * This checks if we have VALID user info in sessionStorage (set after successful login).
  * The backend will ultimately verify authentication via HTTP-only cookies.
  *
  * This is for UI purposes only - the actual auth is verified by the backend.
@@ -272,17 +272,17 @@ export function isAuthenticated(): boolean {
 /**
  * Get stored user info
  *
- * Note: This returns user info stored in localStorage for UI purposes.
+ * Note: This returns user info stored in sessionStorage for UI purposes.
  * The actual authentication is verified by the backend via HTTP-only cookies.
- * Tokens are NOT stored in localStorage - only user display info.
+ * Tokens are NOT stored in sessionStorage - only user display info.
  *
  * This function detects and CLEARS broken/invalid user data to force re-login.
  */
 export function getStoredUserInfo() {
-  const email = localStorage.getItem('user_email');
-  const id = localStorage.getItem('user_id');
-  const name = localStorage.getItem('user_name');
-  const role = localStorage.getItem('user_role');
+  const email = sessionStorage.getItem('user_email');
+  const id = sessionStorage.getItem('user_id');
+  const name = sessionStorage.getItem('user_name');
+  const role = sessionStorage.getItem('user_role');
 
   // If no auth data exists at all, this is a guest state - return empty and stop here.
   // We check for email, name, and id to cover all bases of a partial session.
@@ -309,7 +309,7 @@ export function getStoredUserInfo() {
   // then we clear it to force a clean login state. 
   // We only reach here if at least one of (email, name, id) is present.
   if (isBrokenName || !email || !name) {
-    console.warn('Detected invalid user data in localStorage, clearing auth state');
+    console.warn('Detected invalid user data in sessionStorage, clearing auth state');
     console.warn('Broken data:', { email, id, name, role });
     clearLocalAuthState();
     return {
@@ -331,14 +331,14 @@ export function getStoredUserInfo() {
 /**
  * Clear local authentication state
  *
- * Removes user info from localStorage.
+ * Removes user info from sessionStorage.
  * Note: This does NOT clear HTTP-only cookies - call logout() for that.
  */
 export function clearLocalAuthState(): void {
-  localStorage.removeItem('user_email');
-  localStorage.removeItem('user_id');
-  localStorage.removeItem('user_name');
-  localStorage.removeItem('user_role');
+  sessionStorage.removeItem('user_email');
+  sessionStorage.removeItem('user_id');
+  sessionStorage.removeItem('user_name');
+  sessionStorage.removeItem('user_role');
 }
 
 /**
@@ -360,7 +360,7 @@ export async function validateSession(): Promise<boolean> {
     const response = await apiClient.get('/auth/me');
 
     // If successful, session is valid
-    // Optionally update localStorage with latest user data
+    // Optionally update sessionStorage with latest user data
     if (response.data) {
       const userData = response.data;
       const displayName = buildDisplayName(
@@ -381,16 +381,16 @@ export async function validateSession(): Promise<boolean> {
         return false;
       }
 
-      localStorage.setItem('user_email', userData.email);
-      localStorage.setItem('user_id', userData.id);
-      localStorage.setItem('user_name', displayName);
-      localStorage.setItem('user_role', userData.role);
+      sessionStorage.setItem('user_email', userData.email);
+      sessionStorage.setItem('user_id', userData.id);
+      sessionStorage.setItem('user_name', displayName);
+      sessionStorage.setItem('user_role', userData.role);
       return true;
     }
 
     return false;
   } catch (error: any) {
-    // If 401, cookies are invalid - clear localStorage
+    // If 401, cookies are invalid - clear sessionStorage
     if (error.response?.status === 401) {
       console.log('Session expired - clearing local auth state');
       clearLocalAuthState();
@@ -398,16 +398,16 @@ export async function validateSession(): Promise<boolean> {
     }
 
     // For other errors (network, 500, etc.), assume session might still be valid
-    // Don't clear localStorage on network errors
+    // Don't clear sessionStorage on network errors
     console.error('Session validation error (network issue, keeping local state):', error);
-    return isAuthenticated(); // Return current localStorage state
+    return isAuthenticated(); // Return current sessionStorage state
   }
 }
 
 /**
  * Synchronize authentication state
  *
- * Ensures localStorage is in sync with actual session state.
+ * Ensures sessionStorage is in sync with actual session state.
  * Call this on app initialization and periodically during use.
  *
  * @returns Promise<boolean> - true if user is authenticated
@@ -430,12 +430,12 @@ let draftAuthToken: string | null = null;
 export function setAuthToken(token: string | null): void {
   draftAuthToken = token;
   if (token) {
-    localStorage.setItem('draftAuthToken', token);
+    sessionStorage.setItem('draftAuthToken', token);
   } else {
-    localStorage.removeItem('draftAuthToken');
+    sessionStorage.removeItem('draftAuthToken');
   }
 }
 
 export function getAuthToken(): string | null {
-  return draftAuthToken || localStorage.getItem('draftAuthToken');
+  return draftAuthToken || sessionStorage.getItem('draftAuthToken');
 }

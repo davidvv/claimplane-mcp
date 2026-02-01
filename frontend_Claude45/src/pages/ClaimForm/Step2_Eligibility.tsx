@@ -14,7 +14,6 @@ import { toast } from 'sonner';
 import { eligibilityFormSchema, type EligibilityForm } from '@/schemas/validation';
 import { checkEligibility } from '@/services/eligibility';
 import { deleteClaim } from '@/services/claims';
-import { uploadDocument } from '@/services/documents';
 import apiClient from '@/services/api';
 import type { FlightStatus, EligibilityResponse } from '@/types/api';
 
@@ -49,7 +48,7 @@ export function Step2_Eligibility({
   flightData,
   initialData,
   draftClaimId,
-  boardingPassFile,
+  boardingPassFile: _boardingPassFile,
   ocrFileId,
   onComplete,
   onBack,

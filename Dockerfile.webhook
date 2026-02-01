@@ -20,15 +20,26 @@ RUN pip install --no-cache-dir flask==3.0.0
 # Create app directory
 WORKDIR /app
 
+# Create webhook user and docker group (matching host GID 988)
+# We use a fixed GID 988 to match the host's docker group for this specific deployment
+ARG DOCKER_GID=988
+RUN groupadd -g ${DOCKER_GID} docker_host_group \
+    && useradd -m -s /bin/bash -u 1000 webhook \
+    && usermod -aG docker_host_group webhook
+
 # Copy webhook receiver script
 COPY webhook_deploy.py /app/
 COPY deploy.sh /app/
 
-# Make deploy script executable
-RUN chmod +x /app/deploy.sh
+# Make deploy script executable and set permissions
+RUN chmod +x /app/deploy.sh \
+    && chown -R webhook:webhook /app
 
 # Expose webhook port
 EXPOSE 9000
+
+# Switch to non-root user
+USER webhook
 
 # Run webhook receiver
 CMD ["python", "webhook_deploy.py"]

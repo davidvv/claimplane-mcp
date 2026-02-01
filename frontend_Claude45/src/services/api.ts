@@ -33,15 +33,22 @@ apiClient.interceptors.request.use(
     // No need to manually add Authorization header for regular auth
 
     // Workflow v2: Add draft auth token if available (for progressive file uploads)
-    let draftToken = localStorage.getItem('draftAuthToken');
+    // We check sessionStorage first (primary secure storage)
+    let draftToken = sessionStorage.getItem('draftAuthToken');
     
     // Fallback: Check claim form persistence data if direct token is missing (e.g. after refresh)
+    // Note: We prefer sessionStorage for security, but legacy drafts might be in localStorage
     if (!draftToken) {
       try {
         const savedData = localStorage.getItem('claimplane_form_data');
         if (savedData) {
           const parsed = JSON.parse(savedData);
           draftToken = parsed.draftAccessToken;
+          
+          // Migrate to sessionStorage if found and valid
+          if (draftToken) {
+             sessionStorage.setItem('draftAuthToken', draftToken);
+          }
         }
       } catch (e) {
         // Ignore parsing errors

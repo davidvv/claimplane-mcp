@@ -119,6 +119,7 @@ export interface Claim {
   updatedAt?: string; // ISO datetime (readonly)
   notes?: string | null;
   bookingReference?: string | null;
+  ticketNumber?: string | null;
   // Optional fields for draft resume (returned when include_details=true)
   passengers?: PassengerInfo[];
   contactInfo?: ContactInfo;

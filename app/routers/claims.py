@@ -290,8 +290,10 @@ async def submit_claim_with_customer(
     )
 
     await db.refresh(claim)
+    # Ensure relationships are loaded for the response
+    claim = await claim_repo.get_by_id_with_details(claim.id)
     return ClaimSubmitResponseSchema(
-        claim=ClaimResponseSchema.from_orm(claim), accessToken=access_token, tokenType="bearer"
+        claim=ClaimResponseSchema.from_orm(claim, include_details=True), accessToken=access_token, tokenType="bearer"
     )
 
 
@@ -352,7 +354,7 @@ async def get_customer_claims(
 @router.patch("/{claim_id}/draft", response_model=ClaimResponseSchema)
 async def update_draft_claim(
     claim_id: UUID,
-    update_data: Dict[str, Any],
+    update_data: ClaimDraftUpdateSchema,
     request: Request,
     user_data: tuple = Depends(get_current_user_with_claim_access),
     db: AsyncSession = Depends(get_db)
@@ -373,23 +375,9 @@ async def update_draft_claim(
         
         verify_claim_access(claim, current_user, token_claim_id)
         
-        # Transform frontend keys to backend keys
-        data_dict = update_data.copy()
-        if 'postalCode' in data_dict: data_dict['postal_code'] = data_dict.pop('postalCode')
-        if 'incidentType' in data_dict: data_dict['incident_type'] = data_dict.pop('incidentType')
-        if 'bookingReference' in data_dict: data_dict['booking_reference'] = data_dict.pop('bookingReference')
-        if 'boardingPassFileId' in data_dict: data_dict['boarding_pass_file_id'] = data_dict.pop('boardingPassFileId')
-
-        if 'passengers' in data_dict and isinstance(data_dict['passengers'], list):
-            valid_passengers = []
-            for p in data_dict['passengers']:
-                p_transformed = p.copy()
-                if 'firstName' in p_transformed: p_transformed['first_name'] = p_transformed.pop('firstName')
-                if 'lastName' in p_transformed: p_transformed['last_name'] = p_transformed.pop('lastName')
-                if 'ticketNumber' in p_transformed: p_transformed['ticket_number'] = p_transformed.pop('ticketNumber')
-                if p_transformed.get('first_name') and p_transformed.get('last_name'):
-                    valid_passengers.append(p_transformed)
-            data_dict['passengers'] = valid_passengers
+        # Convert Pydantic model to dict, using internal names (snake_case)
+        # exclude_unset=True ensures we only update fields that were actually provided
+        data_dict = update_data.dict(exclude_unset=True, by_alias=False)
 
         updated_claim = await draft_service.update_draft(
             claim_id=claim_id, update_data=data_dict,

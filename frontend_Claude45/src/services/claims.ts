@@ -79,6 +79,23 @@ export const submitClaim = async (request: ClaimRequest): Promise<Claim> => {
     throw new Error('Failed to submit claim');
   }
 
+  // Set user info in localStorage to consider them authenticated
+  // This allows viewing the claim details immediately on the Status page
+  const claim = response.data.claim;
+  if (claim.contactInfo) {
+    sessionStorage.setItem('user_email', claim.contactInfo.email || '');
+    sessionStorage.setItem('user_id', claim.customerId);
+    
+    // Attempt to get name from passengers or contact info
+    let displayName = 'User';
+    if (claim.passengers && claim.passengers.length > 0) {
+      const primaryPax = claim.passengers[0];
+      displayName = `${primaryPax.firstName} ${primaryPax.lastName}`;
+    }
+    sessionStorage.setItem('user_name', displayName);
+    sessionStorage.setItem('user_role', 'customer');
+  }
+
   // Access token is automatically stored in HTTP-only cookie by the backend
   // No need to manually store it
 

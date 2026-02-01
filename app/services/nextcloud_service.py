@@ -494,6 +494,45 @@ class NextcloudService:
         # Execute upload with retry logic
         return await self._retry_with_backoff(_perform_upload)
 
+    async def upload_file_stream(self, content_stream: Any, remote_path: str, file_size: int) -> Dict[str, Any]:
+        """Upload file stream to Nextcloud via WebDAV."""
+        # Ensure parent directory exists
+        await self.ensure_directory_exists(remote_path, is_file_path=True)
+        
+        full_path = f"{self.username}/{remote_path.lstrip('/')}"
+        upload_url = urljoin(self.webdav_url, full_path)
+        
+        headers = {
+            "Content-Type": "application/octet-stream",
+            "Content-Length": str(file_size)
+        }
+        
+        # We increase timeout for streams
+        async with httpx.AsyncClient(timeout=self.timeout * 10) as client:
+            try:
+                response = await client.put(
+                    url=upload_url,
+                    content=content_stream,
+                    headers=headers,
+                    auth=self.auth
+                )
+                
+                if response.status_code in [200, 201, 204]:
+                    return {
+                        "success": True,
+                        "file_id": remote_path,
+                        "url": upload_url,
+                        "status_code": response.status_code
+                    }
+                else:
+                    raise self._classify_http_error(
+                        response,
+                        context=f"upload_stream:{remote_path}",
+                        operation="file_upload_stream"
+                    )
+            except Exception as e:
+                raise self._classify_error(e, context=f"upload_stream:{remote_path}")
+
     async def upload_file_chunked(self, file_content: bytes, remote_path: str, chunk_size: int = None) -> Dict[str, Any]:
         """Upload large file in chunks for memory efficiency."""
         if chunk_size is None:

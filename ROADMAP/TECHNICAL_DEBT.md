@@ -48,6 +48,11 @@ These should be addressed alongside feature development:
 - [ ] Deployment guide
 
 ### Frontend & UX
+- [x] ✅ UI/UX Critical Fixes (2026-02-02)
+  - Implemented smooth auto-scroll to compensation results (WP #360)
+  - Fixed Sonner toast animation glitches ("jump twice" bug)
+  - Improved accessibility with focus management after scroll
+  - Fixed mobile visibility issues for compensation section
 - [x] ✅ Mobile responsiveness fixes (2026-01-18)
   - Fixed ExtractedDataPreview component layout issues
   - Fixed Stepper component on narrow screens

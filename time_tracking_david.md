@@ -1,6 +1,30 @@
 # Time Tracking - David
 
-## Latest Work (2026-01-31) - Security & Privacy Hardening
+## Latest Work (2026-02-02) - UI/UX Critical Fixes
+
+### Frontend Optimization
+**Estimated Time**: 1.5 hours
+
+#### Key Tasks:
+1. **Auto-scroll to compensation results** (WP #360)
+   - Implemented robust `useEffect` and `useRef` based auto-scroll
+   - Added `headerOffset` for sticky header compatibility
+   - Fixed mobile visibility issues where results were off-screen
+   - Estimated: 0.75 hours
+
+2. **Sonner Toast Animation Fixes** (WP #360)
+   - Removed conflicting CSS transitions and custom animations
+   - Resolved "jump twice" glitch by letting Sonner handle its own logic
+   - Improved animation smoothness during scroll operations
+   - Estimated: 0.5 hours
+
+3. **Accessibility Improvements** (WP #360)
+   - Added focus management to results section after auto-scroll
+   - Ensured screen readers announce compensation results
+   - Verified keyboard navigation flow
+   - Estimated: 0.25 hours
+
+## Previous Work (2026-01-31) - Security & Privacy Hardening
 
 ### Security Audit Implementation
 **Estimated Time**: 13.5 hours

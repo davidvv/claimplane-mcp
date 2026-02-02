@@ -5,7 +5,7 @@
  * to enable progressive file uploads and abandoned cart recovery.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle, XCircle, Mail, Euro } from 'lucide-react';
@@ -60,6 +60,42 @@ export function Step2_Eligibility({
     initialData
   );
   const [submittedEmail, setSubmittedEmail] = useState<string>('');
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  // WP-360: Improved auto-scroll implementation
+  useEffect(() => {
+    if (eligibilityResult) {
+      // Prevent toast animations from glitching during scroll
+      document.body.classList.add('scrolling');
+
+      // Small delay to ensure the component has rendered and fade-in animation has started
+      const timeoutId = setTimeout(() => {
+        if (resultsRef.current) {
+          // Use a bit of padding for the sticky header (h-16 = 64px)
+          const headerOffset = 80;
+          const elementPosition = resultsRef.current.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+
+          // WP-360: Move focus for accessibility
+          resultsRef.current?.focus();
+        }
+
+        // Cleanup scrolling class after animation completes
+        setTimeout(() => {
+          document.body.classList.remove('scrolling');
+        }, 1000);
+      }, 150);
+      return () => {
+        clearTimeout(timeoutId);
+        document.body.classList.remove('scrolling');
+      };
+    }
+  }, [eligibilityResult]);
 
   const {
     register,
@@ -83,17 +119,6 @@ export function Step2_Eligibility({
 
       setEligibilityResult(result);
       setSubmittedEmail(data.email);
-
-      // Auto-scroll to eligibility results after they are displayed
-      setTimeout(() => {
-        const resultsElement = document.querySelector('[data-compensation-results]');
-        if (resultsElement) {
-          resultsElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          });
-        }
-      }, 100); // Small delay to ensure DOM is updated
 
       // If user is NOT eligible and has a draft claim, delete it to prevent "abandoned claim" reminders
       if (!result.eligible && draftClaimId) {
@@ -249,7 +274,13 @@ export function Step2_Eligibility({
         const hasCompensation = eligibilityResult.compensationAmount && eligibilityResult.compensationAmount > 0;
 
         return (
-          <Card className="fade-in" data-compensation-results style={{animationDelay: '0.1s'}}>
+          <Card 
+            ref={resultsRef} 
+            tabIndex={-1} 
+            className="fade-in focus:outline-none" 
+            data-compensation-results 
+            style={{animationDelay: '0.1s'}}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {eligibilityResult.eligible ? (

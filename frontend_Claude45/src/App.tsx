@@ -86,7 +86,6 @@ function App() {
         className="toast-container"
         style={{
           zIndex: 9999,
-          transition: 'all 0.2s ease-in-out',
         }}
       />
     </BrowserRouter>

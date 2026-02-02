@@ -101,6 +101,7 @@ class Config:
     SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "noreply@flightclaim.com")
     SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "ClaimPlane LLC")
     SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "vences.david@icloud.com")
 
     # Celery Configuration (Phase 2)
     CELERY_BROKER_URL = REDIS_URL  # Use Redis as broker
@@ -137,6 +138,9 @@ class Config:
     
     # CORS Configuration
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8081,https://eac.dvvcloud.work").split(",")
+    
+    # Trusted Hosts Configuration
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,eac.dvvcloud.work,api").split(",")
     
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
@@ -219,6 +223,7 @@ class DevelopmentConfig(Config):
     # Allow more permissive settings in development
     # Note: Cannot use "*" wildcard when allow_credentials=True (required for HTTP-only cookies)
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8081,https://eac.dvvcloud.work").split(",")
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,eac.dvvcloud.work,api").split(",")
     RATE_LIMIT_UPLOAD = "100/minute"
     RATE_LIMIT_DOWNLOAD = "1000/minute"
     SECURITY_HEADERS_ENABLED = False
@@ -230,6 +235,7 @@ class ProductionConfig(Config):
     
     # Strict security settings
     CORS_ORIGINS = SecureConfig.get_required_env_var("CORS_ORIGINS", "https://yourdomain.com").split(",")
+    ALLOWED_HOSTS = SecureConfig.get_required_env_var("ALLOWED_HOSTS", "yourdomain.com").split(",")
     RATE_LIMIT_UPLOAD = "5/minute"
     RATE_LIMIT_DOWNLOAD = "50/minute"
     SECURITY_HEADERS_ENABLED = True

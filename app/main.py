@@ -80,7 +80,7 @@ app.add_middleware(
 # Setup trusted host middleware
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"]  # Configure appropriately for production
+    allowed_hosts=config.ALLOWED_HOSTS
 )
 
 # Setup exception handlers
@@ -99,7 +99,9 @@ async def add_security_headers(request: Request, call_next):
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: blob:; "
-        "connect-src 'self';"
+        "connect-src 'self' https://eac.dvvcloud.work; "
+        "frame-ancestors 'none'; "
+        "upgrade-insecure-requests;"
     )
     
     # Additional security headers
@@ -107,6 +109,12 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+    response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+    
+    # Strict-Transport-Security (HSTS) - only in production and if using HTTPS
+    if config.SECURITY_HEADERS_ENABLED:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     
     return response
 

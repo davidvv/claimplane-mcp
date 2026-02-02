@@ -5,7 +5,7 @@
 ---
 
 **Priority**: MEDIUM-HIGH - Required for GDPR compliance
-**Status**: ⏳ **IN PROGRESS** (75% Complete)
+**Status**: ⏳ **IN PROGRESS** (80% Complete)
 **Estimated Effort**: 2-3 weeks
 **Business Value**: Enables public launch with legal compliance
 **Target Version**: v0.4.0
@@ -18,7 +18,7 @@
 
 
 **Priority**: HIGH - Required for production launch
-**Status**: ⏳ **IN PROGRESS** - ~70% Complete
+**Status**: ⏳ **IN PROGRESS** - ~80% Complete
 **Estimated Effort**: 1-2 weeks (including cookie consent implementation)
 **Business Value**: Critical - enables customer self-service and GDPR compliance
 **Blocking**: Phase 4.6 (Cookie Consent) requires Phase 4.5.14 (HTTP-only cookies) - ✅ COMPLETED
@@ -158,9 +158,9 @@ class AccountDeletionRequest(Base):
    - [ ] Document deletion process in admin guide
 
 3. **Data Retention Policy**
-   - [ ] Define retention periods for different data types
-   - [ ] Keep financial records for 7 years (legal requirement)
-   - [ ] Anonymize vs. delete decision tree
+   - ✅ Define retention periods for different data types (claims: 7 years, implemented via `gdpr_retention_task.py`)
+   - ✅ Keep financial records for 7 years (legal requirement, automated via Celery task)
+   - ✅ Anonymize vs. delete decision tree (implemented: claims anonymized after 7 years)
 
 4. **Right to Data Portability**
    - [ ] `GET /account/export-data` - Export all customer data as JSON/PDF

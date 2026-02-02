@@ -79,6 +79,9 @@ services:
       # CORS Security
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
       
+      # Trusted Hosts Security
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,eac.dvvcloud.work}
+      
       # Security Headers
       SECURITY_HEADERS_ENABLED: ${SECURITY_HEADERS_ENABLED:-false}
 ```
@@ -127,8 +130,9 @@ curl -I http://localhost/health
 #### **API Security:**
 - **JWT Authentication**: Secure token-based authentication
 - **Rate Limiting**: Upload/download request throttling
-- **CORS Protection**: Cross-origin request validation
-- **Security Headers**: XSS, CSRF, and clickjacking protection
+- **CORS Protection**: Strict cross-origin request validation with whitelist
+- **Trusted Host Validation**: Host header validation to prevent Host header injection attacks
+- **Security Headers**: XSS, CSRF, and clickjacking protection (CSP, HSTS, X-Frame-Options, etc.)
 
 #### **Database Security:**
 - **Connection Encryption**: PostgreSQL SSL/TLS support

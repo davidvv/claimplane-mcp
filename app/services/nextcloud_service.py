@@ -610,6 +610,33 @@ class NextcloudService:
             })
             raise classified_error
 
+    async def download_file_stream(self, remote_path: str):
+        """Download file from Nextcloud as a stream."""
+        full_path = f"{self.username}/{remote_path.lstrip('/')}"
+        download_url = urljoin(self.webdav_url, full_path)
+        
+        client = httpx.AsyncClient(timeout=self.timeout)
+        try:
+            async with client.stream("GET", download_url, auth=self.auth) as response:
+                if response.status_code == 404:
+                    raise NextcloudFileNotFoundError(
+                        message=f"File not found: {remote_path}",
+                        file_path=remote_path,
+                        context="download_file_stream"
+                    )
+                elif response.status_code != 200:
+                    raise self._classify_http_error(
+                        response,
+                        context=f"download_file_stream:{remote_path}",
+                        operation="file_download"
+                    )
+                
+                async for chunk in response.aiter_bytes():
+                    yield chunk
+        finally:
+            await client.aclose()
+
+
     async def verify_upload_integrity(self, original_content: bytes, remote_path: str,
                                     verification_strategy: str = "auto") -> Dict[str, Any]:
         """Verify uploaded file integrity by downloading and comparing with original content.

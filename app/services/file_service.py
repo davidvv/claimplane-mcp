@@ -130,6 +130,7 @@ class FileService:
 
         # Context for capturing hash during streaming
         hash_context = {"sha256": hashlib.sha256(), "processed": 0}
+        encryption_context = encryption_service.create_streaming_context(config.CHUNK_SIZE)
 
         async def encrypted_stream_generator():
             # Reset file position
@@ -140,8 +141,9 @@ class FileService:
                 hash_context["sha256"].update(chunk)
                 hash_context["processed"] += len(chunk)
                 
-                # Encrypt chunk (independent Fernet token)
-                yield encryption_service.encrypt_data(chunk)
+                # Encrypt chunk using AES-GCM streaming
+                yield encryption_service.encrypt_chunk(chunk, encryption_context)
+
 
         try:
             # Upload using streaming
@@ -475,23 +477,28 @@ class FileService:
                 remote_path=file_record.storage_path
             )
             
-            # Decrypt content (Chunked Fernet)
-            decrypted_content = b""
-            encrypted_len = len(encrypted_content)
-            
-            # Calculate encrypted size of a full chunk
-            full_chunk_enc_size = encryption_service.get_encrypted_chunk_size(config.CHUNK_SIZE)
-            
-            offset = 0
-            while offset < encrypted_len:
-                remaining = encrypted_len - offset
-                # If remaining is more than a full chunk, read a full chunk.
-                # If equal or less, read all remaining (last chunk).
-                chunk_len = full_chunk_enc_size if remaining > full_chunk_enc_size else remaining
+            # Decrypt content (Supports both GCM streaming and legacy Chunked Fernet)
+            if encrypted_content.startswith(encryption_service.GCM_MAGIC):
+                decrypted_content = encryption_service.decrypt_data(encrypted_content)
+            else:
+                # Legacy Decrypt content (Chunked Fernet)
+                decrypted_content = b""
+                encrypted_len = len(encrypted_content)
                 
-                token = encrypted_content[offset : offset + chunk_len]
-                decrypted_content += encryption_service.decrypt_data(token)
-                offset += chunk_len
+                # Calculate encrypted size of a full chunk
+                full_chunk_enc_size = encryption_service.get_encrypted_chunk_size(config.CHUNK_SIZE)
+                
+                offset = 0
+                while offset < encrypted_len:
+                    remaining = encrypted_len - offset
+                    # If remaining is more than a full chunk, read a full chunk.
+                    # If equal or less, read all remaining (last chunk).
+                    chunk_len = full_chunk_enc_size if remaining > full_chunk_enc_size else remaining
+                    
+                    token = encrypted_content[offset : offset + chunk_len]
+                    decrypted_content += encryption_service.decrypt_data(token)
+                    offset += chunk_len
+
             
             # Verify integrity
             # We can't verify encrypted_content hash because we didn't store it (we stored plaintext hash).

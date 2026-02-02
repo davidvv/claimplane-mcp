@@ -45,6 +45,7 @@ celery_app.conf.update(
     task_routes={
         'app.tasks.claim_tasks.*': {'queue': 'notifications'},
         'app.tasks.draft_tasks.*': {'queue': 'notifications'},
+        'app.tasks.gdpr_retention_task.*': {'queue': 'notifications'},
     },
 
     # Default queue name
@@ -84,6 +85,11 @@ celery_app.conf.update(
         'cleanup-orphan-files': {
             'task': 'cleanup_orphan_files',
             'schedule': crontab(minute=0),  # Every hour at :00
+        },
+        # GDPR 7-year data retention purge (1st of every month at 02:00)
+        'run-gdpr-retention-purge': {
+            'task': 'run_retention_purge',
+            'schedule': crontab(day_of_month=1, hour=2, minute=0),
         },
     },
 )

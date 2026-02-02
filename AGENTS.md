@@ -52,15 +52,7 @@ celery -A app.celery_app worker --loglevel=info  # Background tasks
 For significant work or feature implementation, you may use the `openproject-task-manager` skill to track progress if needed, but prioritize direct action for straightforward tasks.
 
 ## Notifications
-- **CRITICAL**: If a task takes longer than 10 minutes, or after significant work (bugfixing, testing, new features), send a concise summary to David via RocketChat DM using the `rocketchat_send_message` tool.
-- **MANDATORY**: **ALWAYS** notify David via RocketChat after completing ANY work task, feature implementation, bug fix, or testing session - regardless of duration. This includes:
-  - Code changes and fixes
-  - Testing and QA work
-  - Documentation updates
-  - Configuration changes
-  - Any task completion or milestone
-  Use `rocketchat_send_message` tool with a concise summary of what was accomplished.
-  **IMPORTANT**: Send messages to `@david` (David's RocketChat username) - this ensures David receives notifications on all devices.
+- **ALWAYS** notify David after ANY work: use `rocketchat_send_message` to `@david`
 
 
 ## Code Style

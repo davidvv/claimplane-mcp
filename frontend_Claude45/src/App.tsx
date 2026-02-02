@@ -78,6 +78,16 @@ function App() {
         expand={false}
         richColors
         closeButton
+        duration={4000}
+        gap={8}
+        offset={16}
+        theme="light"
+        visibleToasts={3}
+        className="toast-container"
+        style={{
+          zIndex: 9999,
+          transition: 'all 0.2s ease-in-out',
+        }}
       />
     </BrowserRouter>
   );

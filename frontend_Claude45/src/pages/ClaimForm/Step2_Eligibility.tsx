@@ -84,6 +84,17 @@ export function Step2_Eligibility({
       setEligibilityResult(result);
       setSubmittedEmail(data.email);
 
+      // Auto-scroll to eligibility results after they are displayed
+      setTimeout(() => {
+        const resultsElement = document.querySelector('[data-compensation-results]');
+        if (resultsElement) {
+          resultsElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      }, 100); // Small delay to ensure DOM is updated
+
       // If user is NOT eligible and has a draft claim, delete it to prevent "abandoned claim" reminders
       if (!result.eligible && draftClaimId) {
         try {
@@ -238,7 +249,7 @@ export function Step2_Eligibility({
         const hasCompensation = eligibilityResult.compensationAmount && eligibilityResult.compensationAmount > 0;
 
         return (
-          <Card className="fade-in">
+          <Card className="fade-in" data-compensation-results style={{animationDelay: '0.1s'}}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {eligibilityResult.eligible ? (

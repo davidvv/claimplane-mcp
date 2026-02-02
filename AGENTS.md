@@ -53,6 +53,13 @@ For significant work or feature implementation, you may use the `openproject-tas
 
 ## Notifications
 - **CRITICAL**: If a task takes longer than 10 minutes, or after significant work (bugfixing, testing, new features), send a concise summary to David via RocketChat DM using the `rocketchat_send_message` tool.
+- **MANDATORY**: **ALWAYS** notify David via RocketChat after completing ANY work task, feature implementation, bug fix, or testing session - regardless of duration. This includes:
+  - Code changes and fixes
+  - Testing and QA work
+  - Documentation updates
+  - Configuration changes
+  - Any task completion or milestone
+  Use `rocketchat_send_message` tool with a concise summary of what was accomplished.
 
 
 ## Code Style

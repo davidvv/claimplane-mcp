@@ -97,6 +97,7 @@ export function Step5_Review({
         bookingReference: passengerData.bookingReference || null,
         ticketNumber: primaryPassenger.ticketNumber || null,
         termsAccepted: true,
+        privacyPolicyAccepted: true,
         // Workflow v2: Pass draft claim ID to finalize existing draft
         claimId: draftClaimId || undefined,
       };

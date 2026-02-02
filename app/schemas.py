@@ -477,6 +477,7 @@ class ClaimRequestSchema(BaseModel):
     booking_reference: Optional[str] = Field(None, alias="bookingReference", max_length=20, description="Airline booking/PNR code")
     ticket_number: Optional[str] = Field(None, alias="ticketNumber", max_length=20, description="13-digit ticket number")
     terms_accepted: bool = Field(..., alias="termsAccepted", description="User must accept terms and conditions")
+    privacy_policy_accepted: bool = Field(..., alias="privacyPolicyAccepted", description="User must accept privacy policy")
     claim_id: Optional[UUID] = Field(None, alias="claimId", description="Optional draft claim ID to finalize")
 
     @validator('incident_type')
@@ -492,6 +493,13 @@ class ClaimRequestSchema(BaseModel):
         """Validate that terms have been accepted."""
         if not v:
             raise ValueError("You must accept the terms and conditions to submit a claim")
+        return v
+
+    @validator('privacy_policy_accepted')
+    def validate_privacy_policy_accepted(cls, v):
+        """Validate that privacy policy has been accepted."""
+        if not v:
+            raise ValueError("You must accept the privacy policy to submit a claim")
         return v
 
     class Config:

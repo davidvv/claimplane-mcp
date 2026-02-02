@@ -77,8 +77,10 @@ class ClaimRepository(BaseRepository[Claim]):
                           incident_type: str, notes: Optional[str] = None,
                           booking_reference: Optional[str] = None,
                           ticket_number: Optional[str] = None,
-                          terms_accepted_at: Optional[str] = None,
-                          terms_acceptance_ip: Optional[str] = None) -> Claim:
+                          terms_accepted_at: Optional[datetime] = None,
+                          terms_acceptance_ip: Optional[str] = None,
+                          privacy_consent_at: Optional[datetime] = None,
+                          privacy_consent_ip: Optional[str] = None) -> Claim:
         """Create a new claim with all required fields."""
         return await self.create(
             customer_id=customer_id,
@@ -92,7 +94,9 @@ class ClaimRepository(BaseRepository[Claim]):
             booking_reference=booking_reference.upper() if booking_reference else None,
             ticket_number=ticket_number,
             terms_accepted_at=terms_accepted_at,
-            terms_acceptance_ip=terms_acceptance_ip
+            terms_acceptance_ip=terms_acceptance_ip,
+            privacy_consent_at=privacy_consent_at,
+            privacy_consent_ip=privacy_consent_ip
         )
     
     async def update_claim(self, claim_id: UUID, allow_null_values: bool = False, **kwargs) -> Optional[Claim]:
@@ -314,7 +318,9 @@ class ClaimRepository(BaseRepository[Claim]):
         booking_reference: Optional[str] = None,
         ticket_number: Optional[str] = None,
         terms_accepted_at: Optional[datetime] = None,
-        terms_acceptance_ip: Optional[str] = None
+        terms_acceptance_ip: Optional[str] = None,
+        privacy_consent_at: Optional[datetime] = None,
+        privacy_consent_ip: Optional[str] = None
     ) -> Optional[Claim]:
         """Finalize a draft claim to submitted status."""
         claim = await self.get_by_id(claim_id)
@@ -330,6 +336,8 @@ class ClaimRepository(BaseRepository[Claim]):
         claim.ticket_number = ticket_number
         claim.terms_accepted_at = terms_accepted_at or datetime.utcnow()
         claim.terms_acceptance_ip = terms_acceptance_ip
+        claim.privacy_consent_at = privacy_consent_at or datetime.utcnow()
+        claim.privacy_consent_ip = privacy_consent_ip
         claim.submitted_at = datetime.utcnow()
 
         await self.session.flush()

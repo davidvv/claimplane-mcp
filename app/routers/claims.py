@@ -114,7 +114,9 @@ async def create_claim(
         booking_reference=getattr(claim_data, 'booking_reference', None),
         ticket_number=getattr(claim_data, 'ticket_number', None),
         terms_accepted_at=datetime.now(timezone.utc),
-        terms_acceptance_ip=ip_address
+        terms_acceptance_ip=ip_address,
+        privacy_consent_at=datetime.now(timezone.utc),
+        privacy_consent_ip=ip_address
     )
 
     # Send claim submitted email notification
@@ -243,7 +245,8 @@ async def submit_claim_with_customer(
                 departure_airport=flight_data.departure_airport, arrival_airport=flight_data.arrival_airport,
                 incident_type=claim_request.incident_type, notes=claim_request.notes,
                 booking_reference=claim_request.booking_reference, ticket_number=claim_request.ticket_number,
-                terms_accepted_at=datetime.now(timezone.utc), terms_acceptance_ip=ip_address
+                terms_accepted_at=datetime.now(timezone.utc), terms_acceptance_ip=ip_address,
+                privacy_consent_at=datetime.now(timezone.utc), privacy_consent_ip=ip_address
             )
             await db.commit()
 
@@ -465,6 +468,15 @@ async def sign_power_of_attorney(
     existing_files = await file_repo.get_by_claim_id(claim_id, include_deleted=False)
     existing_poa = next((f for f in existing_files if f.document_type == ClaimFile.DOCUMENT_POWER_OF_ATTORNEY), None)
     if existing_poa: return FileResponseSchema.model_validate(existing_poa)
+    
+    # Update claim with consent information
+    now = datetime.now(timezone.utc)
+    ip_address = request.client.host if request.client else "unknown"
+    
+    claim.terms_accepted_at = now
+    claim.terms_acceptance_ip = ip_address
+    claim.privacy_consent_at = now
+    claim.privacy_consent_ip = ip_address
     
     customer_repo = CustomerRepository(db)
     customer = await customer_repo.get_by_id(claim.customer_id)

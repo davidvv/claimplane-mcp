@@ -1,6 +1,17 @@
 # Time Tracking - David
 
-## Latest Work (2026-02-02) - UI/UX Critical Fixes
+## Latest Work (2026-02-02) - GDPR Compliance & UI/UX
+
+### GDPR Compliance
+**Estimated Time**: 4.0 hours
+
+#### Key Tasks:
+1. **Granular GDPR Consent** (WP #358)
+   - Updated database schema with separate `privacy_consent_at` and `privacy_consent_ip` fields.
+   - Implemented separate T&C and Privacy Policy checkboxes in frontend.
+   - Updated API endpoints and Pydantic schemas to enforce and track dual consent.
+   - Performed data migration to backfill consent for existing claims.
+   - Estimated: 2.5 hours
 
 ### Frontend Optimization
 **Estimated Time**: 1.5 hours

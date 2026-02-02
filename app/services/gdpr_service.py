@@ -231,6 +231,7 @@ class GDPRService:
             claim.booking_reference = None
             claim.ticket_number = None
             claim.terms_acceptance_ip = "0.0.0.0"
+            claim.privacy_consent_ip = "0.0.0.0"
             claim.notes = "DELETED - Customer requested account deletion"
             
             # Anonymize linked passengers
@@ -301,3 +302,109 @@ class GDPRService:
         )
 
         return deletion_summary
+
+    @staticmethod
+    async def anonymize_specific_claim(
+        session: AsyncSession,
+        claim_id: UUID,
+        reason: str = "7-year retention policy"
+    ) -> Dict[str, Any]:
+        """
+        Anonymize a specific claim after retention period (GDPR Article 5.1.e).
+        PII is removed but statistical data is preserved for reporting.
+        """
+        from app.services.nextcloud_service import NextcloudService
+
+        claim = await session.get(Claim, claim_id, options=[
+            selectinload(Claim.passengers),
+            selectinload(Claim.claim_notes),
+            selectinload(Claim.status_history),
+            selectinload(Claim.files)
+        ], populate_existing=True)
+
+        if not claim:
+            raise ValueError(f"Claim {claim_id} not found")
+
+        summary = {
+            "claim_id": str(claim_id),
+            "files_deleted": 0,
+            "passengers_anonymized": 0,
+            "notes_anonymized": 0,
+            "events_scrubbed": 0
+        }
+
+        # 1. Delete files from Nextcloud and database
+        nextcloud = NextcloudService()
+        for file in claim.files:
+            try:
+                if file.storage_path:
+                    await nextcloud.delete_file(file.storage_path)
+                    summary["files_deleted"] += 1
+            except Exception as e:
+                logger.error(f"Failed to delete file {file.id} from Nextcloud: {e}")
+            
+            await session.delete(file)
+
+        # 2. Anonymize claim fields (clear high-entropy PII)
+        claim.booking_reference = None
+        claim.ticket_number = None
+        claim.terms_acceptance_ip = "0.0.0.0"
+        claim.privacy_consent_ip = "0.0.0.0"
+        claim.notes = f"ANONYMIZED - {reason}"
+        
+        # 3. Anonymize linked passengers
+        for passenger in claim.passengers:
+            passenger.first_name = "DELETED"
+            passenger.last_name = "USER"
+            passenger.email = f"deleted_p_{passenger.id}@deleted.local"
+            passenger.ticket_number = None
+            summary["passengers_anonymized"] += 1
+
+        # 4. Scrub notes
+        for note in claim.claim_notes:
+            note.note_text = f"DELETED - {reason}"
+            summary["notes_anonymized"] += 1
+
+        # 5. Scrub status history
+        for history in claim.status_history:
+            history.change_reason = "DELETED"
+
+        # 6. Scrub analytics events for this claim
+        result = await session.execute(
+            update(ClaimEvent)
+            .where(ClaimEvent.claim_id == claim_id)
+            .values(ip_address="0.0.0.0", event_data=None)
+        )
+        summary["events_scrubbed"] = result.rowcount
+
+        logger.info(f"Successfully anonymized claim {claim_id} ({reason})")
+        return summary
+
+    @staticmethod
+    async def get_expired_claims(
+        session: AsyncSession,
+        years: int = 7
+    ):
+        """
+        Identify claims older than specified years that are eligible for purge.
+        Eligible: Finished status (paid, rejected, withdrawn) AND not locked.
+        """
+        from datetime import timedelta
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=years * 365.25)
+
+        # Build query for eligible claims
+        query = select(Claim).where(
+            Claim.updated_at < cutoff_date,
+            Claim.status.in_([
+                Claim.STATUS_PAID,
+                Claim.STATUS_REJECTED,
+                Claim.STATUS_WITHDRAWN,
+                Claim.STATUS_CLOSED,
+                Claim.STATUS_ABANDONED
+            ]),
+            Claim.is_retention_locked == False,
+            Claim.is_legal_proceeding == False
+        )
+
+        result = await session.execute(query)
+        return result.scalars().all()

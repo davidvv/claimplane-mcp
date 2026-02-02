@@ -5,7 +5,7 @@
 ---
 
 **Priority**: MEDIUM-HIGH - Required for GDPR compliance
-**Status**: ⏳ **IN PROGRESS** (70% Complete)
+**Status**: ⏳ **IN PROGRESS** (75% Complete)
 **Estimated Effort**: 2-3 weeks
 **Business Value**: Enables public launch with legal compliance
 **Target Version**: v0.4.0
@@ -28,6 +28,7 @@
 - ✅ Account management endpoints - 100% (GET /account/info, PUT /account/email, PUT /account/password, POST /account/delete-request)
 - ✅ Database models (AccountDeletionRequest, Customer deletion fields) - 100%
 - ✅ Email notification tasks (email change, password change, deletion requests) - 100%
+- ✅ Granular GDPR consent (WP #358) - Separate T&C and Privacy Policy checkboxes
 
 **What's Remaining**:
 - ❌ Admin endpoint for deletion requests (GET /admin/deletion-requests) - 0%

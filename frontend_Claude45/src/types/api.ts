@@ -133,6 +133,7 @@ export interface ClaimRequest {
   bookingReference?: string | null;
   ticketNumber?: string | null;
   termsAccepted: boolean;
+  privacyPolicyAccepted: boolean;
   claimId?: string;  // Workflow v2: Draft claim ID to finalize
 }
 

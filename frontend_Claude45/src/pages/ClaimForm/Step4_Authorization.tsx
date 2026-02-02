@@ -35,6 +35,7 @@ function Checkbox({ id, checked, onCheckedChange, disabled }: { id: string, chec
 // Schema for the authorization form
 const authorizationSchema = z.object({
   consentTerms: z.boolean().refine(val => val === true, "You must accept the Terms and Conditions"),
+  consentPrivacy: z.boolean().refine(val => val === true, "You must accept the Privacy Policy"),
   consentElectronicSignature: z.boolean().refine(val => val === true, "You must consent to use an electronic signature"),
   consentRepresentAll: z.boolean().optional(),
 });
@@ -63,6 +64,7 @@ export function Step4_Authorization({
     resolver: zodResolver(authorizationSchema),
     defaultValues: {
       consentTerms: false,
+      consentPrivacy: false,
       consentElectronicSignature: false,
       consentRepresentAll: false
     }
@@ -109,6 +111,7 @@ export function Step4_Authorization({
         signer_name: primaryPassengerName,
         is_primary_passenger: true,
         consent_terms: data.consentTerms,
+        consent_privacy_policy: data.consentPrivacy,
         consent_electronic_signature: data.consentElectronicSignature,
         consent_represent_all: data.consentRepresentAll
       });
@@ -189,10 +192,26 @@ export function Step4_Authorization({
                 />
                 <div className="grid gap-1.5 leading-none">
                   <Label htmlFor="consentTerms" className="cursor-pointer">
-                    I agree to the <a href="/terms" className="underline text-primary">Terms and Conditions</a> and <a href="/privacy" className="underline text-primary">Privacy Policy</a>.
+                    I agree to the <a href="/terms" className="underline text-primary" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>.
                   </Label>
                   {errors.consentTerms && (
                     <p className="text-xs text-destructive">{errors.consentTerms.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox 
+                  id="consentPrivacy" 
+                  checked={!!watch('consentPrivacy')}
+                  onCheckedChange={(checked) => setValue('consentPrivacy', checked as boolean)}
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label htmlFor="consentPrivacy" className="cursor-pointer">
+                    I have read and agree to the <a href="/privacy" className="underline text-primary" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and consent to the processing of my data.
+                  </Label>
+                  {errors.consentPrivacy && (
+                    <p className="text-xs text-destructive">{errors.consentPrivacy.message}</p>
                   )}
                 </div>
               </div>

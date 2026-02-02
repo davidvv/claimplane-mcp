@@ -182,6 +182,7 @@ class Claim(Base):
     STATUS_PAID = "paid"
     STATUS_CLOSED = "closed"
     STATUS_ABANDONED = "abandoned"
+    STATUS_WITHDRAWN = "withdrawn"
     
     STATUS_TYPES = [
         STATUS_DRAFT,
@@ -191,7 +192,8 @@ class Claim(Base):
         STATUS_REJECTED,
         STATUS_PAID,
         STATUS_CLOSED,
-        STATUS_ABANDONED
+        STATUS_ABANDONED,
+        STATUS_WITHDRAWN
     ]
     
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -220,6 +222,10 @@ class Claim(Base):
     terms_accepted_at = Column(DateTime(timezone=True), nullable=True)
     terms_acceptance_ip = Column(String(45), nullable=True)  # IPv6 compatible
 
+    # Privacy Policy consent tracking (GDPR compliance)
+    privacy_consent_at = Column(DateTime(timezone=True), nullable=True)
+    privacy_consent_ip = Column(String(45), nullable=True)  # IPv6 compatible
+
     # Draft workflow fields (Phase 7 - Workflow v2)
     last_activity_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     reminder_count = Column(Integer, default=0, server_default="0")  # Number of abandonment reminders sent
@@ -235,6 +241,11 @@ class Claim(Base):
     flight_distance_km = Column(Numeric(10, 2), nullable=True)
     delay_hours = Column(Numeric(5, 2), nullable=True)
     extraordinary_circumstances = Column(String(255), nullable=True)
+
+    # GDPR & Legal Compliance (Work Package 359)
+    is_retention_locked = Column(Boolean, default=False, server_default="false")
+    is_legal_proceeding = Column(Boolean, default=False, server_default="false")
+    retention_flag = Column(String(255), nullable=True)  # Legacy support for pseudo-code requirement
 
     # Relationships
     customer = relationship("Customer", back_populates="claims", foreign_keys=[customer_id])

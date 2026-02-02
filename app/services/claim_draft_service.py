@@ -242,7 +242,9 @@ class ClaimDraftService:
             booking_reference=booking_reference,
             ticket_number=ticket_number,
             terms_accepted_at=now,
-            terms_acceptance_ip=ip_address
+            terms_acceptance_ip=ip_address,
+            privacy_consent_at=now,
+            privacy_consent_ip=ip_address
         )
 
         # Commit changes

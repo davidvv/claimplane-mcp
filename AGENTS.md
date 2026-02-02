@@ -52,7 +52,9 @@ celery -A app.celery_app worker --loglevel=info  # Background tasks
 For significant work or feature implementation, you may use the `openproject-task-manager` skill to track progress if needed, but prioritize direct action for straightforward tasks.
 
 ## Notifications
-- **ALWAYS** notify David after ANY work: use `rocketchat_send_message` to `@david`
+**ALWAYS** notify David directly: `rocketchat_send_message(channel="@david", message="...")`
+
+**❌ WRONG**: `rocketchat_send_message(channel="general", message="@david ...")`
 
 
 ## Code Style

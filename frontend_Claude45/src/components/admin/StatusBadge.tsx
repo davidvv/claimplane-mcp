@@ -3,6 +3,7 @@
  * Displays claim status with appropriate color coding
  */
 
+import { memo } from 'react';
 import { Badge } from '../ui/Badge';
 
 interface StatusBadgeProps {
@@ -33,7 +34,7 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   cancelled: { label: 'Cancelled', variant: 'destructive' },
 };
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export const StatusBadge = memo(function StatusBadge({ status, className }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status] || {
     label: status.replace(/_/g, ' '),
     variant: 'outline' as const,
@@ -44,4 +45,4 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       {config.label}
     </Badge>
   );
-}
+});

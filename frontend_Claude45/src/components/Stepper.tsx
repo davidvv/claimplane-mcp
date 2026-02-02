@@ -2,6 +2,7 @@
  * Multi-step progress indicator for claim form wizard
  */
 
+import { memo } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -16,7 +17,7 @@ interface StepperProps {
   currentStep: number;
 }
 
-export function Stepper({ steps, currentStep }: StepperProps) {
+export const Stepper = memo(function Stepper({ steps, currentStep }: StepperProps) {
   return (
     <nav aria-label="Progress" className="mb-8 overflow-hidden">
       <ol className="flex items-center justify-between w-full">
@@ -83,4 +84,4 @@ export function Stepper({ steps, currentStep }: StepperProps) {
       </ol>
     </nav>
   );
-}
+});

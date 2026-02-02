@@ -124,7 +124,12 @@ class FileSecurityMiddleware(BaseHTTPMiddleware):
             )
     
     def _get_client_ip(self, request: Request) -> str:
-        """Get client IP address with proxy support."""
+        """Get client IP address with proxy and Cloudflare support."""
+        # Trust Cloudflare's CF-Connecting-IP header first
+        cf_ip = request.headers.get("CF-Connecting-IP")
+        if cf_ip:
+            return cf_ip
+            
         # Check for forwarded headers
         forwarded = request.headers.get("X-Forwarded-For")
         if forwarded:

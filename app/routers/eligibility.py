@@ -1,10 +1,11 @@
 """Eligibility check endpoints - public access."""
 from typing import Optional, List
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 from decimal import Decimal
 
 from app.services.compensation_service import CompensationService
+from app.dependencies.rate_limit import limiter
 
 router = APIRouter(prefix="/eligibility", tags=["eligibility"])
 
@@ -66,7 +67,8 @@ class EligibilityResponseSchema(BaseModel):
 
 
 @router.post("/check", response_model=EligibilityResponseSchema)
-async def check_eligibility(request: EligibilityRequestSchema) -> EligibilityResponseSchema:
+@limiter.limit("20/minute")
+async def check_eligibility(request: Request, data: EligibilityRequestSchema) -> EligibilityResponseSchema:
     """
     Check eligibility for flight compensation (PUBLIC ENDPOINT).
 
@@ -74,7 +76,8 @@ async def check_eligibility(request: EligibilityRequestSchema) -> EligibilityRes
     Uses EU261/2004 regulations for compensation calculation.
 
     Args:
-        request: Flight details for eligibility check
+        request: FastAPI request object (for rate limiting)
+        data: Flight details for eligibility check
 
     Returns:
         Eligibility result with calculated compensation amount
@@ -83,13 +86,13 @@ async def check_eligibility(request: EligibilityRequestSchema) -> EligibilityRes
     try:
         # Determine airports for distance calculation
         # If flights list is provided (multi-leg), use Origin of first and Destination of last
-        departure_iata = request.departure_airport.upper()
-        arrival_iata = request.arrival_airport.upper()
-        distance_to_use = request.distance_km
+        departure_iata = data.departure_airport.upper()
+        arrival_iata = data.arrival_airport.upper()
+        distance_to_use = data.distance_km
         
-        if request.flights and len(request.flights) > 0:
-            departure_iata = request.flights[0].departure_airport.upper()
-            arrival_iata = request.flights[-1].arrival_airport.upper()
+        if data.flights and len(data.flights) > 0:
+            departure_iata = data.flights[0].departure_airport.upper()
+            arrival_iata = data.flights[-1].arrival_airport.upper()
             # Force recalculation of distance for multi-leg to ensure Great Circle rule (Origin -> Final)
             # as frontend might have calculated sum of legs or single leg distance
             distance_to_use = None
@@ -97,8 +100,8 @@ async def check_eligibility(request: EligibilityRequestSchema) -> EligibilityRes
         result = await CompensationService.calculate_compensation(
             departure_airport=departure_iata,
             arrival_airport=arrival_iata,
-            delay_hours=request.delay_hours,
-            incident_type=request.incident_type,
+            delay_hours=data.delay_hours,
+            incident_type=data.incident_type,
             distance_km=distance_to_use,  # Use API-provided distance if available
             use_api=True  # Enable AeroDataBox API for any airport
         )
@@ -116,7 +119,7 @@ async def check_eligibility(request: EligibilityRequestSchema) -> EligibilityRes
         return EligibilityResponseSchema(
             eligible=True,
             amount=Decimal("0"),
-            distance_km=request.distance_km or 0,
+            distance_km=data.distance_km or 0,
             reason="Unable to automatically calculate compensation. Your claim will be reviewed by our team to assess eligibility based on EU261/2004 regulations.",
             requires_manual_review=True
         )

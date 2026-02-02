@@ -3,6 +3,8 @@ from fastapi import Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from app.config import config
+
 def get_real_ip(request: Request) -> str:
     """
     Get the real client IP address, accounting for Cloudflare tunnel.
@@ -28,6 +30,6 @@ def get_real_ip(request: Request) -> str:
 limiter = Limiter(
     key_func=get_real_ip,
     default_limits=["100/minute"],  # Global default
-    storage_uri="memory://",  # Use Redis in production: "redis://redis:6379"
+    storage_uri=config.REDIS_URL,  # Use Redis for shared state across processes
     headers_enabled=True  # Enable rate limit headers in responses
 )

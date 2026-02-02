@@ -5,7 +5,7 @@
  * This enables progressive file uploads and abandoned cart recovery.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Stepper } from '@/components/Stepper';
 import { useClaimFormPersistence } from '@/hooks/useLocalStorageForm';
@@ -14,13 +14,24 @@ import { isAuthenticated, getCurrentUser, type UserProfile, setAuthToken } from 
 import { getClaim } from '@/services/claims';
 import { listClaimDocuments } from '@/services/documents';
 import { toast } from 'sonner';
-import { Step1_Flight, type OCRData } from './Step1_Flight';
-import { Step2_Eligibility } from './Step2_Eligibility';
-import { Step3_Passenger } from './Step3_Passenger';
-import { Step4_Authorization } from './Step4_Authorization';
-import { Step5_Review } from './Step5_Review';
+import type { OCRData } from './Step1_Flight';
 import type { FlightStatus, EligibilityResponse, OCRResponse } from '@/types/api';
 import type { PassengerInfoForm } from '@/schemas/validation';
+
+// Lazy load steps
+const Step1_Flight = lazy(() => import('./Step1_Flight').then(m => ({ default: m.Step1_Flight })));
+const Step2_Eligibility = lazy(() => import('./Step2_Eligibility').then(m => ({ default: m.Step2_Eligibility })));
+const Step3_Passenger = lazy(() => import('./Step3_Passenger').then(m => ({ default: m.Step3_Passenger })));
+const Step4_Authorization = lazy(() => import('./Step4_Authorization').then(m => ({ default: m.Step4_Authorization })));
+const Step5_Review = lazy(() => import('./Step5_Review').then(m => ({ default: m.Step5_Review })));
+
+// Loading component for steps
+const StepLoader = () => (
+  <div className="py-20 flex flex-col items-center justify-center space-y-4">
+    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+    <p className="text-muted-foreground animate-pulse">Loading step details...</p>
+  </div>
+);
 
 const STEPS = [
   { number: 1, title: 'Flight', description: 'Flight details' },
@@ -409,68 +420,70 @@ export function ClaimFormPage() {
 
         {/* Step content */}
         <div className="mt-8">
-          {currentStep === 1 && (
-            <Step1_Flight
-              initialData={flightData}
-              onComplete={handleFlightComplete}
-              savedOcrResult={rawOcrResponse}
-              setSavedOcrResult={setRawOcrResponse}
-              savedBoardingPassFile={savedBoardingPassFile}
-              setSavedBoardingPassFile={setSavedBoardingPassFile}
-              setOcrFileId={setOcrFileId}
-            />
-          )}
+          <Suspense fallback={<StepLoader />}>
+            {currentStep === 1 && (
+              <Step1_Flight
+                initialData={flightData}
+                onComplete={handleFlightComplete}
+                savedOcrResult={rawOcrResponse}
+                setSavedOcrResult={setRawOcrResponse}
+                savedBoardingPassFile={savedBoardingPassFile}
+                setSavedBoardingPassFile={setSavedBoardingPassFile}
+                setOcrFileId={setOcrFileId}
+              />
+            )}
 
-          {currentStep === 2 && flightData && (
-            <Step2_Eligibility
-              flightData={flightData}
-              initialData={eligibilityData}
-              draftClaimId={draftClaimId}
-              boardingPassFile={savedBoardingPassFile}
-              ocrFileId={ocrFileId}
-              onComplete={handleEligibilityComplete}
-              onBack={handleBack}
-              onDraftCancelled={handleDraftCancelled}
-            />
-          )}
+            {currentStep === 2 && flightData && (
+              <Step2_Eligibility
+                flightData={flightData}
+                initialData={eligibilityData}
+                draftClaimId={draftClaimId}
+                boardingPassFile={savedBoardingPassFile}
+                ocrFileId={ocrFileId}
+                onComplete={handleEligibilityComplete}
+                onBack={handleBack}
+                onDraftCancelled={handleDraftCancelled}
+              />
+            )}
 
-          {currentStep === 3 && flightData && eligibilityData && (
-            <Step3_Passenger
-              flightData={flightData}
-              eligibilityData={eligibilityData}
-              initialData={passengerData}
-              initialDocuments={documents}
-              customerEmail={customerEmail}
-              userProfile={userProfile}
-              draftClaimId={draftClaimId}
-              ocrData={ocrData} // Pass OCR data for pre-filling
-              onUpdate={handlePassengerDataChange}
-              onComplete={handlePassengerComplete}
-              onBack={handleBack}
-            />
-          )}
+            {currentStep === 3 && flightData && eligibilityData && (
+              <Step3_Passenger
+                flightData={flightData}
+                eligibilityData={eligibilityData}
+                initialData={passengerData}
+                initialDocuments={documents}
+                customerEmail={customerEmail}
+                userProfile={userProfile}
+                draftClaimId={draftClaimId}
+                ocrData={ocrData} // Pass OCR data for pre-filling
+                onUpdate={handlePassengerDataChange}
+                onComplete={handlePassengerComplete}
+                onBack={handleBack}
+              />
+            )}
 
-          {currentStep === 4 && flightData && passengerData && (
-            <Step4_Authorization
-              flightData={flightData}
-              passengerData={passengerData}
-              claimId={draftClaimId}
-              onComplete={handleAuthorizationComplete}
-              onBack={handleBack}
-            />
-          )}
+            {currentStep === 4 && flightData && passengerData && (
+              <Step4_Authorization
+                flightData={flightData}
+                passengerData={passengerData}
+                claimId={draftClaimId}
+                onComplete={handleAuthorizationComplete}
+                onBack={handleBack}
+              />
+            )}
 
-          {currentStep === 5 && flightData && eligibilityData && passengerData && (
-            <Step5_Review
-              flightData={flightData}
-              eligibilityData={eligibilityData}
-              passengerData={passengerData}
-              documents={documents}
-              draftClaimId={draftClaimId}
-              onComplete={handleSubmitComplete}
-              onBack={handleBack}
-            />
-          )}
+            {currentStep === 5 && flightData && eligibilityData && passengerData && (
+              <Step5_Review
+                flightData={flightData}
+                eligibilityData={eligibilityData}
+                passengerData={passengerData}
+                documents={documents}
+                draftClaimId={draftClaimId}
+                onComplete={handleSubmitComplete}
+                onBack={handleBack}
+              />
+            )}
+          </Suspense>
         </div>
       </div>
     </div>

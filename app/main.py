@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+import redis
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -14,6 +15,7 @@ from app.routers import health, customers, claims, files, admin_claims, admin_fi
 from app.exceptions import setup_exception_handlers
 from app.config import get_config
 from app.dependencies.rate_limit import limiter
+from app.middleware.file_security import FileSecurityMiddleware, FileContentSecurityMiddleware
 
 # Get configuration
 config = get_config()
@@ -21,6 +23,9 @@ config = get_config()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Create Redis client for middleware
+redis_client = redis.from_url(config.REDIS_URL, decode_responses=True)
 
 
 @asynccontextmanager
@@ -85,6 +90,10 @@ app.add_middleware(
 
 # Setup exception handlers
 setup_exception_handlers(app)
+
+# Add file security middleware
+app.add_middleware(FileSecurityMiddleware, redis_client=redis_client)
+app.add_middleware(FileContentSecurityMiddleware)
 
 # Add security headers middleware including CSP
 @app.middleware("http")

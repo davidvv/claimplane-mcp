@@ -3,7 +3,7 @@
  * Displays paginated list of claims with filters
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { StatusBadge } from './StatusBadge';
@@ -21,6 +21,120 @@ interface ClaimsTableProps {
   onFiltersChange: (filters: any) => void;
   isLoading?: boolean;
 }
+
+const formatCurrency = (amount: string | null) => {
+  if (!amount) return '—';
+  return `€${parseFloat(amount).toFixed(0)}`;
+};
+
+const calculateDaysSince = (dateString: string): number => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - date.getTime());
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
+// Extracted and memoized row component for better performance with large lists
+const ClaimsTableRow = memo(({ 
+  claim, 
+  isSelected, 
+  onSelect, 
+  onClick 
+}: { 
+  claim: ClaimListItem; 
+  isSelected: boolean; 
+  onSelect: (id: string, checked: boolean) => void;
+  onClick: () => void;
+}) => (
+  <tr
+    className="hover:bg-muted/50 cursor-pointer transition-colors"
+    onClick={onClick}
+  >
+    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+      <input
+        type="checkbox"
+        className="rounded border-gray-300"
+        checked={isSelected}
+        onChange={(e) => onSelect(claim.id, e.target.checked)}
+      />
+    </td>
+    <td className="px-3 py-3">
+      <div className="flex flex-col">
+        <span className="font-medium text-sm truncate max-w-[120px]">
+          {claim.customer.first_name} {claim.customer.last_name}
+        </span>
+        <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+          {claim.customer.email}
+        </span>
+      </div>
+    </td>
+    <td className="px-3 py-3">
+      <div className="flex flex-col">
+        <span className="font-medium text-sm">{claim.flight_number}</span>
+        <span className="text-xs text-muted-foreground truncate max-w-[80px]">{claim.airline}</span>
+      </div>
+    </td>
+    <td className="px-3 py-3">
+      <div className="text-sm">
+        {claim.departure_airport} → {claim.arrival_airport}
+      </div>
+    </td>
+    <td className="px-3 py-3">
+      <span className="text-sm capitalize truncate max-w-[100px] block">
+        {claim.incident_type.replace(/_/g, ' ')}
+      </span>
+    </td>
+    <td className="px-3 py-3">
+      {claim.assignee ? (
+        <div className="flex flex-col">
+          <span className="font-medium text-sm truncate max-w-[100px]">
+            {claim.assignee.first_name}
+          </span>
+        </div>
+      ) : (
+        <span className="text-sm text-muted-foreground italic">—</span>
+      )}
+    </td>
+    <td className="px-3 py-3">
+      <StatusBadge status={claim.status} />
+    </td>
+    <td className="px-3 py-3">
+      <span className="font-medium text-sm">
+        {formatCurrency(claim.calculated_compensation)}
+      </span>
+    </td>
+    <td className="px-3 py-3">
+      <span className="text-sm text-muted-foreground">
+        {format(new Date(claim.submitted_at), 'MMM d')}
+      </span>
+    </td>
+    <td className="px-3 py-3">
+      <span className="text-sm font-medium">
+        {calculateDaysSince(claim.submitted_at)}d
+      </span>
+    </td>
+    <td className="px-3 py-3">
+      <div className="flex items-center gap-1 text-sm">
+        <span className="text-muted-foreground">{claim.file_count}</span>
+      </div>
+    </td>
+    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+      >
+        View
+      </Button>
+    </td>
+  </tr>
+));
+
+ClaimsTableRow.displayName = 'ClaimsTableRow';
 
 export function ClaimsTable({ claims, total, filters, onFiltersChange, isLoading }: ClaimsTableProps) {
   const navigate = useNavigate();
@@ -114,19 +228,6 @@ export function ClaimsTable({ claims, total, filters, onFiltersChange, isLoading
     } finally {
       setIsBulkAssigning(false);
     }
-  };
-
-  const formatCurrency = (amount: string | null) => {
-    if (!amount) return '—';
-    return `€${parseFloat(amount).toFixed(0)}`;
-  };
-
-  const calculateDaysSince = (dateString: string): number => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
   };
 
   return (
@@ -266,92 +367,13 @@ export function ClaimsTable({ claims, total, filters, onFiltersChange, isLoading
                 </tr>
               ) : (
                 claims.map((claim) => (
-                  <tr
+                  <ClaimsTableRow
                     key={claim.id}
-                    className="hover:bg-muted/50 cursor-pointer transition-colors"
+                    claim={claim}
+                    isSelected={selectedClaimIds.includes(claim.id)}
+                    onSelect={handleSelectClaim}
                     onClick={() => navigate(`/panel/claims/${claim.id}`)}
-                  >
-                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300"
-                        checked={selectedClaimIds.includes(claim.id)}
-                        onChange={(e) => handleSelectClaim(claim.id, e.target.checked)}
-                      />
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm truncate max-w-[120px]">
-                          {claim.customer.first_name} {claim.customer.last_name}
-                        </span>
-                        <span className="text-xs text-muted-foreground truncate max-w-[120px]">
-                          {claim.customer.email}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm">{claim.flight_number}</span>
-                        <span className="text-xs text-muted-foreground truncate max-w-[80px]">{claim.airline}</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="text-sm">
-                        {claim.departure_airport} → {claim.arrival_airport}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="text-sm capitalize truncate max-w-[100px] block">
-                        {claim.incident_type.replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      {claim.assignee ? (
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm truncate max-w-[100px]">
-                            {claim.assignee.first_name}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground italic">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-3">
-                      <StatusBadge status={claim.status} />
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="font-medium text-sm">
-                        {formatCurrency(claim.calculated_compensation)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="text-sm text-muted-foreground">
-                        {format(new Date(claim.submitted_at), 'MMM d')}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="text-sm font-medium">
-                        {calculateDaysSince(claim.submitted_at)}d
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-1 text-sm">
-                        <span className="text-muted-foreground">{claim.file_count}</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/panel/claims/${claim.id}`);
-                        }}
-                      >
-                        View
-                      </Button>
-                    </td>
-                  </tr>
+                  />
                 ))
               )}
             </tbody>

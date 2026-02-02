@@ -1,7 +1,10 @@
-import { useRef, useState, useEffect } from 'react';
-import SignatureCanvas from 'react-signature-canvas';
+import { useRef, useState, useEffect, lazy, Suspense } from 'react';
+import type SignatureCanvasType from 'react-signature-canvas';
 import { Button } from '@/components/ui/Button';
 import { Eraser } from 'lucide-react';
+
+// Lazy load SignatureCanvas to reduce initial bundle size
+const SignatureCanvas = lazy(() => import('react-signature-canvas'));
 
 interface SignaturePadProps {
   onSignatureChange: (dataUrl: string | null) => void;
@@ -16,7 +19,7 @@ export function SignaturePad({
   height,
   className 
 }: SignaturePadProps) {
-  const sigPadRef = useRef<SignatureCanvas>(null);
+  const sigPadRef = useRef<SignatureCanvasType>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: width || 400, height: height || 200 });
 
@@ -72,21 +75,23 @@ export function SignaturePad({
     <div className={`flex flex-col gap-2 ${className}`}>
       <div 
         ref={containerRef}
-        className="border-2 border-dashed border-input rounded-md bg-white hover:border-primary/50 transition-colors"
+        className="border-2 border-dashed border-input rounded-md bg-white hover:border-primary/50 transition-colors flex items-center justify-center overflow-hidden"
         style={{ height: canvasDimensions.height }}
       >
-        <SignatureCanvas
-          ref={sigPadRef}
-          penColor="black"
-          backgroundColor="white"
-          canvasProps={{
-            width: canvasDimensions.width,
-            height: canvasDimensions.height,
-            className: 'signature-canvas w-full h-full rounded-md'
-          }}
-          onBegin={handleBegin}
-          onEnd={handleEnd}
-        />
+        <Suspense fallback={<div className="text-sm text-muted-foreground">Loading signature pad...</div>}>
+          <SignatureCanvas
+            ref={sigPadRef}
+            penColor="black"
+            backgroundColor="white"
+            canvasProps={{
+              width: canvasDimensions.width,
+              height: canvasDimensions.height,
+              className: 'signature-canvas w-full h-full rounded-md'
+            }}
+            onBegin={handleBegin}
+            onEnd={handleEnd}
+          />
+        </Suspense>
       </div>
       
       <div className="flex justify-between items-center text-xs text-muted-foreground">

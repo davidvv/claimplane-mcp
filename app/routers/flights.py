@@ -9,6 +9,7 @@ import logging
 
 from app.database import get_db
 from app.config import config
+from app.dependencies.rate_limit import limiter
 from app.schemas.flight_schemas import (
     AirportSearchRequestSchema,
     AirportSearchResponseSchema,
@@ -54,7 +55,9 @@ class FlightStatusResponse(BaseModel):
 
 
 @router.get("/status/{flight_number}")
+@limiter.limit("10/minute")
 async def get_flight_status(
+    request: Request,
     flight_number: str,
     date: str = Query(..., description="Flight date in YYYY-MM-DD format"),
     refresh: bool = Query(False, description="Force refresh from cache (bypasses cache)"),
@@ -423,7 +426,9 @@ def _parse_aerodatabox_response(api_response: dict, flight_number: str, date: st
 
 
 @router.get("/airports/search", response_model=AirportSearchResponseSchema)
+@limiter.limit("20/minute")
 async def search_airports(
+    request: Request,
     query: str = Query(..., min_length=2, max_length=50, description="Search query (IATA code, city, or airport name)"),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of results to return")
 ) -> AirportSearchResponseSchema:
@@ -503,13 +508,14 @@ async def search_airports(
 
 
 @router.get("/search", response_model=RouteSearchResponseSchema)
+@limiter.limit("10/minute")
 async def search_flights_by_route(
+    request: Request,
     from_: str = Query(..., alias="from", min_length=3, max_length=3, description="Departure airport IATA code"),
     to: str = Query(..., min_length=3, max_length=3, description="Arrival airport IATA code"),
     date: str = Query(..., description="Flight date in YYYY-MM-DD format"),
     time: Optional[str] = Query(None, description="Approximate time (morning/afternoon/evening or HH:MM)"),
     force_refresh: bool = Query(False, description="Force API call (bypasses cache)"),
-    request: Request = None,
     db: AsyncSession = Depends(get_db)
 ) -> RouteSearchResponseSchema:
     """

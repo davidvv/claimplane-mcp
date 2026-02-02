@@ -32,46 +32,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-# Simple in-memory rate limiter as fallback since slowapi isn't working correctly
-import time
-from collections import defaultdict
-
-rate_limit_store = defaultdict(lambda: {"count": 0, "reset_time": 0})
-
-def simple_rate_limit(request: Request, limit: int, window_seconds: int):
-    """Simple rate limiter implementation"""
-    # Get IP address using Cloudflare headers if available
-    cf_ip = request.headers.get("CF-Connecting-IP")
-    if cf_ip:
-        client_ip = cf_ip
-    else:
-        forwarded_for = request.headers.get("X-Forwarded-For")
-        if forwarded_for:
-            client_ip = forwarded_for.split(",")[0].strip()
-        else:
-            client_ip = request.client.host if request.client else "unknown"
-
-    # Create key for this endpoint and client
-    endpoint = request.url.path
-    key = f"{client_ip}:{endpoint}"
-
-    now = time.time()
-    record = rate_limit_store[key]
-
-    # Reset counter if window has passed
-    if now >= record["reset_time"]:
-        record["count"] = 0
-        record["reset_time"] = now + window_seconds
-
-    # Check limit
-    if record["count"] >= limit:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Rate limit exceeded: {limit} requests per {window_seconds} seconds"
-        )
-
-    # Increment counter
-    record["count"] += 1
+# Removed manual fallback in favor of Redis-based slowapi Limiter
 
 
 def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
@@ -134,6 +95,7 @@ def clear_auth_cookies(response: Response):
     summary="Register a new user",
     description="Create a new user account with email and password. Returns user info and authentication tokens."
 )
+@limiter.limit("3/hour")
 async def register(
     data: UserRegisterSchema,
     request: Request,
@@ -152,9 +114,6 @@ async def register(
 
     Returns user information and authentication tokens.
     """
-    # Apply rate limit: 3 requests per hour
-    simple_rate_limit(request, limit=3, window_seconds=3600)
-
     try:
         # Register user
         customer = await AuthService.register_user(
@@ -226,6 +185,7 @@ async def register(
     summary="Login with email and password",
     description="Authenticate with email and password. Returns user info and authentication tokens."
 )
+@limiter.limit("5/minute")
 async def login(
     data: UserLoginSchema,
     request: Request,
@@ -241,9 +201,6 @@ async def login(
 
     Returns user information and authentication tokens.
     """
-    # Apply rate limit: 5 requests per minute
-    simple_rate_limit(request, limit=5, window_seconds=60)
-
     # Authenticate user
     customer = await AuthService.login_user(
         session=session,
@@ -579,6 +536,7 @@ async def verify_magic_link(
     summary="Request password reset",
     description="Send a password reset email to the user."
 )
+@limiter.limit("3/15 minutes")
 async def request_password_reset(
     data: PasswordResetRequestSchema,
     request: Request,
@@ -593,8 +551,6 @@ async def request_password_reset(
     Sends a password reset email if the email exists. Always returns success
     to prevent email enumeration attacks.
     """
-    # Apply rate limit: 3 requests per 15 minutes
-    simple_rate_limit(request, limit=3, window_seconds=900)
     # Get client info
     ip_address, user_agent = get_client_info(request)
 

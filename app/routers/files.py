@@ -7,7 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File,
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import config
 from app.database import get_db
+from app.dependencies.rate_limit import limiter
 from app.models import Customer, Claim
 from app.repositories import ClaimRepository
 from app.schemas import (
@@ -58,7 +60,9 @@ async def verify_file_access(file_info, current_user: Customer) -> None:
 
 
 @router.post("/upload", response_model=FileResponseSchema, status_code=status.HTTP_201_CREATED)
+@limiter.limit(config.RATE_LIMIT_UPLOAD)
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     claim_id: str = Form(...),
     document_type: str = Form(...),
@@ -256,7 +260,9 @@ async def get_file_info(
 
 
 @router.get("/{file_id}/download")
+@limiter.limit(config.RATE_LIMIT_DOWNLOAD)
 async def download_file(
+    request: Request,
     file_id: str,
     current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)

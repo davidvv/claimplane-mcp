@@ -31,6 +31,7 @@ from app.services.file_service import FileService, get_file_service
 from app.services.claim_draft_service import ClaimDraftService
 from app.tasks.claim_tasks import send_claim_submitted_email
 from app.config import config
+from app.dependencies.rate_limit import limiter
 from app.dependencies.auth import get_current_user, get_optional_current_user, get_current_user_with_claim_access
 from app.utils.db_encryption import generate_blind_index
 
@@ -79,6 +80,7 @@ def verify_claim_access(claim: Claim, current_user: Customer, token_claim_id: Op
 
 
 @router.post("/", response_model=ClaimResponseSchema, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/hour")
 async def create_claim(
     claim_data: ClaimCreateSchema,
     request: Request,
@@ -144,6 +146,7 @@ async def create_claim(
 
 
 @router.post("/draft", response_model=ClaimDraftResponseSchema, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/hour")
 async def create_draft_claim(
     draft_data: ClaimDraftSchema,
     request: Request,
@@ -193,6 +196,7 @@ async def create_draft_claim(
 
 
 @router.post("/submit", response_model=ClaimSubmitResponseSchema, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/hour")
 async def submit_claim_with_customer(
     claim_request: ClaimRequestSchema,
     request: Request,
@@ -583,7 +587,9 @@ async def list_claim_documents(
 
 
 @router.post("/ocr-boarding-pass", status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")
 async def extract_boarding_pass_data(
+    request: Request,
     file: UploadFile = File(...),
     current_user: Customer = Depends(get_optional_current_user),
     db: AsyncSession = Depends(get_db)

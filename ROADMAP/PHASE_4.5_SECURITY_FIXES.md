@@ -103,25 +103,30 @@ Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deplo
 
 #### 4.5.5 Missing Rate Limiting - CVSS 7.3
 **Risk**: Brute force attacks, account enumeration
-**Status**: ✅ **FIXED** (2025-12-07)
+**Status**: ✅ **COMPLETED** (2026-02-02)
 
-**Solution Implemented**: ✅ **Custom in-memory rate limiter with Cloudflare support**
+**Solution Implemented**: ✅ **Redis-based comprehensive rate limiting with Cloudflare support**
 
 **Implementation Details**:
-- Created custom `simple_rate_limit()` function in `app/routers/auth.py`
-  - Reads CF-Connecting-IP header (Cloudflare's real client IP)
-  - Falls back to X-Forwarded-For, then direct IP
-  - Fixed window rate limiting (in-memory, can be upgraded to Redis)
-  - Returns HTTP 429 when rate limit exceeded
-- Applied rate limits to all critical auth endpoints
-- Tested successfully with 7 sequential requests (5 allowed, 2 blocked)
+- Upgraded to Redis-based `slowapi` Limiter for shared state across worker processes.
+- Unified IP detection supporting `CF-Connecting-IP` (Cloudflare), `X-Forwarded-For`, and `X-Real-IP`.
+- Applied specific rate limits to all critical endpoints:
+  - Auth: Register (3/hour), Login (5/minute), Password Reset (3/15min)
+  - Flights: Status lookup (10/minute), Search (10/minute), Airport search (20/minute)
+  - Eligibility: Public check (20/minute)
+  - Claims: Create (5/hour), Submit (5/hour), OCR extraction (5/minute)
+  - Files: Upload (10/minute), Download (100/minute)
+- Enabled `FileSecurityMiddleware` for additional hourly limits and suspicious activity detection.
 
 **Tasks**:
-- [x] Choose rate limiting approach (custom implementation)
+- [x] Choose rate limiting approach (Redis-based slowapi)
 - [x] Implement rate limits on `/auth/login` (5/minute)
 - [x] Implement rate limits on `/auth/register` (3/hour)
 - [x] Implement rate limits on `/auth/password/reset-request` (3/15minutes)
-- [x] Test rate limits (verified: requests 1-5 allowed, 6-7 blocked with HTTP 429)
+- [x] Implement rate limits on flight search and status (10/minute)
+- [x] Implement rate limits on claim submission (5/hour)
+- [x] Implement rate limits on file uploads/downloads
+- [x] Test rate limits across multiple processes (Redis-verified)
 
 #### 4.5.6 Missing HTTPS Configuration - CVSS 7.4
 **Risk**: Man-in-the-middle attacks, credential interception

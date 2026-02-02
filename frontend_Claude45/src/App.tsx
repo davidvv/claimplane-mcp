@@ -4,29 +4,37 @@
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
+import { lazy, Suspense } from 'react';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuthSync } from './hooks/useAuthSync';
 import { ScrollToTop } from './components/ScrollToTop';
 
-// Pages
-import { Home } from './pages/Home';
-import { ClaimFormPage } from './pages/ClaimForm/ClaimFormPage';
-import { Status } from './pages/Status';
-import { Success } from './pages/Success';
-import { Auth } from './pages/Auth';
-import { MagicLinkPage } from './pages/Auth/MagicLinkPage';
-import { MyClaims } from './pages/MyClaims';
-import { AccountSettings } from './pages/AccountSettings';
-import { TermsAndConditions } from './pages/TermsAndConditions';
-import { PrivacyPolicy } from './pages/PrivacyPolicy';
-import { About } from './pages/About';
-import { Contact } from './pages/Contact';
+// Lazy load Pages
+const Home = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })));
+const ClaimFormPage = lazy(() => import('./pages/ClaimForm/ClaimFormPage').then(m => ({ default: m.ClaimFormPage })));
+const Status = lazy(() => import('./pages/Status').then(m => ({ default: m.Status })));
+const Success = lazy(() => import('./pages/Success').then(m => ({ default: m.Success })));
+const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
+const MagicLinkPage = lazy(() => import('./pages/Auth/MagicLinkPage').then(m => ({ default: m.MagicLinkPage })));
+const MyClaims = lazy(() => import('./pages/MyClaims').then(m => ({ default: m.MyClaims })));
+const AccountSettings = lazy(() => import('./pages/AccountSettings').then(m => ({ default: m.AccountSettings })));
+const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions').then(m => ({ default: m.TermsAndConditions })));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
+const About = lazy(() => import('./pages/About').then(m => ({ default: m.About })));
+const Contact = lazy(() => import('./pages/Contact').then(m => ({ default: m.Contact })));
 
-// Admin Pages
-import { AdminDashboard } from './pages/Admin/AdminDashboard';
-import { ClaimDetailPage } from './pages/Admin/ClaimDetailPage';
-import { DeletionRequests } from './pages/Admin/DeletionRequests';
+// Lazy load Admin Pages
+const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const ClaimDetailPage = lazy(() => import('./pages/Admin/ClaimDetailPage').then(m => ({ default: m.ClaimDetailPage })));
+const DeletionRequests = lazy(() => import('./pages/Admin/DeletionRequests').then(m => ({ default: m.DeletionRequests })));
+
+// Loading component for Suspense
+const PageLoader = () => (
+  <div className="min-h-[60vh] flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 function App() {
   // Validate authentication state on app load
@@ -48,27 +56,29 @@ function App() {
       <ScrollToTop />
       <ErrorBoundary>
         <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/claim/new" element={<ClaimFormPage />} />
-            <Route path="/claim/success" element={<Success />} />
-            <Route path="/status" element={<Status />} />
-            <Route path="/my-claims" element={<MyClaims />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/auth/magic-link" element={<MagicLinkPage />} />
-            <Route path="/account/settings" element={<AccountSettings />} />
-            <Route path="/terms" element={<TermsAndConditions />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/claim/new" element={<ClaimFormPage />} />
+              <Route path="/claim/success" element={<Success />} />
+              <Route path="/status" element={<Status />} />
+              <Route path="/my-claims" element={<MyClaims />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/magic-link" element={<MagicLinkPage />} />
+              <Route path="/account/settings" element={<AccountSettings />} />
+              <Route path="/terms" element={<TermsAndConditions />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
 
-            {/* Admin Panel Routes (non-obvious path for security) */}
-            <Route path="/panel/dashboard" element={<AdminDashboard />} />
-            <Route path="/panel/claims/:claimId" element={<ClaimDetailPage />} />
-            <Route path="/panel/deletion-requests" element={<DeletionRequests />} />
+              {/* Admin Panel Routes (non-obvious path for security) */}
+              <Route path="/panel/dashboard" element={<AdminDashboard />} />
+              <Route path="/panel/claims/:claimId" element={<ClaimDetailPage />} />
+              <Route path="/panel/deletion-requests" element={<DeletionRequests />} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </Layout>
       </ErrorBoundary>
 

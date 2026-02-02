@@ -60,6 +60,7 @@ For significant work or feature implementation, you may use the `openproject-tas
   - Configuration changes
   - Any task completion or milestone
   Use `rocketchat_send_message` tool with a concise summary of what was accomplished.
+  **IMPORTANT**: Send messages to `@david` (David's RocketChat username) - this ensures David receives notifications on all devices.
 
 
 ## Code Style

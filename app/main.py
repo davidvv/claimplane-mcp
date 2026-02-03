@@ -15,6 +15,7 @@ from app.routers import health, customers, claims, files, admin_claims, admin_fi
 from app.exceptions import setup_exception_handlers
 from app.config import get_config
 from app.dependencies.rate_limit import limiter
+# Import middleware classes - use direct import to avoid file/directory conflict
 from app.middleware.file_security import FileSecurityMiddleware, FileContentSecurityMiddleware
 
 # Get configuration

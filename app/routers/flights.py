@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, HTTPException, Query, Depends, Request
+from fastapi import APIRouter, HTTPException, Query, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field, ValidationError
 import logging
@@ -58,6 +58,7 @@ class FlightStatusResponse(BaseModel):
 @limiter.limit("10/minute")
 async def get_flight_status(
     request: Request,
+    response: Response,
     flight_number: str,
     date: str = Query(..., description="Flight date in YYYY-MM-DD format"),
     refresh: bool = Query(False, description="Force refresh from cache (bypasses cache)"),
@@ -429,6 +430,7 @@ def _parse_aerodatabox_response(api_response: dict, flight_number: str, date: st
 @limiter.limit("20/minute")
 async def search_airports(
     request: Request,
+    response: Response,
     query: str = Query(..., min_length=2, max_length=50, description="Search query (IATA code, city, or airport name)"),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of results to return")
 ) -> AirportSearchResponseSchema:
@@ -511,6 +513,7 @@ async def search_airports(
 @limiter.limit("10/minute")
 async def search_flights_by_route(
     request: Request,
+    response: Response,
     from_: str = Query(..., alias="from", min_length=3, max_length=3, description="Departure airport IATA code"),
     to: str = Query(..., min_length=3, max_length=3, description="Arrival airport IATA code"),
     date: str = Query(..., description="Flight date in YYYY-MM-DD format"),

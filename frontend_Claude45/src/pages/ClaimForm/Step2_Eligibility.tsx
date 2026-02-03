@@ -236,6 +236,7 @@ export function Step2_Eligibility({
                   id="email"
                   type="email"
                   placeholder="your@email.com"
+                  autoComplete="email"
                   className="pl-10"
                   {...register('email')}
                 />

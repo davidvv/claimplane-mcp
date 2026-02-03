@@ -433,6 +433,8 @@ export function Step3_Passenger({
                     )}
                   </div>
                   <Input
+                    id={`passengers.${index}.firstName`}
+                    autoComplete={`section-passenger${index} given-name`}
                     {...register(`passengers.${index}.firstName`)}
                     placeholder="e.g. John"
                   />
@@ -449,6 +451,8 @@ export function Step3_Passenger({
                     <Label htmlFor={`passengers.${index}.lastName`}>Last Name *</Label>
                   </div>
                   <Input
+                    id={`passengers.${index}.lastName`}
+                    autoComplete={`section-passenger${index} family-name`}
                     {...register(`passengers.${index}.lastName`)}
                     placeholder="e.g. Doe"
                   />
@@ -463,6 +467,7 @@ export function Step3_Passenger({
                 <div className="space-y-2">
                   <Label htmlFor={`passengers.${index}.ticketNumber`}>Ticket Number (Optional)</Label>
                   <Input
+                    id={`passengers.${index}.ticketNumber`}
                     {...register(`passengers.${index}.ticketNumber`)}
                     placeholder="13-digit number"
                   />
@@ -510,6 +515,7 @@ export function Step3_Passenger({
             <div className="space-y-2">
               <Label htmlFor="bookingReference">Booking Reference (Group)</Label>
               <Input
+                id="bookingReference"
                 {...register('bookingReference')}
                 placeholder="e.g. ABC123"
               />

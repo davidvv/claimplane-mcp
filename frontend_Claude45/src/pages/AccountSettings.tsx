@@ -334,6 +334,7 @@ export function AccountSettings() {
                   <input
                     id="firstName"
                     type="text"
+                    autoComplete="given-name"
                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="First name"
                     value={profileForm.first_name}
@@ -348,6 +349,7 @@ export function AccountSettings() {
                   <input
                     id="lastName"
                     type="text"
+                    autoComplete="family-name"
                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Last name"
                     value={profileForm.last_name}
@@ -367,6 +369,7 @@ export function AccountSettings() {
                   <input
                     id="phone"
                     type="tel"
+                    autoComplete="tel"
                     className="w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="+1 234 567 8900"
                     value={profileForm.phone}
@@ -390,6 +393,7 @@ export function AccountSettings() {
                     <input
                       id="street"
                       type="text"
+                      autoComplete="street-address"
                       className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="123 Main Street"
                       value={profileForm.street}
@@ -405,6 +409,7 @@ export function AccountSettings() {
                       <input
                         id="city"
                         type="text"
+                        autoComplete="address-level2"
                         className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="New York"
                         value={profileForm.city}
@@ -418,6 +423,7 @@ export function AccountSettings() {
                       <input
                         id="postal_code"
                         type="text"
+                        autoComplete="postal-code"
                         className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="10001"
                         value={profileForm.postal_code}
@@ -431,6 +437,7 @@ export function AccountSettings() {
                       <input
                         id="country"
                         type="text"
+                        autoComplete="country-name"
                         className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="United States"
                         value={profileForm.country}

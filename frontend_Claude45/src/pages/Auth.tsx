@@ -109,6 +109,7 @@ export function Auth() {
                     id="email"
                     type="email"
                     placeholder="your@email.com"
+                    autoComplete="email"
                     className="pl-11 h-12 text-base"
                     {...form.register('email')}
                     disabled={isLoading}

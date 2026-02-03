@@ -3,7 +3,7 @@ import uuid
 from typing import List, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request, Response
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -63,6 +63,7 @@ async def verify_file_access(file_info, current_user: Customer) -> None:
 @limiter.limit(config.RATE_LIMIT_UPLOAD)
 async def upload_file(
     request: Request,
+    response: Response,
     file: UploadFile = File(...),
     claim_id: str = Form(...),
     document_type: str = Form(...),
@@ -263,6 +264,7 @@ async def get_file_info(
 @limiter.limit(config.RATE_LIMIT_DOWNLOAD)
 async def download_file(
     request: Request,
+    response: Response,
     file_id: str,
     current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)

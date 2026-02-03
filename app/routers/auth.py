@@ -540,6 +540,7 @@ async def verify_magic_link(
 async def request_password_reset(
     data: PasswordResetRequestSchema,
     request: Request,
+    response: Response,
     session: AsyncSession = Depends(get_db)
 ):
     """

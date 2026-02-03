@@ -422,6 +422,60 @@ Use this checklist for **EVERY** commit:
 - [ ] Created annotated tag with descriptive message
 - [ ] Listed all key features in tag message
 
+### Step 8: Push to GitHub
+
+```bash
+# Push commits
+git push origin MVP
+
+# Push tags (if created)
+git push origin v0.X.0
+```
+
+---
+
+## Checklist
+
+Use this checklist for **EVERY** commit:
+
+### ✅ Step 1: Roadmap Check (MANDATORY FIRST)
+- [ ] Reviewed what I changed and determined if roadmap needs updating
+- [ ] **IF PHASE COMPLETE**: Updated ROADMAP.md with phase completion (Section 1.1)
+- [ ] **IF SIGNIFICANT PROGRESS**: Updated ROADMAP.md with progress (Section 1.2)
+- [ ] **IF BUG FIX**: Confirmed no roadmap update needed
+- [ ] Updated "NEXT STEPS" section if applicable
+- [ ] Updated version number in ROADMAP header if phase complete
+
+### ✅ Step 1.5: Time Tracking Update (MANDATORY FOR NOTABLE WORK)
+- [ ] Reviewed if work requires time tracking entry
+- [ ] **IF SIGNIFICANT WORK**: Updated time_tracking_david.md with:
+  - [ ] Date and work description
+  - [ ] Key tasks and commits
+  - [ ] Estimated time spent
+- [ ] **IF SIGNIFICANT WORK**: Updated time_tracking_summary.md with:
+  - [ ] Updated total commits
+  - [ ] Updated estimated total hours
+  - [ ] Updated date range
+
+### ✅ Step 2-3: Review & Stage
+- [ ] Reviewed all changes with `git status` and `git diff`
+- [ ] Excluded `__pycache__`, `.env`, and generated files
+- [ ] Staged ROADMAP.md if it was updated
+- [ ] Staged time_tracking files if they were updated
+- [ ] Tested changes locally (if applicable)
+
+### ✅ Step 4-5: Commit
+- [ ] Used conventional commit format (`feat`, `fix`, etc.)
+- [ ] NO Claude/Anthropic attribution
+- [ ] Included detailed description
+- [ ] Mentioned ROADMAP.md update in commit message (if updated)
+- [ ] Mentioned time_tracking update in commit message (if updated)
+
+### ✅ Step 6-7: Versioning (if phase complete)
+- [ ] Determined correct version number from VERSIONING.md
+- [ ] Created annotated tag with descriptive message
+- [ ] Listed all key features in tag message
+
 ### ✅ Step 8: Push
 - [ ] Pushed commits: `git push origin MVP`
 - [ ] Pushed tags (if created): `git push origin v0.X.0`
@@ -591,3 +645,4 @@ This skill should be followed for **ALL** commits to ensure:
 **Remember**: ROADMAP check is Step 1, time tracking is Step 1.5 - not afterthoughts!
 
 **Version**: v3.0 (2026-01-07) - Added time tracking update requirement
+

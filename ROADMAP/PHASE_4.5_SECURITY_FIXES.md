@@ -117,6 +117,7 @@ Security audit revealed CRITICAL vulnerabilities that MUST be fixed before deplo
   - Claims: Create (5/hour), Submit (5/hour), OCR extraction (5/minute)
   - Files: Upload (10/minute), Download (100/minute)
 - Enabled `FileSecurityMiddleware` for additional hourly limits and suspicious activity detection.
+- **2026-02-03 Update**: Increased global `max_requests_per_window` from 10 to 60 in `FileSecurityMiddleware` to prevent false positives from rapid SPA auto-saves and browser autofill.
 
 **Tasks**:
 - [x] Choose rate limiting approach (Redis-based slowapi)

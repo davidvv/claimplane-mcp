@@ -4,7 +4,7 @@ from uuid import UUID
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File, Form, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File, Form, Query, Response
 from sqlalchemy import select, or_, and_, bindparam, String
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -84,6 +84,7 @@ def verify_claim_access(claim: Claim, current_user: Customer, token_claim_id: Op
 async def create_claim(
     claim_data: ClaimCreateSchema,
     request: Request,
+    response: Response,
     current_user: Customer = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> ClaimResponseSchema:
@@ -150,6 +151,7 @@ async def create_claim(
 async def create_draft_claim(
     draft_data: ClaimDraftSchema,
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db)
 ) -> ClaimDraftResponseSchema:
     """Create a draft claim after eligibility check (Step 2)."""
@@ -200,6 +202,7 @@ async def create_draft_claim(
 async def submit_claim_with_customer(
     claim_request: ClaimRequestSchema,
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db)
 ) -> ClaimSubmitResponseSchema:
     """Submit a claim with customer information or finalize a draft."""
@@ -590,6 +593,7 @@ async def list_claim_documents(
 @limiter.limit("5/minute")
 async def extract_boarding_pass_data(
     request: Request,
+    response: Response,
     file: UploadFile = File(...),
     current_user: Customer = Depends(get_optional_current_user),
     db: AsyncSession = Depends(get_db)

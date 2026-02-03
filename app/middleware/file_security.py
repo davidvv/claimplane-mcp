@@ -22,7 +22,7 @@ class FileSecurityMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.redis = redis_client
         self.rate_limit_window = 60  # 1 minute
-        self.max_requests_per_window = 10
+        self.max_requests_per_window = 60
         self.max_file_uploads_per_hour = 50
         self.max_downloads_per_hour = 100
         

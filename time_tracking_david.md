@@ -1,6 +1,24 @@
 # Time Tracking - David
 
-## Latest Work (2026-02-02) - GDPR Compliance & UI/UX
+## Latest Work (2026-02-03) - Rate Limiting Optimization & Testing
+
+### Security & DX Optimization
+**Estimated Time**: 2.0 hours
+
+#### Key Tasks:
+1. **Rate Limiting UX Optimization**
+   - Performed E2E testing of all claim creation methods (Flight, Route, OCR).
+   - Identified bottleneck in global rate limiting middleware (10 req/min) due to SPA auto-save frequency.
+   - Increased global threshold to 60 req/min to accommodate rapid form filling and browser autofill.
+   - Verified fix with Florian's boarding pass OCR flow.
+   - Estimated: 1.5 hours
+
+2. **Agent Documentation Hardening**
+   - Updated `AGENTS.md` with mandatory **🛑 CRITICAL NOTIFICATION MANDATE**.
+   - Integrated notification requirement into `commit-workflow` checklist.
+   - Estimated: 0.5 hours
+
+## Previous Work (2026-02-02) - GDPR Compliance & UI/UX
 
 ### GDPR Compliance
 **Estimated Time**: 4.0 hours
@@ -13,7 +31,7 @@
    - Performed data migration to backfill consent for existing claims.
    - Estimated: 2.5 hours
 
-### Infrastructure & Legal Updates
+### Infrastructure & UI Fixes
 **Estimated Time**: 2.5 hours
 
 #### Key Tasks:
@@ -21,28 +39,18 @@
    - Implemented Redis-based rate limiting across all endpoints.
    - Added frontend code splitting and memoization.
    - Fixed missing `structlog` dependency causing app crash.
-   - Estimated: 2.0 hours
+   - Estimated: 1.5 hours
 
 2. **Legal Documents Update**
    - Fetched updated Terms & Conditions from Google Cloud via rclone.
    - Updated website content with new "Geographic Scope" section.
    - Estimated: 0.5 hours
+
+3. **Accessibility & UI Polish**
    - Implemented robust `useEffect` and `useRef` based auto-scroll
    - Added `headerOffset` for sticky header compatibility
    - Fixed mobile visibility issues where results were off-screen
-   - Estimated: 0.75 hours
-
-2. **Sonner Toast Animation Fixes** (WP #360)
-   - Removed conflicting CSS transitions and custom animations
-   - Resolved "jump twice" glitch by letting Sonner handle its own logic
-   - Improved animation smoothness during scroll operations
    - Estimated: 0.5 hours
-
-3. **Accessibility Improvements** (WP #360)
-   - Added focus management to results section after auto-scroll
-   - Ensured screen readers announce compensation results
-   - Verified keyboard navigation flow
-   - Estimated: 0.25 hours
 
 ## Previous Work (2026-01-31) - Security & Privacy Hardening
 

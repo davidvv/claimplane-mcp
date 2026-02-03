@@ -51,10 +51,16 @@ celery -A app.celery_app worker --loglevel=info  # Background tasks
 
 For significant work or feature implementation, you may use the `openproject-task-manager` skill to track progress if needed, but prioritize direct action for straightforward tasks.
 
-## Notifications
-**ALWAYS** notify David directly: `rocketchat_send_message(channel="@david", message="...")`
+## 🛑 CRITICAL NOTIFICATION MANDATE
+**NOTIFICATIONS ARE NOT OPTIONAL.** A task is **FAILED** if `rocketchat_send_message` is not called before the final summary.
 
-**❌ WRONG**: `rocketchat_send_message(channel="general", message="@david ...")`
+**IMMEDIATELY** notify @david on:
+1. ✅ **Completion**: When you finish a requested task.
+2. 🔴 **Failure**: If a build, test, or API check fails.
+3. 🔄 **State Change**: e.g., API status updates.
+
+**Format**: `rocketchat_send_message(channel="@david", message="<emoji> <Summary>")`
+**❌ NEVER** ask "Should I notify you?". **❌ NEVER** use channel "general".
 
 
 ## Code Style

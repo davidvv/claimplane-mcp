@@ -1,6 +1,6 @@
 """Eligibility check endpoints - public access."""
 from typing import Optional, List
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel, Field
 from decimal import Decimal
 
@@ -68,7 +68,7 @@ class EligibilityResponseSchema(BaseModel):
 
 @router.post("/check", response_model=EligibilityResponseSchema)
 @limiter.limit("20/minute")
-async def check_eligibility(request: Request, data: EligibilityRequestSchema) -> EligibilityResponseSchema:
+async def check_eligibility(request: Request, response: Response, data: EligibilityRequestSchema) -> EligibilityResponseSchema:
     """
     Check eligibility for flight compensation (PUBLIC ENDPOINT).
 

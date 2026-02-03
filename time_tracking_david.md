@@ -13,11 +13,20 @@
    - Performed data migration to backfill consent for existing claims.
    - Estimated: 2.5 hours
 
-### Frontend Optimization
-**Estimated Time**: 1.5 hours
+### Infrastructure & Legal Updates
+**Estimated Time**: 2.5 hours
 
 #### Key Tasks:
-1. **Auto-scroll to compensation results** (WP #360)
+1. **Security & Performance Implementation** (WP #348, #351)
+   - Implemented Redis-based rate limiting across all endpoints.
+   - Added frontend code splitting and memoization.
+   - Fixed missing `structlog` dependency causing app crash.
+   - Estimated: 2.0 hours
+
+2. **Legal Documents Update**
+   - Fetched updated Terms & Conditions from Google Cloud via rclone.
+   - Updated website content with new "Geographic Scope" section.
+   - Estimated: 0.5 hours
    - Implemented robust `useEffect` and `useRef` based auto-scroll
    - Added `headerOffset` for sticky header compatibility
    - Fixed mobile visibility issues where results were off-screen

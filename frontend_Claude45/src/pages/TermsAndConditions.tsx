@@ -9,7 +9,7 @@ export function TermsAndConditions() {
       <div className="container max-w-4xl">
         <h1 className="text-4xl font-bold mb-2">Terms and Conditions</h1>
         <p className="text-muted-foreground mb-8">
-          Last Updated: January 25, 2026
+          Last Updated: February 1, 2026
         </p>
 
         <div className="prose prose-slate dark:prose-invert max-w-none">
@@ -227,6 +227,7 @@ export function TermsAndConditions() {
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2">
               <li>You are at least 18 years of age or the age of majority in your jurisdiction</li>
+              <li>You are a legal resident of the United States</li>
               <li>You have the legal capacity to enter into binding contracts</li>
               <li>The information you provide is accurate and current</li>
             </ul>
@@ -409,37 +410,52 @@ export function TermsAndConditions() {
             </p>
           </section>
 
+          {/* Geographic Scope */}
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4">12. Geographic Scope</h2>
+            <p className="mb-4">
+              ClaimPlane's Service is currently offered only to legal residents of the United States.
+              By accessing or using the Service, you represent and warrant that you are a legal
+              resident of the United States. We do not currently extend our services to residents
+              outside the United States. If you are not a U.S. resident, please refrain from using the Service.
+            </p>
+            <p className="mb-4">
+              We may occasionally request information to verify residency. Access to the Service is
+              provided on the understanding that this eligibility requirement is met.
+            </p>
+          </section>
+
           {/* General Provisions */}
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">12. General Provisions</h2>
+            <h2 className="text-2xl font-semibold mb-4">13. General Provisions</h2>
 
-            <h3 className="text-xl font-semibold mb-3">12.1 Entire Agreement</h3>
+            <h3 className="text-xl font-semibold mb-3">13.1 Entire Agreement</h3>
             <p className="mb-4">
               These Terms, together with our Privacy Policy and any other legal notices published on the
               Service, constitute the entire agreement between you and ClaimPlane LLC regarding the Service.
             </p>
 
-            <h3 className="text-xl font-semibold mb-3">12.2 Severability</h3>
+            <h3 className="text-xl font-semibold mb-3">13.2 Severability</h3>
             <p className="mb-4">
               If any provision of these Terms is found to be invalid or unenforceable, that provision shall
               be limited or eliminated to the minimum extent necessary, and the remaining provisions shall
               remain in full force and effect.
             </p>
 
-            <h3 className="text-xl font-semibold mb-3">12.3 Waiver</h3>
+            <h3 className="text-xl font-semibold mb-3">13.3 Waiver</h3>
             <p className="mb-4">
               Our failure to enforce any right or provision of these Terms shall not constitute a waiver of
               such right or provision. Any waiver must be in writing and signed by an authorized representative
               of ClaimPlane LLC.
             </p>
 
-            <h3 className="text-xl font-semibold mb-3">12.4 Assignment</h3>
+            <h3 className="text-xl font-semibold mb-3">13.4 Assignment</h3>
             <p className="mb-4">
               You may not assign or transfer these Terms or your rights hereunder without our prior written
               consent. We may assign these Terms or any rights hereunder without restriction.
             </p>
 
-            <h3 className="text-xl font-semibold mb-3">12.5 Notices</h3>
+            <h3 className="text-xl font-semibold mb-3">13.5 Notices</h3>
             <p className="mb-4">
               All notices to you will be sent to the email address you provide during registration. Notices
               to us should be sent to:
@@ -451,14 +467,14 @@ export function TermsAndConditions() {
               <p>Address: 3436 SW 8th Pl, Cape Coral 33914</p>
             </div>
 
-            <h3 className="text-xl font-semibold mb-3">12.6 Survival</h3>
+            <h3 className="text-xl font-semibold mb-3">13.6 Survival</h3>
             <p className="mb-4">
               Provisions that by their nature should survive termination shall survive, including but not
               limited to: ownership provisions, warranty disclaimers, indemnification, limitations of liability,
               and dispute resolution provisions.
             </p>
 
-            <h3 className="text-xl font-semibold mb-3">12.7 Language</h3>
+            <h3 className="text-xl font-semibold mb-3">13.7 Language</h3>
             <p className="mb-4">
               These Terms are drafted in English. Any translations are provided for convenience only. In case
               of conflict between the English version and any translation, the English version shall prevail.
@@ -467,7 +483,7 @@ export function TermsAndConditions() {
 
           {/* Contact Information */}
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">13. Contact Information</h2>
+            <h2 className="text-2xl font-semibold mb-4">14. Contact Information</h2>
             <p className="mb-4">
               If you have any questions about these Terms, please contact us at support@claimplane.com or legal@claimplane.com.
             </p>

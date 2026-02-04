@@ -1,24 +1,34 @@
 # ClaimPlane Project - Complete Time Tracking Summary
 
 ## Project Overview
-- **Project Duration**: 2025-09-04 to 2026-02-02 (5 months)
-- **Total Commits**: 178 (177 by David, 17 by Florian)
-- **Estimated Total Time**: ~560.75-649.75 hours (added 1.5 hours)
+- **Project Duration**: 2025-09-04 to 2026-02-04 (5 months)
+- **Total Commits**: 183 (182 by David, 1 by Florian)
+- **Estimated Total Time**: ~564.25-653.25 hours (added 3.5 hours)
 - **Committers**: David (Primary Developer), Florian (Frontend Specialist)
 
 ## Team Contribution Breakdown
 
-### David's Contributions (82-85% of total time)
-- **Commits**: 176 (91.2%)
-- **Estimated Time**: 508.0-582.6 hours
-- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness & De-Cramping, File Persistence, Upload Optimization, Admin Document Viewer
+### David's Contributions (85-88% of total time)
+- **Commits**: 182 (99.4%)
+- **Estimated Time**: 511.0-587.1 hours
+- **Focus Areas**: Backend, API, Architecture, Security, Deployment, Flight Data Integration, Email Templates, OCR, Draft Logic, Frontend UX Fixes, Multi-Language Support, Mobile Responsiveness & De-Cramping, File Persistence, Upload Optimization, Admin Document Viewer, Rebranding, US Legal Strategy, Autofill Optimization
 
-### Florian's Contributions (12-15% of total time)
-- **Commits**: 17 (8.8%)
-- **Estimated Time**: 68-85 hours
-- **Focus Areas**: Frontend, UI/UX, Integration
+## Latest Update (2026-02-04) - Rebranding, Autofill & US Legal Strategy
+
+### Brand & Legal Infrastructure Implementation
+**Estimated Time**: 3.5 hours
+**Work Package**: #361 (Fix site downtime and verify frontend improvements)
+
+#### Summary:
+Completed a comprehensive brand transformation and legal pivot for the US market:
+- **Global Rebranding**: Replaced all 100+ occurrences of "EasyAirClaim" with **ClaimPlane** across the entire stack (UI, backend, docs, docker, nginx).
+- **US Legal Strategy**: Implemented the "Claim Assignment & Service Agreement" model to bypass airline anti-assignment clauses. Added DOT 2024 compliance for manual success fee reimbursement.
+- **Autofill Excellence**: Resolved iOS Safari autofill issues by implementing WHATWG 'Autofill Sections'.
+- **Performance**: Fixed an infinite saving loop in the claim form through deep-comparison data tracking in the `useAutoSave` hook.
+- **Git Infrastructure**: Updated remote origin and all local script references to the new brand naming.
 
 ## Latest Update (2026-02-02) - Security Hardening Completion & Protection Rules
+
 
 ### Security Infrastructure Enhancement
 **Estimated Time**: 1.5 hours

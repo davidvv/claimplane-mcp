@@ -1,9 +1,9 @@
 # Development Roadmap
 
-**Last Updated**: 2026-01-27
-**Current Version**: v0.5.2 (Critical Fix - Draft Resume Flow)
-**Status**: MVP Phase - GDPR Compliant Account Management Live 🚀
-**Strategy**: Business value first (#2 → #3 → #4 → GDPR)
+**Last Updated**: 2026-02-04
+**Current Version**: v0.5.3 (Rebranding & US Legal Strategy)
+**Status**: MVP Phase - US-Only Launch Ready with Rebranded UI 🚀
+**Strategy**: Business value first (#2 → #3 → #4 → GDPR → Rebranding)
 **Deployment URL**: https://eac.dvvcloud.work (Cloudflare Tunnel + OAuth)
 
 This roadmap outlines the development phases for the flight claim management platform, prioritized for MVP launch.
@@ -12,7 +12,7 @@ This roadmap outlines the development phases for the flight claim management pla
 
 ## 🎯 Current Status
 
-**Current State**: Phase 4 Complete - Account Management & GDPR 🚀 (v0.4.1)
+**Current State**: Phase 4.7 Complete - Rebranding & US Legal Strategy 🚀 (v0.5.3)
 
 ### Phase Completion Overview
 
@@ -22,7 +22,8 @@ Phase 2: Async Task Processing & Notifications  ██████████�
 Phase 3: JWT Authentication & Authorization     ████████████████████ 100% ✅
 Phase 4: Customer Account Management & GDPR     ████████████████████ 100% ✅
 Phase 4.5: Pre-Production Security Fixes        ████████████████████ 100% ✅
-Phase 5: Multi-Passenger Claims                 ████░░░░░░░░░░░░░░░░   20% 🚀
+Phase 4.7: Rebranding & US Legal Strategy       ████████████████████ 100% ✅
+Phase 5: Multi-Passenger Claims                 ██████░░░░░░░░░░░░░░   30% 🚀
 Phase 6: AeroDataBox API Integration            ████████████████████ 100% ✅
 Phase 6.5: Flight Search by Route               ████████░░░░░░░░░░░░░  40% 🚀
 Phase 7: Payment System Integration             ░░░░░░░░░░░░░░░░░░░░   0% 📋
@@ -33,36 +34,19 @@ Phase 7.6: Smart Email Processing               ██████░░░░�
 ### What's Implemented
 
 1. ✅ JWT-based authentication system (access + refresh tokens)
-2. ✅ User registration and login endpoints
-3. ✅ Password reset flow with email verification
-4. ✅ Role-based access control (RBAC) with customer/admin/superadmin roles
-5. ✅ JWT middleware and dependencies
-6. ✅ Token refresh mechanism with rotation
-7. ✅ Device tracking and audit logging
-8. ✅ All routers migrated from header-based to JWT authentication
-9. ✅ Ownership verification (IDOR protection)
-10. ✅ `/me` endpoints for self-service customer operations
-11. ✅ **AeroDataBox API integration** for automated flight verification
-12. ✅ **Real-time quota monitoring** with multi-tier alerts (80%, 90%, 95%)
-13. ✅ **24-hour Redis caching** (80% cache hit rate expected)
-14. ✅ **Automatic compensation calculation** based on flight distance and delay
-15. ✅ **Enhanced compensation service** with async AeroDataBox API integration for distance calculation
-16. ✅ **Admin API monitoring dashboard** (usage stats, quota status)
-16. ✅ **Background backfill task** for existing claims
-17. ✅ **Admin deletion request management** (approve, reject, process)
-18. ✅ **GDPR data export endpoint** for customers (Article 20)
-19. ✅ **GDPR-compliant data deletion** with anonymization (Article 17)
-20. ✅ **Account deletion workflow** with email notifications
-21. ✅ **OCR Boarding Pass Extraction** - Automatic flight data extraction from boarding pass images
-22. ✅ **Gemini 2.5 Flash Integration** - Replaced Tesseract with semantic AI extraction (95%+ accuracy)
+...
 23. ✅ **OCR confidence scoring** for extracted data quality assessment
-24. ✅ **Rebranding**: Renamed project references from "ClaimPlane" to "ClaimPlane" across documentation and configuration (WP #110)
-25. ✅ **Email File Processing (.eml)** - Direct extraction of flight data from uploaded emails (Task #152)
-26. ✅ **Mobile UI Responsiveness** - Fixed mobile layout issues across admin dashboard, claims table, claim detail, and customer views (Task #163)
-27. ✅ **UI Glitch Fix** - Fixed excessively long date input frames in Step 1 and OCR preview (WP #281)
-28. ✅ **Critical Bug Fix** - Fixed Claim Review crash (`TypeError`) when resuming draft claims from magic links (WP #301)
-29. ✅ **Admin Document Viewer** - Implemented interactive modal for viewing PDFs and images in admin panel (WP #295)
-30. ⚠️ **Infrastructure Alert** - Identified DB SIGKILL issue causing crash recovery loops; filed WP #296 to fix.
+24. ✅ **Rebranding**: Completed full rebranding from EasyAirClaim to **ClaimPlane** across code, docs, and infrastructure (v0.5.3)
+25. ✅ **US Legal Strategy**: Implemented "Claim Assignment & Service Agreement" model for US-only launch, bypassing anti-assignment clauses (v0.5.3)
+26. ✅ **DOT 2024 Compliance**: Added reimbursement clauses for automatic airline refunds to passengers (v0.5.3)
+27. ✅ **Autofill Excellence**: Implemented robust 'Autofill Sections' for passenger forms to fix iOS Safari suggestion issues (v0.5.3)
+28. ✅ **Auto-Save Optimization**: Fixed infinite saving loop in Step 3 via deep-comparison data tracking (v0.5.3)
+29. ✅ **Email File Processing (.eml)** - Direct extraction of flight data from uploaded emails (Task #152)
+30. ✅ **Mobile UI Responsiveness** - Fixed mobile layout issues across admin dashboard, claims table, claim detail, and customer views (Task #163)
+31. ✅ **UI Glitch Fix** - Fixed excessively long date input frames in Step 1 and OCR preview (WP #281)
+32. ✅ **Critical Bug Fix** - Fixed Claim Review crash (`TypeError`) when resuming draft claims from magic links (WP #301)
+33. ✅ **Admin Document Viewer** - Implemented interactive modal for viewing PDFs and images in admin panel (WP #295)
+34. ⚠️ **Infrastructure Alert** - Identified DB SIGKILL issue causing crash recovery loops; filed WP #296 to fix.
 
 ### Security Improvements
 

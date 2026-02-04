@@ -2,10 +2,35 @@
 # ClaimPlane Project - Complete Commit History Analysis
 
 ## Summary Statistics
-- **Total Commits**: 177 (added 2 new commits)
-- **Date Range**: 2025-09-04 to 2026-02-02
-- **Estimated Total Time**: ~507.5-582.1 hours (added 1.5 hours)
+- **Total Commits**: 182 (added 3 new commits)
+- **Date Range**: 2025-09-04 to 2026-02-04
+- **Estimated Total Time**: ~511.0-587.1 hours (added 3.5 hours)
 - **Average Weekly Commit Rate**: ~8-10 commits/week
+
+## Latest Work (2026-02-04) - Rebranding, Autofill & US Legal Strategy
+
+### UI/UX & Brand Identity Implementation
+**Estimated Time**: 3.5 hours
+**Work Package**: #361 (Fix site downtime and verify frontend improvements)
+
+#### Key Tasks:
+1. **Autofill & Save Loop Fixes** (d2801ec)
+   - Implemented 'Autofill Sections' for passenger forms to fix iOS Safari suggestion issues.
+   - Added missing `autocomplete` and `id` attributes across all forms.
+   - Optimized `useAutoSave` hook with deep-comparison (JSON.stringify) to prevent infinite loops.
+   - Estimated: 1.0 hour
+
+2. **Global Rebranding to ClaimPlane** (7f87765)
+   - Replaced all 100+ instances of 'EasyAirClaim' and 'easyairclaim' in UI, docs, and configs.
+   - Updated logo placeholder SVG and backend templates.
+   - Updated Git remote and local directory references in scripts.
+   - Estimated: 1.0 hour
+
+3. **US Legal Strategy & Authorization Model** (ff14107)
+   - Implemented "Claim Assignment & Service Agreement" model for US-only launch.
+   - Added DOT 2024 compliance clauses for automatic refunds.
+   - Updated backend schemas to support LPOA, Assignment, and Service Agreement document types.
+   - Estimated: 1.5 hours
 
 ## Latest Work (2026-02-02) - Security Hardening Completion & Protection Rules
 

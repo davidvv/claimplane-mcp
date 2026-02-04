@@ -13,7 +13,8 @@ export function useSessionStorageForm<T>(
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.sessionStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      if (!item || item === 'undefined' || item === 'null') return initialValue;
+      return JSON.parse(item);
     } catch (error) {
       console.error(`Error loading ${key} from sessionStorage:`, error);
       return initialValue;

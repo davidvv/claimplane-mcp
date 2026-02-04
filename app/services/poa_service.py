@@ -40,6 +40,24 @@ class POAService:
             doc = fitz.open(POAService.TEMPLATE_PATH)
             page = doc[0]
             
+            # --- 0. Rebranding: Replace EasyAirClaim with ClaimPlane ---
+            # This is necessary because the template PDF might still contain the old brand name
+            for old_name in ["EasyAirClaim", "easyairclaim"]:
+                rebrand_hits = page.search_for(old_name)
+                for rect in rebrand_hits:
+                    # White out old name
+                    page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1), overlay=True)
+                    # Insert new name
+                    is_header = rect.y0 < 100
+                    page.insert_text(
+                        (rect.x0, rect.y1 - 2), 
+                        "ClaimPlane",
+                        fontsize=12 if is_header else 10,
+                        fontname="helv", 
+                        color=(0, 0, 0),
+                        overlay=True
+                    )
+
             # --- 1. Aggressive Redaction of Template Artifacts ---
             
             # Redact the large signature box area
@@ -83,8 +101,9 @@ class POAService:
             for placeholder, value in replacements.items():
                 hits = page.search_for(placeholder)
                 for rect in hits:
-                    # Solid white box over the placeholder
-                    page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1), overlay=True)
+                    # Solid white box over the placeholder (slightly larger to ensure clean replacement)
+                    whiteout_rect = fitz.Rect(rect.x0 - 1, rect.y0 - 1, rect.x1 + 1, rect.y1 + 1)
+                    page.draw_rect(whiteout_rect, color=(1, 1, 1), fill=(1, 1, 1), overlay=True)
                     
                     val_str = str(value)
                     fontsize = 10
@@ -95,7 +114,7 @@ class POAService:
                     
                     # Insert actual data
                     page.insert_text(
-                        (rect.x0, rect.y1 - 1), 
+                        (rect.x0, rect.y1 - 2), 
                         val_str, 
                         fontsize=fontsize, 
                         fontname="helv", 
@@ -110,7 +129,8 @@ class POAService:
                     # Using Pixmap to validate image data before insertion
                     img_stream = io.BytesIO(signature_image_bytes)
                     # Position it within the large cleared signature area
-                    SIGNATURE_AREA = fitz.Rect(72, 750, 523, 830)
+                    # Adjusted to avoid overlap with audit trail at y=820
+                    SIGNATURE_AREA = fitz.Rect(72, 750, 523, 810)
                     page.insert_image(SIGNATURE_AREA, stream=img_stream.read(), keep_proportion=True, overlay=True)
                 except Exception as img_err:
                     logger.error(f"Failed to insert signature image: {img_err}")
@@ -121,18 +141,26 @@ class POAService:
                 logger.warning(f"Signature image missing or too small: {len(signature_image_bytes) if signature_image_bytes else 0} bytes")
             
             # --- 5. Audit Trail ---
+            # Move up from the edge (y=842 -> y=820) and improve formatting
+            audit_y = 820
+            audit_trail_rect = fitz.Rect(72, audit_y - 10, 523, audit_y + 25)
+            
+            # Clean up user agent for display
+            display_ua = user_agent if len(user_agent) < 100 else f"{user_agent[:97]}..."
+            
             audit_text = (
                 f"Digitally signed by: {signer_name} | IP: {ip_address} | "
-                f"Date: {signed_at.strftime('%Y-%m-%d %H:%M:%S UTC')} | "
-                f"Device: {user_agent[:40]}..."
+                f"Date: {signed_at.strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+                f"Device/Browser: {display_ua}"
             )
             
-            page.insert_text(
-                (86, 842), 
+            page.insert_textbox(
+                audit_trail_rect,
                 audit_text,
                 fontsize=7,
-                color=(0.2, 0.2, 0.2),
+                color=(0.3, 0.3, 0.3),
                 fontname="helv",
+                align=fitz.TEXT_ALIGN_LEFT,
                 overlay=True
             )
 

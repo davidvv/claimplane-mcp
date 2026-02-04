@@ -35,11 +35,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 # Removed manual fallback in favor of Redis-based slowapi Limiter
 
 
-def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
-    """Extract client IP and user agent from request."""
-    ip_address = request.client.host if request.client else None
-    user_agent = request.headers.get("user-agent")
-    return ip_address, user_agent
+from app.utils.request_utils import get_client_info
 
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str):

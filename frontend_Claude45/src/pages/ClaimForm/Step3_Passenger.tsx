@@ -323,6 +323,7 @@ export function Step3_Passenger({
                   <Input
                     id="phone"
                     type="tel"
+                    autoComplete="tel"
                     placeholder="123456789"
                     className="pl-10"
                     value={phoneNumber}
@@ -347,7 +348,7 @@ export function Step3_Passenger({
           {/* Address Fields */}
           <div className="space-y-2">
             <Label htmlFor="street">Street Address *</Label>
-            <Input id="street" autoComplete="street-address" {...register('street')} />
+            <Input id="street" autoComplete="address-line1" {...register('street')} />
             {errors.street && <p className="text-sm text-destructive">{errors.street.message}</p>}
           </div>
 

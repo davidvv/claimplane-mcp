@@ -69,6 +69,7 @@ services:
 
 networks:
   nextcloud_network:
+    name: claimplane_nextcloud_network
     driver: bridge
 
 volumes:

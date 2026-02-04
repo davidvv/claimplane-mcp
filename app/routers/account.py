@@ -31,11 +31,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/account", tags=["Account Management"])
 
 
-def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
-    """Extract client IP and user agent from request."""
-    ip_address = request.client.host if request.client else None
-    user_agent = request.headers.get("user-agent")
-    return ip_address, user_agent
+from app.utils.request_utils import get_client_info
 
 
 @router.get(

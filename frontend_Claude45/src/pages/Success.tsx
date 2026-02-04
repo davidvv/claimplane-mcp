@@ -16,12 +16,17 @@ export function Success() {
   const claimId = searchParams.get('claimId');
 
   useEffect(() => {
-    // Trigger confetti animation
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
+    // Trigger confetti animation with a slight delay for reliability
+    const timer = setTimeout(() => {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'] // Brand colors
+      });
+    }, 200);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (

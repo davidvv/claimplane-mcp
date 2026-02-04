@@ -1,6 +1,31 @@
 # Time Tracking - David
 
-## Latest Work (2026-02-03) - Rate Limiting Optimization & Testing
+## Latest Work (2026-02-04) - Infrastructure Stability & POA Quality
+
+### Infrastructure & PDF Quality
+**Estimated Time**: 4.5 hours
+
+#### Key Tasks:
+1. **Network Infrastructure Fix**
+   - Resolved Docker network mismatch preventing API-to-Nextcloud communication.
+   - Consolidated PROJECT_NAME networking to `claimplane_nextcloud_network`.
+   - Rebuilt API container to fix missing `structlog` dependency.
+   - Estimated: 1.5 hours
+
+2. **POA PDF Generation Improvements**
+   - Fixed text cutoff for "Booking Ref" by increasing whiteout padding and adjusting vertical alignment.
+   - Relocated Audit Trail up from document edge (y=820) for full visibility.
+   - Switched to multi-line text box for Audit Trail to handle long User Agents.
+   - Centralized real IP collection to trust Cloudflare `CF-Connecting-IP` header.
+   - Estimated: 1.5 hours
+
+3. **Frontend Stability & UX**
+   - Fixed crash in `useSessionStorageForm` when encountering corrupted/null session data.
+   - Improved iOS autocomplete compatibility in passenger info form (address-line1, tel, etc.).
+   - Refined `Success.tsx` confetti with 200ms render delay and brand-specific colors.
+   - Estimated: 1.5 hours
+
+## Previous Work (2026-02-03) - Rate Limiting Optimization & Testing
 
 ### Security & DX Optimization
 **Estimated Time**: 2.0 hours

@@ -34,27 +34,8 @@ from app.config import config
 from app.dependencies.rate_limit import limiter
 from app.dependencies.auth import get_current_user, get_optional_current_user, get_current_user_with_claim_access
 from app.utils.db_encryption import generate_blind_index
+from app.utils.request_utils import get_client_info
 
-logger = logging.getLogger(__name__)
-
-router = APIRouter(prefix="/claims", tags=["claims"])
-
-
-def validate_no_html(value: Optional[str]) -> Optional[str]:
-    """Validate that string does not contain HTML tags to prevent XSS."""
-    if value and ('<' in value or '>' in value):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="HTML tags are not allowed in description field"
-        )
-    return value
-
-
-def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
-    """Extract client IP and user agent from request."""
-    ip_address = request.client.host if request.client else None
-    user_agent = request.headers.get("user-agent")
-    return ip_address, user_agent
 
 
 def verify_claim_access(claim: Claim, current_user: Customer, token_claim_id: Optional[UUID] = None) -> None:
@@ -478,7 +459,7 @@ async def sign_power_of_attorney(
     
     # Update claim with consent information
     now = datetime.now(timezone.utc)
-    ip_address = request.client.host if request.client else "unknown"
+    ip_address, user_agent = get_client_info(request)
     
     claim.terms_accepted_at = now
     claim.terms_acceptance_ip = ip_address
@@ -493,9 +474,6 @@ async def sign_power_of_attorney(
         signature_bytes = base64.b64decode(encoded)
     except:
         raise HTTPException(status_code=400, detail="Invalid signature image")
-
-    ip_address = request.client.host if request.client else "unknown"
-    user_agent = request.headers.get("user-agent", "unknown")
     
     # Get passengers
     from sqlalchemy import select
@@ -519,10 +497,10 @@ async def sign_power_of_attorney(
 
     file_service = get_file_service(db)
     file_record = await file_service.upload_generated_document(
-        file_content=pdf_bytes, filename=f"POA_{claim.id}.pdf",
+        file_content=pdf_bytes, filename=f"ClaimPlane_POA_{claim.id}.pdf",
         claim_id=str(claim.id), customer_id=str(customer.id),
         document_type=ClaimFile.DOCUMENT_POWER_OF_ATTORNEY,
-        description="Signed Power of Attorney"
+        description="Signed Power of Attorney (ClaimPlane)"
     )
     await db.commit()
     return FileResponseSchema.model_validate(file_record)

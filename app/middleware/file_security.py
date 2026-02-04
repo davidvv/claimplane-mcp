@@ -1,7 +1,7 @@
 """Security middleware for file operations."""
 import time
 import hashlib
-import ipaddress
+from app.utils.request_utils import get_real_ip, get_client_info
 from typing import Optional, Dict, Any
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -125,23 +125,7 @@ class FileSecurityMiddleware(BaseHTTPMiddleware):
     
     def _get_client_ip(self, request: Request) -> str:
         """Get client IP address with proxy and Cloudflare support."""
-        # Trust Cloudflare's CF-Connecting-IP header first
-        cf_ip = request.headers.get("CF-Connecting-IP")
-        if cf_ip:
-            return cf_ip
-            
-        # Check for forwarded headers
-        forwarded = request.headers.get("X-Forwarded-For")
-        if forwarded:
-            # Take the first IP in the chain
-            return forwarded.split(",")[0].strip()
-        
-        real_ip = request.headers.get("X-Real-IP")
-        if real_ip:
-            return real_ip
-        
-        # Fallback to direct connection
-        return request.client.host if request.client else "unknown"
+        return get_real_ip(request)
     
     def _is_file_upload_request(self, request: Request) -> bool:
         """Check if request is a file upload."""

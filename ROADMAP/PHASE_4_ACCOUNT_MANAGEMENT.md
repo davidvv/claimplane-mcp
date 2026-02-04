@@ -5,7 +5,7 @@
 ---
 
 **Priority**: MEDIUM-HIGH - Required for GDPR compliance
-**Status**: ⏳ **IN PROGRESS** (80% Complete)
+**Status**: ⏳ **IN PROGRESS** (85% Complete)
 **Estimated Effort**: 2-3 weeks
 **Business Value**: Enables public launch with legal compliance
 **Target Version**: v0.4.0
@@ -18,7 +18,7 @@
 
 
 **Priority**: HIGH - Required for production launch
-**Status**: ⏳ **IN PROGRESS** - ~80% Complete
+**Status**: ⏳ **IN PROGRESS** - ~85% Complete
 **Estimated Effort**: 1-2 weeks (including cookie consent implementation)
 **Business Value**: Critical - enables customer self-service and GDPR compliance
 **Blocking**: Phase 4.6 (Cookie Consent) requires Phase 4.5.14 (HTTP-only cookies) - ✅ COMPLETED
@@ -29,6 +29,7 @@
 - ✅ Database models (AccountDeletionRequest, Customer deletion fields) - 100%
 - ✅ Email notification tasks (email change, password change, deletion requests) - 100%
 - ✅ Granular GDPR consent (WP #358) - Separate T&C and Privacy Policy checkboxes
+- ✅ Real IP tracking (WP #360) - Centralized Cloudflare/proxy IP extraction across API and middleware
 
 **What's Remaining**:
 - ❌ Admin endpoint for deletion requests (GET /admin/deletion-requests) - 0%

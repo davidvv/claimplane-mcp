@@ -45,7 +45,7 @@ celery -A app.celery_app worker --loglevel=info  # Background tasks
 ### Eligible Flights for E2E Testing
 | Flight | Date | Route | Delay | Compensation |
 |--------|------|-------|-------|--------------|
-| UA988 | 2025-08-18 | EWR → FRA | 3+ hours | Eligible |
+| UA988 | 2025-08-18 | FRA → IAD | 3+ hours | Eligible |
 
 ## OpenProject Task Management
 

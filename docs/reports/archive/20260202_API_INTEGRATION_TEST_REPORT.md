@@ -216,7 +216,7 @@ Based on API testing, the frontend should:
 
 ## Test Files Created
 
-- `/home/david/easyAirClaim/claimplane/tests/test_api_workflow.py` - Comprehensive async API test script
+- `/home/david/claimplane/claimplane/tests/test_api_workflow.py` - Comprehensive async API test script
 
 Run with:
 ```bash

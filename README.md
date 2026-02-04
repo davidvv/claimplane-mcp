@@ -126,7 +126,7 @@ See [docs/SECURITY_AUDIT_v0.2.0.md](docs/SECURITY_AUDIT_v0.2.0.md) for security 
 
 ## 📞 Support
 
-**Email:** easyairclaim@gmail.com
+**Email:** support@claimplane.com
 
 **Issues:** Report bugs on GitHub repository
 

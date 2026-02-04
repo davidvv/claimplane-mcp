@@ -38,7 +38,7 @@
 
 1. Copy the JSON key file to your project:
 ```bash
-cp ~/Downloads/claimplane-ocr-*.json /home/david/easyAirClaim/claimplane/google-cloud-key.json
+cp ~/Downloads/claimplane-ocr-*.json /home/david/claimplane/claimplane/google-cloud-key.json
 ```
 
 2. Update `docker-compose.yml` to mount the credentials:

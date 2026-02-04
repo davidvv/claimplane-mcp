@@ -88,7 +88,7 @@ Once you find where `CORS_ORIGINS` is set, either:
 
 ### Step 3: Clean Restart
 ```bash
-cd /home/david/easyAirClaim/claimplane
+cd /home/david/claimplane/claimplane
 
 # If you removed the environment variable, logout/login or:
 unset CORS_ORIGINS
@@ -154,7 +154,7 @@ curl http://192.168.5.209/
 
 ### Check Container Status
 ```bash
-cd /home/david/easyAirClaim/claimplane
+cd /home/david/claimplane/claimplane
 docker compose ps
 docker compose logs api --tail=50
 docker compose logs nginx --tail=50
@@ -162,7 +162,7 @@ docker compose logs nginx --tail=50
 
 ### Rebuild Frontend (if needed)
 ```bash
-cd /home/david/easyAirClaim/claimplane/frontend_Claude45
+cd /home/david/claimplane/claimplane/frontend_Claude45
 npm run build
 cd ..
 docker compose restart nginx
@@ -182,7 +182,7 @@ curl http://localhost/api/health
 
 ### Force Clean Restart
 ```bash
-cd /home/david/easyAirClaim/claimplane
+cd /home/david/claimplane/claimplane
 docker compose down
 docker compose build --no-cache api celery_worker  # Only if code changed
 docker compose up -d

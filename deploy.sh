@@ -6,7 +6,7 @@
 set -e  # Exit on any error
 
 # Ensure we are in the project root (mounted volume)
-cd /home/david/easyAirClaim/claimplane || { echo "Project directory not found"; exit 1; }
+cd /home/david/claimplane/claimplane || { echo "Project directory not found"; exit 1; }
 
 echo "Starting deployment at $(date)"
 

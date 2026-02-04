@@ -113,7 +113,9 @@ export function Step4_Authorization({
         consent_terms: data.consentTerms,
         consent_privacy_policy: data.consentPrivacy,
         consent_electronic_signature: data.consentElectronicSignature,
-        consent_represent_all: data.consentRepresentAll
+        consent_represent_all: data.consentRepresentAll,
+        region: 'US',
+        document_type: 'claim_assignment'
       });
 
       toast.success("Authorization signed successfully");
@@ -133,10 +135,10 @@ export function Step4_Authorization({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <PenTool className="w-5 h-5 text-primary" />
-            Sign Power of Attorney
+            Claim Assignment & Service Agreement
           </CardTitle>
           <CardDescription>
-            To legally represent you against the airline, we need your signature on the Power of Attorney.
+            To legally represent you against the airline, we need your signature on the Claim Assignment and Service Agreement.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -157,13 +159,18 @@ export function Step4_Authorization({
           <div className="space-y-4">
             <div className="text-sm space-y-2">
               <p>
-                By signing below, I authorize ClaimPlane to act as my legal representative to claim compensation 
-                for the flight irregularity described above. This includes the authority to negotiate with the airline, 
-                submit claims, and receive payments on my behalf.
+                By signing below, I authorize ClaimPlane to act as my representative to claim compensation 
+                for the flight irregularity described above. I hereby assign to ClaimPlane the proceeds of any 
+                settlement or judgment resulting from this claim.
+              </p>
+              <p>
+                I understand that under the DOT 2024 Final Rule, airlines may issue refunds directly to my 
+                original form of payment. In such cases, I agree to reimburse ClaimPlane for their agreed 
+                success fee within 7 days of receipt of funds.
               </p>
               <p>
                 <a href="#" className="text-primary underline hover:text-primary/80" onClick={(e) => e.preventDefault()}>
-                  View full Power of Attorney document
+                  View full Assignment Agreement
                 </a>
               </p>
             </div>
@@ -224,7 +231,7 @@ export function Step4_Authorization({
                 />
                 <div className="grid gap-1.5 leading-none">
                   <Label htmlFor="consentElectronicSignature" className="cursor-pointer">
-                    I agree to use an electronic signature for this Power of Attorney and understand it has the same legal validity as a handwritten signature.
+                    I agree to use an electronic signature for this Assignment Agreement and understand it has the same legal validity as a handwritten signature.
                   </Label>
                   {errors.consentElectronicSignature && (
                     <p className="text-xs text-destructive">{errors.consentElectronicSignature.message}</p>

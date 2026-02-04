@@ -42,8 +42,8 @@ Successfully deployed the application through Cloudflare Tunnel for production t
 
 #### URL Updates
 - **.env Files**: Updated all environment files with Cloudflare domain
-  - Backend: `/home/david/easyAirClaim/claimplane/.env`
-  - Frontend: `/home/david/easyAirClaim/claimplane/frontend_Claude45/.env`
+  - Backend: `/home/david/claimplane/claimplane/.env`
+  - Frontend: `/home/david/claimplane/claimplane/frontend_Claude45/.env`
 - **API Client**: Changed fallback from `localhost:8000` to empty string (uses Vite proxy)
   - Location: frontend_Claude45/src/services/api.ts:10
 

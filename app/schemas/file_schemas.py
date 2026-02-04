@@ -15,6 +15,9 @@ class DocumentType(str, Enum):
     FLIGHT_TICKET = "flight_ticket"
     DELAY_CERTIFICATE = "delay_certificate"
     CANCELLATION_NOTICE = "cancellation_notice"
+    LPOA = "lpoa"
+    CLAIM_ASSIGNMENT = "claim_assignment"
+    SERVICE_AGREEMENT = "service_agreement"
     OTHER = "other"
 
 

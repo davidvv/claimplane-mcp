@@ -113,7 +113,7 @@ Based on your Cloudflare Tunnel setup:
 
 ### Add Webhook to GitHub Repository
 
-1. Go to: `https://github.com/davidvv/easyAirClaim/settings/hooks`
+1. Go to: `https://github.com/davidvv/claimplane/settings/hooks`
 
 2. Click **"Add webhook"**
 

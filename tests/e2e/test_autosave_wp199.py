@@ -13,7 +13,7 @@ class AutoSaveTest:
         self.base_url = "http://localhost:3000"
         self.draft_id = "5a3b5eb8-8825-4729-aa8e-8c1cf9cb4e0f"
         self.test_email = "florian.luhn@outlook.com"
-        self.screenshots_dir = "/home/david/easyAirClaim/claimplane/tests/e2e/screenshots"
+        self.screenshots_dir = "/home/david/claimplane/claimplane/tests/e2e/screenshots"
         self.console_logs = []
         self.errors = []
         self.db_config = {

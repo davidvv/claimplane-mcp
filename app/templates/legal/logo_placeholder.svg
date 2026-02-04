@@ -2,6 +2,6 @@
   <g>
     <rect fill="#007bff" x="10" y="10" width="40" height="40" rx="10" ry="10"/>
     <path d="M20 30 L30 40 L45 20" stroke="white" stroke-width="4" fill="none"/>
-    <text x="60" y="40" font-family="Arial" font-size="24" font-weight="bold" fill="#333">EasyAirClaim</text>
+    <text x="60" y="40" font-family="Arial" font-size="24" font-weight="bold" fill="#333">ClaimPlane</text>
   </g>
 </svg>

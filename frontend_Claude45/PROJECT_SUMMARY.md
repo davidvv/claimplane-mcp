@@ -20,7 +20,7 @@ A **production-ready, fully-typed, responsive SPA** built from the OpenAPI 3.0.3
 ## Complete File Structure
 
 ```
-easyairclaim-portal/
+claimplane-portal/
 ├── 📄 README.md                    # Complete documentation
 ├── 📄 DEPLOYMENT.md                # Deployment guide (all platforms)
 ├── 📄 PROJECT_SUMMARY.md           # This file
@@ -294,11 +294,11 @@ netlify deploy --prod
 ### Docker
 ```bash
 docker build \
-  --build-arg VITE_API_BASE_URL=https://api.easyairclaim.com/v1 \
+  --build-arg VITE_API_BASE_URL=https://api.claimplane.com/v1 \
   --build-arg VITE_API_KEY=your_key \
-  -t easyairclaim-frontend .
+  -t claimplane-frontend .
 
-docker run -d -p 80:80 easyairclaim-frontend
+docker run -d -p 80:80 claimplane-frontend
 ```
 
 See `DEPLOYMENT.md` for complete guides (AWS, DigitalOcean, GitHub Pages, etc.)
@@ -391,7 +391,7 @@ All components tested on:
 
 ## Support & Contact
 
-- **Email**: easyairclaim@gmail.com
+- **Email**: claimplane@gmail.com
 - **Documentation**: See README.md
 - **Deployment**: See DEPLOYMENT.md
 - **API Docs**: OpenAPI spec in project root

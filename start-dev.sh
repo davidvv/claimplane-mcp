@@ -6,7 +6,7 @@
 set -e  # Exit on any error
 
 echo "=================================================="
-echo "Starting EasyAirClaim Development Environment"
+echo "Starting ClaimPlane Development Environment"
 echo "=================================================="
 
 # Start Nextcloud services first (file storage infrastructure)

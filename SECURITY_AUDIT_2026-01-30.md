@@ -1,4 +1,4 @@
-# 🔒 EasyAirClaim Security Audit Report
+# 🔒 ClaimPlane Security Audit Report
 Generated: 2026-01-30 14:00:00
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

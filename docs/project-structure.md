@@ -816,7 +816,7 @@ class EmailService:
 
 **Configuration**:
 - Uses Gmail SMTP (smtp.gmail.com:587)
-- Custom "From" address: noreply@easyairclaim.com
+- Custom "From" address: noreply@claimplane.com
 - TLS encryption
 - Configurable via environment variables
 
@@ -1002,7 +1002,7 @@ celery_worker:
     - SMTP_PORT=587
     - SMTP_USERNAME=${SMTP_USERNAME}
     - SMTP_PASSWORD=${SMTP_PASSWORD}
-    - SMTP_FROM_EMAIL=noreply@easyairclaim.com
+    - SMTP_FROM_EMAIL=noreply@claimplane.com
   depends_on:
     - redis
     - db

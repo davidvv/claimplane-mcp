@@ -120,7 +120,7 @@ Follow `GOOGLE_VISION_SETUP.md` to get your credentials.
 ### 2. Rebuild Docker Container
 
 ```bash
-cd /home/david/easyAirClaim/easyAirClaim
+cd /home/david/easyAirClaim/claimplane
 
 # Rebuild with new dependencies
 docker compose build api

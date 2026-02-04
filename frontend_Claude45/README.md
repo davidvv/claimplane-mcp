@@ -28,7 +28,7 @@ A production-ready, responsive single-page application (SPA) for filing flight c
 ## Project Structure
 
 ```
-easyairclaim-portal/
+claimplane-portal/
 ├── public/                 # Static assets
 ├── src/
 │   ├── components/         # Reusable UI components
@@ -132,7 +132,7 @@ npm run preview
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `VITE_API_BASE_URL` | Backend API base URL | `https://api.easyairclaim.com/v1` |
+| `VITE_API_BASE_URL` | Backend API base URL | `https://api.claimplane.com/v1` |
 | `VITE_API_KEY` | API key for authentication | `your_api_key` |
 | `VITE_ENV` | Environment (development/production) | `production` |
 
@@ -372,8 +372,8 @@ Private - All rights reserved
 
 ## Support
 
-Email: easyairclaim@gmail.com
-Website: https://www.easyairclaim.com
+Email: claimplane@gmail.com
+Website: https://www.claimplane.com
 
 ---
 

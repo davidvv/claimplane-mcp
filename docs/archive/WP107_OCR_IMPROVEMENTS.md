@@ -156,7 +156,7 @@ Example: `M1LASTNAME/FIRSTNAME EABCDEF LHRJFK    AA1234 014Y012A0001`
 
 ### 1. Rebuild Docker Container
 ```bash
-cd /home/david/easyAirClaim/easyAirClaim
+cd /home/david/easyAirClaim/claimplane
 docker compose build api
 docker compose up -d api
 ```

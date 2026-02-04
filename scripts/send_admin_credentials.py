@@ -17,7 +17,7 @@ from app.services.email_service import EmailService
 async def send_credentials_email(email: str, password: str, first_name: str):
     """Send admin credentials via email."""
 
-    subject = "EasyAirClaim - Your Superadmin Credentials"
+    subject = "ClaimPlane - Your Superadmin Credentials"
 
     html_body = f"""
     <!DOCTYPE html>
@@ -96,12 +96,12 @@ async def send_credentials_email(email: str, password: str, first_name: str):
     </head>
     <body>
         <div class="header">
-            <h1>🔐 EasyAirClaim Superadmin Access</h1>
+            <h1>🔐 ClaimPlane Superadmin Access</h1>
         </div>
         <div class="content">
             <p>Hello {first_name},</p>
 
-            <p>Your superadmin account for EasyAirClaim has been created successfully. Below are your login credentials:</p>
+            <p>Your superadmin account for ClaimPlane has been created successfully. Below are your login credentials:</p>
 
             <div class="credentials">
                 <div class="credential-item">
@@ -129,7 +129,7 @@ async def send_credentials_email(email: str, password: str, first_name: str):
             </div>
 
             <p style="text-align: center;">
-                <a href="https://eac.dvvcloud.work/auth" class="button">Login to EasyAirClaim</a>
+                <a href="https://eac.dvvcloud.work/auth" class="button">Login to ClaimPlane</a>
             </p>
 
             <p><strong>Your Superadmin Capabilities:</strong></p>
@@ -144,10 +144,10 @@ async def send_credentials_email(email: str, password: str, first_name: str):
             <p>If you have any questions or need assistance, please don't hesitate to reach out.</p>
 
             <p>Best regards,<br>
-            <strong>EasyAirClaim System</strong></p>
+            <strong>ClaimPlane System</strong></p>
         </div>
         <div class="footer">
-            <p>This is an automated email from EasyAirClaim Testing Environment</p>
+            <p>This is an automated email from ClaimPlane Testing Environment</p>
             <p>Cloudflare Tunnel: https://eac.dvvcloud.work</p>
         </div>
     </body>
@@ -156,11 +156,11 @@ async def send_credentials_email(email: str, password: str, first_name: str):
 
     # Plain text version
     text_body = f"""
-EasyAirClaim - Your Superadmin Credentials
+ClaimPlane - Your Superadmin Credentials
 
 Hello {first_name},
 
-Your superadmin account for EasyAirClaim has been created successfully.
+Your superadmin account for ClaimPlane has been created successfully.
 
 Login Credentials:
 ------------------
@@ -184,10 +184,10 @@ Your Superadmin Capabilities:
 - Access system analytics and reports
 
 Best regards,
-EasyAirClaim System
+ClaimPlane System
 
 ---
-This is an automated email from EasyAirClaim Testing Environment
+This is an automated email from ClaimPlane Testing Environment
 Cloudflare Tunnel: https://eac.dvvcloud.work
     """
 

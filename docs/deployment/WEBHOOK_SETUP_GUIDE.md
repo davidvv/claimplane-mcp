@@ -28,7 +28,7 @@ docker-compose ps webhook
 You should see:
 ```
 NAME                    IMAGE                     STATUS
-flight_claim_webhook    easyairclaim-webhook      Up X seconds
+flight_claim_webhook    claimplane-webhook      Up X seconds
 ```
 
 **Check logs:**

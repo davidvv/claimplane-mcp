@@ -155,7 +155,7 @@ The following vulnerabilities will **NOT be automatically fixed** by Phase 3 and
   # Production configuration
   app.add_middleware(
       CORSMiddleware,
-      allow_origins=["https://easyairclaim.com"],  # Specific origins only
+      allow_origins=["https://claimplane.com"],  # Specific origins only
       allow_credentials=True,
       allow_methods=["GET", "POST", "PUT", "DELETE"],
       allow_headers=["*"],

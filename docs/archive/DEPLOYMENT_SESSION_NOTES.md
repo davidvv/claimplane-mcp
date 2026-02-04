@@ -17,7 +17,7 @@
   nginx:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./frontend_Claude45/dist:/var/www/easyairclaim:ro
+      - ./frontend_Claude45/dist:/var/www/claimplane:ro
   ```
 - Frontend now serves correctly at http://192.168.5.209/
 
@@ -88,7 +88,7 @@ Once you find where `CORS_ORIGINS` is set, either:
 
 ### Step 3: Clean Restart
 ```bash
-cd /home/david/easyAirClaim/easyAirClaim
+cd /home/david/easyAirClaim/claimplane
 
 # If you removed the environment variable, logout/login or:
 unset CORS_ORIGINS
@@ -122,7 +122,7 @@ curl http://192.168.5.209/
 
 ### 1. `docker-compose.yml`
 - **Line 52**: Added `https://eac.dvvcloud.work` to CORS_ORIGINS default
-- **Line 117**: Added frontend volume mount: `./frontend_Claude45/dist:/var/www/easyairclaim:ro`
+- **Line 117**: Added frontend volume mount: `./frontend_Claude45/dist:/var/www/claimplane:ro`
 
 ### 2. `.env`
 - **Lines 40-43**: Commented out CORS_ORIGINS (to use docker-compose.yml default)
@@ -154,7 +154,7 @@ curl http://192.168.5.209/
 
 ### Check Container Status
 ```bash
-cd /home/david/easyAirClaim/easyAirClaim
+cd /home/david/easyAirClaim/claimplane
 docker compose ps
 docker compose logs api --tail=50
 docker compose logs nginx --tail=50
@@ -162,7 +162,7 @@ docker compose logs nginx --tail=50
 
 ### Rebuild Frontend (if needed)
 ```bash
-cd /home/david/easyAirClaim/easyAirClaim/frontend_Claude45
+cd /home/david/easyAirClaim/claimplane/frontend_Claude45
 npm run build
 cd ..
 docker compose restart nginx
@@ -182,7 +182,7 @@ curl http://localhost/api/health
 
 ### Force Clean Restart
 ```bash
-cd /home/david/easyAirClaim/easyAirClaim
+cd /home/david/easyAirClaim/claimplane
 docker compose down
 docker compose build --no-cache api celery_worker  # Only if code changed
 docker compose up -d

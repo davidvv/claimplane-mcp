@@ -20,7 +20,7 @@ Direct claims with airlines typically do not require document uploads if the cus
 | **CA** | WestJet | No | Reservation code, DOB |
 
 ## 2. Competitors (Legal Representation)
-Agencies acting on behalf of customers (like EasyAirClaim) have different requirements because they need legal standing to represent the passenger in court or negotiations.
+Agencies acting on behalf of customers (like ClaimPlane) have different requirements because they need legal standing to represent the passenger in court or negotiations.
 
 | Competitor | Document Mandatory? | Mandatory Documents |
 | :--- | :--- | :--- |
@@ -30,7 +30,7 @@ Agencies acting on behalf of customers (like EasyAirClaim) have different requir
 | **Skycop** | **Yes** | Boarding Pass & Signed POA |
 | **Refund.me** | **Yes** | Signed Power of Attorney (POA) |
 
-## 3. Analysis for EasyAirClaim
+## 3. Analysis for ClaimPlane
 While airlines don't technically need a document to *identify* the flight, our business model (representation) requires:
 1.  **Legal Authority:** A signed Power of Attorney (POA) is legally mandatory for us to act.
 2.  **Evidence:** A boarding pass or booking confirmation serves as proof of contract and presence on the flight, which prevents fraudulent claims.

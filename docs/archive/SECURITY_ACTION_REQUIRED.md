@@ -5,7 +5,7 @@
 ### What Happened
 Your `.env` file containing SMTP credentials was committed to git history (commit 1c12739e). This means the following Gmail app password is exposed in your git repository:
 
-**Exposed Gmail Account:** `easyairclaim@gmail.com`
+**Exposed Gmail Account:** `claimplane@gmail.com`
 **Exposed App Password:** `ybikt nslj gyzf zhpg`
 
 ### Required Actions
@@ -101,7 +101,7 @@ git push origin --force --all
 #### 5. Monitor for Suspicious Activity
 
 - Check your Gmail account for suspicious activity
-- Review recent sent emails from easyairclaim@gmail.com
+- Review recent sent emails from claimplane@gmail.com
 - Enable 2FA on the Gmail account if not already enabled
 - Consider creating a new Gmail account if you suspect compromise
 

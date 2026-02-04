@@ -89,8 +89,8 @@ For significant work or feature implementation, you may use the `openproject-tas
 - ❌ **DO NOT** create, modify, delete, or move any files in:
   - `/home/david/.config/opencode/agents/` (Global agent definitions)
   - `/home/david/.config/opencode/skill/` (Global skill definitions)
-  - `/home/david/easyAirClaim/easyAirClaim/.claude/agents/` (Project agents)
-  - `/home/david/easyAirClaim/easyAirClaim/.claude/skills/` (Project skills)
+  - `/home/david/claimplane/claimplane/.claude/agents/` (Project agents)
+  - `/home/david/claimplane/claimplane/.claude/skills/` (Project skills)
 - ❌ **DO NOT** update, rename, or remove skill/agent files
 - ❌ **DO NOT** change skill configurations or metadata
 - ❌ **DO NOT** deprecate or mark skills as obsolete
@@ -152,7 +152,7 @@ Use with: `@agent-name` or `task(subagent_type="agent-name")`
 - **`@troubleshooter`**: Specialized in interpreting logs, tracebacks, and system errors
 - **`@web-browser-tester`**: Specialized web browser automation agent for testing applications
 
-### **PROJECT-SPECIFIC** (in `/home/david/easyAirClaim/easyAirClaim/.claude/`)
+### **PROJECT-SPECIFIC** (in `/home/david/claimplane/claimplane/.claude/`)
 - **`backend-tester.md`**: Backend testing agent for the ClaimPlane project
 
 ---

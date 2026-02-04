@@ -157,7 +157,7 @@ export function Step4_Authorization({
           <div className="space-y-4">
             <div className="text-sm space-y-2">
               <p>
-                By signing below, I authorize EasyAirClaim to act as my legal representative to claim compensation 
+                By signing below, I authorize ClaimPlane to act as my legal representative to claim compensation 
                 for the flight irregularity described above. This includes the authority to negotiate with the airline, 
                 submit claims, and receive payments on my behalf.
               </p>

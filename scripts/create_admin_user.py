@@ -2,7 +2,7 @@
 """
 Admin User Creation Script
 
-This script creates admin or superadmin users for the EasyAirClaim platform.
+This script creates admin or superadmin users for the ClaimPlane platform.
 Use this to create the first admin users who can then manage the system.
 
 Usage:
@@ -17,7 +17,7 @@ Usage:
 
 Requirements:
     - Database must be accessible (check DATABASE_URL in .env)
-    - EasyAirClaim conda environment must be activated
+    - ClaimPlane conda environment must be activated
     - Run from project root directory
 
 Security Notes:
@@ -131,7 +131,7 @@ async def create_admin_user(
 async def interactive_create_admin():
     """Interactive mode for creating admin users."""
     print("=" * 60)
-    print("EasyAirClaim - Admin User Creation")
+    print("ClaimPlane - Admin User Creation")
     print("=" * 60)
     print()
 
@@ -234,7 +234,7 @@ async def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Create admin users for EasyAirClaim",
+        description="Create admin users for ClaimPlane",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

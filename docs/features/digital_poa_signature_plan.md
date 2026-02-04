@@ -68,7 +68,7 @@ Step 5: Review & Submit
 ### Phase 1: Design & Templates (WP #206-207)
 | WP | Subject | Estimated | Status |
 |----|---------|-----------|--------|
-| 206 | Create EasyAirClaim vector logo and branding | 3-4 hours | New |
+| 206 | Create ClaimPlane vector logo and branding | 3-4 hours | New |
 | 207 | Create POA PDF template with legal text | 4-6 hours | New |
 
 ### Phase 2: Backend Implementation (WP #208-209, #213-214)

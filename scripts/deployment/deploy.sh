@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# EasyAirClaim Deployment Script
+# ClaimPlane Deployment Script
 # Called by GitHub Actions on push to MVP branch
 
 set -e  # Exit on any error

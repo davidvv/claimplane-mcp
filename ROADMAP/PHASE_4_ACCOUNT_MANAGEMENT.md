@@ -391,7 +391,7 @@ Add essential legal and informational pages to the homepage that are required fo
    - [ ] Create Contact page (`/contact`)
    - [ ] Include:
      - [ ] Contact form (name, email, subject, message)
-     - [ ] Email address: support@easyairclaim.com
+     - [ ] Email address: support@claimplane.com
      - [ ] Response time expectations (24-48 hours)
      - [ ] FAQ section link
      - [ ] Company address (if applicable)

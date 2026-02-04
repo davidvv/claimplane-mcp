@@ -2,7 +2,7 @@
 # Setup script for creating admin users - Creates virtual environment
 
 echo "========================================="
-echo "EasyAirClaim Virtual Environment Setup"
+echo "ClaimPlane Virtual Environment Setup"
 echo "========================================="
 echo ""
 

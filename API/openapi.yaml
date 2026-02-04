@@ -1,24 +1,24 @@
 openapi: 3.0.3
 info:
-  title: EasyAirClaim API
+  title: ClaimPlane API
   description: |
     API for managing flight compensation claims across Europe, USA, and Canada.
     Handles flight status checking, eligibility verification, claim submission,
     and customer data management with full GDPR compliance.
     
-    EasyAirClaim helps passengers get the compensation they deserve for delayed, 
+    ClaimPlane helps passengers get the compensation they deserve for delayed, 
     cancelled, or disrupted flights according to EU261, DOT, and CTA regulations.
   version: 1.0.0
   contact:
-    name: EasyAirClaim Support
-    email: easyairclaim@gmail.com
-    url: https://www.easyairclaim.com
+    name: ClaimPlane Support
+    email: claimplane@gmail.com
+    url: https://www.claimplane.com
   license:
     name: Private
 servers:
-  - url: https://api.easyairclaim.com/v1
+  - url: https://api.claimplane.com/v1
     description: Production server
-  - url: https://staging-api.easyairclaim.com/v1
+  - url: https://staging-api.claimplane.com/v1
     description: Staging server
 
 # Security schemes

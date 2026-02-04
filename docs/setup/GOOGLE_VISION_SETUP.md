@@ -17,7 +17,7 @@
 1. Go to [Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts)
 2. Click **"Create Service Account"**
 3. Fill in details:
-   - **Name**: `easyairclaim-ocr`
+   - **Name**: `claimplane-ocr`
    - **Description**: `OCR service for boarding pass extraction`
 4. Click **"Create and Continue"**
 5. Grant role: **Cloud Vision API User** (or Editor for development)
@@ -38,7 +38,7 @@
 
 1. Copy the JSON key file to your project:
 ```bash
-cp ~/Downloads/easyairclaim-ocr-*.json /home/david/easyAirClaim/easyAirClaim/google-cloud-key.json
+cp ~/Downloads/claimplane-ocr-*.json /home/david/easyAirClaim/claimplane/google-cloud-key.json
 ```
 
 2. Update `docker-compose.yml` to mount the credentials:
@@ -127,7 +127,7 @@ gcloud services enable vision.googleapis.com --project=YOUR_PROJECT_ID
 **Solution**: Grant Vision API User role to service account:
 ```bash
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:easyairclaim-ocr@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:claimplane-ocr@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/cloudvision.user"
 ```
 

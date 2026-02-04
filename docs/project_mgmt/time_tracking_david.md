@@ -631,7 +631,7 @@ Updated `openproject-task-manager` skill to support time estimation.
 **Work Package**: #110
 
 #### Overview:
-Completed rebranding from "EasyAirClaim" to "ClaimPlane" across all documentation, configuration files, and frontend text to ensure brand consistency.
+Completed rebranding from "ClaimPlane" to "ClaimPlane" across all documentation, configuration files, and frontend text to ensure brand consistency.
 
 #### Key Tasks:
 1. **Global Search & Replace**

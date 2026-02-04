@@ -127,7 +127,7 @@ SMTP_USERNAME=your-gmail-address@gmail.com        # ← Change this!
 SMTP_PASSWORD=abcd efgh ijkl mnop                 # ← Change this! (16-char app password)
 
 # Email "From" Address (can be anything!)
-SMTP_FROM_EMAIL=noreply@easyairclaim.com          # ← This is what customers see
+SMTP_FROM_EMAIL=noreply@claimplane.com          # ← This is what customers see
 SMTP_FROM_NAME=ClaimPlane Support
 
 # Email Settings
@@ -151,7 +151,7 @@ ENVIRONMENT=development
 **Replace These Values**:
 - `SMTP_USERNAME`: Your full Gmail address (e.g., `john.doe@gmail.com`)
 - `SMTP_PASSWORD`: The 16-character app password from Step 1 (e.g., `abcd efgh ijkl mnop`)
-- `SMTP_FROM_EMAIL`: The address customers will see (can be anything, like `noreply@easyairclaim.com`)
+- `SMTP_FROM_EMAIL`: The address customers will see (can be anything, like `noreply@claimplane.com`)
 - `SMTP_FROM_NAME`: The name customers will see (e.g., "ClaimPlane Support")
 
 **Save the file** (Ctrl+O in nano, then Ctrl+X to exit)
@@ -717,7 +717,7 @@ When you send an email, there are actually TWO addresses involved:
 
 2. **From Address** (`SMTP_FROM_EMAIL`):
    - What recipients see in their inbox
-   - Example: `noreply@easyairclaim.com`
+   - Example: `noreply@claimplane.com`
    - Can be anything you want!
 
 ### Using Custom "From" Address with Gmail
@@ -725,19 +725,19 @@ When you send an email, there are actually TWO addresses involved:
 **What you'll do**:
 ```bash
 SMTP_USERNAME=john.doe@gmail.com           # Your actual Gmail
-SMTP_FROM_EMAIL=noreply@easyairclaim.com  # What customers see
+SMTP_FROM_EMAIL=noreply@claimplane.com  # What customers see
 SMTP_FROM_NAME=ClaimPlane Support        # Display name
 ```
 
 **What customers see**:
 ```
-From: ClaimPlane Support <noreply@easyairclaim.com>
+From: ClaimPlane Support <noreply@claimplane.com>
 Subject: Claim Submitted - Lufthansa LH123
 ```
 
 **Potential issues**:
 - Some email clients show "via gmail.com" next to sender
-- Example: `ClaimPlane Support <noreply@easyairclaim.com> via gmail.com`
+- Example: `ClaimPlane Support <noreply@claimplane.com> via gmail.com`
 - Emails might go to spam more often
 - SPF checks might fail (Gmail's servers sending for your domain)
 
@@ -789,7 +789,7 @@ v=spf1 include:_spf.google.com ~all
 
 3. **Add DMARC record** (DNS TXT record):
 ```
-v=DMARC1; p=quarantine; rua=mailto:dmarc@easyairclaim.com
+v=DMARC1; p=quarantine; rua=mailto:dmarc@claimplane.com
 ```
 
 **For now, don't worry about this!** It's only needed for production.
@@ -933,7 +933,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your-gmail@gmail.com
 SMTP_PASSWORD=your-16-char-app-password
-SMTP_FROM_EMAIL=noreply@easyairclaim.com
+SMTP_FROM_EMAIL=noreply@claimplane.com
 SMTP_FROM_NAME=ClaimPlane Support
 SMTP_USE_TLS=true
 NOTIFICATIONS_ENABLED=true

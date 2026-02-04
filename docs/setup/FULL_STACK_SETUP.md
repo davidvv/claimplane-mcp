@@ -21,7 +21,7 @@ source /Users/david/miniconda3/bin/activate ClaimPlane
 
 Check `.env` file has:
 ```env
-DATABASE_URL=postgresql+asyncpg://user:password@localhost/easyairclaim
+DATABASE_URL=postgresql+asyncpg://user:password@localhost/claimplane
 SECRET_KEY=your-secret-key-here
 FILE_ENCRYPTION_KEY=your-fernet-key-here
 REDIS_URL=redis://localhost:6379/0

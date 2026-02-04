@@ -6,7 +6,7 @@
 set -e  # Exit on any error
 
 echo "=================================================="
-echo "Stopping EasyAirClaim Development Environment"
+echo "Stopping ClaimPlane Development Environment"
 echo "=================================================="
 
 # Stop Vite dev server if running

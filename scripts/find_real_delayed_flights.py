@@ -81,7 +81,7 @@ class FlightFinder:
             return {
                 "x-api-market-key": config.AERODATABOX_API_KEY,
                 "accept": "application/json",
-                "User-Agent": f"EasyAirClaim/{config.API_VERSION}"
+                "User-Agent": f"ClaimPlane/{config.API_VERSION}"
             }
         elif "rapidapi.com" in config.AERODATABOX_BASE_URL.lower():
             return {

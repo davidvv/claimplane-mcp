@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# EasyAirClaim Deployment Script
+# ClaimPlane Deployment Script
 # Called by GitHub Actions on push to MVP branch
 
 set -e  # Exit on any error
 
 # Ensure we are in the project root (mounted volume)
-cd /home/david/easyAirClaim/easyAirClaim || { echo "Project directory not found"; exit 1; }
+cd /home/david/easyAirClaim/claimplane || { echo "Project directory not found"; exit 1; }
 
 echo "Starting deployment at $(date)"
 

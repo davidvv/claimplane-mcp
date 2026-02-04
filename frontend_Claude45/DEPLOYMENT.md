@@ -16,7 +16,7 @@ Complete guide for deploying the ClaimPlane frontend to various platforms.
 All platforms require these environment variables:
 
 ```env
-VITE_API_BASE_URL=https://api.easyairclaim.com/v1
+VITE_API_BASE_URL=https://api.claimplane.com/v1
 VITE_API_KEY=your_production_api_key
 VITE_ENV=production
 ```
@@ -32,7 +32,7 @@ VITE_ENV=production
    git init
    git add .
    git commit -m "Initial commit"
-   git remote add origin https://github.com/yourusername/easyairclaim-frontend.git
+   git remote add origin https://github.com/yourusername/claimplane-frontend.git
    git push -u origin main
    ```
 
@@ -180,16 +180,16 @@ server {
 ```bash
 # Build image
 docker build \
-  --build-arg VITE_API_BASE_URL=https://api.easyairclaim.com/v1 \
+  --build-arg VITE_API_BASE_URL=https://api.claimplane.com/v1 \
   --build-arg VITE_API_KEY=your_api_key \
   --build-arg VITE_ENV=production \
-  -t easyairclaim-frontend .
+  -t claimplane-frontend .
 
 # Run container
-docker run -d -p 80:80 --name easyairclaim-frontend easyairclaim-frontend
+docker run -d -p 80:80 --name claimplane-frontend claimplane-frontend
 
 # Check logs
-docker logs easyairclaim-frontend
+docker logs claimplane-frontend
 ```
 
 ### 4. Docker Compose (with backend)
@@ -230,8 +230,8 @@ npm run build
 ### 2. Create S3 Bucket
 
 ```bash
-aws s3 mb s3://easyairclaim-frontend
-aws s3 website s3://easyairclaim-frontend \
+aws s3 mb s3://claimplane-frontend
+aws s3 website s3://claimplane-frontend \
   --index-document index.html \
   --error-document index.html
 ```
@@ -239,7 +239,7 @@ aws s3 website s3://easyairclaim-frontend \
 ### 3. Upload Build
 
 ```bash
-aws s3 sync dist/ s3://easyairclaim-frontend \
+aws s3 sync dist/ s3://claimplane-frontend \
   --delete \
   --cache-control "public, max-age=31536000"
 ```
@@ -277,7 +277,7 @@ npm install -D gh-pages
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
-  "homepage": "https://yourusername.github.io/easyairclaim"
+  "homepage": "https://yourusername.github.io/claimplane"
 }
 ```
 
@@ -285,7 +285,7 @@ npm install -D gh-pages
 
 ```typescript
 export default defineConfig({
-  base: '/easyairclaim/',
+  base: '/claimplane/',
   // ... rest of config
 })
 ```
@@ -384,7 +384,7 @@ Sentry.init({
 sudo apt-get install certbot python3-certbot-nginx
 
 # Get certificate
-sudo certbot --nginx -d easyairclaim.com -d www.easyairclaim.com
+sudo certbot --nginx -d claimplane.com -d www.claimplane.com
 ```
 
 ### Cloudflare (Free)
@@ -420,10 +420,10 @@ sudo certbot --nginx -d easyairclaim.com -d www.easyairclaim.com
 
 ```bash
 # Stop current
-docker stop easyairclaim-frontend
+docker stop claimplane-frontend
 
 # Run previous image
-docker run -d -p 80:80 easyairclaim-frontend:previous-tag
+docker run -d -p 80:80 claimplane-frontend:previous-tag
 ```
 
 ### S3/CloudFront
@@ -518,7 +518,7 @@ Configure platform to serve `index.html` for all routes:
 ## Support
 
 For deployment issues:
-- Email: easyairclaim@gmail.com
+- Email: claimplane@gmail.com
 - Check logs on your platform
 - Review browser console for errors
 

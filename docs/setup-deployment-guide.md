@@ -193,7 +193,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-app-password-here
-SMTP_FROM_EMAIL=noreply@easyairclaim.com
+SMTP_FROM_EMAIL=noreply@claimplane.com
 NOTIFICATIONS_ENABLED=true
 
 # Application Settings
@@ -420,7 +420,7 @@ celery_worker:
     SMTP_PORT: 587
     SMTP_USERNAME: ${SMTP_USERNAME}
     SMTP_PASSWORD: ${SMTP_PASSWORD}
-    SMTP_FROM_EMAIL: noreply@easyairclaim.com
+    SMTP_FROM_EMAIL: noreply@claimplane.com
     NOTIFICATIONS_ENABLED: true
   depends_on:
     redis:
@@ -469,7 +469,7 @@ api:
     SMTP_PORT: 587
     SMTP_USERNAME: ${SMTP_USERNAME}
     SMTP_PASSWORD: ${SMTP_PASSWORD}
-    SMTP_FROM_EMAIL: noreply@easyairclaim.com
+    SMTP_FROM_EMAIL: noreply@claimplane.com
     NOTIFICATIONS_ENABLED: true
   ports:
     - "8000:8000"

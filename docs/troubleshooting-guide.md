@@ -1084,7 +1084,7 @@ docker-compose logs api | grep ".delay("
 # Check spam/junk folder in email client
 
 # Improve email deliverability:
-1. Use verified email domain (not noreply@easyairclaim.com)
+1. Use verified email domain (not noreply@claimplane.com)
 2. Set up SPF/DKIM records for domain
 3. Use authenticated Gmail account as SMTP_FROM_EMAIL
 4. Test with multiple email providers (Gmail, Outlook, Yahoo)

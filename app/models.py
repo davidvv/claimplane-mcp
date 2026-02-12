@@ -1157,5 +1157,75 @@ class ClaimEvent(Base):
         return event_type
 
 
+# ============================================================================
+# PHASE 5: Multi-Passenger Claims - Claim Groups
+# ============================================================================
+
+
+class ClaimGroup(Base):
+    """Claim group model for multi-passenger/family claims.
+    
+    Allows a single account holder to submit multiple related claims
+    for different passengers on the same flight.
+    """
+    
+    __tablename__ = "claim_groups"
+    
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    account_holder_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False, index=True)
+    
+    # Flight information (all claims in group must share same flight)
+    flight_number = Column(String(10), nullable=False)
+    flight_date = Column(Date, nullable=False)
+    
+    # Group metadata
+    group_name = Column(String(255), nullable=True)  # e.g., "Smith Family - UA988"
+    
+    # GDPR consent tracking
+    consent_confirmed = Column(Boolean, default=False, server_default="false")
+    consent_confirmed_at = Column(DateTime(timezone=True), nullable=True)
+    consent_ip_address = Column(String(45), nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    account_holder = relationship("Customer", foreign_keys=[account_holder_id])
+    claims = relationship("Claim", back_populates="claim_group")
+    notes = relationship("ClaimGroupNote", back_populates="claim_group", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<ClaimGroup(id={self.id}, flight={self.flight_number}, claims={len(self.claims) if self.claims else 0})>"
+
+
+class ClaimGroupNote(Base):
+    """Admin notes for claim groups.
+    
+    Allows admins to add notes visible to all admins working on a claim group.
+    """
+    
+    __tablename__ = "claim_group_notes"
+    
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_group_id = Column(PGUUID(as_uuid=True), ForeignKey("claim_groups.id"), nullable=False, index=True)
+    admin_id = Column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    
+    note_text = Column(Text, nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    claim_group = relationship("ClaimGroup", back_populates="notes")
+    admin = relationship("Customer", foreign_keys=[admin_id])
+    
+    def __repr__(self):
+        return f"<ClaimGroupNote(id={self.id}, group_id={self.claim_group_id})>"
+
+
 # Add events relationship to Claim model
 Claim.events = relationship("ClaimEvent", back_populates="claim", cascade="all, delete-orphan")
+
+# Add claim_group relationship to Claim model
+Claim.claim_group = relationship("ClaimGroup", back_populates="claims")
+Claim.claim_group_id = Column(PGUUID(as_uuid=True), ForeignKey("claim_groups.id"), nullable=True, index=True)

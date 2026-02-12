@@ -655,7 +655,159 @@ class HealthResponseSchema(BaseModel):
 
 class ErrorResponseSchema(BaseModel):
     """Schema for error responses."""
-    
+
     success: bool = False
     error: dict
     timestamp: datetime
+
+
+class StandardResponseSchema(BaseModel):
+    """Standard response schema for API endpoints."""
+
+    success: bool = True
+    message: str
+    data: Optional[dict] = None
+
+
+# ============================================================================
+# PHASE 5: Multi-Passenger Claims - Claim Groups
+# ============================================================================
+
+
+class ClaimGroupCreateSchema(BaseModel):
+    """Schema for creating a new claim group."""
+    
+    flight_number: str = Field(..., min_length=3, max_length=10)
+    flight_date: date
+    group_name: Optional[str] = Field(None, max_length=255)
+    
+    @validator('flight_number')
+    def validate_flight_number(cls, v):
+        """Validate flight number format."""
+        if v:
+            v = v.upper().strip()
+            if not any(char.isdigit() for char in v):
+                raise ValueError("Flight number must contain digits")
+            if len(v) < 3:
+                raise ValueError("Flight number too short")
+        return v
+
+
+class ClaimGroupSchema(BaseModel):
+    """Schema for claim group response."""
+    
+    id: UUID
+    account_holder_id: UUID
+    flight_number: str
+    flight_date: date
+    group_name: Optional[str]
+    consent_confirmed: bool
+    consent_confirmed_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class ClaimGroupSummarySchema(BaseModel):
+    """Schema for claim group summary (list view)."""
+    
+    id: UUID
+    group_name: Optional[str]
+    flight_number: str
+    flight_date: date
+    total_claims: int
+    total_compensation: Optional[Decimal]
+    status_summary: dict  # e.g., {"approved": 2, "pending": 1}
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class ClaimGroupDetailSchema(BaseModel):
+    """Schema for claim group with all claims."""
+    
+    id: UUID
+    account_holder_id: UUID
+    flight_number: str
+    flight_date: date
+    group_name: Optional[str]
+    consent_confirmed: bool
+    consent_confirmed_at: Optional[datetime]
+    claims: List[dict]  # Simplified claim info
+    total_compensation: Optional[Decimal]
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class ClaimGroupNoteCreateSchema(BaseModel):
+    """Schema for creating a claim group note."""
+    
+    note_text: str = Field(..., min_length=1, max_length=5000)
+    
+    @validator('note_text')
+    def validate_note_text(cls, v):
+        """Prevent XSS by rejecting HTML tags."""
+        return validate_no_html(v)
+
+
+class ClaimGroupNoteSchema(BaseModel):
+    """Schema for claim group note response."""
+    
+    id: UUID
+    claim_group_id: UUID
+    admin_id: UUID
+    note_text: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class BulkActionSchema(BaseModel):
+    """Schema for bulk actions on claim groups."""
+    
+    action: str = Field(..., pattern="^(approve_all|reject_all|request_info_all)$")
+    rejection_reason: Optional[str] = Field(None, max_length=1000)
+    
+    @validator('rejection_reason')
+    def validate_rejection_reason(cls, v, values):
+        """Require rejection reason when action is reject_all."""
+        if values.get('action') == 'reject_all' and not v:
+            raise ValueError("Rejection reason is required when rejecting all claims")
+        return v
+
+
+class ClaimGroupFilterSchema(BaseModel):
+    """Schema for filtering claim groups (admin)."""
+    
+    status: Optional[str] = None
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+    account_holder_id: Optional[UUID] = None
+    flight_number: Optional[str] = None
+
+
+class GroupedClaimSubmitSchema(BaseModel):
+    """Schema for submitting a claim with group association."""
+    
+    claim_group_id: UUID
+    # Include all fields from regular claim submission
+    flight_number: str
+    airline: str
+    departure_date: date
+    departure_airport: str
+    arrival_airport: str
+    incident_type: str
+    passenger_first_name: str = Field(..., max_length=100)
+    passenger_last_name: str = Field(..., max_length=100)
+    passenger_date_of_birth: Optional[date] = None
+    relationship_to_holder: Optional[str] = Field(None, max_length=50)
+    booking_reference: Optional[str] = None
+    ticket_number: Optional[str] = None
+    consent_confirmed: bool = False

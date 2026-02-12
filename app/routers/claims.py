@@ -36,6 +36,8 @@ from app.dependencies.auth import get_current_user, get_optional_current_user, g
 from app.utils.db_encryption import generate_blind_index
 from app.utils.request_utils import get_client_info
 
+# Create router
+router = APIRouter(prefix="/claims", tags=["claims"])
 
 
 def verify_claim_access(claim: Claim, current_user: Customer, token_claim_id: Optional[UUID] = None) -> None:

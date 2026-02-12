@@ -49,6 +49,11 @@ celery -A app.celery_app worker --loglevel=info  # Background tasks
 
 ## OpenProject Task Management
 
+**⚠️ IMPORTANT: When you need user input or clarification, use the `question` tool instead of asking in text!**
+- Use `question` tool when you need to gather requirements, preferences, or decisions from the user
+- Never just throw questions in text - use the tool for a proper response interface
+- This ensures clear, structured answers and better user experience
+
 For significant work or feature implementation, you may use the `openproject-task-manager` skill to track progress if needed, but prioritize direct action for straightforward tasks.
 
 ## 🛑 CRITICAL NOTIFICATION MANDATE

@@ -1,7 +1,7 @@
 ## Phase 5: Multi-Passenger Claims (Family/Group Claims)
 
 **Priority**: HIGH - Major UX improvement and revenue opportunity
-**Status**: 🚀 **IN PROGRESS** - ~40% Complete
+**Status**: 🚀 **IN PROGRESS** - ~60% Complete
 **Estimated Effort**: 3.5-5 weeks (18-27 days)
 **Business Value**: HIGH - Increases average order value and customer satisfaction
 **📄 Detailed Planning**: See [docs/MULTI_PASSENGER_CLAIMS.md](docs/MULTI_PASSENGER_CLAIMS.md)
@@ -20,9 +20,22 @@
 2. **Legal & Authorization Flow** (3-4 days): Digital POA signature, PDF generation, Email attachments ✅
 3. **Single Claim Group API** (2-3 days): Core API endpoints ✅ (Enhanced for draft resume)
 4. **Frontend Multi-Passenger Form** (5-7 days): Wizard with passenger addition ✅ (Step 3 Refactored & Draft Resume fixed)
-5. **Customer Dashboard** (2-3 days): View grouped claims ⏳
-6. **Admin Interface** (4-6 days): Manage and process grouped claims ⏳
+5. **Customer Dashboard** (2-3 days): View grouped claims ⏳ **WP #363** - SCHEDULED: Feb 17-19, 2026
+6. **Admin Interface** (4-6 days): Manage and process grouped claims ⏳ **WP #364, #365** - SCHEDULED: Feb 18-20, 2026
 7. **Notifications & Polish** (2-3 days): Email templates, testing ✅ (Draft resume flow verified)
+
+### Remaining Work (Week of Feb 16-20, 2026)
+
+**Backend (Web app backend project):**
+- WP #362: Create Claim Groups API endpoints (16h) - Feb 16-18
+- WP #364: Admin Interface for Claim Groups (14h) - Feb 18-20
+
+**Frontend (Web app frontend project):**
+- WP #366: Add Consent Checkbox for Multi-Passenger Claims (6h) - Feb 16-17
+- WP #363: Customer Dashboard - View Grouped Claims (12h) - Feb 17-19
+- WP #365: Admin Dashboard - Manage Grouped Claims (16h) - Feb 19-20
+
+**Total Effort**: ~64 hours (8 days with 2 developers)
 
 ### GDPR & Compliance
 

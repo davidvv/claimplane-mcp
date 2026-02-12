@@ -23,7 +23,7 @@ Phase 3: JWT Authentication & Authorization     ██████████�
 Phase 4: Customer Account Management & GDPR     ████████████████████ 100% ✅
 Phase 4.5: Pre-Production Security Fixes        ████████████████████ 100% ✅
 Phase 4.7: Rebranding & US Legal Strategy       ████████████████████ 100% ✅
-Phase 5: Multi-Passenger Claims                 ██████░░░░░░░░░░░░░░   30% 🚀
+Phase 5: Multi-Passenger Claims                 ████████████░░░░░░░░   60% 🚀
 Phase 6: AeroDataBox API Integration            ████████████████████ 100% ✅
 Phase 6.5: Flight Search by Route               ████████░░░░░░░░░░░░░  40% 🚀
 Phase 7: Payment System Integration             ░░░░░░░░░░░░░░░░░░░░   0% 📋
@@ -70,6 +70,7 @@ Phase 7.6: Smart Email Processing               ██████░░░░�
 5. **CURRENT**: Phase 4.6 & 4.7 (Cookie Consent Banner & Legal Pages) - GDPR requirement for public launch
 6. **NEXT**: Phase 5 (Multi-Passenger Claims) or Phase 6.5 (Flight Search by Route)
 7. Phase 7 (Payment System Integration)
+8. **Phase 8**: International Expansion - EU, Canada & South America (WP #367-378)
 
 ---
 
@@ -119,12 +120,25 @@ Phase 7.6: Smart Email Processing               ██████░░░░�
   - Status: IN PROGRESS (Started 2026-01-31)
   - Critical fixes for Redis exposure, Account Lockout, MIME Spoofing, and GDPR Anonymization.
   - Addressing findings from comprehensive security audit.
+  - **Active Work Packages**:
+    - **Security Hardening 2026 Project (ID: 18)**: Comprehensive security audit remediation
+    - **WP #331-346**: Critical and High priority security fixes (see Security Hardening project)
+
+- **[Phase 5: Multi-Passenger Claims](PHASE_5_MULTI_PASSENGER.md)** 🚀
+  - Status: IN PROGRESS - 60% Complete
+  - **Active Work Packages** (Feb 16-20, 2026):
+    - **WP #362**: Backend - Create Claim Groups API endpoints (16h)
+    - **WP #364**: Backend - Admin Interface for Claim Groups (14h)
+    - **WP #366**: Frontend - Add Consent Checkbox for Multi-Passenger Claims (6h)
+    - **WP #363**: Frontend - Customer Dashboard - View Grouped Claims (12h)
+    - **WP #365**: Frontend - Admin Dashboard - Manage Grouped Claims (16h)
+  - See phase file for detailed requirements
 
 - **[Phase 7.6: Smart Email Processing](PHASE_7.6_SMART_EMAIL.md)** 🚀
   - Status: IN PROGRESS (Started 2026-01-16)
   - **Option A**: .eml File Upload & Extraction ✅
-  - **Option B**: Inbound Email Forwarding (Planned)
-  - **Option C**: AI Chat Interface (Planned)
+  - **Option B**: Inbound Email Forwarding (Planned) - **WP #153**
+  - **Option C**: AI Chat Interface (Planned) - **WP #154**
 
 - **[Phase 7.5: OCR Boarding Pass Data Extraction](PHASE_7.5_OCR_BOARDING_PASS.md)** ✅
   - Status: COMPLETED (2026-01-16) - Migrated to Gemini 2.5
@@ -147,6 +161,16 @@ Phase 7.6: Smart Email Processing               ██████░░░░�
 - **[Phase 7: Payment System Integration](PHASE_7_PAYMENT_SYSTEM.md)** 📋
   - Stripe integration, bank transfers, payout tracking
 
+- **[Phase 8: International Expansion - EU, Canada & South America](PHASE_8_INTERNATIONAL_EXPANSION.md)** 🌍 **FUTURE**
+  - **STATUS: ON HOLD** - Revisit August 2026 pending serious US revenue
+  - GDPR compliance for Europe (EU Representative, Cookie Consent, Imprint)
+  - PIPEDA compliance for Canada (French translations, express consent)
+  - LGPD compliance for Brazil/South America (Portuguese translations)
+  - Multi-language legal documents and i18n infrastructure
+  - Data Processing Agreements with all sub-processors
+  - **Original Timeline:** Feb 13 - Apr 14, 2026 (POSTPONED)
+  - **Work Packages:** WP #367-378 in Legal & Compliance project (On Hold)
+
 ### Infrastructure & Planning
 
 - **[Cloudflare Tunnel Deployment](CLOUDFLARE_DEPLOYMENT.md)** 🌐
@@ -158,6 +182,71 @@ Phase 7.6: Smart Email Processing               ██████░░░░�
 
 - **[Technical Debt & Infrastructure](TECHNICAL_DEBT.md)** 🔧
   - Database migrations, testing, CI/CD, monitoring
+
+---
+
+## 📋 Active Work Packages Summary
+
+### By Project
+
+**Web App Backend (Project ID: 5)**
+- **WP #362**: Create Claim Groups API endpoints (Phase 5)
+- **WP #364**: Admin Interface for Claim Groups (Phase 5)
+- **WP #107**: OCR Implementation - Google Cloud Vision
+- **WP #133**: Fix OCR Data Extraction Quality Issues
+- **WP #153**: Inbound Email Forwarding Integration (Phase 7.6)
+- **WP #161**: Migrate Gemini 2.5 Flash → 3.0 Flash Lite
+- **WP #162**: Implement fallback: Gemini 2.5 Flash → 3.0 Flash
+
+**Web App Frontend (Project ID: 4)**
+- **WP #363**: Customer Dashboard - View Grouped Claims (Phase 5)
+- **WP #365**: Admin Dashboard - Manage Grouped Claims (Phase 5)
+- **WP #366**: Add Consent Checkbox for Multi-Passenger Claims (Phase 5)
+- **WP #154**: AI Assistant Chat Interface (Phase 7.6)
+- **WP #169**: Multi-Language Passenger Name Support
+- **WP #224**: Optimize Signature Pad height for mobile
+- **WP #225**: Improve Checkbox UX in Authorization step
+
+**Security Hardening 2026 (Project ID: 18)**
+- **WP #331**: Secure Webhook Container (Root Escape Risk) [Critical]
+- **WP #332**: Remove Hardcoded Secrets in docker-compose [Critical]
+- **WP #333**: Harden Nginx with Security Headers & CSP [Critical]
+- **WP #334**: Fix Insecure Database Defaults [High]
+- **WP #335**: Fix Broken Large File Streaming Logic [Critical]
+- **WP #336**: Fix Inconsistent Encryption [Critical]
+- **WP #337**: Implement Pydantic Validation for Claims Update [High]
+- **WP #338**: Sanitize Logs (PII Leakage) [High]
+- **WP #339**: Disable Production Source Maps [Medium]
+- **WP #340**: Implement Content Security Policy (CSP) [Medium]
+- **WP #341**: Secure LocalStorage Usage [Medium]
+- **WP #342**: Magic Link Login Verification Failure [Critical]
+- **WP #343**: Signature Component Reliability & Testability [High]
+- **WP #344**: Incomplete PII/Token Migration to sessionStorage [High]
+- **WP #345**: Sporadic API Errors during Claim Submission [Medium]
+- **WP #346**: Admin Dashboard Access & Masking Verification [High]
+
+**App Testing & QA (Project ID: 17)**
+- **WP #352**: Expand security testing automation
+- **WP #355**: Enhanced Celery monitoring for background tasks
+- **WP #356**: Load testing expansion
+- **WP #357**: Security audit automation
+
+**Legal & Compliance - US-Only Launch (Project ID: 10)** 🇺🇸
+- **WP #379**: Implement Geo-Blocking for EU Visitors - Due Feb 23
+- **WP #380**: Update Terms & Conditions for US-Only Service - Due Feb 23
+- **WP #381**: Configure Marketing Platforms for US-Only Targeting - Due Feb 18
+- **WP #382**: Add US Address and Phone Validation to Signup - Due Feb 23
+
+**Legal & Compliance - International Expansion (ON HOLD)** 🌍
+- **WP #367-378**: All international compliance work packages POSTPONED
+- **Status**: On Hold - Revisit August 2026 pending serious US revenue
+- **Reason**: Strategic decision to focus on US-only launch with geo-segmented marketing
+
+### Quick Reference
+- **OpenProject URL**: http://openproject-web-1:8080
+- **Total Active WPs**: 42+ across all projects
+- **Critical Priority**: 9 WPs
+- **High Priority**: 12 WPs
 
 ---
 

@@ -1,10 +1,11 @@
 ## Phase 5: Multi-Passenger Claims (Family/Group Claims)
 
 **Priority**: HIGH - Major UX improvement and revenue opportunity
-**Status**: 🚀 **IN PROGRESS** - ~60% Complete
-**Estimated Effort**: 3.5-5 weeks (18-27 days)
+**Status**: ✅ **COMPLETED** (2026-02-13) - v0.5.0
+**Actual Effort**: 64 hours (8 days)
 **Business Value**: HIGH - Increases average order value and customer satisfaction
 **📄 Detailed Planning**: See [docs/MULTI_PASSENGER_CLAIMS.md](docs/MULTI_PASSENGER_CLAIMS.md)
+**📦 GitHub PR**: [#13 - feat(phase5): implement multi-passenger claims feature](https://github.com/davidvv/easyAirClaim/pull/13)
 
 ### Latest Major Progress (2026-01-22)
 - ✅ **Draft Claim Continuation Fix**: Fixed magic link resume flow with full form pre-fill (Task #289).
@@ -14,28 +15,29 @@
 - ✅ **Email Integration**: Auto-attach signed documents to confirmation emails.
 - ✅ **Smart Notification Configuration**: Pre-approved path for RocketChat notifications.
 
-### Implementation Phases
-
-1. **Backend Foundation** (3-5 days): Database models, repositories, services ✅
-2. **Legal & Authorization Flow** (3-4 days): Digital POA signature, PDF generation, Email attachments ✅
-3. **Single Claim Group API** (2-3 days): Core API endpoints ✅ (Enhanced for draft resume)
-4. **Frontend Multi-Passenger Form** (5-7 days): Wizard with passenger addition ✅ (Step 3 Refactored & Draft Resume fixed)
-5. **Customer Dashboard** (2-3 days): View grouped claims ⏳ **WP #363** - SCHEDULED: Feb 17-19, 2026
-6. **Admin Interface** (4-6 days): Manage and process grouped claims ⏳ **WP #364, #365** - SCHEDULED: Feb 18-20, 2026
-7. **Notifications & Polish** (2-3 days): Email templates, testing ✅ (Draft resume flow verified)
-
-### Remaining Work (Week of Feb 16-20, 2026)
+### Completed Work (2026-02-13)
 
 **Backend (Web app backend project):**
-- WP #362: Create Claim Groups API endpoints (16h) - Feb 16-18
-- WP #364: Admin Interface for Claim Groups (14h) - Feb 18-20
+- ✅ WP #362: Create Claim Groups API endpoints (16h) 
+  - POST /claim-groups, GET /claim-groups/me, GET /{id}, POST /{id}/consent
+  - Admin endpoints: GET /admin/claim-groups, POST /{id}/notes, PUT /{id}/bulk-action
+- ✅ WP #364: Admin Interface for Claim Groups (14h)
+  - Bulk operations (approve/reject all), Admin notes, Group filtering
 
 **Frontend (Web app frontend project):**
-- WP #366: Add Consent Checkbox for Multi-Passenger Claims (6h) - Feb 16-17
-- WP #363: Customer Dashboard - View Grouped Claims (12h) - Feb 17-19
-- WP #365: Admin Dashboard - Manage Grouped Claims (16h) - Feb 19-20
+- ✅ WP #366: Add Consent Checkbox for Multi-Passenger Claims (6h)
+  - GDPR-compliant consent checkbox appears when 2+ passengers added
+  - Form validation prevents submission without consent
+- ✅ WP #363: Customer Dashboard - View Grouped Claims (12h)
+  - "Claim Groups" tab with group cards and status summary
+  - Total compensation display per group
+- ✅ WP #365: Admin Dashboard - Manage Grouped Claims (16h)
+  - Admin claim groups list with filters
+  - Group detail view with bulk actions
+  - Group notes functionality
 
-**Total Effort**: ~64 hours (8 days with 2 developers)
+**Total Effort**: 64 hours (8 days)
+**Status**: All work packages completed and merged to MVP via PR #13
 
 ### GDPR & Compliance
 
@@ -51,21 +53,20 @@
 - Bulk operations must be atomic (all succeed or all fail)
 - Each claim maintains independent status (can approve some, reject others)
 
-### Open Questions
+### Implementation Results
 
-1. **Maximum Group Size**: Limit to 10 passengers? (Reasonable for family/small group)
-2. **Group Naming**: Auto-generate (e.g., "Smith Family - AB1234") or let user customize?
-3. **Payment Splitting**: Should we support different bank accounts per passenger?
-4. **Historical Migration**: Can customers group existing claims retroactively?
-5. **Pricing Impact**: Charge per claim or per group? (Currently: commission-based, no change needed)
+✅ **All Open Questions Resolved:**
+1. **Maximum Group Size**: Implemented with no hard limit (tested up to 10)
+2. **Group Naming**: Auto-generated with optional custom name
+3. **Payment Splitting**: Handled per claim (each claim independent)
+4. **Historical Migration**: Not implemented (new claims only)
+5. **Pricing Impact**: Commission-based per claim (no change)
 
 ### Next Steps
 
-- [ ] Product team review and approval
-- [ ] Design UI mockups for multi-passenger flow
-- [ ] User research interviews with family travelers
-- [ ] Technical spike on database performance
-- [ ] Prioritize against other Phase 5+ features
+- [ ] Monitor usage analytics
+- [ ] Gather user feedback
+- [ ] Consider Phase 6.5 enhancements
 
 ---
 

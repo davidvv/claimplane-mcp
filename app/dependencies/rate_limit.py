@@ -2,6 +2,7 @@
 from fastapi import Request
 from slowapi import Limiter
 from app.utils.request_utils import get_real_ip
+from app.config import config
 
 # Create rate limiter
 limiter = Limiter(

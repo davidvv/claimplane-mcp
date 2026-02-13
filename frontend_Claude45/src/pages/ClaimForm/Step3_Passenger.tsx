@@ -555,6 +555,46 @@ export function Step3_Passenger({
         </CardContent>
       </Card>
 
+      {/* Multi-Passenger Consent (WP #366) */}
+      {fields.length > 1 && (
+        <Card className="border-amber-200 bg-amber-50/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-800">
+              <AlertCircle className="w-5 h-5" />
+              Authorization Confirmation
+            </CardTitle>
+            <CardDescription className="text-amber-700">
+              Required when filing for multiple passengers
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="consentConfirmed"
+                {...register('consentConfirmed')}
+                className="mt-1 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+              />
+              <div className="space-y-1">
+                <Label htmlFor="consentConfirmed" className="text-amber-900 font-medium cursor-pointer">
+                  I confirm I have permission to file claims for these passengers
+                </Label>
+                <p className="text-sm text-amber-700">
+                  By checking this box, you confirm that you are authorized to submit compensation claims on behalf of all passengers listed above. You understand that you are acting as their representative and have obtained their consent to file these claims.
+                </p>
+                <p className="text-xs text-amber-600">
+                  This is required for GDPR compliance and to prevent fraudulent claims.
+                </p>
+              </div>
+            </div>
+            {errors.consentConfirmed && (
+              <p className="text-sm text-destructive mt-2">{errors.consentConfirmed.message}</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Actions */}
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onBack}>

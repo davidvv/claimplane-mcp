@@ -43,6 +43,18 @@ FileSearchSchema = schemas_module.FileSearchSchema
 FileValidationRuleSchema = schemas_module.FileValidationRuleSchema
 FileSummarySchema = schemas_module.FileSummarySchema
 ErrorResponseSchema = schemas_module.ErrorResponseSchema
+StandardResponseSchema = schemas_module.StandardResponseSchema
+
+# Phase 5: Multi-Passenger Claims
+ClaimGroupCreateSchema = schemas_module.ClaimGroupCreateSchema
+ClaimGroupSchema = schemas_module.ClaimGroupSchema
+ClaimGroupSummarySchema = schemas_module.ClaimGroupSummarySchema
+ClaimGroupDetailSchema = schemas_module.ClaimGroupDetailSchema
+ClaimGroupNoteCreateSchema = schemas_module.ClaimGroupNoteCreateSchema
+ClaimGroupNoteSchema = schemas_module.ClaimGroupNoteSchema
+BulkActionSchema = schemas_module.BulkActionSchema
+ClaimGroupFilterSchema = schemas_module.ClaimGroupFilterSchema
+GroupedClaimSubmitSchema = schemas_module.GroupedClaimSubmitSchema
 
 # Import OCR schemas from local module
 from app.schemas.ocr_schemas import (
@@ -79,6 +91,17 @@ __all__ = [
     "FileValidationRuleSchema",
     "FileSummarySchema",
     "ErrorResponseSchema",
+    "StandardResponseSchema",
+    # Phase 5: Multi-Passenger Claims
+    "ClaimGroupCreateSchema",
+    "ClaimGroupSchema",
+    "ClaimGroupSummarySchema",
+    "ClaimGroupDetailSchema",
+    "ClaimGroupNoteCreateSchema",
+    "ClaimGroupNoteSchema",
+    "BulkActionSchema",
+    "ClaimGroupFilterSchema",
+    "GroupedClaimSubmitSchema",
     # OCR schemas
     "BoardingPassDataSchema",
     "FieldConfidenceSchema",

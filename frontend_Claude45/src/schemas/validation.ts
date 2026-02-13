@@ -241,7 +241,22 @@ export const passengerInfoSchema = z.object({
   // Incident Details
   incidentType: incidentTypeSchema,
   notes: z.string().max(1000, 'Notes must be less than 1000 characters').optional(),
-});
+  
+  // Multi-passenger consent (WP #366)
+  consentConfirmed: z.boolean().optional(),
+}).refine(
+  (data) => {
+    // Require consent when there are multiple passengers
+    if (data.passengers && data.passengers.length > 1) {
+      return data.consentConfirmed === true;
+    }
+    return true;
+  },
+  {
+    message: "You must confirm you have permission to file claims for these passengers",
+    path: ["consentConfirmed"],
+  }
+);
 
 // Claim Status Lookup
 export const claimStatusLookupSchema = z.object({

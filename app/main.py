@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.database import engine, Base
-from app.routers import health, customers, claims, files, admin_claims, admin_files, admin_deletion_requests, eligibility, auth, flights, account
+from app.routers import health, customers, claims, files, admin_claims, admin_files, admin_deletion_requests, eligibility, auth, flights, account, claim_groups, admin_claim_groups
 from app.exceptions import setup_exception_handlers
 from app.config import get_config
 from app.dependencies.rate_limit import limiter
@@ -144,6 +144,10 @@ app.include_router(files.router)
 app.include_router(admin_claims.router)
 app.include_router(admin_files.router)
 app.include_router(admin_deletion_requests.router)  # Phase 4: Deletion Request Management
+app.include_router(admin_claim_groups.router)  # Phase 5: Multi-Passenger Claim Groups
+
+# Phase 5: Multi-Passenger Claims
+app.include_router(claim_groups.router)
 
 
 @app.get("/")

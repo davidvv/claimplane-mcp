@@ -89,7 +89,7 @@ async def get_my_claim_groups(
         return StandardResponseSchema(
             success=True,
             message=f"Found {len(groups_data)} claim groups",
-            data=groups_data
+            data={"groups": groups_data}
         )
     except Exception as e:
         raise HTTPException(

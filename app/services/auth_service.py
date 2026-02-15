@@ -98,6 +98,9 @@ class AuthService:
         """
         Verify and decode a JWT access token.
 
+        SECURITY FIX: Explicitly enforce HS256 algorithm and validate claims.
+        This prevents algorithm confusion attacks (CVE-2015-9235).
+
         Args:
             token: JWT token string
 
@@ -105,16 +108,41 @@ class AuthService:
             Decoded token payload if valid, None otherwise
         """
         try:
-            payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.JWT_ALGORITHM])
+            # SECURITY: Explicitly enforce HS256 algorithm
+            # Do NOT use algorithms from config - hardcode to prevent algorithm confusion
+            payload = jwt.decode(
+                token, 
+                config.SECRET_KEY, 
+                algorithms=["HS256"],  # HARDCODED - prevents algorithm confusion attacks
+                options={
+                    "require": ["exp", "iat", "type", "user_id"],
+                    "verify_exp": True,
+                    "verify_iat": True,
+                }
+            )
 
             # Verify it's an access token
             if payload.get("type") != "access":
                 return None
 
+            # Validate required claims exist and are correct types
+            if not isinstance(payload.get("user_id"), str):
+                logger.warning("JWT payload has invalid user_id type")
+                return None
+            if not isinstance(payload.get("role"), str):
+                logger.warning("JWT payload has invalid role type")
+                return None
+
             return payload
         except jose_exceptions.ExpiredSignatureError:
+            logger.debug("JWT token expired")
             return None
-        except jose_exceptions.JWTError:
+        except jose_exceptions.JWTError as e:
+            logger.warning(f"JWT validation error: {e}")
+            return None
+        except Exception as e:
+            # Log unexpected errors for monitoring
+            logger.error(f"Unexpected JWT verification error: {e}", exc_info=True)
             return None
 
     @staticmethod

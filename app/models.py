@@ -742,9 +742,12 @@ class MagicLinkToken(Base):
         """
         Check if token is still valid.
 
+        SECURITY FIX: Tokens are single-use only - no grace period.
+        This prevents replay attacks where captured tokens could be reused.
+
         Tokens are valid if:
         - Not expired (within 48 hours of creation)
-        - Either never used OR used within last 24 hours (grace period for multiple uses)
+        - Never used (single-use only for security)
         """
         from datetime import timezone, timedelta
         now = datetime.now(timezone.utc)
@@ -753,14 +756,12 @@ class MagicLinkToken(Base):
         if self.expires_at <= now:
             return False
 
-        # If never used, it's valid
-        if self.used_at is None:
-            return True
+        # SECURITY: Token can only be used once - no grace period
+        # If used_at is set, token is invalid (prevents replay attacks)
+        if self.used_at is not None:
+            return False
 
-        # Allow reuse within 24 hour grace period
-        # This lets users click the link multiple times within a day
-        grace_period = timedelta(hours=24)
-        return (now - self.used_at.replace(tzinfo=timezone.utc)) < grace_period
+        return True
 
 
 class AccountDeletionRequest(Base):
@@ -1229,3 +1230,74 @@ Claim.events = relationship("ClaimEvent", back_populates="claim", cascade="all, 
 # Add claim_group relationship to Claim model
 Claim.claim_group = relationship("ClaimGroup", back_populates="claims")
 Claim.claim_group_id = Column(PGUUID(as_uuid=True), ForeignKey("claim_groups.id"), nullable=True, index=True)
+
+
+class FlightDelayEvent(Base):
+    """Stores flight delay events for marketing retargeting campaigns.
+    
+    Captures delay data from AeroDataBox GetGlobalDelays API and other sources
+    to power marketing campaigns targeting passengers with delayed flights.
+    
+    Data retention: 90 days (configurable)
+    """
+    
+    __tablename__ = "flight_delay_events"
+    
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # Flight identification
+    flight_number = Column(String(10), nullable=False, index=True)
+    flight_date = Column(Date, nullable=False, index=True)
+    
+    # Airline info
+    airline_name = Column(String(100), nullable=True)
+    airline_iata = Column(String(2), nullable=True, index=True)
+    
+    # Route info
+    departure_airport = Column(String(3), nullable=False, index=True)  # IATA code
+    arrival_airport = Column(String(3), nullable=False, index=True)    # IATA code
+    
+    # Delay details
+    delay_minutes = Column(Integer, nullable=False)
+    delay_reason = Column(String(255), nullable=True)
+    
+    # Scheduled times
+    scheduled_departure = Column(DateTime(timezone=True), nullable=True)
+    scheduled_arrival = Column(DateTime(timezone=True), nullable=True)
+    
+    # Status at time of capture
+    status = Column(String(20), nullable=True, default="delayed")
+    
+    # Data source
+    api_source = Column(String(50), nullable=False, default="aerodatabox")
+    api_fetched_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    
+    # Marketing flags
+    is_eu261_eligible = Column(Boolean, nullable=False, default=False, server_default="false")
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    def __repr__(self):
+        return f"<FlightDelayEvent({self.flight_number} on {self.flight_date}, delay={self.delay_minutes}min)>"
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses."""
+        return {
+            "id": str(self.id),
+            "flight_number": self.flight_number,
+            "flight_date": self.flight_date.isoformat() if self.flight_date else None,
+            "airline": self.airline_name,
+            "airline_iata": self.airline_iata,
+            "departure_airport": self.departure_airport,
+            "arrival_airport": self.arrival_airport,
+            "delay_minutes": self.delay_minutes,
+            "delay_reason": self.delay_reason,
+            "scheduled_departure": self.scheduled_departure.isoformat() if self.scheduled_departure else None,
+            "scheduled_arrival": self.scheduled_arrival.isoformat() if self.scheduled_arrival else None,
+            "status": self.status,
+            "is_eu261_eligible": self.is_eu261_eligible,
+            "api_source": self.api_source,
+            "api_fetched_at": self.api_fetched_at.isoformat() if self.api_fetched_at else None,
+        }

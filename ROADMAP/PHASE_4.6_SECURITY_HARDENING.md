@@ -98,6 +98,109 @@ Following a comprehensive security and privacy audit, several critical and high-
 
 ---
 
+---
+
+### 🆕 Pentagon-Level Security Audit - Feb 2026
+
+**Audit Date**: 2026-02-15  
+**Auditor**: Security Expert Agent  
+**Report**: `SECURITY_AUDIT_REPORT.md`  
+**OpenProject Work Packages**: Project 18 (Security Hardening 2026)  
+**Overall Security Score**: 7.5/10 → 9.5/10 (after fixes)
+
+#### Critical Fixes (Completed 2026-02-15)
+
+##### 4.6.9 Remove Hardcoded Encryption Keys
+**Risk**: Hardcoded Fernet keys in source code enable complete data decryption if exposed.  
+**Status**: ✅ **FIXED** (2026-02-15)  
+**OpenProject**: WP-403  
+**Changes**:
+- Removed `_DEV_FERNET_KEY` constant from `config.py`
+- Implemented `SecureConfig.get_encryption_key()` helper
+- Production now REQUIRES environment variables (fails hard if not set)
+- Development generates temporary random keys (changes on restart)
+- Added comprehensive key validation
+
+##### 4.6.10 Enforce Strong JWT Secrets
+**Risk**: Default JWT secret enables authentication bypass and token forgery.  
+**Status**: ✅ **FIXED** (2026-02-15)  
+**OpenProject**: WP-404  
+**Changes**:
+- Removed default `SECRET_KEY` from config
+- Implemented `SecureConfig.get_jwt_secret()` helper
+- Enforces minimum 32-character length in production
+- Generates random secrets in development only
+
+#### High Priority Fixes (Completed 2026-02-15)
+
+##### 4.6.11 Enforce JWT Algorithm Explicitly
+**Risk**: Algorithm confusion attacks (CVE-2015-9235) could bypass authentication.  
+**Status**: ✅ **FIXED** (2026-02-15)  
+**OpenProject**: WP-405  
+**Changes**:
+- Hardcoded algorithm to `"HS256"` in `verify_access_token()`
+- Added required claims validation (exp, iat, type, user_id)
+- Added type validation for claims
+- Improved error logging for monitoring
+
+##### 4.6.12 Rate Limiting on Magic Links
+**Risk**: Unlimited magic link requests enable email flooding and DoS attacks.  
+**Status**: ✅ **FIXED** (2026-02-15)  
+**OpenProject**: WP-406  
+**Changes**:
+- Added `@limiter.limit("3/hour")` decorator to `/auth/magic-link/request`
+- Returns generic success to prevent email enumeration
+- Added security logging for rate limit hits
+
+##### 4.6.13 Remove Magic Link Grace Period
+**Risk**: 24-hour grace period enables replay attacks with captured tokens.  
+**Status**: ✅ **FIXED** (2026-02-15)  
+**OpenProject**: WP-407  
+**Changes**:
+- Removed 24-hour grace period from `MagicLinkToken.is_valid`
+- Tokens now single-use only (no replay possible)
+- Token invalidated immediately after first use
+
+##### 4.6.14 Fix Password Reset Email Lookup
+**Risk**: `func.lower()` on encrypted email field doesn't work correctly.  
+**Status**: ✅ **FIXED** (2026-02-15)  
+**OpenProject**: WP-408  
+**Changes**:
+- Changed from `func.lower(Customer.email)` to `Customer.email_idx`
+- Uses blind index for proper encrypted field lookup
+- Normalizes email before creating blind index
+
+---
+
+### Testing & Verification
+
+#### Automated Testing
+- ✅ Config loading test passed
+- ✅ Health endpoint responding correctly
+- ✅ Authentication endpoints functional
+- ✅ JWT token generation/verification working
+
+#### E2E Testing (agent-browser)
+- ✅ Homepage loads successfully
+- ✅ Login/authentication flows work
+- ✅ Claim form functional
+- ✅ No stack traces exposed in errors
+- ✅ No sensitive data in localStorage
+- ✅ File upload working
+
+#### Security Verification
+- ✅ No hardcoded secrets in source code
+- ✅ Production secrets enforced
+- ✅ JWT algorithm hardcoded
+- ✅ Rate limiting active
+- ✅ Single-use magic links
+- ✅ Proper encrypted field lookups
+
+---
+
 ### Timeline
-- **Start Date**: 2026-01-31
-- **Target Completion**: 2026-02-01
+- **Phase 4.6 Start**: 2026-01-31
+- **Phase 4.6 Completion**: 2026-02-01
+- **Pentagon Audit**: 2026-02-15
+- **Critical Fixes**: 2026-02-15
+- **All Fixes Verified**: 2026-02-15

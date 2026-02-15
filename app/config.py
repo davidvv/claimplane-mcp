@@ -44,6 +44,78 @@ class SecureConfig:
             return True
         except Exception:
             return False
+    
+    @staticmethod
+    def get_encryption_key(var_name: str) -> str:
+        """
+        Get encryption key from environment variable.
+        
+        SECURITY: In production, this MUST be set via environment variable.
+        In development, generates a temporary key if not set.
+        """
+        key = os.getenv(var_name)
+        
+        if not key:
+            if os.getenv("ENVIRONMENT") == "production":
+                raise ValueError(
+                    f"CRITICAL SECURITY ERROR: {var_name} must be set in production.\n"
+                    f"Generate a secure key with:\n"
+                    f"python -c \"from cryptography.fernet import Fernet; "
+                    f"print(Fernet.generate_key().decode())\""
+                )
+            # Development: generate temporary key (changes on restart)
+            import warnings
+            warnings.warn(
+                f"{var_name} not set - generating temporary key for development. "
+                f"Set this in your .env file for persistent encryption.",
+                RuntimeWarning
+            )
+            return Fernet.generate_key().decode()
+        
+        # Validate key format
+        if not SecureConfig.validate_encryption_key(key):
+            raise ValueError(
+                f"{var_name} is not a valid Fernet key. "
+                f"Generate a new key with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+            )
+        
+        return key
+    
+    @staticmethod
+    def get_jwt_secret() -> str:
+        """
+        Get JWT secret from environment variable.
+        
+        SECURITY: In production, this MUST be set via environment variable.
+        In development, generates a random secret if not set.
+        """
+        key = os.getenv("SECRET_KEY")
+        
+        if not key:
+            if os.getenv("ENVIRONMENT") == "production":
+                raise ValueError(
+                    "CRITICAL SECURITY ERROR: SECRET_KEY must be set in production.\n"
+                    "Generate a secure secret with:\n"
+                    "python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+                )
+            # Development: generate random secret (changes on restart)
+            import warnings
+            warnings.warn(
+                "SECRET_KEY not set - generating temporary secret for development. "
+                f"This will invalidate existing tokens on restart. "
+                "Set SECRET_KEY in your .env file for persistent sessions.",
+                RuntimeWarning
+            )
+            return secrets.token_urlsafe(64)
+        
+        # Validate minimum entropy
+        if len(key) < 32:
+            raise ValueError(
+                f"SECRET_KEY must be at least 32 characters (current: {len(key)}). "
+                f"Generate a secure secret with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+            )
+        
+        return key
 
 
 # Production-ready configuration with secure defaults
@@ -57,27 +129,25 @@ class Config:
     )
     
     # Security Configuration
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-32-chars-at-least-123456")
+    # SECURITY: Use SecureConfig helper to enforce production secrets
+    SECRET_KEY = SecureConfig.get_jwt_secret()
     
     # File Management Configuration
     MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", "52428800"))  # 50MB
-    # Default keys for development - 32 byte URL-safe base64 encoded
-    _DEV_FERNET_KEY = "ZzA89fkJlfIcusc-7oa2Tejbdg4V5UrO3ctY8bpxgMY="
     
-    FILE_ENCRYPTION_KEY = os.getenv("FILE_ENCRYPTION_KEY", _DEV_FERNET_KEY)
-    DB_ENCRYPTION_KEY = os.getenv("DB_ENCRYPTION_KEY", _DEV_FERNET_KEY)
+    # SECURITY: Encryption keys retrieved via SecureConfig helper
+    # This enforces environment variables in production and generates
+    # temporary keys in development only
+    FILE_ENCRYPTION_KEY = SecureConfig.get_encryption_key("FILE_ENCRYPTION_KEY")
+    DB_ENCRYPTION_KEY = SecureConfig.get_encryption_key("DB_ENCRYPTION_KEY")
 
     # Streaming Configuration for Large Files
     STREAMING_THRESHOLD = int(os.getenv("STREAMING_THRESHOLD", "52428800"))  # 50MB
     CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "8388608"))  # 8MB
     MAX_MEMORY_BUFFER = int(os.getenv("MAX_MEMORY_BUFFER", "104857600"))  # 100MB
     
-    # Validate encryption keys
-    if not SecureConfig.validate_encryption_key(FILE_ENCRYPTION_KEY):
-        raise ValueError("Invalid FILE_ENCRYPTION_KEY format. Must be a valid Fernet key.")
-        
-    if not SecureConfig.validate_encryption_key(DB_ENCRYPTION_KEY):
-        raise ValueError("Invalid DB_ENCRYPTION_KEY format. Must be a valid Fernet key.")
+    # SECURITY NOTE: Encryption key validation is now handled by SecureConfig.get_encryption_key()
+    # This ensures keys are validated at load time with proper error messages
     
     # Nextcloud Configuration (should be set in production)
     NEXTCLOUD_URL = os.getenv("NEXTCLOUD_URL", "http://localhost:8081")

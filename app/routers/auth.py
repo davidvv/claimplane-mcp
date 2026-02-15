@@ -390,9 +390,10 @@ async def logout(
     summary="Request magic link login",
     description="Send a magic link to the user's email for passwordless login."
 )
+@limiter.limit("3/hour")
 async def request_magic_link(
-    data: MagicLinkRequestSchema,
     request: Request,
+    data: MagicLinkRequestSchema,
     session: AsyncSession = Depends(get_db)
 ):
     """
@@ -551,9 +552,12 @@ async def request_password_reset(
     # Get client info
     ip_address, user_agent = get_client_info(request)
 
-    # Find user by email (case-insensitive)
-    from sqlalchemy import select, func
-    stmt = select(Customer).where(func.lower(Customer.email) == data.email.lower())
+    # SECURITY FIX: Use blind index for encrypted email lookup
+    # func.lower(Customer.email) doesn't work on encrypted data
+    from sqlalchemy import select
+    from app.utils.db_encryption import generate_blind_index
+    email_idx = generate_blind_index(data.email.lower().strip())
+    stmt = select(Customer).where(Customer.email_idx == email_idx)
     result = await session.execute(stmt)
     customer = result.scalar_one_or_none()
 

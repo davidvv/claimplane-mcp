@@ -13,10 +13,15 @@ DATABASE_URL = os.getenv(
 )
 
 # Create async engine
+# SECURITY: SQL echo disabled by default in production to prevent query logging
+import os
+SQL_ECHO = os.getenv("SQL_ECHO", "false").lower() == "true"
 engine = create_async_engine(
     DATABASE_URL,
-    echo=True,  # Set to False in production
-    future=True
+    echo=SQL_ECHO,
+    future=True,
+    # SECURITY: Hide parameters in production to prevent sensitive data in logs
+    hide_parameters=os.getenv("ENVIRONMENT") == "production"
 )
 
 # Create async session factory

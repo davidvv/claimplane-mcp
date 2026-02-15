@@ -170,6 +170,49 @@ Following a comprehensive security and privacy audit, several critical and high-
 - Uses blind index for proper encrypted field lookup
 - Normalizes email before creating blind index
 
+#### Medium Priority Fixes (Completed 2026-02-15)
+
+##### 4.6.15 Strengthen CORS Validation
+**Risk**: Multiple CORS origins increase attack surface.  
+**Status**: ✅ **FIXED** (2026-02-15)  
+**OpenProject**: WP-409  
+**Changes**:
+- Added property-based CORS validation
+- Enforces HTTPS only in production
+- Prevents wildcard/subdomain wildcards
+- Validates each origin individually
+
+##### 4.6.16 Disable SQL Echo in Production
+**Risk**: SQL queries logged including sensitive data.  
+**Status**: ✅ **FIXED** (2026-02-15)  
+**OpenProject**: WP-412  
+**Changes**:
+- Made SQL echo configurable via `SQL_ECHO` environment variable
+- Defaults to False in production
+- Added `hide_parameters` option for production
+
+##### 4.6.17 Fix Double Extension File Upload Bypass
+**Risk**: Files like `malicious.pdf.exe` bypass extension checks.  
+**Status**: ✅ **FIXED** (2026-02-15)  
+**OpenProject**: WP-413  
+**Changes**:
+- Added check for dangerous extensions anywhere in filename
+- Validates MIME type matches extension
+- Prevents double extension attacks
+
+#### Low Priority Fixes (Completed 2026-02-15)
+
+##### 4.6.18 Enforce Password Complexity in Schemas
+**Risk**: Password requirements not enforced in schema validation.  
+**Status**: ✅ **VERIFIED** (2026-02-15)  
+**OpenProject**: WP-415  
+**Note**: Already implemented in `auth_schemas.py` with validators for:
+- Minimum 12 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one digit
+- At least one special character
+
 ---
 
 ### Testing & Verification

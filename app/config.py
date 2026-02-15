@@ -207,7 +207,29 @@ class Config:
     JWT_REFRESH_EXPIRATION_DAYS = int(os.getenv("JWT_REFRESH_EXPIRATION_DAYS", "7"))
     
     # CORS Configuration
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8081,https://eac.dvvcloud.work").split(",")
+    # SECURITY: In production, validate origins strictly
+    @property
+    def CORS_ORIGINS(self):
+        origins_str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8081,https://eac.dvvcloud.work")
+        origins = [o.strip() for o in origins_str.split(",") if o.strip()]
+        
+        # In production, enforce strict validation
+        if os.getenv("ENVIRONMENT") == "production":
+            if not origins:
+                raise ValueError("CORS_ORIGINS must be set in production")
+            
+            validated_origins = []
+            for origin in origins:
+                # Enforce HTTPS in production
+                if not origin.startswith("https://"):
+                    raise ValueError(f"CORS origin must use HTTPS in production: {origin}")
+                # Prevent wildcards
+                if "*" in origin:
+                    raise ValueError(f"CORS origin cannot contain wildcard: {origin}")
+                validated_origins.append(origin)
+            return validated_origins
+        
+        return origins
     
     # Trusted Hosts Configuration
     ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,eac.dvvcloud.work,api").split(",")

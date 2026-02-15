@@ -217,7 +217,11 @@ class FileSecurityMiddleware(BaseHTTPMiddleware):
         return True
     
     def _is_safe_filename(self, filename: str) -> bool:
-        """Check if filename is safe."""
+        """Check if filename is safe with comprehensive extension validation.
+        
+        SECURITY: Checks for double extensions and dangerous file types
+        to prevent bypass attacks like 'malicious.pdf.exe'
+        """
         if not filename or len(filename) > 255:
             return False
         
@@ -230,10 +234,23 @@ class FileSecurityMiddleware(BaseHTTPMiddleware):
         if any(char in filename for char in suspicious_chars):
             return False
         
-        # Check file extension
+        # SECURITY: Check for dangerous extensions anywhere in filename
+        # Prevents double extension attacks like 'malicious.pdf.exe'
+        dangerous_extensions = {
+            '.exe', '.bat', '.cmd', '.sh', '.php', '.jsp', '.asp', '.aspx',
+            '.dll', '.scr', '.jar', '.py', '.rb', '.pl', '.cgi'
+        }
+        filename_lower = filename.lower()
+        for dangerous in dangerous_extensions:
+            if dangerous in filename_lower:
+                logger.warning(f"Dangerous extension detected in filename: {filename}")
+                return False
+        
+        # Check file extension (last extension only)
         allowed_extensions = {'.pdf', '.jpg', '.jpeg', '.png', '.gif', '.txt', '.csv'}
         ext = os.path.splitext(filename)[1].lower()
         if ext not in allowed_extensions:
+            logger.warning(f"Disallowed file extension: {ext}")
             return False
         
         return True

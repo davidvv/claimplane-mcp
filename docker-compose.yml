@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  easyairclaim-mcp:
+  claimplane-mcp:
     build: .
-    container_name: easyairclaim-mcp-server
+    container_name: claimplane-mcp-server
     ports:
       - "39128:39128"  # MCP endpoint (Streamable HTTP at /mcp, health at /health)
       - "8083:8083"    # Dashboard endpoint (reserved)
@@ -22,7 +22,7 @@ services:
       # Mount MCP server code (for development)
       - .:/app
     networks:
-      - easyairclaim_nextcloud_network
+      - claimplane_nextcloud_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:39128/health"]
@@ -32,5 +32,5 @@ services:
       start_period: 10s
 
 networks:
-  easyairclaim_nextcloud_network:
+  claimplane_nextcloud_network:
     external: true

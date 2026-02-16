@@ -1,9 +1,10 @@
 """Flight data service - orchestration layer for flight verification.
 
 This service orchestrates:
-- CacheService: Check cache first (24h TTL)
+- CacheService: Check Redis cache first (24h TTL) - FAST
+- FlightDataCacheRepository: Check permanent database cache - NEVER PAY TWICE
 - QuotaTrackingService: Check quota availability (emergency brake at 95%)
-- AeroDataBoxService: Call API if cache miss and quota available
+- AeroDataBoxService: Call API only if no cache hit (save money!)
 - CompensationService: Calculate EU261 compensation
 - FlightDataRepository: Store API snapshot for audit trail
 """
@@ -18,6 +19,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import config
 from app.models import Claim, FlightData
 from app.repositories.flight_data_repository import FlightDataRepository
+from app.repositories.flight_data_cache_repository import (
+    FlightDataCacheRepository,
+    FlightNotFoundLogRepository
+)
 from app.services.cache_service import CacheService
 from app.services.aerodatabox_service import aerodatabox_service
 from app.services.quota_tracking_service import QuotaTrackingService
@@ -35,15 +40,16 @@ class FlightDataService:
     """
     Orchestration service for flight verification and enrichment.
 
-    Flow:
-    1. Check cache (24h TTL)
-    2. If cache miss, check quota availability
-    3. If quota OK, call AeroDataBox API
-    4. Track API usage
-    5. Cache result
-    6. Calculate compensation
-    7. Store FlightData snapshot
-    8. Return enriched data
+    New Flow (Never Pay Twice!):
+    1. Check Redis cache (24h TTL) - FAST
+    2. Check FlightDataCache (permanent) - FREE
+    3. Check FlightNotFoundLog (avoid wasted calls) - FREE
+    4. If quota OK, call AeroDataBox API (PAY ONLY IF NEEDED)
+    5. Track API usage
+    6. Cache result in Redis + FlightDataCache
+    7. Calculate compensation
+    8. Store FlightData snapshot
+    9. Return enriched data
     """
 
     @classmethod
@@ -58,6 +64,7 @@ class FlightDataService:
         Verify flight data and enrich claim with compensation calculation.
 
         This is the main entry point for flight verification.
+        NOW WITH PERMANENT DATABASE CACHING - Never pay twice!
 
         Args:
             session: Database session
@@ -105,7 +112,7 @@ class FlightDataService:
         api_credits_used = 0
 
         try:
-            # Step 1: Check cache (unless force_refresh)
+            # Step 1: Check Redis cache (unless force_refresh)
             if not force_refresh:
                 cached_flight = await CacheService.get_cached_flight(
                     claim.flight_number,
@@ -113,12 +120,64 @@ class FlightDataService:
                 )
 
                 if cached_flight:
-                    logger.info(f"Using cached flight data for {claim.flight_number}")
+                    logger.info(f"Using Redis cached flight data for {claim.flight_number}")
                     flight_data_dict = cached_flight.get("data")
                     enriched_data["cached"] = True
                     enriched_data["verification_source"] = "cached"
 
-            # Step 2: If no cache, call API
+            # Step 2: Check permanent database cache (NEW! Never pay twice!)
+            if flight_data_dict is None and not force_refresh:
+                cache_repo = FlightDataCacheRepository(session)
+                db_cached = await cache_repo.get_fresh_or_none(
+                    claim.flight_number,
+                    claim.departure_date
+                )
+
+                if db_cached:
+                    if db_cached.is_permanently_not_found:
+                        # Flight was previously marked as not found by API
+                        logger.info(
+                            f"Flight {claim.flight_number} on {claim.departure_date} "
+                            f"was previously marked as permanently not found. Skipping API call."
+                        )
+                        enriched_data["verification_source"] = "not_found_permanent"
+                        return enriched_data
+
+                    # Use cached data!
+                    logger.info(
+                        f"Using database cached flight data for {claim.flight_number} "
+                        f"(saved {db_cached.cache_hits} API calls so far!)"
+                    )
+                    flight_data_dict = db_cached.to_api_response()
+                    enriched_data["cached"] = True
+                    enriched_data["verification_source"] = "historical_db"
+
+                    # Also cache in Redis for next time
+                    await CacheService.cache_flight(
+                        claim.flight_number,
+                        claim.departure_date.strftime("%Y-%m-%d"),
+                        flight_data_dict,
+                        ttl=config.FLIGHT_CACHE_TTL_SECONDS
+                    )
+
+            # Step 3: Check FlightNotFoundLog (avoid wasted API calls)
+            if flight_data_dict is None and not force_refresh:
+                not_found_repo = FlightNotFoundLogRepository(session)
+                not_found_entry = await not_found_repo.get_by_flight_and_date(
+                    claim.flight_number,
+                    claim.departure_date
+                )
+
+                if not_found_entry:
+                    logger.info(
+                        f"Flight {claim.flight_number} on {claim.departure_date} "
+                        f"previously returned 404 from API (checked {not_found_entry.check_count} times). "
+                        f"Skipping API call to save credits."
+                    )
+                    enriched_data["verification_source"] = "not_found_logged"
+                    return enriched_data
+
+            # Step 4: If no cache, call API
             if flight_data_dict is None:
                 # Check quota availability (emergency brake at 95%)
                 quota_available = await QuotaTrackingService.check_quota_available(session)
@@ -161,7 +220,7 @@ class FlightDataService:
                     flight_data_dict = api_response
                     enriched_data["verification_source"] = "aerodatabox"
 
-                    # Cache the result
+                    # Cache the result in Redis (24h)
                     await CacheService.cache_flight(
                         claim.flight_number,
                         claim.departure_date.strftime("%Y-%m-%d"),
@@ -169,7 +228,40 @@ class FlightDataService:
                         ttl=config.FLIGHT_CACHE_TTL_SECONDS
                     )
 
+                    # Also cache in permanent database (NEW!)
+                    await cls._cache_flight_data_permanently(
+                        session,
+                        claim.flight_number,
+                        claim.departure_date,
+                        flight_data_dict
+                    )
+
                     logger.info(f"Successfully retrieved flight data from AeroDataBox API")
+
+                except AeroDataBoxFlightNotFoundError as e:
+                    # Flight not found - log it to avoid future API calls
+                    logger.warning(f"Flight not found in AeroDataBox: {claim.flight_number}")
+
+                    not_found_repo = FlightNotFoundLogRepository(session)
+                    await not_found_repo.log_not_found(
+                        flight_number=claim.flight_number,
+                        flight_date=claim.departure_date,
+                        departure_airport=claim.departure_airport,
+                        arrival_airport=claim.arrival_airport,
+                        error_code="404",
+                        error_message=str(e),
+                        claim_id=claim.id
+                    )
+
+                    # Also mark in FlightDataCache
+                    cache_repo = FlightDataCacheRepository(session)
+                    await cache_repo.mark_as_not_found(
+                        claim.flight_number,
+                        claim.departure_date
+                    )
+
+                    enriched_data["verification_source"] = "not_found"
+                    return enriched_data
 
                 except AeroDataBoxError as e:
                     # Track failed API call
@@ -190,10 +282,10 @@ class FlightDataService:
                     logger.error(f"AeroDataBox API error: {str(e)}")
                     raise  # Re-raise for caller to handle
 
-            # Step 3: Parse flight data
+            # Step 5: Parse flight data
             parsed_data = cls._parse_flight_data(flight_data_dict, claim)
 
-            # Step 4: Calculate distance (if not in parsed data)
+            # Step 6: Calculate distance (if not in parsed data)
             if parsed_data.get("distance_km") is None:
                 try:
                     distance = await cls._calculate_distance(
@@ -216,10 +308,10 @@ class FlightDataService:
                     )
                     parsed_data["distance_km"] = distance if distance else None
 
-            # Step 5: Calculate compensation
+            # Step 7: Calculate compensation
             compensation_result = await cls._calculate_compensation(claim, parsed_data)
 
-            # Step 6: Store FlightData snapshot
+            # Step 8: Store FlightData snapshot
             flight_data_record = await cls._store_flight_data(
                 session,
                 claim,
@@ -227,7 +319,7 @@ class FlightDataService:
                 flight_data_dict
             )
 
-            # Step 7: Build enriched response
+            # Step 9: Build enriched response
             enriched_data.update({
                 "verified": True,
                 "distance_km": float(parsed_data.get("distance_km")) if parsed_data.get("distance_km") else None,
@@ -245,7 +337,8 @@ class FlightDataService:
                 f"Flight verification complete for claim {claim.id}: "
                 f"verified={enriched_data['verified']}, "
                 f"compensation={enriched_data['compensation_amount']} EUR, "
-                f"cached={enriched_data['cached']}"
+                f"cached={enriched_data['cached']}, "
+                f"source={enriched_data['verification_source']}"
             )
 
             return enriched_data
@@ -268,6 +361,171 @@ class FlightDataService:
                 exc_info=True
             )
             return cls._create_manual_verification_response(claim)
+
+    @classmethod
+    async def _cache_flight_data_permanently(
+        cls,
+        session: AsyncSession,
+        flight_number: str,
+        flight_date: datetime.date,
+        api_response: Dict[str, Any]
+    ) -> None:
+        """
+        Store flight data in permanent cache for future reuse.
+
+        This is the key to "never pay twice" - we store the API response
+        permanently so future claims for the same flight don't need API calls.
+
+        Args:
+            session: Database session
+            flight_number: Flight number
+            flight_date: Flight date
+            api_response: Full API response to cache
+        """
+        try:
+            # Parse the API response
+            flight_data = cls._extract_flight_data_from_response(api_response)
+
+            # Add airport codes from the response if available
+            if isinstance(api_response, list) and len(api_response) > 0:
+                flight = api_response[0]
+            elif isinstance(api_response, dict):
+                flight = api_response
+            else:
+                flight = {}
+
+            departure = flight.get("departure", {})
+            arrival = flight.get("arrival", {})
+            airline = flight.get("airline", {})
+
+            # Extract IATA codes
+            departure_iata = departure.get("airport", {}).get("iata") if departure else None
+            arrival_iata = arrival.get("airport", {}).get("iata") if arrival else None
+            airline_iata = airline.get("iata") if airline else None
+
+            # Parse scheduled times
+            scheduled_departure = None
+            scheduled_arrival = None
+            actual_departure = None
+            actual_arrival = None
+
+            if flight_data.get("scheduled_departure"):
+                try:
+                    scheduled_departure = datetime.fromisoformat(
+                        flight_data["scheduled_departure"].replace('Z', '+00:00')
+                    )
+                except:
+                    pass
+
+            if flight_data.get("scheduled_arrival"):
+                try:
+                    scheduled_arrival = datetime.fromisoformat(
+                        flight_data["scheduled_arrival"].replace('Z', '+00:00')
+                    )
+                except:
+                    pass
+
+            if flight_data.get("actual_departure"):
+                try:
+                    actual_departure = datetime.fromisoformat(
+                        flight_data["actual_departure"].replace('Z', '+00:00')
+                    )
+                except:
+                    pass
+
+            if flight_data.get("actual_arrival"):
+                try:
+                    actual_arrival = datetime.fromisoformat(
+                        flight_data["actual_arrival"].replace('Z', '+00:00')
+                    )
+                except:
+                    pass
+
+            # Calculate distance if in response
+            distance_km = None
+            if flight.get("distance") and flight["distance"].get("km"):
+                distance_km = Decimal(str(flight["distance"]["km"]))
+
+            # Create cache data dict
+            cache_data = {
+                "airline_iata": airline_iata,
+                "airline_name": flight_data.get("airline_name"),
+                "departure_airport_iata": departure_iata or "",
+                "arrival_airport_iata": arrival_iata or "",
+                "scheduled_departure": scheduled_departure,
+                "scheduled_arrival": scheduled_arrival,
+                "actual_departure": actual_departure,
+                "actual_arrival": actual_arrival,
+                "flight_status": flight_data.get("flight_status"),
+                "delay_minutes": flight_data.get("delay_minutes"),
+                "distance_km": distance_km
+            }
+
+            # Store in permanent cache
+            cache_repo = FlightDataCacheRepository(session)
+            await cache_repo.create_or_update(
+                flight_number=flight_number,
+                flight_date=flight_date,
+                flight_data=cache_data,
+                api_response_raw=api_response
+            )
+
+            logger.info(
+                f"Permanently cached flight data for {flight_number} on {flight_date} "
+                f"(will reuse for future claims without API cost)"
+            )
+
+        except Exception as e:
+            # Don't fail the whole operation if caching fails
+            logger.warning(f"Failed to cache flight data permanently: {str(e)}")
+
+    @classmethod
+    def _extract_flight_data_from_response(cls, api_response: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract flight data from API response for permanent caching."""
+        # Handle both single flight and list response
+        if isinstance(api_response, list) and len(api_response) > 0:
+            flight = api_response[0]
+        elif isinstance(api_response, dict):
+            flight = api_response
+        else:
+            return {}
+
+        # Extract airline info
+        airline = flight.get("airline", {})
+        airline_name = airline.get("name") if airline else None
+
+        # Extract departure info
+        departure = flight.get("departure", {})
+        scheduled_departure = departure.get("scheduledTime", {}).get("utc") if departure else None
+        actual_departure = departure.get("actualTime", {}).get("utc") if departure else None
+
+        # Extract arrival info
+        arrival = flight.get("arrival", {})
+        scheduled_arrival = arrival.get("scheduledTime", {}).get("utc") if arrival else None
+        actual_arrival = arrival.get("actualTime", {}).get("utc") if arrival else None
+
+        # Calculate delay
+        delay_minutes = None
+        if scheduled_arrival and actual_arrival:
+            try:
+                scheduled = datetime.fromisoformat(scheduled_arrival.replace('Z', '+00:00'))
+                actual = datetime.fromisoformat(actual_arrival.replace('Z', '+00:00'))
+                delay_minutes = int((actual - scheduled).total_seconds() / 60)
+            except Exception as e:
+                logger.warning(f"Failed to calculate delay: {str(e)}")
+
+        # Flight status
+        status = flight.get("status", "scheduled")
+
+        return {
+            "airline_name": airline_name,
+            "flight_status": status,
+            "scheduled_departure": scheduled_departure,
+            "actual_departure": actual_departure,
+            "scheduled_arrival": scheduled_arrival,
+            "actual_arrival": actual_arrival,
+            "delay_minutes": delay_minutes
+        }
 
     @classmethod
     def _parse_flight_data(cls, api_response: Dict[str, Any], claim: Claim) -> Dict[str, Any]:
@@ -472,3 +730,14 @@ class FlightDataService:
             "api_credits_used": 0,
             "cached": False
         }
+
+    @classmethod
+    async def get_cache_stats(cls, session: AsyncSession) -> Dict[str, Any]:
+        """
+        Get statistics about the flight data cache.
+
+        Returns:
+            Dictionary with cache statistics showing API savings
+        """
+        cache_repo = FlightDataCacheRepository(session)
+        return await cache_repo.get_cache_stats()

@@ -1,9 +1,10 @@
 """SQLAlchemy models for the flight claim system."""
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Dict, Any
 from uuid import UUID
 
-from sqlalchemy import Column, String, Numeric, Date, Text, ForeignKey, DateTime, func, Boolean, Integer, TypeDecorator
+from sqlalchemy import Column, String, Numeric, Date, Text, ForeignKey, DateTime, func, Boolean, Integer, TypeDecorator, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSON
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -1301,3 +1302,276 @@ class FlightDelayEvent(Base):
             "api_source": self.api_source,
             "api_fetched_at": self.api_fetched_at.isoformat() if self.api_fetched_at else None,
         }
+
+
+# ============================================================================
+# PHASE 8: Permanent Flight Data Caching - Never Pay Twice!
+# ============================================================================
+
+
+class FlightDataCache(Base):
+    """Centralized permanent cache for flight data from AeroDataBox API.
+
+    Unlike FlightData (which is claim-specific audit data), this table stores
+    reusable flight information that can be shared across ALL claims.
+
+    Purpose:
+    - Store flight data permanently after first API call
+    - Reuse for new claims without calling API again (save money!)
+    - Avoid paying for old flights (>180 days) that API won't return
+    - Track data freshness and re-fetch if needed
+
+    Key Features:
+    - Composite unique key: (flight_number, flight_date) ensures one entry per flight
+    - configurable_stale_days: How long before we consider data stale (default 7)
+    - last_refreshed_at: Track when we last fetched this data
+    - api_response_raw: Store complete API response for reconstruction
+
+    Usage Flow:
+    1. Check Redis cache (fast, 24h TTL)
+    2. Check FlightDataCache (permanent, reusable)
+    3. If stale/not found → Call AeroDataBox API
+    4. If API returns 404 → Mark as "permanently_not_found" to avoid future calls
+    5. Store successful response in FlightDataCache
+    """
+
+    __tablename__ = "flight_data_cache"
+
+    # Flight status types
+    STATUS_SCHEDULED = "scheduled"
+    STATUS_DELAYED = "delayed"
+    STATUS_CANCELLED = "cancelled"
+    STATUS_DIVERTED = "diverted"
+    STATUS_LANDED = "landed"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # Composite unique key: one entry per flight number + date
+    flight_number = Column(String(10), nullable=False, index=True)
+    flight_date = Column(Date, nullable=False, index=True)
+
+    # Airline info
+    airline_iata = Column(String(3), nullable=True)
+    airline_name = Column(String(255), nullable=True)
+
+    # Airports
+    departure_airport_iata = Column(String(3), nullable=False, index=True)
+    arrival_airport_iata = Column(String(3), nullable=False, index=True)
+
+    # Scheduled times
+    scheduled_departure = Column(DateTime(timezone=True), nullable=True)
+    scheduled_arrival = Column(DateTime(timezone=True), nullable=True)
+
+    # Actual times
+    actual_departure = Column(DateTime(timezone=True), nullable=True)
+    actual_arrival = Column(DateTime(timezone=True), nullable=True)
+
+    # Status and delay
+    flight_status = Column(String(50), nullable=True)
+    delay_minutes = Column(Integer, nullable=True)
+    distance_km = Column(Numeric(10, 2), nullable=True)
+
+    # Full API response stored for reconstruction
+    api_response_raw = Column(JSON, nullable=True)
+    api_source = Column(String(50), default="aerodatabox")
+
+    # Caching metadata
+    last_refreshed_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    configurable_stale_days = Column(Integer, nullable=False, default=7)  # Refetch after X days
+
+    # "Permanently not found" flag - API returned 404, won't find it later
+    is_permanently_not_found = Column(Boolean, nullable=False, default=False, server_default="false")
+    not_found_checked_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Usage tracking (how many times we've used cached data)
+    cache_hits = Column(Integer, nullable=False, default=0)
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Composite unique constraint
+    __table_args__ = (
+        # Ensure one unique entry per flight number + date combination
+        UniqueConstraint('flight_number', 'flight_date', name='uq_flight_number_date'),
+    )
+
+    def __repr__(self):
+        return f"<FlightDataCache(id={self.id}, flight={self.flight_number}, date={self.flight_date}, hits={self.cache_hits})>"
+
+    @property
+    def is_stale(self) -> bool:
+        """Check if cached data is considered stale and should be refreshed."""
+        if self.is_permanently_not_found:
+            return False  # Never refresh permanently not found flights
+
+        stale_threshold = timedelta(days=self.configurable_stale_days)
+        return datetime.now(timezone.utc) - self.last_refreshed_at > stale_threshold
+
+    @property
+    def delay_hours(self) -> Optional[float]:
+        """Calculate delay in hours from delay_minutes."""
+        if self.delay_minutes is not None:
+            return round(self.delay_minutes / 60.0, 2)
+        return None
+
+    def to_api_response(self) -> Dict[str, Any]:
+        """Reconstruct API response format from cached data.
+
+        Returns data in AeroDataBox API format for compatibility with
+        existing parsing code in flight_data_service.py.
+        """
+        # If we have the raw response, use it directly
+        if self.api_response_raw:
+            return self.api_response_raw
+
+        # Otherwise, reconstruct minimal response
+        return {
+            "number": self.flight_number,
+            "airline": {
+                "iata": self.airline_iata,
+                "name": self.airline_name
+            },
+            "departure": {
+                "airport": {
+                    "iata": self.departure_airport_iata
+                },
+                "scheduledTime": {
+                    "utc": self.scheduled_departure.isoformat() if self.scheduled_departure else None
+                },
+                "actualTime": {
+                    "utc": self.actual_departure.isoformat() if self.actual_departure else None
+                }
+            },
+            "arrival": {
+                "airport": {
+                    "iata": self.arrival_airport_iata
+                },
+                "scheduledTime": {
+                    "utc": self.scheduled_arrival.isoformat() if self.scheduled_arrival else None
+                },
+                "actualTime": {
+                    "utc": self.actual_arrival.isoformat() if self.actual_arrival else None
+                }
+            },
+            "status": self.flight_status,
+            "distance": {"km": float(self.distance_km) if self.distance_km else None}
+        }
+
+
+class AirportCache(Base):
+    """Permanent cache for airport information from AeroDataBox API.
+
+    Stores airport details (name, location, coordinates) to avoid
+    calling the API multiple times for the same airport.
+
+    Airport data rarely changes, so this is essentially permanent storage.
+    """
+
+    __tablename__ = "airport_cache"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # Airport identification (IATA code is unique identifier)
+    iata_code = Column(String(3), nullable=False, unique=True, index=True)
+    icao_code = Column(String(4), nullable=True, index=True)
+
+    # Airport details
+    name = Column(String(255), nullable=False)
+    city = Column(String(100), nullable=True)
+    country_code = Column(String(2), nullable=True)
+    country_name = Column(String(100), nullable=True)
+
+    # Location
+    latitude = Column(Numeric(10, 6), nullable=True)
+    longitude = Column(Numeric(10, 6), nullable=True)
+    timezone = Column(String(50), nullable=True)
+
+    # Full API response
+    api_response_raw = Column(JSON, nullable=True)
+    api_source = Column(String(50), default="aerodatabox")
+
+    # Usage tracking
+    cache_hits = Column(Integer, nullable=False, default=0)
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<AirportCache(iata={self.iata_code}, name={self.name}, hits={self.cache_hits})>"
+
+    def to_api_response(self) -> Dict[str, Any]:
+        """Reconstruct API response format from cached data."""
+        if self.api_response_raw:
+            return self.api_response_raw
+
+        return {
+            "iata": self.iata_code,
+            "icao": self.icao_code,
+            "name": self.name,
+            "shortName": self.name[:50] if self.name else None,
+            "city": self.city,
+            "country": {
+                "code": self.country_code,
+                "name": self.country_name
+            },
+            "location": {
+                "lat": float(self.latitude) if self.latitude else None,
+                "lon": float(self.longitude) if self.longitude else None
+            },
+            "timeZone": self.timezone
+        }
+
+
+class FlightNotFoundLog(Base):
+    """Track flights that returned 404 from AeroDataBox API.
+
+    When the API returns "flight not found", we log it here to avoid
+    wasting API calls on the same flight in the future.
+
+    Common reasons for "not found":
+    - Flight is older than 180 days (API limitation)
+    - Flight number/date is incorrect
+    - Flight was cancelled/rescheduled
+    - API doesn't have data for this airline/route
+
+    By tracking these, we can return immediate "not found" responses
+    without calling the API again, saving credits and improving UX.
+    """
+
+    __tablename__ = "flight_not_found_log"
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # Flight identification
+    flight_number = Column(String(10), nullable=False, index=True)
+    flight_date = Column(Date, nullable=False, index=True)
+
+    # Context
+    departure_airport = Column(String(3), nullable=True, index=True)
+    arrival_airport = Column(String(3), nullable=True, index=True)
+
+    # API response details
+    api_error_code = Column(String(50), nullable=True)  # e.g., "404", "not_found"
+    api_error_message = Column(Text, nullable=True)
+
+    # Tracking
+    first_not_found_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_checked_at = Column(DateTime(timezone=True), server_default=func.now())
+    check_count = Column(Integer, nullable=False, default=1)  # How many times we tried
+
+    # Source of the check (which claim/user triggered it)
+    last_claim_id = Column(PGUUID(as_uuid=True), ForeignKey("claims.id"), nullable=True)
+
+    # If we ever find it later (rare, but possible if API updates)
+    was_found_later = Column(Boolean, nullable=False, default=False, server_default="false")
+    found_later_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Composite unique constraint
+    __table_args__ = (
+        UniqueConstraint('flight_number', 'flight_date', name='uq_not_found_flight_date'),
+    )
+
+    def __repr__(self):
+        return f"<FlightNotFoundLog(flight={self.flight_number}, date={self.flight_date}, checks={self.check_count})>"

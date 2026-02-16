@@ -1,6 +1,6 @@
 # Development Roadmap
 
-**Last Updated**: 2026-02-04
+**Last Updated**: 2026-02-13
 **Current Version**: v0.5.3 (Rebranding & US Legal Strategy)
 **Status**: MVP Phase - US-Only Launch Ready with Rebranded UI 🚀
 **Strategy**: Business value first (#2 → #3 → #4 → GDPR → Rebranding)
@@ -46,7 +46,8 @@ Phase 7.6: Smart Email Processing               ██████░░░░�
 31. ✅ **UI Glitch Fix** - Fixed excessively long date input frames in Step 1 and OCR preview (WP #281)
 32. ✅ **Critical Bug Fix** - Fixed Claim Review crash (`TypeError`) when resuming draft claims from magic links (WP #301)
 33. ✅ **Admin Document Viewer** - Implemented interactive modal for viewing PDFs and images in admin panel (WP #295)
-34. ⚠️ **Infrastructure Alert** - Identified DB SIGKILL issue causing crash recovery loops; filed WP #296 to fix.
+34. ✅ **Permanent Flight Data Cache** - Implemented database-level caching to avoid duplicate API calls and save costs on old flights (>180 days)
+35. ⚠️ **Infrastructure Alert** - Identified DB SIGKILL issue causing crash recovery loops; filed WP #296 to fix.
 
 ### Security Improvements
 
@@ -99,12 +100,14 @@ Phase 7.6: Smart Email Processing               ██████░░░░�
   - Critical security hardening for public launch
 
 - **[Phase 4: Customer Account Management & GDPR Compliance](PHASE_4_ACCOUNT_MANAGEMENT.md)** ✅
-  - Status: COMPLETED (2026-01-03)
+  - Status: COMPLETED (2026-02-13) - Code Audit Confirmed 95%
   - Admin deletion request management (approve, reject, process)
   - GDPR data export endpoint (Article 20)
   - GDPR-compliant data deletion with anonymization (Article 17)
   - Account deletion workflow with email notifications
-  - **Remaining**: Phase 4.6 & 4.7 (Cookie Consent + Legal Pages)
+  - Legal pages (Terms, Privacy Policy, Contact) - All implemented
+  - **Remaining**: Documentation for manual deletion workflow (Section 4.9)
+  - **Deferred**: Cookie Consent (only needed when adding analytics)
 
 - **[Phase 6: AeroDataBox Flight Status API Integration](PHASE_6_AERODATABOX_API.md)** ✅
   - Status: COMPLETED (2026-01-01)

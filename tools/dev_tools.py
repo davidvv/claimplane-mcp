@@ -45,7 +45,7 @@ async def seed_realistic_data(scenario: str = "basic", count: int = 5) -> Dict[s
                 city = random.choice(cities)
                 country = random.choice(countries)
                 
-                customer = await customer_repo.create(
+                customer = await customer_repo.create_customer(
                     email=email,
                     first_name=first_name,
                     last_name=last_name,
@@ -140,8 +140,8 @@ async def create_test_scenario(
             customer_repo = CustomerRepository(session)
             claim_repo = ClaimRepository(session)
             
-            # Create customer
-            customer = await customer_repo.create(
+            # Create customer using create_customer to properly generate email_idx
+            customer = await customer_repo.create_customer(
                 email=email,
                 first_name="Test",
                 last_name="User",

@@ -1575,3 +1575,191 @@ class FlightNotFoundLog(Base):
 
     def __repr__(self):
         return f"<FlightNotFoundLog(flight={self.flight_number}, date={self.flight_date}, checks={self.check_count})>"
+
+
+# ============================================================================
+# BLOG SYSTEM MODELS
+# ============================================================================
+
+
+class BlogAuthor(Base):
+    """Blog author model for content attribution."""
+    
+    __tablename__ = "blog_authors"
+    
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False)
+    bio = Column(Text, nullable=True)
+    avatar_url = Column(String(500), nullable=True)
+    social_links = Column(JSON, nullable=True)  # {twitter: "...", linkedin: "..."}
+    email = Column(String(255), nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    posts = relationship("BlogPost", back_populates="author")
+    
+    def __repr__(self):
+        return f"<BlogAuthor(id={self.id}, name={self.name})>"
+
+
+class BlogCategory(Base):
+    """Blog category model for organizing posts."""
+    
+    __tablename__ = "blog_categories"
+    
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    slug = Column(String(255), unique=True, nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    parent_id = Column(PGUUID(as_uuid=True), ForeignKey("blog_categories.id"), nullable=True)
+    sort_order = Column(Integer, default=0)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    parent = relationship("BlogCategory", remote_side=[id], backref="children")
+    posts = relationship("BlogPost", secondary="blog_post_categories", back_populates="categories")
+    
+    def __repr__(self):
+        return f"<BlogCategory(id={self.id}, slug={self.slug})>"
+
+
+class BlogTag(Base):
+    """Blog tag model for content labeling."""
+    
+    __tablename__ = "blog_tags"
+    
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    slug = Column(String(255), unique=True, nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    posts = relationship("BlogPost", secondary="blog_post_tags", back_populates="tags")
+    
+    def __repr__(self):
+        return f"<BlogTag(id={self.id}, slug={self.slug})>"
+
+
+class BlogPost(Base):
+    """Blog post model for content management.
+    
+    Posts are stored as markdown files on disk with metadata in the database.
+    This allows for easy content editing while maintaining query performance.
+    """
+    
+    __tablename__ = "blog_posts"
+    
+    # Post status
+    STATUS_DRAFT = "draft"
+    STATUS_PUBLISHED = "published"
+    STATUS_ARCHIVED = "archived"
+    
+    STATUS_TYPES = [STATUS_DRAFT, STATUS_PUBLISHED, STATUS_ARCHIVED]
+    
+    # Supported languages
+    LANGUAGE_EN = "en"
+    LANGUAGE_DE = "de"
+    LANGUAGE_FR = "fr"
+    
+    LANGUAGES = [LANGUAGE_EN, LANGUAGE_DE, LANGUAGE_FR]
+    
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # Content identifiers
+    slug = Column(String(255), nullable=False, index=True)
+    language = Column(String(2), nullable=False, default=LANGUAGE_EN)
+    canonical_slug = Column(String(255), nullable=True)  # Links translations together
+    
+    # Content metadata
+    title = Column(String(500), nullable=False)
+    excerpt = Column(Text, nullable=True)  # Meta description and preview
+    featured_image_url = Column(String(500), nullable=True)
+    
+    # Content storage
+    content_path = Column(String(500), nullable=False)  # Path to markdown file
+    content_html_cache = Column(Text, nullable=True)  # Pre-rendered HTML
+    
+    # SEO fields
+    meta_title = Column(String(255), nullable=True)
+    meta_description = Column(Text, nullable=True)
+    
+    # Status and publishing
+    status = Column(String(50), default=STATUS_DRAFT)
+    published_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Analytics
+    view_count = Column(Integer, default=0, server_default="0")
+    reading_time_minutes = Column(Integer, nullable=True)
+    
+    # Author relationship
+    author_id = Column(PGUUID(as_uuid=True), ForeignKey("blog_authors.id"), nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Composite unique constraint for slug + language
+    __table_args__ = (
+        UniqueConstraint('slug', 'language', name='uq_blog_post_slug_language'),
+    )
+    
+    # Relationships
+    author = relationship("BlogAuthor", back_populates="posts")
+    categories = relationship("BlogCategory", secondary="blog_post_categories", back_populates="posts")
+    tags = relationship("BlogTag", secondary="blog_post_tags", back_populates="posts")
+    
+    def __repr__(self):
+        return f"<BlogPost(id={self.id}, slug={self.slug}, lang={self.language}, status={self.status})>"
+    
+    @validates('status')
+    def validate_status(self, key, status):
+        """Validate post status."""
+        if status not in self.STATUS_TYPES:
+            raise ValueError(f"Invalid status. Must be one of: {', '.join(self.STATUS_TYPES)}")
+        return status
+    
+    @validates('language')
+    def validate_language(self, key, language):
+        """Validate language code."""
+        if language not in self.LANGUAGES:
+            raise ValueError(f"Invalid language. Must be one of: {', '.join(self.LANGUAGES)}")
+        return language
+    
+    @property
+    def is_published(self):
+        """Check if post is published."""
+        return self.status == self.STATUS_PUBLISHED
+    
+    @property
+    def url(self):
+        """Generate URL for this post."""
+        return f"/blog/{self.language}/{self.slug}"
+
+
+class BlogPostCategory(Base):
+    """Junction table for blog post categories."""
+    
+    __tablename__ = "blog_post_categories"
+    
+    post_id = Column(PGUUID(as_uuid=True), ForeignKey("blog_posts.id"), primary_key=True)
+    category_id = Column(PGUUID(as_uuid=True), ForeignKey("blog_categories.id"), primary_key=True)
+    
+    def __repr__(self):
+        return f"<BlogPostCategory(post={self.post_id}, category={self.category_id})>"
+
+
+class BlogPostTag(Base):
+    """Junction table for blog post tags."""
+    
+    __tablename__ = "blog_post_tags"
+    
+    post_id = Column(PGUUID(as_uuid=True), ForeignKey("blog_posts.id"), primary_key=True)
+    tag_id = Column(PGUUID(as_uuid=True), ForeignKey("blog_tags.id"), primary_key=True)
+    
+    def __repr__(self):
+        return f"<BlogPostTag(post={self.post_id}, tag={self.tag_id})>"

@@ -43,3 +43,7 @@ reportlab>=4.0.0  # For generating initial PDF templates
 
 # Webhook deployment receiver
 flask==3.0.0
+
+# Blog system dependencies
+markdown==3.6
+pyyaml==6.0.1

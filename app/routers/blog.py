@@ -36,7 +36,6 @@ router = APIRouter(prefix="/blog", tags=["Blog"])
 async def list_posts(
     request: Request,
     response: Response,
-    response: Response,
     language: Optional[str] = Query(None, regex="^(en|de|fr)$", description="Filter by language"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(10, ge=1, le=50, description="Items per page"),
@@ -66,7 +65,6 @@ async def list_posts(
 @limiter.limit("30/minute")
 async def search_posts(
     request: Request,
-    response: Response,
     response: Response,
     q: str = Query(..., min_length=1, max_length=200, description="Search query"),
     language: Optional[str] = Query(None, regex="^(en|de|fr)$"),

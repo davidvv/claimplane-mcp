@@ -27,6 +27,7 @@ const Contact = lazy(() => import('./pages/Contact').then(m => ({ default: m.Con
 // Lazy load Blog Pages
 const BlogList = lazy(() => import('./pages/Blog/BlogList').then(m => ({ default: m.BlogList })));
 const BlogCategoryPage = lazy(() => import('./pages/Blog/BlogCategoryPage').then(m => ({ default: m.BlogCategoryPage })));
+const BlogPostPage = lazy(() => import('./pages/Blog/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
 
 // Lazy load Admin Pages
 const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
@@ -75,11 +76,12 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
 
-              {/* Blog Routes */}
+{/* Blog Routes */}
               <Route path="/blog" element={<BlogList />} />
               <Route path="/blog/category/:categorySlug" element={<BlogCategoryPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
 
-              {/* Admin Panel Routes (non-obvious path for security) */}
+{/* Admin Panel Routes (non-obvious path for security) */}
               <Route path="/panel/dashboard" element={<AdminDashboard />} />
               <Route path="/panel/claims/:claimId" element={<ClaimDetailPage />} />
               <Route path="/panel/deletion-requests" element={<DeletionRequests />} />

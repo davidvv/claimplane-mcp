@@ -393,6 +393,7 @@ async def logout(
 @limiter.limit("3/hour")
 async def request_magic_link(
     request: Request,
+    response: Response,
     data: MagicLinkRequestSchema,
     session: AsyncSession = Depends(get_db)
 ):

@@ -360,19 +360,28 @@ class FlightNotFoundLogRepository(BaseRepository[FlightNotFoundLog]):
     async def get_by_flight_and_date(
         self,
         flight_number: str,
-        flight_date: date
+        flight_date: date,
+        max_age_hours: int = 48
     ) -> Optional[FlightNotFoundLog]:
         """
-        Check if a flight has been marked as not found before.
+        Check if a flight has been marked as not found recently.
+
+        ⚠️ IMPORTANT: "Not found" entries expire after max_age_hours (default 48h)
+        to avoid missing flights that API provider adds later.
 
         Args:
             flight_number: Flight number
             flight_date: Flight date
+            max_age_hours: Maximum age of "not found" entry to consider valid (default: 48h)
 
         Returns:
-            FlightNotFoundLog or None if flight was never marked not found
+            FlightNotFoundLog or None if flight was never marked not found or entry expired
         """
         flight_number = flight_number.upper().replace(" ", "")
+
+        # Only return "not found" entries that are recent (within max_age_hours)
+        # This prevents permanently blocking flights that API provider may add later
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=max_age_hours)
 
         result = await self.session.execute(
             select(FlightNotFoundLog)
@@ -380,7 +389,8 @@ class FlightNotFoundLogRepository(BaseRepository[FlightNotFoundLog]):
                 and_(
                     FlightNotFoundLog.flight_number == flight_number,
                     FlightNotFoundLog.flight_date == flight_date,
-                    FlightNotFoundLog.was_found_later == False  # Still marked as not found
+                    FlightNotFoundLog.was_found_later == False,  # Still marked as not found
+                    FlightNotFoundLog.last_checked_at >= cutoff_time  # Recent entry only
                 )
             )
         )

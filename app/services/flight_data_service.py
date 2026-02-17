@@ -160,22 +160,34 @@ class FlightDataService:
                         ttl=config.FLIGHT_CACHE_TTL_SECONDS
                     )
 
-            # Step 3: Check FlightNotFoundLog (avoid wasted API calls)
+            # Step 3: Check FlightNotFoundLog (ONLY for old flights >180 days)
+            # ⚠️ DANGER: Don't skip API calls for recent flights - API provider may be slow to add them!
             if flight_data_dict is None and not force_refresh:
-                not_found_repo = FlightNotFoundLogRepository(session)
-                not_found_entry = await not_found_repo.get_by_flight_and_date(
-                    claim.flight_number,
-                    claim.departure_date
-                )
+                from datetime import timedelta
+                flight_age_days = (datetime.now(timezone.utc).date() - claim.departure_date).days
 
-                if not_found_entry:
-                    logger.info(
-                        f"Flight {claim.flight_number} on {claim.departure_date} "
-                        f"previously returned 404 from API (checked {not_found_entry.check_count} times). "
-                        f"Skipping API call to save credits."
+                # Only skip API calls for flights older than 180 days (API limitation)
+                if flight_age_days > 180:
+                    not_found_repo = FlightNotFoundLogRepository(session)
+                    not_found_entry = await not_found_repo.get_by_flight_and_date(
+                        claim.flight_number,
+                        claim.departure_date
                     )
-                    enriched_data["verification_source"] = "not_found_logged"
-                    return enriched_data
+
+                    if not_found_entry:
+                        logger.info(
+                            f"Flight {claim.flight_number} on {claim.departure_date} is {flight_age_days} days old "
+                            f"and was previously not found. Skipping API call (flight too old for API)."
+                        )
+                        enriched_data["verification_source"] = "not_found_too_old"
+                        return enriched_data
+                else:
+                    # For recent flights (<180 days), don't trust "not found" status
+                    # API provider may be slow to add new flights
+                    logger.debug(
+                        f"Flight {claim.flight_number} is only {flight_age_days} days old. "
+                        f"Will check API even if marked not found (API may have updated)."
+                    )
 
             # Step 4: If no cache, call API
             if flight_data_dict is None:

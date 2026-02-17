@@ -102,6 +102,15 @@ export function Layout({ children }: LayoutProps) {
             >
               About Us
             </Link>
+            <Link
+              to="/blog"
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                isActive('/blog') ? 'text-foreground' : 'text-muted-foreground'
+              )}
+            >
+              Blog
+            </Link>
           </nav>
 
           {/* Actions */}

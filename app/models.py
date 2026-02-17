@@ -1581,6 +1581,24 @@ class FlightNotFoundLog(Base):
 # BLOG SYSTEM MODELS
 # ============================================================================
 
+from sqlalchemy import Table, Column, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+
+# Junction tables as Table objects (required for SQLAlchemy 2.0 relationships)
+blog_post_categories = Table(
+    'blog_post_categories',
+    Base.metadata,
+    Column('post_id', PGUUID(as_uuid=True), ForeignKey('blog_posts.id'), primary_key=True),
+    Column('category_id', PGUUID(as_uuid=True), ForeignKey('blog_categories.id'), primary_key=True),
+)
+
+blog_post_tags = Table(
+    'blog_post_tags',
+    Base.metadata,
+    Column('post_id', PGUUID(as_uuid=True), ForeignKey('blog_posts.id'), primary_key=True),
+    Column('tag_id', PGUUID(as_uuid=True), ForeignKey('blog_tags.id'), primary_key=True),
+)
+
 
 class BlogAuthor(Base):
     """Blog author model for content attribution."""
@@ -1621,7 +1639,7 @@ class BlogCategory(Base):
     
     # Relationships
     parent = relationship("BlogCategory", remote_side=[id], backref="children")
-    posts = relationship("BlogPost", secondary="blog_post_categories", back_populates="categories")
+    posts = relationship("BlogPost", secondary=lambda: blog_post_categories, back_populates="categories")
     
     def __repr__(self):
         return f"<BlogCategory(id={self.id}, slug={self.slug})>"
@@ -1639,7 +1657,7 @@ class BlogTag(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
-    posts = relationship("BlogPost", secondary="blog_post_tags", back_populates="tags")
+    posts = relationship("BlogPost", secondary=blog_post_tags, back_populates="tags")
     
     def __repr__(self):
         return f"<BlogTag(id={self.id}, slug={self.slug})>"
@@ -1710,8 +1728,8 @@ class BlogPost(Base):
     
     # Relationships
     author = relationship("BlogAuthor", back_populates="posts")
-    categories = relationship("BlogCategory", secondary="blog_post_categories", back_populates="posts")
-    tags = relationship("BlogTag", secondary="blog_post_tags", back_populates="posts")
+    categories = relationship("BlogCategory", secondary=blog_post_categories, back_populates="posts")
+    tags = relationship("BlogTag", secondary=blog_post_tags, back_populates="posts")
     
     def __repr__(self):
         return f"<BlogPost(id={self.id}, slug={self.slug}, lang={self.language}, status={self.status})>"
@@ -1739,27 +1757,3 @@ class BlogPost(Base):
     def url(self):
         """Generate URL for this post."""
         return f"/blog/{self.language}/{self.slug}"
-
-
-class BlogPostCategory(Base):
-    """Junction table for blog post categories."""
-    
-    __tablename__ = "blog_post_categories"
-    
-    post_id = Column(PGUUID(as_uuid=True), ForeignKey("blog_posts.id"), primary_key=True)
-    category_id = Column(PGUUID(as_uuid=True), ForeignKey("blog_categories.id"), primary_key=True)
-    
-    def __repr__(self):
-        return f"<BlogPostCategory(post={self.post_id}, category={self.category_id})>"
-
-
-class BlogPostTag(Base):
-    """Junction table for blog post tags."""
-    
-    __tablename__ = "blog_post_tags"
-    
-    post_id = Column(PGUUID(as_uuid=True), ForeignKey("blog_posts.id"), primary_key=True)
-    tag_id = Column(PGUUID(as_uuid=True), ForeignKey("blog_tags.id"), primary_key=True)
-    
-    def __repr__(self):
-        return f"<BlogPostTag(post={self.post_id}, tag={self.tag_id})>"

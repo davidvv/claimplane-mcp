@@ -12,6 +12,8 @@ from slowapi.errors import RateLimitExceeded
 
 from app.database import engine, Base
 from app.routers import health, customers, claims, files, admin_claims, admin_files, admin_deletion_requests, eligibility, auth, flights, account, claim_groups, admin_claim_groups, marketing, admin_marketing, blog, admin_blog
+# Import all models to ensure SQLAlchemy relationships are properly resolved
+from app.models import BlogAuthor, BlogCategory, BlogTag, BlogPost
 from app.exceptions import setup_exception_handlers
 from app.config import get_config
 from app.dependencies.rate_limit import limiter

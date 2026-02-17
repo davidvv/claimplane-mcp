@@ -24,6 +24,10 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ de
 const About = lazy(() => import('./pages/About').then(m => ({ default: m.About })));
 const Contact = lazy(() => import('./pages/Contact').then(m => ({ default: m.Contact })));
 
+// Lazy load Blog Pages
+const BlogList = lazy(() => import('./pages/Blog/BlogList').then(m => ({ default: m.BlogList })));
+const BlogCategoryPage = lazy(() => import('./pages/Blog/BlogCategoryPage').then(m => ({ default: m.BlogCategoryPage })));
+
 // Lazy load Admin Pages
 const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const ClaimDetailPage = lazy(() => import('./pages/Admin/ClaimDetailPage').then(m => ({ default: m.ClaimDetailPage })));
@@ -70,6 +74,10 @@ function App() {
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+
+              {/* Blog Routes */}
+              <Route path="/blog" element={<BlogList />} />
+              <Route path="/blog/category/:categorySlug" element={<BlogCategoryPage />} />
 
               {/* Admin Panel Routes (non-obvious path for security) */}
               <Route path="/panel/dashboard" element={<AdminDashboard />} />

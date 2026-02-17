@@ -4,7 +4,7 @@ Provides read-only endpoints for serving blog content to the frontend.
 """
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -35,6 +35,8 @@ router = APIRouter(prefix="/blog", tags=["Blog"])
 @limiter.limit("60/minute")
 async def list_posts(
     request: Request,
+    response: Response,
+    response: Response,
     language: Optional[str] = Query(None, regex="^(en|de|fr)$", description="Filter by language"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(10, ge=1, le=50, description="Items per page"),
@@ -64,6 +66,8 @@ async def list_posts(
 @limiter.limit("30/minute")
 async def search_posts(
     request: Request,
+    response: Response,
+    response: Response,
     q: str = Query(..., min_length=1, max_length=200, description="Search query"),
     language: Optional[str] = Query(None, regex="^(en|de|fr)$"),
     page: int = Query(1, ge=1),
@@ -113,6 +117,7 @@ async def search_posts(
 @limiter.limit("60/minute")
 async def get_post(
     request: Request,
+    response: Response,
     slug: str,
     language: str = Query("en", regex="^(en|de|fr)$"),
     db: AsyncSession = Depends(get_db)
@@ -136,6 +141,7 @@ async def get_post(
 @limiter.limit("60/minute")
 async def get_related_posts(
     request: Request,
+    response: Response,
     slug: str,
     language: str = Query("en", regex="^(en|de|fr)$"),
     limit: int = Query(3, ge=1, le=10),
@@ -160,6 +166,7 @@ async def get_related_posts(
 @limiter.limit("60/minute")
 async def list_categories(
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db)
 ):
     """Get all blog categories."""
@@ -177,6 +184,7 @@ async def list_categories(
 @limiter.limit("60/minute")
 async def get_posts_by_category(
     request: Request,
+    response: Response,
     slug: str,
     language: Optional[str] = Query(None, regex="^(en|de|fr)$"),
     page: int = Query(1, ge=1),
@@ -240,6 +248,7 @@ async def get_posts_by_category(
 @limiter.limit("60/minute")
 async def list_tags(
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db)
 ):
     """Get all blog tags."""
@@ -257,6 +266,7 @@ async def list_tags(
 @limiter.limit("60/minute")
 async def get_posts_by_tag(
     request: Request,
+    response: Response,
     slug: str,
     language: Optional[str] = Query(None, regex="^(en|de|fr)$"),
     page: int = Query(1, ge=1),
@@ -320,6 +330,7 @@ async def get_posts_by_tag(
 @limiter.limit("60/minute")
 async def list_authors(
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db)
 ):
     """Get all blog authors."""
@@ -337,6 +348,7 @@ async def list_authors(
 @limiter.limit("60/minute")
 async def get_posts_by_author(
     request: Request,
+    response: Response,
     author_id: str,
     language: Optional[str] = Query(None, regex="^(en|de|fr)$"),
     page: int = Query(1, ge=1),

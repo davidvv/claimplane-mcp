@@ -8,18 +8,17 @@ pydantic==2.5.0
 pydantic[email]==2.5.0
 python-multipart==0.0.6
 httpx==0.25.2
-python-jose[cryptography]==3.3.0
+python-jose[cryptography]>=3.4.0
 passlib==1.7.4
 bcrypt==4.0.1
 python-dotenv==1.0.0
-cryptography==41.0.7
+cryptography>=42.0.0
 redis==5.0.1
 celery==5.3.4
 pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-cov==4.1.0
 faker==20.1.0
-httpx==0.25.2
 python-magic==0.4.27
 
 # Email dependencies (Phase 2)

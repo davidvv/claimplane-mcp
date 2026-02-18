@@ -1,11 +1,34 @@
 /**
  * Markdown Renderer Component
  * Renders markdown content to HTML with styling and features
+ * 
+ * SECURITY: Uses DOMPurify to sanitize HTML and prevent XSS attacks
  */
 
 import { useMemo, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { cn } from '@/lib/utils';
+
+// Configure DOMPurify to allow only safe HTML tags and attributes
+const DOMPURIFY_CONFIG = {
+  ALLOWED_TAGS: [
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'p', 'br', 'hr',
+    'strong', 'em', 'b', 'i', 'u', 's',
+    'a', 'img',
+    'ul', 'ol', 'li',
+    'blockquote', 'pre', 'code',
+    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+    'div', 'span'
+  ],
+  ALLOWED_ATTR: [
+    'href', 'src', 'alt', 'title', 'class', 'id',
+    'target', 'rel', 'loading',
+    'data-internal-link'
+  ],
+  ALLOW_DATA_ATTR: false,
+  ADD_ATTR: ['target', 'rel'],
+};
 
 interface MarkdownRendererProps {
   content: string;
@@ -146,8 +169,12 @@ function extractHeadings(markdown: string): HeadingItem[] {
 export function MarkdownRenderer({ content, className, onHeadingsExtracted }: MarkdownRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Parse markdown to HTML
-  const html = useMemo(() => parseMarkdown(content), [content]);
+  // Parse markdown to HTML and sanitize with DOMPurify
+  const html = useMemo(() => {
+    const rawHtml = parseMarkdown(content);
+    // SECURITY: Sanitize HTML with DOMPurify to prevent XSS attacks
+    return DOMPurify.sanitize(rawHtml, DOMPURIFY_CONFIG);
+  }, [content]);
 
   // Extract headings for table of contents
   useEffect(() => {

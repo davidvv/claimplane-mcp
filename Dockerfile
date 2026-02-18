@@ -1,5 +1,11 @@
 FROM python:3.11-slim
 
+# OCI Image Labels
+LABEL org.opencontainers.image.source="https://github.com/davidvencovsky/easyAirClaim"
+LABEL org.opencontainers.image.description="ClaimPlane - Flight compensation claim management system"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.authors="David Vences"
+
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.dependencies import get_current_admin
+from app.models import Customer
 from app.services.blog_service import BlogService
 from app.schemas.blog import (
     BlogPostCreate, BlogPostUpdate, BlogPostResponse, BlogPostListResponse,
@@ -33,7 +35,10 @@ router = APIRouter(prefix="/admin/blog", tags=["Admin - Blog"])
     summary="Get blog dashboard statistics",
     description="Get statistics for the blog dashboard"
 )
-async def get_dashboard(db: AsyncSession = Depends(get_db)):
+async def get_dashboard(
+    admin: Customer = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
     """Get blog dashboard statistics."""
     service = BlogService(db)
     return await service.get_dashboard_stats()
@@ -57,6 +62,7 @@ async def list_all_posts(
     limit: int = Query(10, ge=1, le=50),
     sort_by: str = Query("created_at", regex="^(published_at|created_at|updated_at|title|view_count)$"),
     sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Get all blog posts (including drafts)."""
@@ -115,6 +121,7 @@ async def list_all_posts(
 )
 async def get_post_admin(
     post_id: UUID,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Get blog post by ID (admin)."""
@@ -161,6 +168,7 @@ async def get_post_admin(
 )
 async def create_post(
     post_data: BlogPostCreate,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new blog post."""
@@ -177,6 +185,7 @@ async def create_post(
 async def update_post(
     post_id: UUID,
     post_data: BlogPostUpdate,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Update a blog post."""
@@ -197,6 +206,7 @@ async def update_post(
 )
 async def delete_post(
     post_id: UUID,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Delete a blog post."""
@@ -218,6 +228,7 @@ async def delete_post(
 async def publish_post(
     post_id: UUID,
     publish_data: Optional[BlogPublishRequest] = None,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Publish a blog post."""
@@ -245,6 +256,7 @@ async def publish_post(
 )
 async def unpublish_post(
     post_id: UUID,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Unpublish a blog post."""
@@ -268,6 +280,7 @@ async def unpublish_post(
 async def duplicate_post(
     post_id: UUID,
     duplicate_data: Optional[BlogDuplicateRequest] = None,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Duplicate a blog post."""
@@ -313,7 +326,10 @@ async def duplicate_post(
     summary="List all categories (admin)",
     description="Get all blog categories"
 )
-async def list_categories_admin(db: AsyncSession = Depends(get_db)):
+async def list_categories_admin(
+    admin: Customer = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
     """Get all categories."""
     service = BlogService(db)
     categories = await service.get_categories()
@@ -329,6 +345,7 @@ async def list_categories_admin(db: AsyncSession = Depends(get_db)):
 )
 async def create_category(
     category_data: BlogCategoryCreate,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new category."""
@@ -345,6 +362,7 @@ async def create_category(
 async def update_category(
     category_id: UUID,
     category_data: BlogCategoryUpdate,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Update a category."""
@@ -365,6 +383,7 @@ async def update_category(
 )
 async def delete_category(
     category_id: UUID,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Delete a category."""
@@ -396,7 +415,10 @@ async def delete_category(
     summary="List all tags (admin)",
     description="Get all blog tags"
 )
-async def list_tags_admin(db: AsyncSession = Depends(get_db)):
+async def list_tags_admin(
+    admin: Customer = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
     """Get all tags."""
     service = BlogService(db)
     tags = await service.get_tags()
@@ -412,6 +434,7 @@ async def list_tags_admin(db: AsyncSession = Depends(get_db)):
 )
 async def create_tag(
     tag_data: BlogTagCreate,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new tag."""
@@ -428,6 +451,7 @@ async def create_tag(
 async def update_tag(
     tag_id: UUID,
     tag_data: BlogTagUpdate,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Update a tag."""
@@ -448,6 +472,7 @@ async def update_tag(
 )
 async def delete_tag(
     tag_id: UUID,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Delete a tag."""
@@ -479,7 +504,10 @@ async def delete_tag(
     summary="List all authors (admin)",
     description="Get all blog authors"
 )
-async def list_authors_admin(db: AsyncSession = Depends(get_db)):
+async def list_authors_admin(
+    admin: Customer = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
     """Get all authors."""
     service = BlogService(db)
     authors = await service.get_authors()
@@ -495,6 +523,7 @@ async def list_authors_admin(db: AsyncSession = Depends(get_db)):
 )
 async def create_author(
     author_data: BlogAuthorCreate,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new author."""
@@ -511,6 +540,7 @@ async def create_author(
 async def update_author(
     author_id: UUID,
     author_data: BlogAuthorUpdate,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Update an author."""
@@ -531,6 +561,7 @@ async def update_author(
 )
 async def delete_author(
     author_id: UUID,
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Delete an author."""
@@ -563,6 +594,7 @@ async def delete_author(
 )
 async def upload_image(
     file: UploadFile = File(...),
+    admin: Customer = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Upload an image for blog posts."""

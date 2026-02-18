@@ -34,11 +34,11 @@ google-cloud-vision==3.8.0  # Google Cloud Vision API for OCR (deprecated, will 
 google-genai==1.0.0  # Gemini via Vertex AI for semantic OCR
 pillow==10.4.0
 pyzbar==0.1.9  # Barcode/QR code reading for boarding passes
-numpy>=1.24.0
+numpy==1.26.4
 
 # PDF Generation & Manipulation (Digital POA)
-PyMuPDF>=1.24.0
-reportlab>=4.0.0  # For generating initial PDF templates
+PyMuPDF==1.24.14
+reportlab==4.2.5  # For generating initial PDF templates
 
 # Webhook deployment receiver
 flask==3.0.0

@@ -22,9 +22,12 @@ services:
   redis:
     image: redis:7-alpine
     container_name: flight_claim_redis
+    environment:
+      # Use env var for auth instead of command line (hides password from process list)
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
     command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5

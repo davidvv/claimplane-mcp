@@ -403,9 +403,7 @@ def backfill_flight_data(
         - quota_exceeded: Whether quota was exceeded during processing
     """
     from uuid import UUID
-    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-    from sqlalchemy.orm import sessionmaker
-    from app.config import config
+    from app.database import AsyncSessionLocal
     from app.repositories.flight_data_repository import FlightDataRepository
     from app.repositories.claim_repository import ClaimRepository
     from app.services.flight_data_service import FlightDataService
@@ -428,13 +426,7 @@ def backfill_flight_data(
 
     async def _backfill_claims():
         """Async function to process claims."""
-        # Create async database session
-        engine = create_async_engine(config.DATABASE_URL, echo=False)
-        async_session = sessionmaker(
-            engine, class_=AsyncSession, expire_on_commit=False
-        )
-
-        async with async_session() as session:
+        async with AsyncSessionLocal() as session:
             try:
                 flight_repo = FlightDataRepository(session)
                 claim_repo = ClaimRepository(session)
@@ -535,9 +527,6 @@ def backfill_flight_data(
                 logger.error(f"Backfill task failed: {str(e)}", exc_info=True)
                 await session.rollback()
                 raise
-
-            finally:
-                await engine.dispose()
 
     try:
         # Run the async backfill function

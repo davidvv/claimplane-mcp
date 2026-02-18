@@ -1,27 +1,34 @@
 FROM python:3.11-slim
 
-# Install git and docker CLI for deployment tasks
+# Install git and curl for deployment tasks
 RUN apt-get update && apt-get install -y \
     git \
     curl \
-    && curl -fsSL https://get.docker.com -o get-docker.sh \
-    && sh get-docker.sh \
-    && rm get-docker.sh \
+    ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install docker-compose
+# Install Docker CLI only (not full engine) - smaller attack surface
+# Download static binary from official Docker releases
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then DOCKER_ARCH="x86_64"; \
+    elif [ "$ARCH" = "aarch64" ]; then DOCKER_ARCH="arm64"; \
+    else echo "Unsupported architecture: $ARCH" && exit 1; fi && \
+    curl -fsSL "https://download.docker.com/linux/static/stable/${DOCKER_ARCH}/docker-24.0.7.tgz" | tar xz && \
+    mv docker/docker /usr/local/bin/ && \
+    rm -rf docker
+
+# Install docker-compose (standalone binary)
 RUN curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
 
 # Install Python dependencies
-RUN pip install --no-cache-dir flask==3.0.0
+RUN pip install --no-cache-dir flask==3.0.0 gunicorn==21.2.0
 
 # Create app directory
 WORKDIR /app
 
-# Create webhook user and docker group (matching host GID 988)
-# We use a fixed GID 988 to match the host's docker group for this specific deployment
+# Create webhook user and docker group (matching host GID)
 ARG DOCKER_GID=988
 RUN groupadd -g ${DOCKER_GID} docker_host_group \
     && useradd -m -s /bin/bash -u 1000 webhook \
@@ -41,5 +48,5 @@ EXPOSE 9000
 # Switch to non-root user
 USER webhook
 
-# Run webhook receiver
-CMD ["python", "webhook_deploy.py"]
+# Run webhook receiver with gunicorn for production
+CMD ["gunicorn", "--bind", "0.0.0.0:9000", "--workers", "2", "webhook_deploy:app"]

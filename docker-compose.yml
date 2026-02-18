@@ -238,14 +238,18 @@ services:
     ports:
       - "127.0.0.1:9000:9000"
     volumes:
-      # Mount project directory for git operations
+      # Mount project directory for git operations (write needed for git pull)
       - .:/home/david/easyAirClaim/claimplane
-      # Mount Docker socket to run docker-compose commands
+      # SECURITY WARNING: Docker socket access gives full host control
+      # Consider using Docker Socket Proxy (tecnativa/docker-socket-proxy) for production
       - /var/run/docker.sock:/var/run/docker.sock
-      # Mount webhook scripts
+      # Mount webhook scripts as read-only
       - ./webhook_deploy.py:/app/webhook_deploy.py:ro
       - ./deploy.sh:/app/deploy.sh:ro
     restart: always
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
     deploy:
       resources:
         limits:

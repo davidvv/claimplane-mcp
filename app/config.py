@@ -5,8 +5,12 @@ from typing import Optional
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from .env file only in development
+# In production, env vars should be explicitly set (not from .env file)
+# Check ENVIRONMENT first from existing env vars, then load .env if not production
+_environment = os.getenv("ENVIRONMENT", "development")
+if _environment != "production":
+    load_dotenv()
 
 
 class SecureConfig:

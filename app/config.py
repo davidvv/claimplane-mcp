@@ -340,8 +340,9 @@ class ProductionConfig(Config):
         if cls.NEXTCLOUD_PASSWORD == "admin":
             raise ValueError("NEXTCLOUD_PASSWORD must be changed from default for production")
         
-        if cls.FILE_ENCRYPTION_KEY == SecureConfig.generate_encryption_key():
-            raise ValueError("FILE_ENCRYPTION_KEY must be explicitly set for production")
+        # Check if FILE_ENCRYPTION_KEY was set via environment variable
+        if not os.getenv("FILE_ENCRYPTION_KEY"):
+            raise ValueError("FILE_ENCRYPTION_KEY must be explicitly set via environment variable for production")
         
         if not cls.SECURITY_HEADERS_ENABLED:
             raise ValueError("SECURITY_HEADERS_ENABLED must be true for production")

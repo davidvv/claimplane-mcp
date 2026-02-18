@@ -17,8 +17,12 @@ MAX_HEALTH_RETRIES=30
 HEALTH_RETRY_INTERVAL=5
 API_HEALTH_URL="http://localhost:8000/health"
 
+# Project directory - can be overridden via environment variable
+# Default path matches the webhook container volume mount
+PROJECT_DIR="${PROJECT_DIR:-/home/david/claimplane/claimplane}"
+
 # Ensure we are in the project root (mounted volume)
-cd /home/david/claimplane/claimplane || { echo "Project directory not found"; exit 1; }
+cd "$PROJECT_DIR" || { echo "Project directory not found: $PROJECT_DIR"; exit 1; }
 
 echo "=========================================="
 echo "Starting deployment at $(date)"

@@ -89,21 +89,15 @@ def send_claim_submitted_email(
         # Let's delegate the fetching to a helper function that runs inside run_async.
         
         async def fetch_poa_and_send():
-            from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-            from sqlalchemy.orm import sessionmaker
-            from app.config import config
+            from app.database import AsyncSessionLocal
             from app.repositories.file_repository import FileRepository
             from app.services.file_service import FileService
             from app.models import ClaimFile
             from uuid import UUID
 
-            # Create session to find POA
-            engine = create_async_engine(config.DATABASE_URL, echo=False)
-            async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-            
             poa_attachment = None
             
-            async with async_session() as session:
+            async with AsyncSessionLocal() as session:
                 try:
                     file_repo = FileRepository(session)
                     # Find POA file for this claim

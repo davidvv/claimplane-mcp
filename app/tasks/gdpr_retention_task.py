@@ -22,83 +22,75 @@ async def _run_retention_purge():
     3. Skip claims marked with is_retention_locked or is_legal_proceeding
     4. Anonymize each claim surgicaly using GDPRService
     """
-    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-    from sqlalchemy.orm import sessionmaker
     from app.models import Claim
     
-    # Create a fresh engine and session factory for this event loop to avoid cross-task interference
-    engine = create_async_engine(config.DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
-    SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-    session = SessionLocal()
-    try:
-        # 1. Identify expired claims (7 years retention)
-        expired_claims = await GDPRService.get_expired_claims(session, years=7)
-        
-        if not expired_claims:
-            logger.info("GDPR Retention: No claims found eligible for 7-year purge.")
-            return {"processed": 0, "errors": 0}
-
-        logger.info(f"GDPR Retention: Found {len(expired_claims)} claims eligible for 7-year purge.")
-        
-        # Notify admin about the batch start
-        if config.ADMIN_EMAIL:
-            await EmailService.send_admin_alert(
-                config.ADMIN_EMAIL,
-                "GDPR Retention Purge Started",
-                f"Starting automated anonymization of {len(expired_claims)} claims older than 7 years."
-            )
-
-        processed_count = 0
-        error_count = 0
-        
-        for claim in expired_claims:
-            try:
-                # Surgeon-like anonymization of specific claim
-                await GDPRService.anonymize_specific_claim(
-                    session, 
-                    claim.id, 
-                    reason="Automated 7-year retention policy compliance"
-                )
-                processed_count += 1
-                logger.info(f"GDPR Retention: Successfully anonymized claim {claim.id}")
-            except Exception as e:
-                logger.error(f"GDPR Retention: Failed to anonymize claim {claim.id}: {str(e)}")
-                error_count += 1
-
-        # Commit all changes at once for this batch
-        await session.commit()
-        
-        # Final report for logs and admin
-        summary_msg = (
-            f"GDPR 7-year retention purge completed.\n"
-            f"Total eligible: {len(expired_claims)}\n"
-            f"Successfully anonymized: {processed_count}\n"
-            f"Errors encountered: {error_count}"
-        )
-        logger.info(summary_msg)
-        
-        if config.ADMIN_EMAIL:
-            await EmailService.send_admin_alert(
-                config.ADMIN_EMAIL,
-                "GDPR Retention Purge Report",
-                summary_msg
-            )
+    async with AsyncSessionLocal() as session:
+        try:
+            # 1. Identify expired claims (7 years retention)
+            expired_claims = await GDPRService.get_expired_claims(session, years=7)
             
-        return {"total_eligible": len(expired_claims), "processed": processed_count, "errors": error_count}
+            if not expired_claims:
+                logger.info("GDPR Retention: No claims found eligible for 7-year purge.")
+                return {"processed": 0, "errors": 0}
 
-    except Exception as e:
-        logger.error(f"GDPR Retention: Fatal error during purge process: {str(e)}")
-        if config.ADMIN_EMAIL:
-            await EmailService.send_admin_alert(
-                config.ADMIN_EMAIL,
-                "GDPR Retention Purge FAILED",
-                f"Critical error during retention purge: {str(e)}"
+            logger.info(f"GDPR Retention: Found {len(expired_claims)} claims eligible for 7-year purge.")
+            
+            # Notify admin about the batch start
+            if config.ADMIN_EMAIL:
+                await EmailService.send_admin_alert(
+                    config.ADMIN_EMAIL,
+                    "GDPR Retention Purge Started",
+                    f"Starting automated anonymization of {len(expired_claims)} claims older than 7 years."
+                )
+
+            processed_count = 0
+            error_count = 0
+            
+            for claim in expired_claims:
+                try:
+                    # Surgeon-like anonymization of specific claim
+                    await GDPRService.anonymize_specific_claim(
+                        session, 
+                        claim.id, 
+                        reason="Automated 7-year retention policy compliance"
+                    )
+                    processed_count += 1
+                    logger.info(f"GDPR Retention: Successfully anonymized claim {claim.id}")
+                except Exception as e:
+                    logger.error(f"GDPR Retention: Failed to anonymize claim {claim.id}: {str(e)}")
+                    error_count += 1
+
+            # Commit all changes at once for this batch
+            await session.commit()
+            
+            # Final report for logs and admin
+            summary_msg = (
+                f"GDPR 7-year retention purge completed.\n"
+                f"Total eligible: {len(expired_claims)}\n"
+                f"Successfully anonymized: {processed_count}\n"
+                f"Errors encountered: {error_count}"
             )
-        raise
-    finally:
-        await session.close()
-        await engine.dispose()
+            logger.info(summary_msg)
+            
+            if config.ADMIN_EMAIL:
+                await EmailService.send_admin_alert(
+                    config.ADMIN_EMAIL,
+                    "GDPR Retention Purge Report",
+                    summary_msg
+                )
+                
+            return {"total_eligible": len(expired_claims), "processed": processed_count, "errors": error_count}
+
+        except Exception as e:
+            logger.error(f"GDPR Retention: Fatal error during purge process: {str(e)}")
+            if config.ADMIN_EMAIL:
+                await EmailService.send_admin_alert(
+                    config.ADMIN_EMAIL,
+                    "GDPR Retention Purge FAILED",
+                    f"Critical error during retention purge: {str(e)}"
+                )
+            raise
+
 
 @celery_app.task(
     name="run_retention_purge",

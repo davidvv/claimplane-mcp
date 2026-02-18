@@ -34,22 +34,15 @@ async def _cleanup_orphan_files():
     Returns:
         Dictionary with cleanup statistics
     """
-    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-    from sqlalchemy.orm import sessionmaker
     from sqlalchemy import select, and_
-    from app.config import config
+    from app.database import AsyncSessionLocal
     from app.models import ClaimFile
     from app.services.nextcloud_service import nextcloud_service
     
-    # Create fresh engine for this event loop
-    engine = create_async_engine(config.DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
-    SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    
-    session = SessionLocal()
     deleted_count = 0
     error_count = 0
     
-    try:
+    async with AsyncSessionLocal() as session:
         # Find orphan files older than 24 hours
         cutoff_time = datetime.utcnow() - timedelta(hours=24)
         
@@ -92,10 +85,6 @@ async def _cleanup_orphan_files():
         
         logger.info(f"[cleanup_orphan_files] Cleanup complete: {result}")
         return result
-        
-    finally:
-        await session.close()
-        await engine.dispose()
 
 
 @celery_app.task(

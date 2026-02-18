@@ -12,7 +12,8 @@ echo "=================================================="
 # Stop Vite dev server if running
 echo ""
 echo "[1/3] Stopping Vite dev server..."
-pkill -f "vite" || echo "  No Vite server running"
+# Use more specific pattern to avoid killing vite from other projects
+pkill -f "vite.*frontend_Claude45" || echo "  No Vite server running"
 
 # Stop main application services
 echo ""

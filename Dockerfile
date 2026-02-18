@@ -16,6 +16,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Set work directory
 WORKDIR /app
 
+# Create non-root user FIRST (before copying files)
+RUN addgroup --gid 1000 appgroup && \
+    adduser --disabled-password --gecos '' --uid 1000 --gid 1000 appuser
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -30,11 +34,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
-COPY . .
+# Copy project with correct ownership (much faster than chown -R)
+COPY --chown=appuser:appgroup . .
 
-# Create non-root user with explicit UID/GID for reproducible builds
-RUN adduser --disabled-password --gecos '' --uid 1000 --gid 1000 appuser && chown -R appuser:appuser /app
+# Switch to non-root user
 USER appuser
 
 # Health check for container orchestration

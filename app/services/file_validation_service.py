@@ -1,11 +1,14 @@
 """File validation service for security and compliance."""
 import json
+import logging
 import mimetypes
 import os
 import re
 from typing import Dict, Any, Optional, List
 
 from fastapi import HTTPException, status
+
+logger = logging.getLogger(__name__)
 
 
 class FileValidationService:
@@ -266,7 +269,7 @@ class FileValidationService:
             except Exception as e:
                 # Log error but don't block upload if scan service is down (fail open vs closed)
                 # For this implementation, we report error to let admin know scan failed
-                print(f"Virus scan failed: {str(e)}")
+                logger.warning(f"Virus scan failed: {str(e)}")
                 # If we want to fail closed (secure):
                 # result["errors"].append("Virus scan failed - file rejected for security")
                 # If we want to fail open (usability):

@@ -4,6 +4,7 @@ import uuid
 import io
 import hashlib
 import asyncio
+import logging
 from typing import Optional, Dict, Any, List, AsyncGenerator
 from datetime import datetime, timedelta
 
@@ -17,6 +18,8 @@ from app.services.file_validation_service import file_validation_service
 from app.services.nextcloud_service import nextcloud_service
 from app.exceptions import NextcloudRetryableError, NextcloudPermanentError
 from app.config import config
+
+logger = logging.getLogger(__name__)
 
 
 class FileService:
@@ -56,22 +59,22 @@ class FileService:
         """Handle upload errors and cleanup partial uploads."""
         try:
             # Log the error
-            print(f"Upload error occurred: {str(error)}")
+            logger.error(f"Upload error occurred: {str(error)}")
 
             # If we have a partial upload path, attempt cleanup
             if partial_path:
                 try:
                     await nextcloud_service.cancel_upload(partial_path)
-                    print(f"Cleaned up partial upload: {partial_path}")
+                    logger.info(f"Cleaned up partial upload: {partial_path}")
                 except Exception as cleanup_error:
-                    print(f"Failed to cleanup partial upload {partial_path}: {str(cleanup_error)}")
+                    logger.error(f"Failed to cleanup partial upload {partial_path}: {str(cleanup_error)}")
 
             # Reset file position for potential retry
             if hasattr(file.file, 'seek'):
                 file.file.seek(0)
 
         except Exception as e:
-            print(f"Error during upload error handling: {str(e)}")
+            logger.error(f"Error during upload error handling: {str(e)}")
 
     async def _retry_chunk_upload(self, chunk_data: bytes, remote_path: str, max_retries: int = 3) -> bool:
         """Retry uploading a specific chunk with exponential backoff."""
@@ -396,7 +399,7 @@ class FileService:
                 except HTTPException:
                     raise
                 except Exception as verification_error:
-                    print(f"Upload verification error for {storage_path}: {str(verification_error)}")
+                    logger.error(f"Upload verification error for {storage_path}: {str(verification_error)}")
 
             # Create file record
             file_record = ClaimFile(

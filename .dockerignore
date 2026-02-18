@@ -29,18 +29,24 @@ htmlcov/
 .coverage
 .coverage.*
 
-# Environment
+# Environment and Secrets
 .env
 .env.*
+*.pem
+*.key
+google-cloud-key.json
+*-credentials.json
 
 # Documentation
 docs/
 *.md
+!README.md
 
 # Frontend
 frontend_Claude45/node_modules/
 frontend_Claude45/.next/
 frontend_Claude45/out/
+frontend_Claude45/dist/
 
 # Alembic
 alembic.ini
@@ -52,3 +58,12 @@ alembic.ini
 *.db
 *.sqlite
 *.sqlite3
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/

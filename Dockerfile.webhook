@@ -18,9 +18,18 @@ RUN ARCH=$(uname -m) && \
     mv docker/docker /usr/local/bin/ && \
     rm -rf docker
 
-# Install docker-compose (standalone binary)
-RUN curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
-    && chmod +x /usr/local/bin/docker-compose
+# Install docker-compose (standalone binary) with checksum verification
+# SHA256 checksums from https://github.com/docker/compose/releases/tag/v2.24.0
+RUN DOCKER_COMPOSE_VERSION="v2.24.0" && \
+    ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        DOCKER_COMPOSE_SHA="5a21ec1bc6a8bd762d67b6c6a37b4531bc7e3e28e9d2ed7ff09946a6875e36f9"; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+        DOCKER_COMPOSE_SHA="b5c2c282e6e17f50b5f79f23acd31d0f5b5f58e07fcf6b6e3e87a22e67bdfc8f"; \
+    else echo "Unsupported architecture: $ARCH" && exit 1; fi && \
+    curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
+    echo "${DOCKER_COMPOSE_SHA}  /usr/local/bin/docker-compose" | sha256sum -c - && \
+    chmod +x /usr/local/bin/docker-compose
 
 # Install Python dependencies
 RUN pip install --no-cache-dir flask==3.0.0 gunicorn==21.2.0

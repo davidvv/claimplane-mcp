@@ -1,5 +1,6 @@
 """Authentication service for JWT token management and user authentication."""
 import asyncio
+import logging
 import secrets
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
@@ -14,6 +15,8 @@ from app.models import Customer, RefreshToken, PasswordResetToken, MagicLinkToke
 from app.services.password_service import PasswordService
 from app.services.cache_service import CacheService
 from app.exceptions import AccountLockedException
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:

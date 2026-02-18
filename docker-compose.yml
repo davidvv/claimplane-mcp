@@ -35,7 +35,7 @@ services:
       - nextcloud_network
 
   clamav:
-    image: clamav/clamav:latest
+    image: clamav/clamav:1.4
     container_name: flight_claim_clamav
     ports:
       - "127.0.0.1:3310:3310"
@@ -207,7 +207,7 @@ services:
       - nextcloud_network
 
   nginx:
-    image: nginx:alpine
+    image: nginx:1.25-alpine
     container_name: flight_claim_nginx
     ports:
       - "80:80"

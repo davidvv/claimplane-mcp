@@ -33,8 +33,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . .
 
-# Create non-root user
-RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app
+# Create non-root user with explicit UID/GID for reproducible builds
+RUN adduser --disabled-password --gecos '' --uid 1000 --gid 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Health check for container orchestration

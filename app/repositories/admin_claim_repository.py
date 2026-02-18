@@ -306,21 +306,25 @@ class AdminClaimRepository(BaseRepository[Claim]):
         """
         from sqlalchemy import update
 
-        # Update claims
+        # CRITICAL FIX: Fetch claims FIRST to capture previous_status BEFORE update
+        claims_query = select(Claim.id, Claim.status).where(Claim.id.in_(claim_ids))
+        claims_result = await self.session.execute(claims_query)
+        previous_statuses = {row.id: row.status for row in claims_result}
+
+        # Now update claims
         stmt = update(Claim).where(Claim.id.in_(claim_ids)).values(
             status=new_status,
             updated_at=datetime.utcnow()
         )
         result = await self.session.execute(stmt)
 
-        # Create status history entries for each claim
+        # Create status history entries for each claim using captured previous statuses
         for claim_id in claim_ids:
-            # Get the claim to know previous status
-            claim = await self.get_by_id(claim_id)
-            if claim:
+            previous_status = previous_statuses.get(claim_id)
+            if previous_status:
                 history = ClaimStatusHistory(
                     claim_id=claim_id,
-                    previous_status=claim.status,
+                    previous_status=previous_status,  # Now correctly captured BEFORE update
                     new_status=new_status,
                     changed_by=changed_by,
                     change_reason=change_reason or f"Bulk status update"

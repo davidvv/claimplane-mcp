@@ -123,9 +123,10 @@ class Config:
     """Application configuration with secure defaults."""
     
     # Database Configuration
+    # SECURITY: No default password - must be set via environment variable
     DATABASE_URL = SecureConfig.get_required_env_var(
         "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@db:5432/flight_claim"
+        "postgresql+asyncpg://user:CHANGE_ME@db:5432/flight_claim"  # Placeholder - will fail if not overridden
     )
     
     # Security Configuration

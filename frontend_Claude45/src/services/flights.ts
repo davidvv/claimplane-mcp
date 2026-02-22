@@ -29,8 +29,23 @@ export const getFlightStatus = async (
     }
   );
 
+  // Handle case where flight data is unavailable but claim can still proceed
   if (!response.data.data) {
-    throw new Error('Flight data not found');
+    if (response.data.canProceedWithClaim) {
+      // Return a minimal FlightStatus with manual review flag
+      return {
+        flightNumber: flightNumber.toUpperCase(),
+        airline: '',
+        departureDate: date,
+        departureAirport: '',
+        arrivalAirport: '',
+        id: '',
+        lastUpdated: new Date().toISOString(),
+        dataSource: 'manual',
+        requiresManualVerification: true,
+      } as FlightStatus;
+    }
+    throw new Error(response.data.userMessage || 'Flight data not found');
   }
 
   return response.data.data;

@@ -143,6 +143,13 @@ export interface ApiResponse<T = unknown> {
   message: string;
   timestamp: string; // ISO datetime
   data?: T;
+  // Flight status specific fields
+  canProceedWithClaim?: boolean;
+  manualReview?: boolean;
+  error?: string;
+  userMessage?: string;
+  flightNumber?: string;
+  date?: string;
 }
 
 export interface ErrorResponse {

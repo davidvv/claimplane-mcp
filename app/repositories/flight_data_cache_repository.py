@@ -1,6 +1,6 @@
 """Repository for FlightDataCache model - permanent flight data storage."""
 from typing import Optional, Dict, Any
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from uuid import UUID
 
 from sqlalchemy import select, and_, update

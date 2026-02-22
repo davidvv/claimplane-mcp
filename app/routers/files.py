@@ -1,7 +1,10 @@
 """File management API endpoints."""
 import uuid
+import logging
 from typing import List, Optional
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request, Response
 from fastapi.responses import StreamingResponse

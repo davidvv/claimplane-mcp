@@ -461,7 +461,8 @@ class AuthService:
                 return 0
             count = await client.get(f"{config.AUTH_REDIS_PREFIX}{email.lower()}")
             return int(count) if count else 0
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Failed to get failed attempts from Redis: {str(e)}")
             return 0
 
     @staticmethod
@@ -477,8 +478,8 @@ class AuthService:
             pipe.incr(key)
             pipe.expire(key, 3600)  # 1 hour window
             await pipe.execute()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to increment failed attempts in Redis: {str(e)}")
 
     @staticmethod
     async def _handle_login_failure(session: AsyncSession, customer: Customer):
@@ -499,8 +500,8 @@ class AuthService:
             client = await CacheService.get_redis_client()
             if client:
                 await client.delete(f"{config.AUTH_REDIS_PREFIX}{customer.email.lower()}")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to reset Redis counter on login success: {str(e)}")
             
         # Reset DB counter
         customer.failed_login_attempts = 0

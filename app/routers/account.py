@@ -86,9 +86,10 @@ async def change_email(
             detail="Current password is incorrect"
         )
 
-    # Check if new email is already taken
+    # Check if new email is already taken using blind index (encrypted email lookup)
+    email_idx = generate_blind_index(data.new_email)
     result = await session.execute(
-        select(Customer).where(Customer.email == data.new_email)
+        select(Customer).where(Customer.email_idx == email_idx)
     )
     existing_user = result.scalar_one_or_none()
     if existing_user:

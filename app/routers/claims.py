@@ -4,6 +4,8 @@ from uuid import UUID
 import logging
 from datetime import datetime, timezone
 
+logger = logging.getLogger(__name__)
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File, Form, Query, Response
 from sqlalchemy import select, or_, and_, bindparam, String
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,6 +37,7 @@ from app.dependencies.rate_limit import limiter
 from app.dependencies.auth import get_current_user, get_optional_current_user, get_current_user_with_claim_access
 from app.utils.db_encryption import generate_blind_index
 from app.utils.request_utils import get_client_info
+from app.routers.files import validate_no_html
 
 # Create router
 router = APIRouter(prefix="/claims", tags=["claims"])

@@ -9,6 +9,25 @@ import { useMemo, useEffect, useRef } from 'react';
 import DOMPurify from 'dompurify';
 import { cn } from '@/lib/utils';
 
+/**
+ * Sanitize URL to prevent javascript: and other dangerous protocols
+ */
+function sanitizeUrl(url: string): string {
+  const trimmedUrl = url.trim().toLowerCase();
+  
+  // Block dangerous protocols
+  if (/^(javascript|data|vbscript|mhtml|x-|file):/i.test(trimmedUrl)) {
+    return '#';
+  }
+  
+  // Block protocol-relative URLs that could be exploits
+  if (url.startsWith('//')) {
+    return '#';
+  }
+  
+  return url;
+}
+
 // Configure DOMPurify to allow only safe HTML tags and attributes
 const DOMPURIFY_CONFIG = {
   ALLOWED_TAGS: [
@@ -90,22 +109,32 @@ function parseMarkdown(markdown: string): string {
 
   // Links - distinguish internal vs external
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
-    const isExternal = url.startsWith('http://') || url.startsWith('https://');
-    const isAnchor = url.startsWith('#');
+    // SECURITY: Sanitize URL to prevent XSS
+    const safeUrl = sanitizeUrl(url);
+    const isExternal = safeUrl.startsWith('http://') || safeUrl.startsWith('https://');
+    const isAnchor = safeUrl.startsWith('#');
     
-    if (isAnchor) {
-      return `<a href="${url}" class="text-primary hover:underline">${text}</a>`;
+    if (safeUrl === '#') {
+      // Blocked URL - render as plain text
+      return text;
+    } else if (isAnchor) {
+      return `<a href="${safeUrl}" class="text-primary hover:underline">${text}</a>`;
     } else if (isExternal) {
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline inline-flex items-center gap-1">${text}<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>`;
+      return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline inline-flex items-center gap-1">${text}<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 002 2v10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>`;
     } else {
       // Internal link - will be handled by React Router
-      return `<a href="${url}" class="text-primary hover:underline" data-internal-link>${text}</a>`;
+      return `<a href="${safeUrl}" class="text-primary hover:underline" data-internal-link>${text}</a>`;
     }
   });
 
   // Images with lazy loading
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
-    return `<img src="${src}" alt="${alt}" loading="lazy" class="rounded-lg my-6 max-w-full h-auto" />`;
+    // SECURITY: Sanitize image src to prevent XSS
+    const safeSrc = sanitizeUrl(src);
+    if (safeSrc === '#') {
+      return `<span class="text-muted-foreground">[Image blocked]</span>`;
+    }
+    return `<img src="${safeSrc}" alt="${alt}" loading="lazy" class="rounded-lg my-6 max-w-full h-auto" />`;
   });
 
   // Blockquotes

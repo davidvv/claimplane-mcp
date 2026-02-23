@@ -70,7 +70,19 @@ class Customer(Base):
     email = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=False)
     email_idx = Column(String(255), unique=True, nullable=False, index=True)
     
-    password_hash = Column(String(255), nullable=True)  # Nullable for migration compatibility
+    password_hash = Column(String(255), nullable=True)  # TODO: Phase 3.5 - Make non-nullable after migration
+    
+    @validates('password_hash')
+    def validate_password_hash(self, key, value):
+        """Ensure admin accounts have passwords set."""
+        # Only validate for new records (id is None) with admin roles
+        # This allows existing passwordless customers while requiring passwords for admins
+        if self.id is None and value is None:
+            # Check if role is set to admin (default is customer)
+            role = getattr(self, 'role', self.ROLE_CUSTOMER)
+            if role in (self.ROLE_ADMIN, self.ROLE_SUPERADMIN):
+                raise ValueError(f"Password is required for {role} accounts")
+        return value
     
     first_name = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=False)
     last_name = Column(AESEncryptedString(config.DB_ENCRYPTION_KEY), nullable=False)

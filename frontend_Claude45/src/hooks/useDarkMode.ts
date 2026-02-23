@@ -1,23 +1,35 @@
 /**
  * Custom hook for managing dark mode preference
  * Persists to localStorage and applies class to document
+ * 
+ * SSR-safe: Uses useEffect for localStorage access
  */
 
 import { useState, useEffect } from 'react';
 
 export function useDarkMode() {
-  const [isDark, setIsDark] = useState<boolean>(() => {
+  // Start with safe default for SSR
+  const [isDark, setIsDark] = useState<boolean>(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Initialize from localStorage/system preference after mount (client-side only)
+  useEffect(() => {
     // Check localStorage first
     const stored = localStorage.getItem('theme');
     if (stored) {
-      return stored === 'dark';
+      setIsDark(stored === 'dark');
+    } else {
+      // Fall back to system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setIsDark(prefersDark);
     }
-
-    // Fall back to system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+    setIsInitialized(true);
+  }, []);
 
   useEffect(() => {
+    // Skip if not initialized yet (SSR or initial mount)
+    if (!isInitialized) return;
+    
     // Apply theme class to document
     if (isDark) {
       document.documentElement.classList.add('dark');
@@ -26,7 +38,7 @@ export function useDarkMode() {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
-  }, [isDark]);
+  }, [isDark, isInitialized]);
 
   const toggleDarkMode = () => {
     setIsDark(!isDark);

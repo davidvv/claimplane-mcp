@@ -1,5 +1,6 @@
 """SQLAlchemy models for the flight claim system."""
 import uuid
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from uuid import UUID
@@ -13,6 +14,8 @@ import cryptography.fernet
 from app.database import Base
 from app.config import config
 from app.utils.phone_validator import validate_phone_number
+
+logger = logging.getLogger(__name__)
 
 
 class AESEncryptedString(TypeDecorator):
@@ -39,7 +42,12 @@ class AESEncryptedString(TypeDecorator):
             return None
         try:
             return self.fernet.decrypt(value.encode()).decode()
-        except Exception:
+        except Exception as e:
+            # Log decryption failures for security monitoring
+            logger.warning(
+                f"AESEncryptedString decryption failed: {type(e).__name__}. "
+                f"Data may be corrupted or using wrong key."
+            )
             # Fallback for data that might not be encrypted during transition
             return value
 
@@ -676,9 +684,10 @@ class RefreshToken(Base):
     @property
     def is_valid(self):
         """Check if token is still valid."""
+        from datetime import timezone
         return (
             self.revoked_at is None and
-            self.expires_at > datetime.utcnow()
+            self.expires_at > datetime.now(timezone.utc)
         )
 
 

@@ -59,10 +59,16 @@ apiClient.interceptors.request.use(
       config.headers['Authorization'] = `Bearer ${draftToken}`;
     }
 
-    // Enhanced debugging for development
+    // Enhanced debugging for development (sanitized - no sensitive data)
     if (import.meta.env.DEV) {
       console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
-      console.log('Headers:', config.headers);
+      // Log only non-sensitive headers
+      const safeHeaders: Record<string, string | undefined> = {
+        'Content-Type': (config.headers['Content-Type'] as string) || 'application/json',
+      };
+      console.log('Headers (sanitized):', safeHeaders);
+      console.log('Has Auth Header:', !!config.headers['Authorization']);
+      console.log('Has API Key:', !!config.headers['X-API-Key']);
       console.log('Credentials:', config.withCredentials);
     }
 
@@ -76,9 +82,9 @@ apiClient.interceptors.request.use(
 // Response interceptor
 apiClient.interceptors.response.use(
   (response) => {
-    // Log response in development
+    // Log response in development (sanitized - no sensitive data)
     if (import.meta.env.DEV) {
-      console.log(`[API Response] ${response.config.url}`, response.data);
+      console.log(`[API Response] ${response.config.url} - Status: ${response.status}`);
     }
     return response;
   },

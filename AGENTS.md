@@ -130,35 +130,18 @@ Only modify without permission if:
 
 ---
 
-## Available Skills and Agents
+## Skills and Agents
 
-### **GLOBAL SKILLS** (in `/home/david/.config/opencode/skill/`)
-Use with: `skill("skill-name")`
+Skills and agents are auto-discovered from the filesystem. No manual listing needed.
 
-- **`commit-workflow`**: Enforces proper commit practices, version tagging, and roadmap maintenance
-- **`docker-build-helper`**: Guidelines for handling long-running Docker build processes
-- **`git-pull-reminder`**: Ensures Claude Code always pulls latest changes from GitHub
-- **`notify-phone`**: Send direct messages to David via RocketChat for important events
-- **`openproject-task-manager`**: Manages OpenProject task lifecycle (create, track, log time)
-- **`skill-creator`**: Guidelines for creating high-quality skills that match project standards
-- **`plugin-creator`**: Guidelines and instructions for creating plugins in OpenCode
-- **`subagent-creator`**: Guidelines and instructions for creating specialized subagents
+### **SKILLS** (`~/.config/opencode/skill/`)
+OpenCode auto-discovers all skills from this directory. Use `skill()` with no arguments to see available skills, or load a specific skill with `skill("skill-name")`.
 
-### **GLOBAL AGENTS** (in `/home/david/.config/opencode/agents/`)
-Use with: `@agent-name` or `task(subagent_type="agent-name")`
+### **AGENTS** (`~/.config/opencode/agents/`)
+Custom agents can be placed here and invoked with `@agent-name`.
 
-- **`@backend-expert`**: Expert in FastAPI, Celery, Pydantic, and backend architecture
-- **`@code-reviewer`**: Reviews code for quality, security, and project-specific conventions
-- **`@docs-expert`**: Expert in technical documentation, maintaining READMEs and technical folders
-- **`@frontend-expert`**: Expert in React, Tailwind CSS, Vite, and modern frontend development
-- **`@law-expert`**: Expert in American and European digital law (GDPR, CCPA)
-- **`@security-expert`**: Expert in cybersecurity, penetration testing, and secure coding practices
-- **`@test-expert`**: Expert in testing strategies, specifically Pytest, Unit testing, and Integration testing
-- **`@troubleshooter`**: Specialized in interpreting logs, tracebacks, and system errors
-- **`@web-browser-tester`**: Specialized web browser automation agent for testing applications
-
-### **PROJECT-SPECIFIC** (in `/home/david/claimplane/claimplane/.claude/`)
-- **`backend-tester.md`**: Backend testing agent for the ClaimPlane project
+### **PROJECT-SPECIFIC** (`.claude/skills/` and `.claude/agents/`)
+Project-local skills and agents can also be placed in these directories.
 
 ---
 

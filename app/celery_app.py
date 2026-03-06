@@ -91,6 +91,12 @@ celery_app.conf.update(
             'task': 'run_retention_purge',
             'schedule': crontab(day_of_month=1, hour=2, minute=0),
         },
+        # Marketing: Cleanup old flight delay events (90-day retention)
+        # NOTE: fetch_global_flight_delays is now MANUAL - trigger via API or CLI
+        'cleanup-old-delay-events': {
+            'task': 'cleanup_old_flight_delay_events',
+            'schedule': crontab(hour=4, minute=0),  # Daily at 04:00 UTC
+        },
     },
 )
 

@@ -738,6 +738,125 @@ class AeroDataBoxService:
 
         return matching_flights
 
+    async def get_global_delays(
+        self,
+        min_delay_minutes: int = 120,
+        region: str = None,
+        airline_iata: str = None,
+        departure_airport_iata: str = None,
+        max_results: int = 100
+    ) -> Dict[str, Any]:
+        """
+        Get global flight delays from AeroDataBox GetGlobalDelays endpoint.
+
+        This endpoint returns all flights currently experiencing delays globally.
+        Filters can be applied to narrow results to specific airlines, airports, or regions.
+
+        Endpoint: POST /flights/delays/global
+        Tier: TIER 2 (2 credits per call)
+
+        Args:
+            min_delay_minutes: Minimum delay in minutes to include (default: 120 for EU261 threshold)
+            region: Optional region filter (e.g., "US", "EU", "Asia")
+            airline_iata: Optional airline IATA code to filter by
+            departure_airport_iata: Optional departure airport IATA code to filter by
+            max_results: Maximum number of results to return (API may return more)
+
+        Returns:
+            Dictionary containing:
+            - timestamp: When the data was fetched
+            - total_delays: Number of delayed flights
+            - delays: List of delay event objects with flight details
+
+        Raises:
+            AeroDataBoxError: On API failure
+
+        Example:
+            >>> service = AeroDataBoxService()
+            >>> delays = await service.get_global_delays(min_delay_minutes=120)
+            >>> print(f"Found {delays['total_delays']} delayed flights")
+        """
+        # Normalize inputs
+        if airline_iata:
+            airline_iata = airline_iata.upper()
+        if departure_airport_iata:
+            departure_airport_iata = departure_airport_iata.upper()
+        if region:
+            region = region.upper()
+
+        async def _get_global_delays():
+            url = f"{self.base_url}/flights/delays/global"
+
+            # Build request body
+            payload = {
+                "minDelayMinutes": min_delay_minutes,
+                "maxResults": max_results
+            }
+
+            # Add optional filters
+            if region:
+                payload["region"] = region
+            if airline_iata:
+                payload["airlineIata"] = airline_iata
+            if departure_airport_iata:
+                payload["departureAirportIata"] = departure_airport_iata
+
+            logger.info(
+                f"Fetching global delays (min_delay={min_delay_minutes}min"
+                f"{f', region={region}' if region else ''}"
+                f"{f', airline={airline_iata}' if airline_iata else ''}"
+                f"{f', airport={departure_airport_iata}' if departure_airport_iata else ''})"
+            )
+
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(url, headers=self._get_headers(), json=payload)
+                response.raise_for_status()
+
+                data = response.json()
+
+                # Process and standardize response
+                timestamp = datetime.utcnow().isoformat()
+                delays = []
+
+                if isinstance(data, dict) and "delays" in data:
+                    raw_delays = data["delays"]
+                elif isinstance(data, list):
+                    raw_delays = data
+                else:
+                    raw_delays = []
+
+                for delay_data in raw_delays:
+                    try:
+                        delay = {
+                            "flight_number": delay_data.get("flightNumber"),
+                            "airline": delay_data.get("airline", {}).get("name") if delay_data.get("airline") else None,
+                            "airline_iata": delay_data.get("airline", {}).get("iata") if delay_data.get("airline") else None,
+                            "departure_airport": delay_data.get("departure", {}).get("airport", {}).get("iata") if delay_data.get("departure") else None,
+                            "arrival_airport": delay_data.get("arrival", {}).get("airport", {}).get("iata") if delay_data.get("arrival") else None,
+                            "delay_minutes": delay_data.get("delayMinutes"),
+                            "scheduled_departure": delay_data.get("departure", {}).get("scheduledTime", {}).get("utc") if delay_data.get("departure") else None,
+                            "status": delay_data.get("status", "delayed"),
+                            "reason": delay_data.get("delayReason"),
+                        }
+                        delays.append(delay)
+                    except Exception as e:
+                        logger.warning(f"Error parsing delay data: {str(e)}")
+                        continue
+
+                return {
+                    "timestamp": timestamp,
+                    "total_delays": len(delays),
+                    "delays": delays,
+                    "filters_applied": {
+                        "min_delay_minutes": min_delay_minutes,
+                        "region": region,
+                        "airline_iata": airline_iata,
+                        "departure_airport_iata": departure_airport_iata,
+                    }
+                }
+
+        return await self._retry_with_backoff(_get_global_delays)
+
 
 # Convenience function with exact signature requested
 async def findFlightsByRoute(

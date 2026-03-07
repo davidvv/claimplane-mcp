@@ -43,7 +43,7 @@ export function Home() {
               <Link to="/claim/new">
                 <Button size="lg" className="w-full sm:w-auto">
                   <FileText className="w-5 h-5 mr-2" />
-                  File a Claim
+                  Start Your Claim Now
                 </Button>
               </Link>
               <Link to="/status">

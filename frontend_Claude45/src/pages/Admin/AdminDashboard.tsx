@@ -32,9 +32,7 @@ export function AdminDashboard() {
     setError(null);
     try {
       const filterToUse = newFilters || filters;
-      console.log('[AdminDashboard] loadClaims with filters:', filterToUse);
       const response = await listClaims(filterToUse);
-      console.log('[AdminDashboard] Received claims:', response.claims.length, 'Total:', response.total);
       setClaims(response.claims);
       setTotal(response.total);
     } catch (error: any) {
@@ -71,14 +69,11 @@ export function AdminDashboard() {
   }, [navigate]);
 
   const handleFiltersChange = (newFilters: Partial<ClaimFilters>) => {
-    console.log('[AdminDashboard] handleFiltersChange called with:', newFilters);
-    console.log('[AdminDashboard] Current filters:', filters);
     const updatedFilters = {
       ...filters,
       ...newFilters,
       skip: 0, // Reset pagination when filters change
     };
-    console.log('[AdminDashboard] Updated filters:', updatedFilters);
     setFilters(updatedFilters);
     loadClaims(updatedFilters);
   };

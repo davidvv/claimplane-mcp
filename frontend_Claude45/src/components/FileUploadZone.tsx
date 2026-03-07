@@ -111,7 +111,7 @@ export function FileUploadZone({
         }
         return newFiles;
       });
-      console.log(`File uploaded successfully: ${fileEntry.file.name}`);
+      // File uploaded successfully
 
     } catch (error: any) {
       console.error(`Failed to upload ${fileEntry.file.name}:`, error);

@@ -104,8 +104,6 @@ export function Step4_Authorization({
     setIsSubmitting(true);
 
     try {
-      console.log('Sending signature to backend, length:', signatureData?.length || 0);
-      // 1. Send signature to backend
       await apiClient.post(`/claims/${claimId}/sign-poa`, {
         signature_image: signatureData,
         signer_name: primaryPassengerName,

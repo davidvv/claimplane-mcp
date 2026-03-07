@@ -1,26 +1,11 @@
 """Celery tasks for file cleanup operations."""
-import asyncio
 import logging
 from datetime import datetime, timedelta
 
 from app.celery_app import celery_app
+from app.tasks.async_helpers import run_async
 
 logger = logging.getLogger(__name__)
-
-
-def run_async(coro):
-    """Helper function to run async code in Celery tasks."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        pending = asyncio.all_tasks(loop)
-        for task in pending:
-            task.cancel()
-        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-        loop.close()
-        asyncio.set_event_loop(None)
 
 
 async def _cleanup_orphan_files():

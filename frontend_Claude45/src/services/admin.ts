@@ -214,9 +214,6 @@ export async function listClaims(filters: ClaimFilters = {}): Promise<PaginatedC
   if (filters.sort_order) params.append('sort_order', filters.sort_order);
 
   const url = `/admin/claims?${params.toString()}`;
-  console.log('[AdminService] Requesting:', url);
-  console.log('[AdminService] Filters:', filters);
-
   const response = await apiClient.get<PaginatedClaimsResponse>(url);
 
   return response.data;

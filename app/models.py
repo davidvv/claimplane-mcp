@@ -463,7 +463,7 @@ class ClaimFile(Base):
     expires_at = Column(DateTime(timezone=True))
     
     # Soft delete and versioning
-    is_deleted = Column(Numeric(1, 0), default=0)
+    is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime(timezone=True))
     version = Column(Numeric(5, 0), default=1)
     

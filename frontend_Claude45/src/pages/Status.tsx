@@ -72,11 +72,7 @@ export function Status() {
     }
   }, [authenticated, navigate, searchParams]);
 
-  // Debug: Track documents state changes
-  useEffect(() => {
-    console.log('[STATE] Documents state changed:', documents);
-    console.log('[STATE] Documents count:', documents.length);
-  }, [documents]);
+
 
   // Auto-load claim if claimId is in URL (e.g., from magic link redirect)
   useEffect(() => {
@@ -84,36 +80,20 @@ export function Status() {
     if (claimIdFromUrl && !hasAutoLoaded) {
       setValue('claimId', claimIdFromUrl);
 
-      // Comprehensive debugging for authentication state
-      console.log('=== STATUS PAGE DEBUGGING ===');
-      console.log('Claim ID from URL:', claimIdFromUrl);
-      console.log('Current URL:', window.location.href);
-
-      // Check if user is authenticated (user info stored in sessionStorage after login)
       const userEmail = sessionStorage.getItem('user_email');
       if (userEmail) {
-        console.log('User authenticated, proceeding with auto-load');
-        setHasAutoLoaded(true);  // Mark as auto-loaded to prevent duplicate execution
-        setIsLoading(true); // Show loading for auto-load
+        setHasAutoLoaded(true);
+        setIsLoading(true);
         
-        // Add additional debugging for the API call
-        const debugOnSubmit = async (claimId: string) => {
-          console.log('Starting claim lookup for:', claimId);
+        const loadClaim = async (claimId: string) => {
           try {
             const claimData = await getClaim(claimId, true);
-            console.log('Claim lookup successful:', claimData);
             setClaim(claimData);
 
-            // Fetch documents (optional - don't fail if not available)
             if (claimData.id) {
               try {
-                console.log('[AUTO-LOAD] Fetching documents for claim:', claimData.id);
                 const docs = await listClaimDocuments(claimData.id);
-                console.log('[AUTO-LOAD] Documents API response:', docs);
-                console.log('[AUTO-LOAD] Number of documents:', docs?.length || 0);
-                console.log('[AUTO-LOAD] Setting documents state with:', docs);
                 setDocuments(docs);
-                console.log('[AUTO-LOAD] Documents state updated');
               } catch (docError) {
                 console.error('[AUTO-LOAD] Error fetching documents:', docError);
                 setDocuments([]);
@@ -123,9 +103,6 @@ export function Status() {
             toast.success('Claim found!');
           } catch (error: any) {
             console.error('Claim lookup failed:', error);
-            console.error('Error response:', error.response);
-            console.error('Error status:', error.response?.status);
-            console.error('Error data:', error.response?.data);
             
             if (error.response?.status === 401) {
               toast.error('Authentication expired. Please log in again.');
@@ -148,13 +125,9 @@ export function Status() {
           }
         };
         
-        // Delay slightly to ensure auth state is ready
         setTimeout(() => {
-          debugOnSubmit(claimIdFromUrl);
-        }, 500); // Short delay to ensure sessionStorage is accessible
-      } else {
-        console.log('User not authenticated, manual submission required');
-        // Don't show error toast for missing auth - let user manually enter claim ID
+          loadClaim(claimIdFromUrl);
+        }, 500);
       }
     }
   }, [searchParams]);
@@ -166,16 +139,10 @@ export function Status() {
       const claimData = await getClaim(data.claimId, true);
       setClaim(claimData);
 
-      // Fetch documents (optional - don't fail if not available)
       if (claimData.id) {
         try {
-          console.log('[MANUAL LOAD] Fetching documents for claim:', claimData.id);
           const docs = await listClaimDocuments(claimData.id);
-          console.log('[MANUAL LOAD] Documents API response:', docs);
-          console.log('[MANUAL LOAD] Number of documents:', docs?.length || 0);
-          console.log('[MANUAL LOAD] Setting documents state with:', docs);
           setDocuments(docs);
-          console.log('[MANUAL LOAD] Documents state updated');
         } catch (docError) {
           console.error('[MANUAL LOAD] Error fetching documents:', docError);
           setDocuments([]);
@@ -239,22 +206,13 @@ export function Status() {
     let failCount = 0;
 
     for (const pending of pendingUploads) {
-      // Skip already-uploaded files or files without a File object
       if (pending.alreadyUploaded || !pending.file) {
-        console.log('[UPLOAD] Skipping already-uploaded or missing file:', pending.name);
         continue;
       }
       
       try {
-        console.log('[UPLOAD] Uploading document:', pending.file.name);
         const uploadedDoc = await uploadDocument(claim.id, pending.file, pending.documentType);
-        console.log('[UPLOAD] Upload successful:', uploadedDoc);
-        console.log('[UPLOAD] Adding to documents state, current length:', documents.length);
-        setDocuments(prev => {
-          const updated = [uploadedDoc, ...prev];
-          console.log('[UPLOAD] Documents state after update, length:', updated.length);
-          return updated;
-        });
+        setDocuments(prev => [uploadedDoc, ...prev]);
         successCount++;
       } catch (error: any) {
         console.error('[UPLOAD] Upload error:', error);

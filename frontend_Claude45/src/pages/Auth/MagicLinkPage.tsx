@@ -32,7 +32,6 @@ export function MagicLinkPage() {
       try {
         // Log only in development without sensitive data
         if (import.meta.env.DEV) {
-          console.log('[MagicLink] Verifying token...');
         }
 
         // Read pending redirect BEFORE verification (in case of errors clearing it)
@@ -43,7 +42,6 @@ export function MagicLinkPage() {
 
         // Log success in dev only
         if (import.meta.env.DEV) {
-          console.log('[MagicLink] Verification successful');
         }
 
         // Tokens are automatically stored in HTTP-only cookies by backend
@@ -70,7 +68,6 @@ export function MagicLinkPage() {
         }
 
         if (import.meta.env.DEV) {
-          console.log('[MagicLink] Authentication complete');
         }
 
         setStatus('success');
@@ -90,7 +87,6 @@ export function MagicLinkPage() {
             // Validate redirect is safe (must start with /) to prevent open redirect attacks
             if (pendingRedirect.startsWith('/') && !pendingRedirect.startsWith('//')) {
               if (import.meta.env.DEV) {
-                console.log('[MagicLink] Resuming interrupted flow');
               }
               navigate(pendingRedirect);
               return;
@@ -102,7 +98,6 @@ export function MagicLinkPage() {
           // Check for draft resume (resume=true parameter from email link)
           if (resume === 'true' && claimId) {
             if (import.meta.env.DEV) {
-              console.log('[MagicLink] Draft resume detected, redirecting');
             }
             navigate(`/claim/new?resume=${claimId}`);
             return;
@@ -111,19 +106,16 @@ export function MagicLinkPage() {
           if (userRole === 'admin' || userRole === 'superadmin') {
             // Admin users go to admin panel
             if (import.meta.env.DEV) {
-              console.log('[MagicLink] Admin user, redirecting to dashboard');
             }
             navigate('/panel/dashboard');
           } else if (claimId) {
             // Customer with specific claim goes to status page
             if (import.meta.env.DEV) {
-              console.log('[MagicLink] Redirecting to status page');
             }
             navigate(`/status?claimId=${claimId}`);
           } else {
             // Customer without claim goes to claims list
             if (import.meta.env.DEV) {
-              console.log('[MagicLink] Redirecting to My Claims');
             }
             navigate('/my-claims');
           }

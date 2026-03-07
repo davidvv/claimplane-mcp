@@ -60,7 +60,6 @@ export function SignaturePad({
         // Get PNG data URL directly from the canvas
         // Note: We avoid getTrimmedCanvas() due to trim-canvas compatibility issues
         const dataUrl = sigPadRef.current.toDataURL('image/png');
-        console.log('Signature captured, length:', dataUrl.length);
         onSignatureChange(dataUrl);
       }
     }

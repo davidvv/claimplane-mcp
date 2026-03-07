@@ -7,33 +7,14 @@ These tasks run on a schedule (Celery Beat) to:
 3. Track analytics events
 """
 import logging
-import asyncio
 from datetime import datetime, timezone
 
 from app.celery_app import celery_app
 from app.services.email_service import EmailService
 from app.database import AsyncSessionLocal
+from app.tasks.async_helpers import run_async
 
 logger = logging.getLogger(__name__)
-
-
-def run_async(coro):
-    """Helper function to run async code in Celery tasks."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        # Clean up any pending tasks
-        pending = asyncio.all_tasks(loop)
-        for task in pending:
-            task.cancel()
-        # Run one more iteration to handle cancellations
-        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-        # Close the loop
-        loop.close()
-        # Reset event loop to None to prevent reuse
-        asyncio.set_event_loop(None)
 
 
 async def _send_draft_reminder_30min():

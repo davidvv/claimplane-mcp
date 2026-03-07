@@ -48,46 +48,32 @@ export function MyClaims() {
       try {
         // Check if user is authenticated (user_email is stored in sessionStorage after login)
         const userEmail = sessionStorage.getItem('user_email');
-        console.log('[MyClaims] User authenticated:', !!userEmail);
 
         if (!userEmail) {
-          console.log('[MyClaims] No user info found, redirecting to auth');
           toast.error('Please log in to view your claims');
           navigate('/auth');
           return;
         }
 
-        // Redirect admins and superadmins to the admin dashboard
-        // The "My Claims" page is designed for customers only
         const userRole = getUserRole();
-        console.log('[MyClaims] User role:', userRole);
 
         if (userRole === 'admin' || userRole === 'superadmin') {
-          console.log('[MyClaims] Admin/superadmin detected, redirecting to admin dashboard');
           toast.info('Redirecting to Admin Dashboard...', {
             description: 'Use the admin dashboard to manage all claims.'
           });
           navigate('/panel/dashboard', { replace: true });
           return;
         }
-
-        console.log('[MyClaims] Fetching claims and groups...');
         
         // Fetch both claims and claim groups in parallel
         const [claimsArray, groupsArray] = await Promise.all([
           listClaims({ limit: 100, includeDrafts: true }),
           getMyClaimGroups().catch(() => []) // Don't fail if claim groups endpoint fails
         ]);
-        
-        console.log('[MyClaims] Claims count:', claimsArray.length);
-        console.log('[MyClaims] Claim groups count:', groupsArray.length);
 
         setClaims(claimsArray);
         setClaimGroups(groupsArray);
       } catch (error: any) {
-        console.error('[MyClaims] Failed to fetch claims:', error);
-        console.error('[MyClaims] Error response:', error.response);
-
         if (error.response?.status === 401) {
           toast.error('Session expired. Please log in again');
           sessionStorage.removeItem('auth_token');
@@ -97,7 +83,6 @@ export function MyClaims() {
           toast.error('Failed to load your claims');
         }
       } finally {
-        console.log('[MyClaims] Setting isLoading to false');
         setIsLoading(false);
       }
     };

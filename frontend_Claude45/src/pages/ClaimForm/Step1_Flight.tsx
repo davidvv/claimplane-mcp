@@ -122,7 +122,6 @@ export function Step1_Flight({ initialData, onComplete, savedOcrResult, setSaved
       // Capture file ID from OCR response for later linking to claim
       if (result.uploadedFileId && setOcrFileId) {
         setOcrFileId(result.uploadedFileId);
-        console.log('[OCR] File saved with ID:', result.uploadedFileId);
       }
       
       // Small delay to allow progress bar to reach 100% visually

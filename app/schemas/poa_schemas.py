@@ -14,6 +14,7 @@ class SignatureRequest(BaseModel):
     consent_represent_all: Optional[bool] = Field(None, description="Consent to represent all passengers (multi-passenger only)")
     region: str = Field("US", description="Region for the legal document (US or EU)")
     document_type: str = Field("claim_assignment", description="Type of document being signed (claim_assignment, poa, service_agreement)")
+    signature_type: str = Field("draw", description="Type of signature: 'draw' for handwritten, 'type' for typed name")
 
 class SignedPOAResponse(BaseModel):
     """Response model for a signed POA."""

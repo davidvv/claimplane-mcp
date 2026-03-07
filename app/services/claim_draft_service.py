@@ -109,14 +109,24 @@ class ClaimDraftService:
             try:
                 from app.services.file_service import get_file_service
                 file_service = get_file_service(self.session)
-                await file_service.link_file_to_claim(
+                
+                # Debug logging
+                logger.info(f"Attempting to link boarding pass {boarding_pass_file_id} to claim {claim.id} for customer {customer.id}")
+                
+                linked_file = await file_service.link_file_to_claim(
                     file_id=UUID(boarding_pass_file_id),
                     claim_id=claim.id,
                     customer_id=customer.id
                 )
-                logger.info(f"Linked boarding pass {boarding_pass_file_id} to claim {claim.id}")
+                
+                logger.info(f"Successfully linked boarding pass {boarding_pass_file_id} to claim {claim.id}. File record: {linked_file.id}")
             except Exception as e:
-                logger.error(f"Failed to link boarding pass to claim {claim.id}: {str(e)}")
+                logger.error(f"CRITICAL: Failed to link boarding pass {boarding_pass_file_id} to claim {claim.id}: {str(e)}")
+                logger.error(f"Exception type: {type(e).__name__}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                # Re-raise to make this a hard failure - we don't want drafts without boarding passes
+                raise ValueError(f"Failed to link boarding pass to claim: {str(e)}")
 
         # Commit the draft
         await self.session.commit()

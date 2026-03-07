@@ -238,42 +238,6 @@ class EncryptionService:
                 decrypted = self.aes_gcm.decrypt(nonce, ciphertext + tag, None)
                 yield decrypted
 
-            
-            if header_parsed:
-                # Process GCM chunks
-                while len(buffer) >= self.CHUNK_HEADER_SIZE:
-                    chunk_header = buffer[:self.CHUNK_HEADER_SIZE]
-                    nonce_counter, tag = struct.unpack(self.CHUNK_HEADER_STRUCT, chunk_header)
-                    
-                    # We need to know how much ciphertext to read.
-                    # For all but the last chunk, it's `chunk_size`.
-                    # But we don't know if this is the last chunk yet!
-                    # Actually, if we have more data after `chunk_size` bytes, then it's definitely not the last one OR it's the last one and that's it.
-                    
-                    needed = self.CHUNK_HEADER_SIZE + chunk_size
-                    if len(buffer) < needed:
-                        # Need more data to decrypt this chunk
-                        # Wait, what if it's the LAST chunk and it's smaller than chunk_size?
-                        # We don't know the size of the last chunk from the header!
-                        # This is a flaw in my design. 
-                        # I should probably include the ciphertext length in the chunk header if it can be variable.
-                        break
-                    
-                    # If we have enough data for a full chunk, process it.
-                    # But wait, what if the last chunk is exactly chunk_size?
-                    # Or what if it's smaller?
-                    
-                    # Let's check if there's any data left after this chunk.
-                    # If we have exactly `needed` bytes, it MIGHT be the last chunk.
-                    
-                    # Actually, in GCM, we know the ciphertext length is the same as plaintext.
-                    # Let's adjust the format to include ciphertext length in chunk header.
-                    pass
-        
-        # ... (I'll rethink the format)
-
-
-
 
 # Global encryption service instance
 encryption_service = EncryptionService()

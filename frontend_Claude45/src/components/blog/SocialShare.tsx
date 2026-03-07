@@ -43,7 +43,6 @@ export function SocialShare({ url, title, className }: SocialShareProps) {
         });
       } catch (err) {
         // User cancelled or error
-        console.log('Share cancelled');
       }
     }
   };

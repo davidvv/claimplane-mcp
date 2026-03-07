@@ -171,8 +171,6 @@ export function ClaimsTable({ claims, total, filters, onFiltersChange, isLoading
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[ClaimsTable] Filter button clicked');
-    console.log('[ClaimsTable] Search:', searchQuery, 'Status:', statusFilter, 'Airline:', airlineFilter);
     onFiltersChange({
       search: searchQuery,
       status: statusFilter || undefined,

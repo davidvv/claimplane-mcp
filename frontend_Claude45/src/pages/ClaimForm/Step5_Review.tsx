@@ -131,7 +131,6 @@ export function Step5_Review({
                 setUploadProgress(percentCompleted);
               }
             );
-            console.log(`Successfully uploaded: ${doc.file.name}`);
           } catch (error: any) {
             console.error('Document upload error:', error);
             uploadErrors++;

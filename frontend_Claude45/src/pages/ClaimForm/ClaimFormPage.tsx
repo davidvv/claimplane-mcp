@@ -164,7 +164,6 @@ export function ClaimFormPage() {
             };
             setPassengerData(restoredPassengerData);
             updatePassengerData(restoredPassengerData);
-            console.log('Restored passenger data from draft:', restoredPassengerData);
           }
 
           // Fetch and restore any existing documents (e.g., boarding pass uploaded earlier)
@@ -184,7 +183,6 @@ export function ClaimFormPage() {
               }));
               setDocuments(restoredDocs);
               updateDocuments(restoredDocs);
-              console.log(`Restored ${existingDocs.length} document(s) from draft claim`);
             }
           } catch (docError) {
             console.error('Failed to fetch existing documents:', docError);
@@ -220,7 +218,6 @@ export function ClaimFormPage() {
     if (hasSavedData) {
       // WP-202: Auto-restore session without blocking prompt to prevent accidental data loss
       // and ensure persistence works reliably across reloads.
-      console.log("Restoring saved claim session at step", formData.currentStep);
       
       setCurrentStep(formData.currentStep || 1);
       setFlightData(formData.flightData || null);
@@ -260,7 +257,6 @@ export function ClaimFormPage() {
               alreadyUploaded: true,
             }));
             setDocuments(restoredDocs);
-            console.log(`[Persistence] Restored ${existingDocs.length} document(s) from server for draft ${draftClaimId}`);
           }
         } catch (error) {
           console.error('[Persistence] Failed to fetch documents for draft:', error);
@@ -282,8 +278,7 @@ export function ClaimFormPage() {
             setUserProfile(profile);
           }
         } catch (error) {
-          console.log('Could not fetch user profile:', error);
-          // Silently fail - user can still fill in the form manually
+          // Could not fetch user profile - continuing without it
         }
       }
     };

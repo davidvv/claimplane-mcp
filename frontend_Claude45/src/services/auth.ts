@@ -309,8 +309,9 @@ export function getStoredUserInfo() {
   // then we clear it to force a clean login state. 
   // We only reach here if at least one of (email, name, id) is present.
   if (isBrokenName || !email || !name) {
-    console.warn('Detected invalid user data in sessionStorage, clearing auth state');
-    console.warn('Broken data:', { email, id, name, role });
+    if (import.meta.env.DEV) {
+      console.warn('Detected invalid user data in sessionStorage, clearing auth state');
+    }
     clearLocalAuthState();
     return {
       email: null,
@@ -372,12 +373,9 @@ export async function validateSession(): Promise<boolean> {
       // If the backend gave us invalid data (no email), clear session
       // Note: first_name/last_name may be empty for new users or admin accounts
       if (!userData.email) {
-        console.warn('Backend returned invalid user data (missing email), clearing session');
-        console.warn('Invalid data:', {
-          email: userData.email,
-          first_name: userData.first_name,
-          last_name: userData.last_name
-        });
+        if (import.meta.env.DEV) {
+          console.warn('Backend returned invalid user data (missing email), clearing session');
+        }
         clearLocalAuthState();
         return false;
       }
@@ -393,7 +391,9 @@ export async function validateSession(): Promise<boolean> {
   } catch (error: any) {
     // If 401, cookies are invalid - clear sessionStorage
     if (error.response?.status === 401) {
-      console.log('Session expired - clearing local auth state');
+      if (import.meta.env.DEV) {
+        console.log('Session expired - clearing local auth state');
+      }
       clearLocalAuthState();
       return false;
     }

@@ -123,11 +123,10 @@ export function Step2_Eligibility({
       // If user is NOT eligible and has a draft claim, delete it to prevent "abandoned claim" reminders
       if (!result.eligible && draftClaimId) {
         try {
-          console.log(`Deleting ineligible draft claim: ${draftClaimId}`);
           await deleteClaim(draftClaimId);
           onDraftCancelled();
         } catch (error) {
-          console.error('Failed to delete ineligible draft claim:', error);
+          console.error('Failed to delete draft claim:', error);
           // Non-blocking error
         }
       }
@@ -151,7 +150,7 @@ export function Step2_Eligibility({
       }
     } catch (error: any) {
       toast.error('Error checking eligibility. Please try again.');
-      console.error('Eligibility check error:', error);
+        console.error('Eligibility check failed:', error);
     } finally {
       setIsLoading(false);
     }
@@ -194,7 +193,8 @@ export function Step2_Eligibility({
         currency: response.data.currency,
       };
 
-      console.log('Draft claim created:', draftData.claimId);
+          if (import.meta.env.DEV) {
+          }
 
       // Note: Boarding pass is now linked by the backend automatically 
       // if boardingPassFileId was provided in the draft creation request.

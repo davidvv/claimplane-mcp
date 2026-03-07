@@ -21,6 +21,11 @@ from app.tasks.draft_tasks import (
 )
 
 from app.tasks.file_cleanup_tasks import cleanup_orphan_files
+from app.tasks.marketing_tasks import (
+    fetch_global_flight_delays,
+    cleanup_old_flight_delay_events,
+    generate_delay_report,
+)
 
 __all__ = [
     # Claim notification tasks
@@ -35,4 +40,8 @@ __all__ = [
     "send_final_reminder",
     # File cleanup tasks (Celery Beat)
     "cleanup_orphan_files",
+    # Marketing tasks (Celery Beat)
+    "fetch_global_flight_delays",
+    "cleanup_old_flight_delay_events",
+    "generate_delay_report",
 ]

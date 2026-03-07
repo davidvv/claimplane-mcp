@@ -964,27 +964,46 @@ class FileService:
         """
         try:
             # Get the orphan file
+            logger.info(f"Looking up file {file_id} in database")
             file_record = await self.file_repo.get_by_id(file_id)
             
             if not file_record:
+                logger.error(f"File {file_id} not found in database")
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="File not found"
+                    detail=f"File {file_id} not found"
                 )
             
+            logger.info(f"Found file record: {file_record.id}, current claim_id: {file_record.claim_id}, storage_path: {file_record.storage_path}")
+            
             if file_record.claim_id is not None:
+                logger.warning(f"File {file_id} already linked to claim {file_record.claim_id}")
+                # Don't fail if already linked to the same claim
+                if file_record.claim_id == claim_id:
+                    logger.info(f"File already linked to the same claim {claim_id}, returning existing record")
+                    return file_record
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="File already linked to a claim"
+                    detail=f"File already linked to claim {file_record.claim_id}"
                 )
             
             # Move file from temp path to claim path
             old_path = file_record.storage_path
             new_path = f"flight_claims/{claim_id}/{file_record.filename}"
             
-            await nextcloud_service.move_file(old_path, new_path)
+            logger.info(f"Moving file from {old_path} to {new_path}")
+            try:
+                await nextcloud_service.move_file(old_path, new_path)
+                logger.info(f"Successfully moved file to {new_path}")
+            except Exception as move_error:
+                logger.error(f"Failed to move file in Nextcloud: {str(move_error)}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to move file in storage: {str(move_error)}"
+                )
             
             # Update file record
+            logger.info(f"Updating file record with claim_id={claim_id}, customer_id={customer_id}")
             file_record.claim_id = claim_id
             file_record.customer_id = customer_id
             file_record.storage_path = new_path
@@ -992,12 +1011,16 @@ class FileService:
             file_record.updated_at = datetime.utcnow()
             
             await self.db.flush()
+            logger.info(f"Successfully linked file {file_id} to claim {claim_id}")
             
             return file_record
             
         except HTTPException:
             raise
         except Exception as e:
+            logger.error(f"Unexpected error linking file {file_id} to claim {claim_id}: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to link file to claim: {str(e)}"

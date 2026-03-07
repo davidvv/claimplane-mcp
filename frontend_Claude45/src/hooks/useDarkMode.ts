@@ -19,8 +19,9 @@ export function useDarkMode() {
     if (stored) {
       setIsDark(stored === 'dark');
     } else {
-      // Fall back to system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Fall back to system preference (SSR-safe check)
+      const prefersDark = typeof window !== 'undefined' && 
+        window.matchMedia('(prefers-color-scheme: dark)').matches;
       setIsDark(prefersDark);
     }
     setIsInitialized(true);

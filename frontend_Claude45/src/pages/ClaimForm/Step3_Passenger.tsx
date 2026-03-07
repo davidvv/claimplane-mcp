@@ -127,12 +127,10 @@ export function Step3_Passenger({
           p.lastName.toLowerCase() === userLastName
         );
 
-        if (matchIndex > 0) {
-          // Move matched passenger to the front
-          const [matched] = rawPassengers.splice(matchIndex, 1);
-          rawPassengers.unshift(matched);
-          console.log("Reordered passengers based on user profile match");
-        }
+         if (matchIndex > 0) {
+           const [matched] = rawPassengers.splice(matchIndex, 1);
+           rawPassengers.unshift(matched);
+         }
       }
 
       return rawPassengers;

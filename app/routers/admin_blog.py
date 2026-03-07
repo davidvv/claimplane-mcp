@@ -587,6 +587,9 @@ async def delete_author(
 # Media Upload
 # ============================================================================
 
+# Maximum file size: 5MB
+MAX_IMAGE_SIZE = 5 * 1024 * 1024
+
 @router.post(
     "/upload-image",
     summary="Upload blog image",
@@ -610,8 +613,37 @@ async def upload_image(
             detail=f"Invalid file type. Allowed: {', '.join(allowed_types)}"
         )
     
-    # Generate unique filename
-    file_ext = Path(file.filename).suffix
+    # Read file content
+    content = await file.read()
+    
+    # Validate file size
+    if len(content) > MAX_IMAGE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size: {MAX_IMAGE_SIZE // (1024*1024)}MB"
+        )
+    
+    # Validate file content (basic magic number check)
+    # Check for valid image headers to prevent malicious uploads
+    image_signatures = {
+        b'\xFF\xD8\xFF': 'jpeg',
+        b'\x89PNG\r\n\x1a\n': 'png',
+        b'GIF87a': 'gif',
+        b'GIF89a': 'gif',
+        b'RIFF': 'webp',  # WebP starts with RIFF
+    }
+    
+    is_valid_image = any(content.startswith(sig) for sig in image_signatures.keys())
+    if not is_valid_image:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid image file. File content does not match allowed image types."
+        )
+    
+    # Generate unique filename with safe extension
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+        file_ext = '.jpg'  # Default extension
     unique_name = f"{uuid.uuid4()}{file_ext}"
     
     # Save to blog images directory
@@ -621,7 +653,6 @@ async def upload_image(
     file_path = upload_dir / unique_name
     
     try:
-        content = await file.read()
         with open(file_path, "wb") as f:
             f.write(content)
         

@@ -1,8 +1,10 @@
 """Virus scanning service using ClamAV."""
+import asyncio
 import socket
 import struct
 import logging
 import io
+from concurrent.futures import ThreadPoolExecutor
 from typing import Union, BinaryIO
 
 from app.config import config
@@ -18,6 +20,7 @@ class VirusScanService:
         self.host = host_port[0]
         self.port = int(host_port[1]) if len(host_port) > 1 else 3310
         self.enabled = str(config.VIRUS_SCAN_ENABLED).lower() == "true"
+        self._executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="virus_scan_")
 
     async def scan_file(self, file_content: bytes) -> bool:
         """
@@ -37,7 +40,13 @@ class VirusScanService:
             return True
 
         try:
-            return self._scan_stream(io.BytesIO(file_content))
+            # Run blocking socket operations in thread pool to avoid blocking event loop
+            loop = asyncio.get_event_loop()
+            return await loop.run_in_executor(
+                self._executor,
+                self._scan_stream,
+                io.BytesIO(file_content)
+            )
         except Exception as e:
             logger.error(f"Virus scan failed: {str(e)}")
             # In high security, we might want to raise error (fail closed)

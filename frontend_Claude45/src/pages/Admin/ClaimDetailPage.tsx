@@ -156,18 +156,14 @@ export function ClaimDetailPage() {
 
     setIsAddingNote(true);
     try {
-      console.log('[ClaimDetail] Adding note:', { noteText, isInternal: isInternalNote });
       const newNote = await addClaimNote(claimId, {
         note_text: noteText,
         is_internal: isInternalNote,
       });
-      console.log('[ClaimDetail] Note created:', newNote);
       toast.success('Note added successfully');
       setNoteText('');
       // Reload claim to get updated notes
-      console.log('[ClaimDetail] Reloading claim data...');
       await loadClaimData();
-      console.log('[ClaimDetail] Claim reloaded, notes count:', claim?.claim_notes?.length);
     } catch (error: any) {
       console.error('Failed to add note:', error);
       toast.error(error.response?.data?.detail || 'Failed to add note');

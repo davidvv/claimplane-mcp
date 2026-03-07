@@ -22,7 +22,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         stmt = select(ClaimFile).where(ClaimFile.claim_id == claim_id)
 
         if not include_deleted:
-            stmt = stmt.where(ClaimFile.is_deleted == 0)
+            stmt = stmt.where(ClaimFile.is_deleted == False)
 
         stmt = stmt.order_by(ClaimFile.uploaded_at.desc())
 
@@ -34,7 +34,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         stmt = select(ClaimFile).where(ClaimFile.customer_id == customer_id)
 
         if not include_deleted:
-            stmt = stmt.where(ClaimFile.is_deleted == 0)
+            stmt = stmt.where(ClaimFile.is_deleted == False)
 
         stmt = stmt.order_by(ClaimFile.uploaded_at.desc())
 
@@ -46,7 +46,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         stmt = select(ClaimFile).where(
             and_(
                 ClaimFile.file_hash == file_hash,
-                ClaimFile.is_deleted == 0
+                ClaimFile.is_deleted == False
             )
         )
         
@@ -58,7 +58,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         stmt = select(ClaimFile).where(
             and_(
                 ClaimFile.status == status,
-                ClaimFile.is_deleted == 0
+                ClaimFile.is_deleted == False
             )
         )
         
@@ -75,7 +75,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         stmt = select(ClaimFile).where(
             and_(
                 ClaimFile.document_type == document_type,
-                ClaimFile.is_deleted == 0
+                ClaimFile.is_deleted == False
             )
         )
         
@@ -92,7 +92,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         stmt = select(ClaimFile).where(
             and_(
                 ClaimFile.expires_at < before_date,
-                ClaimFile.is_deleted == 0
+                ClaimFile.is_deleted == False
             )
         )
         
@@ -108,7 +108,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         ).where(
             and_(
                 ClaimFile.customer_id == customer_id,
-                ClaimFile.is_deleted == 0
+                ClaimFile.is_deleted == False
             )
         )
         
@@ -123,7 +123,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         ).where(
             and_(
                 ClaimFile.customer_id == customer_id,
-                ClaimFile.is_deleted == 0
+                ClaimFile.is_deleted == False
             )
         ).group_by(ClaimFile.document_type)
         
@@ -134,7 +134,7 @@ class FileRepository(BaseRepository[ClaimFile]):
         recent_stmt = select(ClaimFile).where(
             and_(
                 ClaimFile.customer_id == customer_id,
-                ClaimFile.is_deleted == 0
+                ClaimFile.is_deleted == False
             )
         ).order_by(ClaimFile.uploaded_at.desc()).limit(5)
         
@@ -160,7 +160,7 @@ class FileRepository(BaseRepository[ClaimFile]):
                           date_to: Optional[datetime] = None,
                           limit: int = 100, offset: int = 0) -> List[ClaimFile]:
         """Search files with various criteria."""
-        stmt = select(ClaimFile).where(ClaimFile.is_deleted == 0)
+        stmt = select(ClaimFile).where(ClaimFile.is_deleted == False)
 
         # Build parameters dict for bound parameters
         params = {}

@@ -35,7 +35,7 @@ async def _cleanup_orphan_files():
             and_(
                 ClaimFile.claim_id == None,  # Orphan (no claim linked)
                 ClaimFile.uploaded_at < cutoff_time,
-                ClaimFile.is_deleted == 0
+                ClaimFile.is_deleted == False
             )
         )
         
